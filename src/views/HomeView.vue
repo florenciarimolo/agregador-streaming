@@ -2,6 +2,7 @@
 import { onMounted, ref } from 'vue'
 import { searchMovies, getExternalIds, getTrendingMovies } from '../api/tmdb'
 import type { Movie } from '../types/MovieSearch'
+import Carrousel from '../components/Carrousel.vue'
 
 let movies = ref<Movie[]>([])
 
@@ -25,7 +26,9 @@ onMounted(async () => {
 
 <template>
   <div class="p-4">
-    <h1 class="text-2xl font-bold mb-4">Películas en tendencia</h1>
+    <h1 class="text-2xl font-bold mb-4 uppercase">Películas en tendencia</h1>
+    <Carrousel/>
+    <!--
     <div class="grid grid-cols-4 md:grid-cols-6 gap-4">
       <div v-for="movie in movies" :key="movie.id"
         class="w-[200px] rounded border border-[#646cff] relative flex flex-col items-center justify-center text-sm text-white/80 overflow-hidden shadow-sm max-w-80">
@@ -46,6 +49,6 @@ onMounted(async () => {
         </div>
 
       </div>
-    </div>
+    </div> -->
   </div>
 </template>
