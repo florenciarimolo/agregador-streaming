@@ -1,37 +1,50 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
-import { useLibraryStore } from '../stores/library'
+import { onMounted, ref } from 'vue'
+import { searchMovies, getExternalIds, getTrendingMovies } from '../api/tmdb'
+import type { Movie } from '../types/MovieSearch'
 
-const library = useLibraryStore()
+let movies = ref<Movie[]>([])
 
-onMounted(() => {
-  if (library.content.length === 0) {
-    library.loadMockData()
+onMounted(async () => {
+  try {
+    // Fetch trending movies
+    const response = await getTrendingMovies()
+    movies.value = response.results
+
+    // Optionally, fetch external IDs for each movie
+    for (const movie of movies.value) {
+      const externalIds = await getExternalIds(movie.id)
+      movie.imdb_id = externalIds.imdb_id // Assuming the API returns an object with imdb_id
+    }
+  } catch (error) {
+    console.error('Error fetching trending movies:', error)
   }
 })
+
 </script>
 
 <template>
   <div class="p-4">
-    <h1 class="text-2xl font-bold mb-4">Tu biblioteca</h1>
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-      <div
-        v-for="item in library.content"
-        :key="item.id"
-        class="bg-white shadow rounded overflow-hidden"
-      >
-        <img :src="item.image" :alt="item.title" class="w-full h-auto" />
-        <div class="p-2">
-          <h2 class="font-semibold">{{ item.title }}</h2>
-          <p class="text-sm text-gray-600">{{ item.platform.join(', ') }}</p>
-          <a
-            :href="item.url"
-            target="_blank"
-            class="text-blue-500 text-sm underline"
-          >
-            Ver ahora
+    <h1 class="text-2xl font-bold mb-4">Películas en tendencia</h1>
+    <div class="grid grid-cols-4 md:grid-cols-6 gap-4">
+      <div v-for="movie in movies" :key="movie.id"
+        class="w-[200px] rounded border border-[#646cff] relative flex flex-col items-center justify-center text-sm text-white/80 overflow-hidden shadow-sm max-w-80">
+        <div class="">
+          <a href="#">
+            <img v-if="movie.poster_path" :src="`https://image.tmdb.org/t/p/w200${movie.poster_path}`"
+              :alt="movie.title" class="" />
           </a>
         </div>
+
+        <div class="flex flex-col justify-around backdrop-blur-sm w-full h-full bg-white/10 p-3">
+          <div class="flex items-center justify-between w-full pb-3">
+            <p>{{ movie.title }}</p>
+            <div class="bg-black/50 rounded px-2 py-1.5">{{ movie.vote_average }}</div>
+          </div>
+          <p class="text-xs text-gray-300">{{ movie.release_date }}</p>
+
+        </div>
+
       </div>
     </div>
   </div>
