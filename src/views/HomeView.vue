@@ -28,6 +28,8 @@ onMounted(async () => {
   <div class="p-4">
     <h1 class="text-2xl font-bold mb-4 uppercase">Películas en tendencia</h1>
     <Carrousel/>
+        <h1 class="text-2xl font-bold mb-4 uppercase">Películas en tendencia</h1>
+    <Carrousel/>
     <!--
     <div class="grid grid-cols-4 md:grid-cols-6 gap-4">
       <div v-for="movie in movies" :key="movie.id"

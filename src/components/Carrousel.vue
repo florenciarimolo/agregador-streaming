@@ -6,7 +6,7 @@
             ‹
         </button>
 
-        <div class="no-scrollbar w-full">
+        <div class="w-full no-scrollbar">
             <div class="flex gap-4">
                 <article
                     v-for="movie in pagedMovies"
@@ -17,10 +17,10 @@
                         class="w-full h-full object-cover rounded border border-[#2731f5]" />
                     <div
                         class="w-full flex flex-col rounded border border-[#2731f5] items-center justify-center px-4 opacity-0 group-hover:opacity-100 transition-all duration-300 absolute bottom-0 backdrop-blur-md left-0 w-inherit h-full bg-black/20">
-                        <p class="text-white text-lg font-semibold text-center">
+                        <p class="text-lg font-semibold text-center text-white">
                             {{ movie.title }}
                         </p>
-                        <p class="text-white text-lg font-semibold text-center">
+                        <p class="text-lg font-semibold text-center text-white">
                             {{ movie.release_date }}
                         </p>
                     </div>
