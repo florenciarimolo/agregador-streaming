@@ -8,20 +8,21 @@
 
         <div class="w-full no-scrollbar">
             <div class="flex gap-4">
-                <article
-                    v-for="movie in pagedMovies"
-                    :key="movie.id"
-                    class="w-56 flex-shrink-0 h-[20rem] relative group hover:scale-105 transition-all duration-300"
-                >
-                    <img :src="`https://image.tmdb.org/t/p/w500${movie.poster_path}`" alt="card"
+                <article v-for="mediaObject in pagedMedia" :key="mediaObject.id"
+                    class="w-56 flex-shrink-0 h-[20rem] relative group hover:scale-105 transition-all duration-300">
+                    <img :src="`https://image.tmdb.org/t/p/w500${mediaObject.poster_path}`"
+                        :alt="mediaObject.title ? mediaObject.title : mediaObject.name"
                         class="w-full h-full object-cover rounded border border-[#2731f5]" />
+                    <p class="mt-4 text-lg font-semibold text-center text-white">
+                        {{ mediaObject.title ? mediaObject.title : mediaObject.name }}
+                    </p>
+                    <p v-if="mediaObject.release_date" class="text-lg font-semibold text-center text-white">
+                        {{ formatDateToSpanish(mediaObject.release_date) }}
+                    </p>
                     <div
                         class="w-full flex flex-col rounded border border-[#2731f5] items-center justify-center px-4 opacity-0 group-hover:opacity-100 transition-all duration-300 absolute bottom-0 backdrop-blur-md left-0 w-inherit h-full bg-black/20">
-                        <p class="text-lg font-semibold text-center text-white">
-                            {{ movie.title }}
-                        </p>
-                        <p class="text-lg font-semibold text-center text-white">
-                            {{ movie.release_date }}
+                        <p v-if="mediaObject.release_date" class="text-lg font-semibold text-center text-white">
+                            {{ formatDateToSpanish(mediaObject.release_date) }}
                         </p>
                     </div>
                 </article>
@@ -36,30 +37,21 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { onMounted } from 'vue'
-import type { Movie } from '../types/MovieSearch'
-import { getExternalIds, getTrendingMovies } from '../api/tmdb'
+import { ref, computed, onMounted, watch } from 'vue'
+import { formatDateToSpanish } from '../utils/formatDate'
+import type { MediaTrending } from '../types/Media'
+
+const props = defineProps({
+    mediaTrendingList: {
+        type: Array as () => MediaTrending[],
+        required: true
+    }
+})
 
 const itemsPerPage = 5
 const currentPage = ref(0)
 
-
-
-let movies = ref<Movie[]>([])
-
-
-const totalPages = computed(() => Math.ceil(movies.value.length / itemsPerPage))
-
-const carouselStyle = computed(() => {
-    // 224px = w-56 (width de cada card) + gap (aprox 16px)
-    const cardWidth = 224
-    const gap = 16
-    const offset = currentPage.value * itemsPerPage * (cardWidth + gap)
-    return {
-        transform: `translateX(-${offset}px)`
-    }
-})
+const totalPages = computed(() => Math.ceil(props.mediaTrendingList.length / itemsPerPage))
 
 
 const nextPage = () => {
@@ -76,25 +68,19 @@ const prevPage = () => {
 
 const endReached = computed(() => currentPage.value >= totalPages.value - 1)
 
-const pagedMovies = computed(() =>
-    movies.value.slice(currentPage.value * itemsPerPage, (currentPage.value + 1) * itemsPerPage)
-)
-
-onMounted(async () => {
-    try {
-        // Fetch trending movies
-        const response = await getTrendingMovies()
-        movies.value = response.results
-
-        // Optionally, fetch external IDs for each movie
-        for (const movie of movies.value) {
-            const externalIds = await getExternalIds(movie.id)
-            movie.imdb_id = externalIds.imdb_id // Assuming the API returns an object with imdb_id
-        }
-    } catch (error) {
-        console.error('Error fetching trending movies:', error)
+onMounted(() => {
+    if (props.mediaTrendingList.length === 0) {
+        console.warn('No media items available to display in the carousel.')
     }
 })
+const mediaList = ref<MediaTrending[]>(props.mediaTrendingList)
+watch(() => props.mediaTrendingList, (newList) => {
+    mediaList.value = newList
+    currentPage.value = 0 // Reset to first page when the list changes
+}, { immediate: true })
+const pagedMedia = computed(() =>
+    mediaList.value.slice(currentPage.value * itemsPerPage, (currentPage.value + 1) * itemsPerPage)
+)
 
 </script>
 
