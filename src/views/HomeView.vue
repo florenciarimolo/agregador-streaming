@@ -8,32 +8,14 @@ let trendingMovies = ref<MediaTrending[]>([])
 let trendingTVShows = ref<MediaTrending[]>([])
 
 onMounted(async () => {
-  try {
     // Fetch trending movies
-    const response = await getTrendingMovies()
-    trendingMovies.value = response.results
+    const trendingMoviesResponse = await getTrendingMovies()
+    trendingMovies.value = trendingMoviesResponse.results
 
-    // Optionally, fetch external IDs for each movie
-    for (const movie of trendingMovies.value) {
-      const externalIds = await getExternalMovieIds(movie.id)
-      movie.imdb_id = externalIds.imdb_id // Assuming the API returns an object with imdb_id
-    }
-  } catch (error) {
-    console.error('Error fetching trending movies:', error)
-  }
 
   // Fetch TV trending shows
-  try {
-    const response = await getTrendingTVShows()
-    trendingTVShows.value = response.results
-    // Optionally, fetch external IDs for each TV show
-    for (const show of trendingTVShows.value) {
-      const externalIds = await getExternalTVIds(show.id)
-      show.imdb_id = externalIds.imdb_id // Assuming the API returns an object with imdb_id
-    }
-  } catch (error) {
-    console.error('Error fetching trending TV shows:', error)
-  }
+    const trendingShowsResponse = await getTrendingTVShows()
+    trendingTVShows.value = trendingShowsResponse.results
 })
 
 </script>
