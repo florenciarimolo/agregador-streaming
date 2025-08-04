@@ -1,34 +1,32 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
-import { getExternalMovieIds, getExternalTVIds, getTrendingMovies, getTrendingTVShows } from '../api/tmdb'
-import Carrousel from '../components/Carrousel.vue'
-import type { MediaTrending } from '../types/Media'
+import { onMounted, ref } from "vue";
+import { getTrendingMovies, getTrendingTVShows } from "../api/tmdb";
+import Carrousel from "@/components/Carrousel.vue";
+import type { MediaTrending } from "@/types/Media";
 
-let trendingMovies = ref<MediaTrending[]>([])
-let trendingTVShows = ref<MediaTrending[]>([])
+let trendingMovies = ref<MediaTrending[]>([]);
+let trendingTVShows = ref<MediaTrending[]>([]);
 
 onMounted(async () => {
-    // Fetch trending movies
-    const trendingMoviesResponse = await getTrendingMovies()
-    trendingMovies.value = trendingMoviesResponse.results
-
+  // Fetch trending movies
+  const trendingMoviesResponse = await getTrendingMovies();
+  trendingMovies.value = trendingMoviesResponse.results;
 
   // Fetch TV trending shows
-    const trendingShowsResponse = await getTrendingTVShows()
-    trendingTVShows.value = trendingShowsResponse.results
-})
-
+  const trendingShowsResponse = await getTrendingTVShows();
+  trendingTVShows.value = trendingShowsResponse.results;
+});
 </script>
 
 <template>
   <div class="flex flex-col gap-20 md:gap-40 p-9">
     <section class="flex-1">
       <h1 class="mb-4 text-2xl font-bold uppercase">Películas en tendencia</h1>
-      <Carrousel :mediaTrendingList="trendingMovies"/>
+      <Carrousel :media-trending-list="trendingMovies" />
     </section>
     <section class="flex-1">
       <h1 class="mb-4 text-2xl font-bold uppercase">Series en tendencia</h1>
-      <Carrousel :mediaTrendingList="trendingTVShows"/>
+      <Carrousel :media-trending-list="trendingTVShows" />
     </section>
     <!--
     <div class="grid grid-cols-4 gap-4 md:grid-cols-6">
