@@ -9,9 +9,7 @@
     }
   ],
   "compilerOptions": {
-    "types": [
-      "node"
-    ],
+    "types": ["node"],
     "moduleResolution": "node",
     "baseUrl": ".",
     "paths": {
@@ -23,17 +21,6 @@
       "@assets/*": ["./src/assets/*"],
       "@utils/*": ["./src/utils/*"],
       "@types/*": ["./src/types/*"]
-    },
-    "include": [
-      "src/**/*.ts",
-      "src/**/*.tsx",
-      "src/**/*.vue",
-      "src/**/*.json"
-    ],
-    "exclude": [
-      "node_modules",
-      "dist",
-      "build",
-    ]
+    }
   }
 }

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
 import { getTrendingMovies, getTrendingTVShows } from "../api/tmdb";
-import Carrousel from "@/components/Carrousel.vue";
+import MediaCarousel from "@/components/MediaCarousel.vue";
 import type { MediaTrending } from "@/types/Media";
 
 let trendingMovies = ref<MediaTrending[]>([]);
@@ -22,11 +22,11 @@ onMounted(async () => {
   <div class="flex flex-col gap-20 md:gap-40 p-9">
     <section class="flex-1">
       <h1 class="mb-4 text-2xl font-bold uppercase">Películas en tendencia</h1>
-      <Carrousel :media-trending-list="trendingMovies" />
+      <MediaCarousel :media-trending-list="trendingMovies" />
     </section>
     <section class="flex-1">
       <h1 class="mb-4 text-2xl font-bold uppercase">Series en tendencia</h1>
-      <Carrousel :media-trending-list="trendingTVShows" />
+      <MediaCarousel :media-trending-list="trendingTVShows" />
     </section>
     <!--
     <div class="grid grid-cols-4 gap-4 md:grid-cols-6">

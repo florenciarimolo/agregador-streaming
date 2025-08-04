@@ -1,3 +1,3 @@
 export type ExternalIDs = {
-    imdb_id: string; // IMDb ID
-}
+  imdb_id: string; // IMDb ID
+};
