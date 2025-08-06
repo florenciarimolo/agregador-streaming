@@ -1,5 +1,5 @@
 <template>
-  <div class="h-auto text-white bg-gray-900">
+  <div class="h-auto text-white bg-gray-900 fixed top-0 z-50 w-[80%]">
     <nav class="p-4 bg-gray-800">
       <div class="container flex items-center justify-between mx-auto">
         <div class="text-lg font-bold">Agregador Streaming</div>

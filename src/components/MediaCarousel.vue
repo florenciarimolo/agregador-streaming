@@ -2,7 +2,7 @@
   <section class="flex items-center justify-between gap-4 py-9">
     <!-- Flecha izquierda -->
     <button
-      class="z-10 bg-[#2731f5] shadow-md rounded-full p-2 disabled:opacity-30"
+      class="z-10 bg-primary shadow-md rounded-full p-2 disabled:opacity-30"
       :disabled="currentPage === 0"
       @click="prevPage"
     >
@@ -20,7 +20,7 @@
           <img
             :src="`https://image.tmdb.org/t/p/w500${mediaObject.poster_path}`"
             :alt="mediaObject.title ? mediaObject.title : mediaObject.name"
-            class="w-full h-full object-cover rounded border border-[#2731f5]"
+            class="w-full h-full object-cover rounded border border-primary"
           />
           <p class="mt-4 text-lg font-semibold text-center text-white">
             {{ mediaObject.title ? mediaObject.title : mediaObject.name }}
@@ -32,11 +32,11 @@
             {{ formatDateToSpanish(mediaObject.release_date) }}
           </p>
           <div
-            class="w-full flex flex-col rounded border border-[#2731f5] items-center justify-center px-4 opacity-0 group-hover:opacity-100 transition-all duration-300 absolute bottom-0 backdrop-blur-md left-0 w-inherit h-full bg-black/20"
+            class="w-full flex flex-col rounded border border-primary items-center justify-center px-4 opacity-0 group-hover:opacity-100 transition-all duration-300 absolute bottom-0 backdrop-blur-md left-0 w-inherit h-full bg-black/20"
           >
             <RatingBadge :rating="mediaObject.vote_average" />
             <button
-              class="px-4 py-2 mt-4 text-white bg-[#2731f5] rounded hover:bg-[#1e24c7] transition-colors duration-300"
+              class="px-4 py-2 mt-4 text-white bg-primary rounded"
             >
               <router-link
                 :to="{ name: 'movie', params: { id: mediaObject.id } }"
@@ -50,7 +50,7 @@
     <!-- Flecha derecha -->
     <button
       :disabled="endReached"
-      class="z-10 bg-[#2731f5] shadow-md rounded-full p-2 disabled:opacity-30"
+      class="z-10 bg-primary shadow-md rounded-full p-2 disabled:opacity-30"
       @click="nextPage"
     >
       ›
