@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
-import { getTrendingMovies, getTrendingTVShows } from "../api/tmdb";
+import { getTrendingMovies } from "@/api/tmdb/movie";
+import { getTrendingTVShows } from "@/api/tmdb/tvshow";
 import MediaCarousel from "@/components/MediaCarousel.vue";
 import type { MediaTrending } from "@/types/Media";
 

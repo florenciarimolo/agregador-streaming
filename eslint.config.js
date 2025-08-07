@@ -20,10 +20,18 @@ export default tseslint.config(
         extraFileExtensions: ['.vue'],
         sourceType: 'module',
       },
+      globals: {
+        window: 'readonly',
+        document: 'readonly',
+        MouseEvent: 'readonly',
+        Event: 'readonly',
+        HTMLElement: 'readonly',
+        console: 'readonly',
+      },
     },
     rules: {
       ...eslintConfigPrettier.rules,
-    }
+    },
   },
   eslintConfigPrettier
 );

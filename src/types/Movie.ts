@@ -1,4 +1,4 @@
-import type { WatchProvider } from './WatchProvider';
+import type { WatchProviderTypes } from './WatchProvider';
 
 export type Genre = {
   name: string;
@@ -13,7 +13,7 @@ export type Movie = {
   vote_average: number;
   genres: Genre[];
   original_language: string;
-  providers?: WatchProvider[]; // Optional, as not all movies may have providers
+  providers?: WatchProviderTypes; // Optional, as not all movies may have providers
   imdb_id?: string; // Optional, as not all movies may have an IMDb ID
 };
 
