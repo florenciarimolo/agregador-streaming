@@ -2,7 +2,7 @@
   <section class="flex items-center justify-between gap-4 py-9">
     <!-- Flecha izquierda -->
     <button
-      class="z-10 bg-primary shadow-md rounded-full p-2 disabled:opacity-30"
+      class="z-10 p-2 rounded-full shadow-md bg-primary disabled:opacity-30"
       :disabled="currentPage === 0"
       @click="prevPage"
     >
@@ -20,7 +20,7 @@
           <img
             :src="`https://image.tmdb.org/t/p/w500${mediaObject.poster_path}`"
             :alt="mediaObject.title ? mediaObject.title : mediaObject.name"
-            class="w-full h-full object-cover rounded border border-primary"
+            class="object-cover w-full h-full border rounded border-primary"
           />
           <p class="mt-4 text-lg font-semibold text-center text-white">
             {{ mediaObject.title ? mediaObject.title : mediaObject.name }}
@@ -32,14 +32,12 @@
             {{ formatDateToSpanish(mediaObject.release_date) }}
           </p>
           <div
-            class="w-full flex flex-col rounded border border-primary items-center justify-center px-4 opacity-0 group-hover:opacity-100 transition-all duration-300 absolute bottom-0 backdrop-blur-md left-0 w-inherit h-full bg-black/20"
+            class="absolute bottom-0 left-0 flex flex-col items-center justify-center w-full h-full px-4 transition-all duration-300 border rounded opacity-0 border-primary group-hover:opacity-100 backdrop-blur-md w-inherit bg-black/20"
           >
             <RatingBadge :rating="mediaObject.vote_average" />
-            <button
-              class="px-4 py-2 mt-4 text-white bg-primary rounded"
-            >
+            <button class="px-4 py-2 mt-4 text-white rounded bg-primary">
               <router-link
-                :to="{ name: 'movie', params: { id: mediaObject.id } }"
+                class="block" :to="{ name: 'movie', params: { id: mediaObject.id } }"
                 >Ver Detalles</router-link
               >
             </button>
@@ -50,7 +48,7 @@
     <!-- Flecha derecha -->
     <button
       :disabled="endReached"
-      class="z-10 bg-primary shadow-md rounded-full p-2 disabled:opacity-30"
+      class="z-10 p-2 rounded-full shadow-md bg-primary disabled:opacity-30"
       @click="nextPage"
     >
       ›

@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
-import { getTrendingMovies } from "@/api/tmdb/movie";
-import { getTrendingTVShows } from "@/api/tmdb/tvshow";
-import MediaCarousel from "@/components/MediaCarousel.vue";
-import type { MediaTrending } from "@/types/Media";
+import { onMounted, ref } from 'vue';
+import { getTrendingMovies } from '@/api/tmdb/movie';
+import { getTrendingTVShows } from '@/api/tmdb/tvshow';
+import MediaCarousel from '@/components/MediaCarousel.vue';
+import type { MediaTrending } from '@/types/Media';
 
 let trendingMovies = ref<MediaTrending[]>([]);
 let trendingTVShows = ref<MediaTrending[]>([]);
