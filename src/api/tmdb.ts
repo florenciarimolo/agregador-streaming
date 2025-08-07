@@ -1,9 +1,9 @@
 import axios, { type AxiosResponse } from 'axios'
-import type { Movie, MovieSearchResponse } from '../types/MovieSearch'
-import type { ExternalIDs } from '../types/ExternalIDs'
-import type { TVSearchResponse } from '../types/TVSearch'
-import type { MediaTrendingResponse } from '../types/Media'
-import type { CountryWatchProvider } from '../types/WatchProvider'
+import type { Movie, MovieSearchResponse } from '../types/Movie'
+import type { ExternalIDs } from '@/types/ExternalIDs'
+import type { TVSearchResponse } from '@/types/TVShow'
+import type { MediaTrendingResponse } from '@/types/Media'
+import type { CountryWatchProvider } from '@/types/WatchProvider'
 
 const apiKey = import.meta.env.VITE_TMDB_API_KEY
 const baseURL = 'https://api.themoviedb.org/3'
@@ -25,12 +25,12 @@ export async function searchMovies(query: string): Promise<MovieSearchResponse> 
   }).then((response: AxiosResponse<MovieSearchResponse>) => response.data)
 }
 
-export async function searchTVShows(query: string) {
+export async function searchTVShows(query: string): Promise<TVSearchResponse> {
   return tmdb.get('/search/tv', {
     params: {
       query
     }
-  })
+  }).then((response: AxiosResponse<TVSearchResponse>) => response.data)
 }
 
 export async function getMovieDetails(movie_id: number): Promise<Movie> {

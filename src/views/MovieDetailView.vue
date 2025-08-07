@@ -65,8 +65,7 @@ import { useRoute } from 'vue-router';
 import { getMovieDetails, getMovieProviders } from '@/api/tmdb';
 import RatingBadge from '../components/RatingBadge.vue';
 import { formatDateToSpanish } from '../utils/formatDate';
-import type { Movie, Genre } from '@/types/MovieSearch';
-import type { WatchProvider } from '../types/WatchProvider';
+import type { Movie, Genre } from '@/types/Movie';
 import ProviderList from '../components/ProviderList.vue';
 
 const route = useRoute();
