@@ -18,7 +18,7 @@
         >
           <RatingBadge :rating="mediaObject.vote_average" />
           <img
-            :src="`https://image.tmdb.org/t/p/w500${mediaObject.poster_path}`"
+            :src="`https://image.tmdb.org/t/p/w780${mediaObject.poster_path}`"
             :alt="mediaObject.title ? mediaObject.title : mediaObject.name"
             class="object-cover w-full h-full border rounded border-primary"
           />
