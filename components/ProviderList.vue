@@ -12,7 +12,7 @@
       <img
         :src="`https://image.tmdb.org/t/p/w300${provider.logo_path}`"
         :alt="provider.provider_name"
-        class="inline-block w-8 h-8 rounded"
+        class="inline-block w-12 h-12 rounded shadow-secondary/50 shadow-lg"
         :title="provider.provider_name"
       />
     </span>
