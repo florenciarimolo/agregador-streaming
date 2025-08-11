@@ -36,7 +36,7 @@
           >
             <RatingBadge :rating="mediaObject.vote_average" />
 
-              <nuxt-link :to="`/movie/${mediaObject.id}`">
+              <nuxt-link :v-if="mediaObject.media_type === MediaTypeEnum.movie" :to="mediaObject.path">
                 <button class="px-4 py-2 mt-4 text-white rounded bg-primary">
                     Ver más
                 </button>
@@ -62,6 +62,7 @@ import { ref, computed, watch } from 'vue';
 import { formatDateToSpanish } from '@/utils/formatDate';
 import type { MediaTrending } from '@/types/Media';
 import RatingBadge from './RatingBadge.vue';
+import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 
 const props = defineProps({
   mediaTrendingList: {
@@ -98,6 +99,15 @@ watch(
   () => props.mediaTrendingList,
   (newList) => {
     mediaList.value = newList;
+
+    mediaList.value.forEach(media => {
+      if (media.media_type === MediaTypeEnum.movie) {
+        media.path = `/movie/${media.id}`
+      }
+      else {
+        media.path = `/series/${media.id}`
+      }
+    });
     currentPage.value = 0; // Reset to first page when the list changes
   },
   { immediate: true }
@@ -109,6 +119,7 @@ const pagedMedia = computed(() =>
     (currentPage.value + 1) * itemsPerPage
   )
 );
+
 </script>
 
 <style scoped>

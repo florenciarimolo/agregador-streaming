@@ -31,6 +31,7 @@ export default tseslint.config(
     },
     rules: {
       ...eslintConfigPrettier.rules,
+      'vue/multi-word-component-names': 'off',
     },
   },
   eslintConfigPrettier

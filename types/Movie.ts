@@ -1,8 +1,5 @@
 import type { WatchProviderTypes } from './WatchProvider';
-
-export type Genre = {
-  name: string;
-};
+import type { Genre } from './Genre';
 
 export type Movie = {
   id: number;

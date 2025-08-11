@@ -22,10 +22,8 @@
       class="absolute inset-0 z-0 overflow-hidden rounded-xl bg-gradient-to-b from-black/70 to-black/90"
     ></div>
     <div
-      class="relative overflow-hidden transition-transform duration-200 ease-out bg-white bg-center bg-no-repeat bg-cover border cursor-pointer z-90 border-secondary rounded-xl max-w-80"
-      :style="transformStyle"
-      @mousemove="handleMove"
-      @mouseleave="resetTilt"
+      class="relative overflow-hidden transition-transform duration-200 ease-out border cursor-pointer border-secondary rounded-xl max-w-80"
+
     >
       <RatingBadge :rating="movieWithProviders.vote_average" />
       <img
@@ -84,75 +82,56 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { useFetch } from 'nuxt/app';
 import { formatDateToSpanish } from '@/utils/formatDate';
-import type { Movie, Genre } from '@/types/Movie';
+import type { Movie } from '@/types/Movie';
+import type { Genre } from '@/types/Genre';
 import RatingBadge from '@/components/RatingBadge.vue';
 import ProviderList from '@/components/ProviderList.vue';
+import { WatchProviderTypes } from '@/types/WatchProvider';
+import { calculateTilt, getDefaultTilt } from '@/utils/functions';
 
 const route = useRoute();
 const movieId = route.params.id as string;
 
-// Usar useFetch para obtener los detalles de la película
+// Fetch movie details
 const {
   data: movieDetails,
   pending: moviePending,
   error: movieError,
-} = await useFetch(`/api/tmdb/movies/${movieId}`, {
-  transform: (response: any) => response as Movie,
-});
+} = await useFetch(`/api/tmdb/movies/${movieId}`);
 
-// Usar useFetch para obtener los proveedores
+// Fetch providers
 const {
   data: providersData,
   pending: providersPending,
   error: providersError,
-} = await useFetch(`/api/tmdb/movies/${movieId}/providers`, {
-  transform: (response: any) => response,
-});
+} = await useFetch(`/api/tmdb/movies/${movieId}/providers`);
 
 // Computed para manejar los datos
-const movie = computed(() => movieDetails.value || ({} as Movie));
-const providers = computed(() => providersData.value || {});
+const movie = computed<Movie>(() => movieDetails.value as Movie || {} as Movie);
+const providers = computed<WatchProviderTypes>(() => providersData.value as WatchProviderTypes || {});
 
-// Combinar los datos de la película con los proveedores
-const movieWithProviders = computed(() => ({
-  ...movie.value,
-  providers: providers.value,
-}));
-
-// Adjust the threshold value to control the tilt effect
-const threshold = 12;
-
-interface Tilt {
-  x: number;
-  y: number;
-}
-
-const tilt = ref<Tilt>({ x: 0, y: 0 });
-
-const handleMove = (e: MouseEvent) => {
-  const target = e.currentTarget as HTMLElement;
-  const { left, top, width, height } = target.getBoundingClientRect();
-  const x = (e.clientX - left) / width - 0.5;
-  const y = (e.clientY - top) / height - 0.5;
-  tilt.value = {
-    x: y * -threshold,
-    y: x * threshold,
+const movieWithProviders = computed<Movie>(() => {
+  return {
+    ...movie.value,
+    providers: providers.value,
   };
-};
+});
+
+let tilt = getDefaultTilt();
 
 const resetTilt = () => {
-  tilt.value = { x: 0, y: 0 };
+  tilt = getDefaultTilt();
 };
 
-const backgroundImage = ref<string>('');
+const backgroundImage = ref<string>('')
 
 function setBackgroundImage() {
-  if (movieWithProviders.value.backdrop_path) {
-    backgroundImage.value = `https://image.tmdb.org/t/p/original${movieWithProviders.value.backdrop_path}`;
+  if (movie.value.backdrop_path) {
+    backgroundImage.value = `https://image.tmdb.org/t/p/original${movie.value.backdrop_path}`;
   } else {
     backgroundImage.value = '';
   }
@@ -165,11 +144,11 @@ const sectionStyle = computed(() => ({
 }));
 
 const transformStyle = computed(() => ({
-  transform: `perspective(1000px) rotateX(${tilt.value.x}deg) rotateY(${tilt.value.y}deg)`,
+  transform: `perspective(1000px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`,
 }));
 
 const hasAvailableProviders = computed(() => {
-  return !!(
+  return (
     movieWithProviders.value.providers?.flatrate?.length ||
     movieWithProviders.value.providers?.buy?.length ||
     movieWithProviders.value.providers?.rent?.length
@@ -182,24 +161,17 @@ const isLoading = computed(() => moviePending.value || providersPending.value);
 // Error state
 const hasError = computed(() => movieError.value || providersError.value);
 
-// Watch for route changes to refetch data
+onMounted(() => {
+  setBackgroundImage();
+});
+
 watch(
   () => route.params.id,
   async (newId) => {
     if (newId && newId !== movieId) {
-      // Nuxt automáticamente refetch cuando cambia la URL
       setBackgroundImage();
     }
   }
-);
-
-// Set background image when data is available
-watch(
-  movieWithProviders,
-  () => {
-    setBackgroundImage();
-  },
-  { immediate: true }
 );
 </script>
 <style lang=""></style>

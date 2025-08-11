@@ -1,3 +1,5 @@
+import { MediaTypeEnum } from "./enums/MediaTypeEnum";
+
 export type MediaTrending = {
     id: number;
     title?: string; //For movies
@@ -8,9 +10,10 @@ export type MediaTrending = {
     release_date?: string; //For movies
     first_air_date?: string; //For TV shows
     vote_average: number;
-    media_type: 'movie' | 'tv';
+    media_type: MediaTypeEnum;
     original_language: string;
     imdb_id?: string; // Optional, as not all movies may have an IMDb ID
+    path?: string; // Internal URL path
   };
   
   export type MediaTrendingResponse = {

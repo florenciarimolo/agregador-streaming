@@ -4,18 +4,18 @@
         <div class="container flex items-center justify-between mx-auto">
           <div class="text-lg font-bold">Agregador Streaming</div>
           <div>
-            <router-link to="/" class="px-3 py-2 text-white hover:text-gray-300"
-              >Inicio</router-link
+            <nuxt-link to="/" class="px-3 py-2 text-white hover:text-gray-300"
+              >Inicio</nuxt-link
             >
-            <router-link
+            <nuxt-link
               to="/search"
               class="px-3 py-2 text-white hover:text-gray-300"
-              >Buscar</router-link
+              >Buscar</nuxt-link
             >
-            <router-link
+            <nuxt-link
               to="/library"
               class="px-3 py-2 text-white hover:text-gray-300"
-              >Biblioteca</router-link
+              >Biblioteca</nuxt-link
             >
           </div>
         </div>
