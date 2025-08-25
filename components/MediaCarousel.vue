@@ -102,10 +102,10 @@ watch(
 
     mediaList.value.forEach(media => {
       if (media.media_type === MediaTypeEnum.movie) {
-        media.path = `/movie/${media.id}`
+        media.path = `/pelicula/${media.id}`
       }
       else {
-        media.path = `/series/${media.id}`
+        media.path = `/serie/${media.id}`
       }
     });
     currentPage.value = 0; // Reset to first page when the list changes

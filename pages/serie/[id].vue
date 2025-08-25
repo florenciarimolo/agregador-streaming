@@ -97,7 +97,7 @@
           <a href="#">
             <img
               v-if="season.poster_path"
-              :src="`https://image.tmdb.org/t/p/w200${season.poster_path}`"
+              :src="`https://image.tmdb.org/t/p/w780${season.poster_path}`"
               :alt="season.name"
               class=""
             />
@@ -114,6 +114,9 @@
             }}</div>
           </div>
           <p class="text-xs text-gray-300">{{ formatDateToSpanish(season.air_date) }}</p>
+          <p class="text-xs text-gray-300">
+            {{ season.episode_count }} episodios
+          </p>
         </div>
       </article>
     </div>

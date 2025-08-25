@@ -1,6 +1,17 @@
 import type { Genre } from './Genre';
 import type { WatchProviderTypes } from './WatchProvider';
 
+export type Episode = {
+  id: number;
+  name: string;
+  overview: string;
+  air_date: string;
+  season_number: number;
+  vote_average: number;
+  poster_path: string | null;
+  runtime: number;
+}
+
 export type Season = {
   id: number;
   name: string;
@@ -10,6 +21,7 @@ export type Season = {
   episode_count: number;
   poster_path: string | null;
   vote_average: number;
+  episodes?: Episode[];
 };
 
 export type TVShow = {
