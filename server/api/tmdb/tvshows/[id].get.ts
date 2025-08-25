@@ -1,10 +1,13 @@
 import { getTMDBConfig } from '../../../utils/config';
-import { createError } from 'h3';
+import {
+  createError,
+  defineEventHandler,
+} from 'h3';
 
 export default defineEventHandler(async (event) => {
   try {
     const config = getTMDBConfig();
-    const { id } = event.context.params;
+    const { id } = event.context.params as { id: string };
 
     const response = await $fetch(`${config.baseUrl}/tv/${id}`, {
       query: {

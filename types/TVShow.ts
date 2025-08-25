@@ -8,7 +8,7 @@ export type Episode = {
   air_date: string;
   season_number: number;
   vote_average: number;
-  poster_path: string | null;
+  still_path: string | null;
   runtime: number;
 }
 
@@ -18,10 +18,10 @@ export type Season = {
   season_number: number;
   overview: string;
   air_date: string;
-  episode_count: number;
   poster_path: string | null;
   vote_average: number;
   episodes?: Episode[];
+  episode_count?: number;
 };
 
 export type TVShow = {
