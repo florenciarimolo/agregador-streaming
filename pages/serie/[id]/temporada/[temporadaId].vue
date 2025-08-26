@@ -24,7 +24,7 @@
       ></div>
 
       <article
-        class="relative overflow-hidden transition-transform duration-200 ease-out border cursor-pointer border-primary/50 rounded-xl max-w-80"
+        class="relative overflow-hidden border cursor-pointer border-primary/50 rounded-xl max-w-80"
       >
         <RatingBadge :rating="seasonWithProviders?.vote_average" />
         <img
@@ -40,7 +40,7 @@
       >
         <div class="flex items-center gap-4">
           <button
-            class="text-white border rounded-xl hover:text-gray-300 transition-all duration-300 text-xl"
+            class="text-white hover:text-gray-300 transition-all duration-300 text-xl"
             @click="goBack"
           >
             ← Volver a la serie
@@ -100,7 +100,7 @@
         <article
           v-for="(episode, index) in seasonWithProviders.episodes"
           :key="episode.id"
-          class="bg-gray-800 rounded-md overflow-hidden shadow-lg hover:shadow-xl transition-shadow"
+          class="bg-gray-800 rounded-md overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300"
         >
           <div class="relative aspect-video bg-gray-700">
             <img
@@ -156,6 +156,7 @@ import { Season } from '@/types/TVShow';
 import { formatDateToSpanish } from '@/utils/formatDate';
 import { WatchProviderTypes } from '@/types/WatchProvider';
 import ProviderList from '@/components/ProviderList.vue';
+import RatingBadge from '@/components/RatingBadge.vue';
 
 const route = useRoute();
 const router = useRouter();

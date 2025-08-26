@@ -37,8 +37,8 @@
             <RatingBadge :rating="mediaObject.vote_average" />
 
               <nuxt-link :v-if="mediaObject.media_type === MediaTypeEnum.movie" :to="mediaObject.path">
-                <button class="px-4 py-2 mt-4 text-white rounded bg-primary">
-                    Ver más
+                <button class="mt-4 text-white bg-primary hover:bg-secondary">
+                    Ver detalles
                 </button>
               </nuxt-link>
 

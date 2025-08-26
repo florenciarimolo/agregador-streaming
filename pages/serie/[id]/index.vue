@@ -83,42 +83,46 @@
   </section>
   <section>
     <h2 class="col-span-4 text-2xl font-semibold my-11">Temporadas</h2>
-    <div class="grid grid-cols-2 gap-4 md:grid-cols-4 justify-between">
+    <div class="grid grid-cols-2 gap-4 md:grid-cols-4 justify-between relative">
       <article
         v-for="season in tvShowWithProviders.seasons"
         :key="season.id"
-        class="rounded relative flex flex-col items-center justify-center text-sm overflow-hidden shadow-primary/5 shadow-sm w-[300px] cursor-pointer hover:shadow-xl transition-all"
+        class="rounded relative flex flex-col text-sm overflow-hidden shadow-primary/5 shadow-sm w-[300px] cursor-pointer hover:shadow-xl group hover:scale-105 transition-all duration-300"
       >
-        <nuxt-link
-          :to="`/serie/${tvShowId}/temporada/${season.season_number}`"
-          class="block"
-        >
-          <div>
+          <div class="aspect-[2/3] overflow-hidden relative">
             <img
               v-if="season.poster_path"
               :src="`https://image.tmdb.org/t/p/w780${season.poster_path}`"
               :alt="season.name"
-              class="object-cover"
+              class="w-full h-full object-cover"
             />
+            <div
+            class="absolute bottom-0 left-0 flex flex-col items-center justify-center w-full h-full px-4 transition-all duration-300 rounded opacity-0 group-hover:opacity-100 backdrop-blur-md w-inherit bg-black/20"
+          >
+              <nuxt-link :to="`/serie/${tvShowId}/temporada/${season.season_number}`">
+                <button class="text-white bg-primary hover:bg-secondary">
+                    Ver episodios
+                </button>
+              </nuxt-link>
+
+          </div>
           </div>
 
           <div
-            class="flex flex-col justify-around py-5 px-6 bg-gray-800"
+            class="flex flex-col justify-around py-5 px-6 bg-gray-800 min-h-[120px]"
           >
             <div class="flex items-center justify-between pb-3">
               <p class="text-lg font-semibold uppercase">{{ season.name }}</p>
-              <div class="bg-black/50 rounded px-2 py-1.5">⭐️ {{
-                season.vote_average
-              }}</div>
+              <div class="bg-black/50 rounded px-2 py-1.5"
+                >⭐️ {{ season.vote_average }}</div
+              >
             </div>
-            <p>Fecha de lanzamiento: {{
-              formatDateToSpanish(season.air_date)
-            }}</p>
-            <p>
-              {{ season.episode_count || 0 }} episodios
-            </p>
+            <p
+              >Fecha de lanzamiento:
+              {{ formatDateToSpanish(season.air_date) }}</p
+            >
+            <p> {{ season.episode_count || 0 }} episodios </p>
           </div>
-        </nuxt-link>
       </article>
     </div>
   </section>

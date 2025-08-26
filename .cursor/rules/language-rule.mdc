@@ -1,0 +1,5 @@
+---
+description: For the feature "Generate commit message" and code commits use English, for responses use Spanish (Spain)
+globs:
+alwaysApply: true
+---

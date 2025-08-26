@@ -7,7 +7,7 @@
         'bg-gray-500': rating === 0 || !rating,
         'bg-red-500': rating && rating < 5,
       }"
-      class="absolute p-2 text-xs font-semibold rounded shadow-xl shadow-black/20 top-2 right-2"
+      class="absolute p-2 text-sm font-semibold rounded shadow-xl shadow-black/20 top-2 right-2"
     >
       <span class="font-bold text-white">
         ⭐ {{ rating?.toFixed(1) === '0.0' || rating === 0 || !rating ? 'N/A' : rating?.toFixed(1) }} 
