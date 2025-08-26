@@ -2,37 +2,28 @@
   <section class="flex items-center justify-between gap-4 py-9">
     <!-- Flecha izquierda -->
     <button
-      class="z-10 p-2 rounded-full shadow-md bg-primary disabled:opacity-30"
+      class="z-10 mb-20 bg-primary disabled:opacity-30"
       :disabled="currentPage === 0"
       @click="prevPage"
     >
       ‹
     </button>
 
-    <div class="w-full no-scrollbar">
-      <div class="flex gap-4">
+    <div class="flex flex-row w-full gap-4 no-scrollbar">
         <article
           v-for="mediaObject in pagedMedia"
           :key="mediaObject.id"
-          class="w-56 flex-shrink-0 h-[20rem] relative group hover:scale-105 transition-all duration-300"
+          class="relative flex-shrink-0 w-full transition-all duration-300 md:w-56 rounded-xl group hover:scale-105"
         >
-          <RatingBadge :rating="mediaObject.vote_average" />
+          <div class="relative aspect-[2/3]">
+            <RatingBadge :rating="mediaObject.vote_average" />
           <img
             :src="`https://image.tmdb.org/t/p/w780${mediaObject.poster_path}`"
             :alt="mediaObject.title ? mediaObject.title : mediaObject.name"
-            class="object-cover w-full h-full border rounded border-primary"
+            class="object-cover w-full h-full overflow-hidden shadow-md rounded-xl shadow-primary/20"
           />
-          <p class="mt-4 text-lg font-semibold text-center text-white">
-            {{ mediaObject.title ? mediaObject.title : mediaObject.name }}
-          </p>
-          <p
-            v-if="mediaObject.release_date"
-            class="text-lg font-semibold text-center text-white"
-          >
-            {{ formatDateToSpanish(mediaObject.release_date) }}
-          </p>
           <div
-            class="absolute bottom-0 left-0 flex flex-col items-center justify-center w-full h-full px-4 transition-all duration-300 border rounded opacity-0 border-primary group-hover:opacity-100 backdrop-blur-md w-inherit bg-black/20"
+            class="absolute bottom-0 left-0 flex flex-col items-center justify-center w-full h-full px-4 transition-all duration-300 opacity-0 rounded-xl group-hover:opacity-100 group-hover:shadow-primary/20 group-hover:shadow-lg backdrop-blur-md w-inherit bg-black/20"
           >
             <RatingBadge :rating="mediaObject.vote_average" />
 
@@ -43,13 +34,33 @@
               </nuxt-link>
 
           </div>
+          </div>
+          <p class="mt-4 text-lg font-semibold text-center text-white">
+            {{ mediaObject.title ? mediaObject.title : mediaObject.name }}
+          </p>
+          <p
+            v-if="mediaObject.release_date"
+            class="text-lg font-semibold text-center text-white"
+          >
+            {{ formatDateToSpanish(mediaObject.release_date) }}
+          </p>
+          <div
+            class="flex justify-center lg:hidden"
+          >
+            <RatingBadge :rating="mediaObject.vote_average" />
+            <nuxt-link :v-if="mediaObject.media_type === MediaTypeEnum.movie" :to="mediaObject.path">
+              <button class="mt-4 text-white bg-primary hover:bg-secondary">
+                Ver detalles
+              </button>
+            </nuxt-link>
+          </div>
+
         </article>
       </div>
-    </div>
     <!-- Flecha derecha -->
     <button
       :disabled="endReached"
-      class="z-10 p-2 rounded-full shadow-md bg-primary disabled:opacity-30"
+      class="z-10 p-2 mb-20 rounded-full shadow-md bg-primary disabled:opacity-30"
       @click="nextPage"
     >
       ›
@@ -58,24 +69,33 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { formatDateToSpanish } from '@/utils/formatDate';
-import type { MediaTrending } from '@/types/Media';
+import type { Media } from '@/types/Media';
 import RatingBadge from './RatingBadge.vue';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 
 const props = defineProps({
   mediaTrendingList: {
-    type: Array as () => MediaTrending[],
+    type: Array as () => Media[],
     required: true,
   },
 });
 
-const itemsPerPage = 5;
+const isMobile = ref(false);
+const isTablet = ref(false);
+
+// Detect mobile screen size
+const checkMobile = () => {
+  isMobile.value = window.innerWidth < 768;
+  isTablet.value = window.innerWidth < 1024;
+};
+
+const itemsPerPage = computed(() => isMobile.value ? 1 : isTablet.value ? 2 : 5);
 const currentPage = ref(0);
 
 const totalPages = computed(() =>
-  Math.ceil(props.mediaTrendingList.length / itemsPerPage)
+  Math.ceil(props.mediaTrendingList.length / itemsPerPage.value)
 );
 
 const nextPage = () => {
@@ -90,10 +110,34 @@ const prevPage = () => {
   }
 };
 
+
+const pagedMedia = computed(() =>
+  mediaList.value.slice(
+    currentPage.value * itemsPerPage.value,
+    (currentPage.value + 1) * itemsPerPage.value
+  )
+);
+
 const endReached = computed(() => currentPage.value >= totalPages.value - 1);
 
 // Reactive list to handle media items
-const mediaList = ref<MediaTrending[]>(props.mediaTrendingList);
+const mediaList = ref<Media[]>(props.mediaTrendingList);
+
+// Handle resize
+const handleResize = () => {
+  checkMobile();
+};
+
+onMounted(() => {
+  checkMobile();
+  window.addEventListener('resize', handleResize);
+  console.log(isMobile.value);
+});
+
+
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize);
+});
 
 watch(
   () => props.mediaTrendingList,
@@ -111,13 +155,6 @@ watch(
     currentPage.value = 0; // Reset to first page when the list changes
   },
   { immediate: true }
-);
-
-const pagedMedia = computed(() =>
-  mediaList.value.slice(
-    currentPage.value * itemsPerPage,
-    (currentPage.value + 1) * itemsPerPage
-  )
 );
 
 </script>

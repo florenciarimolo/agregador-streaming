@@ -73,3 +73,13 @@ button:focus-visible {
   margin: 0 auto;
   padding: 2rem;
 }
+
+@media screen and (width < 1024px) {
+  #__nuxt {
+    padding: 0 1rem;
+  }
+
+  button {
+    padding: 0.4em 0.8em;
+  }
+}

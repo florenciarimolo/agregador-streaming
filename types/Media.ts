@@ -1,6 +1,7 @@
 import { MediaTypeEnum } from "./enums/MediaTypeEnum";
+import type { WatchProviderTypes } from "./WatchProvider";
 
-export type MediaTrending = {
+export type Media = {
     id: number;
     title?: string; //For movies
     name?: string; //For TV shows
@@ -14,11 +15,12 @@ export type MediaTrending = {
     original_language: string;
     imdb_id?: string; // Optional, as not all movies may have an IMDb ID
     path?: string; // Internal URL path
+    providers?: WatchProviderTypes;
   };
   
-  export type MediaTrendingResponse = {
+  export type MediaResponse = {
     page: number;
-    results: MediaTrending[];
+    results: Media[];
     total_pages: number;
     total_results: number;
   };

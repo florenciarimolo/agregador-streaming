@@ -1,7 +1,8 @@
 import { getTMDBConfig } from '../../../utils/config';
-import { createError } from 'h3';
+import { createError, defineEventHandler, H3Event } from 'h3';
+import type { MediaResponse } from '@/types/Media';
 
-export default defineEventHandler(async (event) => {
+export default defineEventHandler(async (event: H3Event) => {
   try {
     const config = getTMDBConfig();
 
@@ -13,7 +14,7 @@ export default defineEventHandler(async (event) => {
       },
     });
 
-    return response;
+    return response as MediaResponse;
   } catch (error) {
     throw createError({
       statusCode: 500,
