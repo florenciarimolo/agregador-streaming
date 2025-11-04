@@ -1,7 +1,7 @@
 <template>
   <!-- Floating Navbar (Desktop/Tablet) -->
   <header
-    class="sticky top-4 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-[1100px] lg:px-4 hidden md:block"
+    class="sticky top-4 left-1/2 transform -translate-x-1/2 z-50 w-full container lg:px-4 hidden md:block"
   >
     <nav
       class="border shadow-2xl bg-gray-900/80 backdrop-blur-md border-primary rounded-2xl"
@@ -16,32 +16,11 @@
         </nuxt-link>
 
         <!-- Desktop Menu -->
-        <div class="flex items-center space-x-1">
-          <nuxt-link
-            to="/"
-            class="px-4 py-2 text-sm font-medium text-white transition-all duration-200 rounded-lg hover:text-primary"
-            :class="{ 'text-primary bg-gray-800/50': $route.path === '/' }"
-          >
-            Inicio
-          </nuxt-link>
-          <nuxt-link
-            to="/search"
-            class="px-4 py-2 text-sm font-medium text-white transition-all duration-200 rounded-lg hover:text-primary"
-            :class="{
-              'text-primary bg-gray-800/50': $route.path === '/search',
-            }"
-          >
-            Buscar
-          </nuxt-link>
-          <nuxt-link
-            to="/library"
-            class="px-4 py-2 text-sm font-medium text-white transition-all duration-200 rounded-lg hover:text-primary"
-            :class="{
-              'text-primary bg-gray-800/50': $route.path === '/library',
-            }"
-          >
-            Biblioteca
-          </nuxt-link>
+        <div class="flex items-center w-[70%]">
+          <!-- Search Bar -->
+          <div class="flex-1">
+            <SearchBar />
+          </div>
         </div>
       </div>
     </nav>
@@ -95,35 +74,11 @@
         v-show="isMobileMenuOpen"
         class="absolute left-0 w-full border-b shadow-lg top-full bg-gray-900/95 backdrop-blur-sm border-gray-700/50"
       >
-        <div class="px-4 py-3 space-y-1">
-          <nuxt-link
-            to="/"
-            class="block px-4 py-3 text-sm font-medium text-white transition-all duration-200 rounded-lg hover:text-primary hover:bg-gray-800/50"
-            :class="{ 'text-primary bg-gray-800/50': $route.path === '/' }"
-            @click="closeMobileMenu"
-          >
-            Inicio
-          </nuxt-link>
-          <nuxt-link
-            to="/search"
-            class="block px-4 py-3 text-sm font-medium text-white transition-all duration-200 rounded-lg hover:text-primary hover:bg-gray-800/50"
-            :class="{
-              'text-primary bg-gray-800/50': $route.path === '/search',
-            }"
-            @click="closeMobileMenu"
-          >
-            Buscar
-          </nuxt-link>
-          <nuxt-link
-            to="/library"
-            class="block px-4 py-3 text-sm font-medium text-white transition-all duration-200 rounded-lg hover:text-primary hover:bg-gray-800/50"
-            :class="{
-              'text-primary bg-gray-800/50': $route.path === '/library',
-            }"
-            @click="closeMobileMenu"
-          >
-            Biblioteca
-          </nuxt-link>
+        <div class="px-4 py-3 space-y-3">
+          <!-- Mobile Search Bar -->
+          <div class="mb-2">
+            <SearchBar />
+          </div>
         </div>
       </div>
     </nav>
