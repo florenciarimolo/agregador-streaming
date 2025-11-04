@@ -1,8 +1,5 @@
 import { getTMDBConfig } from '../../../utils/config';
-import {
-  createError,
-  defineEventHandler,
-} from 'h3';
+import { createError, defineEventHandler } from 'h3';
 
 export default defineEventHandler(async (event) => {
   try {

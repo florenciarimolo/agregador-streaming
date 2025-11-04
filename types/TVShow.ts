@@ -10,7 +10,7 @@ export type Episode = {
   vote_average: number;
   still_path: string | null;
   runtime: number;
-}
+};
 
 export type Season = {
   id: number;
@@ -27,6 +27,7 @@ export type Season = {
 export type TVShow = {
   id: number;
   name: string;
+  original_name?: string;
   overview: string;
   poster_path: string | null;
   first_air_date: string;

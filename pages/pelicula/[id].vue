@@ -30,6 +30,7 @@ import { WatchProviderTypes } from '@/types/WatchProvider';
 import MediaBannerDetail from '@/components/MediaBannerDetail.vue';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 import type { Media } from '@/types/Media';
+import type { AlternativeTitlesResponse } from '@/types/AlternativeTitle';
 
 const route = useRoute();
 const movieId = route.params.id as string;
@@ -48,6 +49,13 @@ const {
   error: providersError,
 } = await useFetch(`/api/tmdb/movies/${movieId}/providers`);
 
+// Fetch alternative titles
+const {
+  data: alternativeTitlesData,
+  pending: alternativeTitlesPending,
+  error: alternativeTitlesError,
+} = await useFetch(`/api/tmdb/movies/${movieId}/alternative-titles`);
+
 // Computed para manejar los datos
 const movie = computed<Movie>(
   () => (movieDetails.value as Movie) || ({} as Movie)
@@ -56,10 +64,19 @@ const providers = computed<WatchProviderTypes>(
   () => (providersData.value as WatchProviderTypes) || {}
 );
 
+const alternativeTitles = computed<AlternativeTitlesResponse>(
+  () =>
+    (alternativeTitlesData.value as AlternativeTitlesResponse) || {
+      id: 0,
+      titles: [],
+    }
+);
+
 const movieWithProviders = computed<Movie>(() => {
   return {
     ...movie.value,
     providers: providers.value,
+    alternative_titles: alternativeTitles.value,
   };
 });
 
@@ -85,9 +102,16 @@ onUnmounted(() => {
 });
 
 // Loading state
-const isLoading = computed(() => moviePending.value || providersPending.value);
+const isLoading = computed(
+  () =>
+    moviePending.value ||
+    providersPending.value ||
+    alternativeTitlesPending.value
+);
 
 // Error state
-const hasError = computed(() => movieError.value || providersError.value);
+const hasError = computed(
+  () => movieError.value || providersError.value || alternativeTitlesError.value
+);
 </script>
 <style scoped></style>

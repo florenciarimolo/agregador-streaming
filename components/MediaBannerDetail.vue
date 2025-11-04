@@ -9,25 +9,33 @@
     <div
       class="relative overflow-hidden rounded-lg shadow-lg shadow-primary/20 max-w-80"
     >
-      <RatingBadge :rating="movieWithProviders.vote_average" />
+      <RatingBadge :rating="mediaWithProviders.vote_average" />
       <img
         :src="
-          `https://image.tmdb.org/t/p/w780` + movieWithProviders.poster_path
+          `https://image.tmdb.org/t/p/w780` + mediaWithProviders.poster_path
         "
-        :alt="movieWithProviders.title"
+        :alt="mediaWithProviders.title"
         class="object-cover w-full md:w-80"
       />
     </div>
     <div
       class="z-10 flex flex-col content-start justify-between flex-1 gap-6 rounded-lg md:p-6 md:ml-8"
     >
-      <h1 class="text-2xl font-bold text-center md:text-left">{{
-        movieWithProviders.title
-      }}</h1>
-      <p class="text-gray-300">{{ movieWithProviders.overview }}</p>
+      <div class="text-center md:text-left">
+        <h1 v-if="mediaType === MediaTypeEnum.movie && displayAlternativeTitle" class="text-2xl font-bold">{{
+          displayAlternativeTitle
+        }}</h1>
+        <h1 v-if="mediaType === MediaTypeEnum.movie && !displayAlternativeTitle" class="text-2xl font-bold">{{
+          mediaWithProviders.title
+        }}</h1>
+        <h1 v-if="mediaType === MediaTypeEnum.tv" class="text-2xl font-bold">{{
+          (mediaWithProviders as any).name
+        }}</h1>
+      </div>
+      <p class="text-gray-300">{{ mediaWithProviders.overview }}</p>
       <p class="mt-2"
         >Fecha de lanzamiento:
-        {{ formatDateToSpanish(movieWithProviders.release_date || '') }}</p
+        {{ formatDateToSpanish(mediaWithProviders.release_date || '') }}</p
       >
       <MediaStatusBagde
         v-if="mediaType === MediaTypeEnum.tv"
@@ -36,7 +44,7 @@
       <p
         >Géneros:
         {{
-          movieWithProviders?.genres
+          mediaWithProviders?.genres
             ?.map((genre: Genre) => genre.name)
             .join(', ') || 'No disponible'
         }}</p
@@ -47,19 +55,49 @@
         <section v-if="hasAvailableProviders" class="flex flex-col gap-8">
           <ProviderList
             :media-provider-prop-list="
-              movieWithProviders.providers?.flatrate || []
+              mediaWithProviders.providers?.flatrate || []
             "
             watch-type-prop="Ver en:"
+            :media-title="
+              mediaWithProviders.title || (mediaWithProviders as any).name || ''
+            "
+            :original-title="
+              mediaWithProviders.original_title ||
+              (mediaWithProviders as any).original_name ||
+              ''
+            "
+            :alternative-titles="alternativeTitles"
+            :media-type="mediaType"
           />
 
           <ProviderList
-            :media-provider-prop-list="movieWithProviders.providers?.buy || []"
+            :media-provider-prop-list="mediaWithProviders.providers?.buy || []"
             watch-type-prop="Compra:"
+            :media-title="
+              mediaWithProviders.title || (mediaWithProviders as any).name || ''
+            "
+            :original-title="
+              mediaWithProviders.original_title ||
+              (mediaWithProviders as any).original_name ||
+              ''
+            "
+            :alternative-titles="alternativeTitles"
+            :media-type="mediaType"
           />
 
           <ProviderList
-            :media-provider-prop-list="movieWithProviders.providers?.rent || []"
+            :media-provider-prop-list="mediaWithProviders.providers?.rent || []"
             watch-type-prop="Alquiler:"
+            :media-title="
+              mediaWithProviders.title || (mediaWithProviders as any).name || ''
+            "
+            :original-title="
+              mediaWithProviders.original_title ||
+              (mediaWithProviders as any).original_name ||
+              ''
+            "
+            :alternative-titles="alternativeTitles"
+            :media-type="mediaType"
           />
         </section>
         <section v-else class="text-gray-400">
@@ -81,6 +119,7 @@ import ProviderList from './ProviderList.vue';
 import type { Movie } from '@/types/Movie';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 import MediaStatusBagde from './MediaStatusBagde.vue';
+import { getBestAlternativeTitle } from '@/types/AlternativeTitle';
 
 const props = defineProps({
   media: {
@@ -97,14 +136,54 @@ const props = defineProps({
   },
 });
 
-const movieWithProviders = computed(() => props.media as unknown as Movie);
+const mediaWithProviders = computed(() => props.media as unknown as Movie);
 
 const hasAvailableProviders = computed(() => {
   return (
-    (movieWithProviders.value.providers?.flatrate?.length || 0) > 0 ||
-    (movieWithProviders.value.providers?.buy?.length || 0) > 0 ||
-    (movieWithProviders.value.providers?.rent?.length || 0) > 0
+    (mediaWithProviders.value.providers?.flatrate?.length || 0) > 0 ||
+    (mediaWithProviders.value.providers?.buy?.length || 0) > 0 ||
+    (mediaWithProviders.value.providers?.rent?.length || 0) > 0
   );
+});
+
+// Extract alternative titles for Spain (with types)
+const alternativeTitles = computed(() => {
+  const media = mediaWithProviders.value as Movie & {
+    alternative_titles?: {
+      titles: Array<{ title: string; type: string; iso_3166_1: string }>;
+    };
+  };
+  if (media.alternative_titles?.titles) {
+    // Filter for Spain and return objects with title and type
+    return media.alternative_titles.titles
+      .filter((alt) => alt.iso_3166_1 === 'ES')
+      .map((alt) => ({ title: alt.title, type: alt.type }));
+  }
+  return [];
+});
+
+// Get the best alternative title to display (reissue or modern)
+const displayAlternativeTitle = computed(() => {
+  const media = mediaWithProviders.value as Movie & {
+    alternative_titles?: {
+      titles: Array<{ title: string; type: string; iso_3166_1: string }>;
+    };
+    name?: string;
+  };
+  if (media.alternative_titles?.titles) {
+    // Look for reissue title first, then modern title
+    const bestTitle = getBestAlternativeTitle(
+      media.alternative_titles.titles,
+      'ES',
+      ['reissue title', 'modern title']
+    );
+
+    // Only show if it's different from the main title
+    if (bestTitle && bestTitle !== media.title) {
+      return bestTitle;
+    }
+  }
+  return null;
 });
 
 const isMobile = ref(false);
@@ -129,8 +208,8 @@ onUnmounted(() => {
 });
 
 const backgroundImage = computed(() => {
-  if (movieWithProviders.value.backdrop_path) {
-    return `https://image.tmdb.org/t/p/w780${movieWithProviders.value.backdrop_path}`;
+  if (mediaWithProviders.value.backdrop_path) {
+    return `https://image.tmdb.org/t/p/w780${mediaWithProviders.value.backdrop_path}`;
   }
   return '';
 });

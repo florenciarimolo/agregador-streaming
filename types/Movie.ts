@@ -1,9 +1,11 @@
 import type { WatchProviderTypes } from './WatchProvider';
 import type { Genre } from './Genre';
+import type { AlternativeTitlesResponse } from './AlternativeTitle';
 
 export type Movie = {
   id: number;
   title: string;
+  original_title?: string;
   overview: string;
   poster_path: string | null;
   backdrop_path: string | null;
@@ -13,6 +15,7 @@ export type Movie = {
   original_language: string;
   providers?: WatchProviderTypes; // Optional, as not all movies may have providers
   imdb_id?: string; // Optional, as not all movies may have an IMDb ID
+  alternative_titles?: AlternativeTitlesResponse; // Alternative titles from TMDB
 };
 
 export type MovieSearchResponse = {
