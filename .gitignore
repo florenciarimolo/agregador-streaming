@@ -31,3 +31,6 @@ dist-ssr
 .output
 .nitro
 .cache
+
+# Vercel
+.vercel
