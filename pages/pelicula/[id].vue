@@ -24,7 +24,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRoute } from 'vue-router';
-import { useFetch } from 'nuxt/app';
+import { useFetch, useSeoMeta, useHead } from 'nuxt/app';
 import type { Movie } from '@/types/Movie';
 import { WatchProviderTypes } from '@/types/WatchProvider';
 import MediaBannerDetail from '@/components/MediaBannerDetail.vue';
@@ -113,5 +113,50 @@ const isLoading = computed(
 const hasError = computed(
   () => movieError.value || providersError.value || alternativeTitlesError.value
 );
+
+// Meta tags dinámicos
+const pageTitle = computed(() => movie.value?.title || 'Película');
+const pageDescription = computed(() => {
+  const overview = movie.value?.overview || 'Descubre esta película y dónde verla en streaming.';
+  return overview.length > 160 ? overview.substring(0, 160) + '...' : overview;
+});
+const ogImage = computed(() => {
+  if (movie.value?.backdrop_path) {
+    return `https://image.tmdb.org/t/p/w1280${movie.value.backdrop_path}`;
+  }
+  if (movie.value?.poster_path) {
+    return `https://image.tmdb.org/t/p/w780${movie.value.poster_path}`;
+  }
+  return '';
+});
+
+useHead({
+  title: pageTitle,
+  meta: [
+    {
+      name: 'description',
+      content: pageDescription,
+    },
+  ],
+});
+
+useSeoMeta({
+  title: pageTitle,
+  description: pageDescription,
+  ogTitle: pageTitle,
+  ogDescription: pageDescription,
+  ogImage: ogImage,
+  ogType: 'video.movie',
+  ogUrl: computed(() => {
+    if (import.meta.client) {
+      return `${window.location.origin}/pelicula/${movieId}`;
+    }
+    return '';
+  }),
+  twitterCard: 'summary_large_image',
+  twitterTitle: pageTitle,
+  twitterDescription: pageDescription,
+  twitterImage: ogImage,
+});
 </script>
 <style scoped></style>

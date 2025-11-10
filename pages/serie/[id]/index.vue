@@ -69,7 +69,7 @@
 
 <script setup lang="ts">
 import { useRoute } from 'vue-router';
-import { useFetch } from 'nuxt/app';
+import { useFetch, useSeoMeta, useHead } from 'nuxt/app';
 import { computed } from 'vue';
 
 import { TVShow } from '@/types/TVShow';
@@ -112,6 +112,52 @@ const tvShowWithProviders = computed<TVShow>(() => {
     ...tvShow.value,
     providers: tvShowProviders.value,
   };
+});
+
+// Meta tags dinámicos
+const pageTitle = computed(() => tvShow.value?.name || 'Serie');
+const pageDescription = computed(() => {
+  const overview =
+    tvShow.value?.overview || 'Descubre esta serie y dónde verla en streaming.';
+  return overview.length > 160 ? overview.substring(0, 160) + '...' : overview;
+});
+const ogImage = computed(() => {
+  if (tvShow.value?.backdrop_path) {
+    return `https://image.tmdb.org/t/p/w1280${tvShow.value.backdrop_path}`;
+  }
+  if (tvShow.value?.poster_path) {
+    return `https://image.tmdb.org/t/p/w780${tvShow.value.poster_path}`;
+  }
+  return '';
+});
+
+useHead({
+  title: pageTitle,
+  meta: [
+    {
+      name: 'description',
+      content: pageDescription,
+    },
+  ],
+});
+
+useSeoMeta({
+  title: pageTitle,
+  description: pageDescription,
+  ogTitle: pageTitle,
+  ogDescription: pageDescription,
+  ogImage: ogImage,
+  ogType: 'video.tv_show',
+  ogUrl: computed(() => {
+    if (import.meta.client) {
+      return `${window.location.origin}/serie/${tvShowId}`;
+    }
+    return '';
+  }),
+  twitterCard: 'summary_large_image',
+  twitterTitle: pageTitle,
+  twitterDescription: pageDescription,
+  twitterImage: ogImage,
 });
 </script>
 
