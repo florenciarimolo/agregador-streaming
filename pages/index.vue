@@ -123,15 +123,15 @@ useSeoMeta({
 
 <template>
   <div v-if="isLoading">Cargando...</div>
-  <div v-else>
-    <div class="flex flex-col gap-10 md:gap-40 lg:p-9">
-      <section class="flex-1">
+  <div v-else class="w-full max-w-full overflow-x-hidden">
+    <div class="flex flex-col gap-10 md:gap-40 lg:p-9 w-full max-w-full">
+      <section class="flex-1 w-full max-w-full overflow-x-hidden">
         <h1 class="mb-4 text-2xl font-bold text-center uppercase md:text-left"
           >Películas en tendencia</h1
         >
         <MediaCarousel :media-trending-list="trendingMovies" />
       </section>
-      <section class="flex-1">
+      <section class="flex-1 w-full max-w-full overflow-x-hidden">
         <h1 class="mb-4 text-2xl font-bold text-center uppercase md:text-left"
           >Series en tendencia</h1
         >

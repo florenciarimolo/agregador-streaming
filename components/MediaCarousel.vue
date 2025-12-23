@@ -1,5 +1,101 @@
 <template>
-  <section class="flex items-center justify-between gap-4 py-9">
+  <!-- Mobile: List View -->
+  <section
+    class="mobile-list-view flex flex-col gap-4 py-4 md:hidden relative z-0 w-full max-w-full overflow-x-hidden"
+  >
+    <article
+      v-for="mediaObject in mediaList"
+      :key="mediaObject.id"
+      class="flex items-center gap-2 sm:gap-4 bg-black/20 rounded-xl p-2 sm:p-4 hover:bg-black/30 transition-all w-full max-w-full overflow-hidden"
+    >
+      <nuxt-link :to="mediaObject.path" class="flex-shrink-0 self-center">
+        <div
+          class="relative w-20 sm:w-24 aspect-[2/3] overflow-hidden rounded-lg"
+        >
+          <img
+            :src="`https://image.tmdb.org/t/p/w780${mediaObject.poster_path}`"
+            :alt="mediaObject.title ? mediaObject.title : mediaObject.name"
+            class="object-cover w-full h-full rounded-lg shadow-md"
+            loading="lazy"
+            decoding="async"
+          />
+          <!-- Badge positioned at bottom-left to avoid navbar overlap -->
+          <div
+            :class="{
+              'bg-green-500': mediaObject.vote_average >= 7,
+              'bg-yellow-500':
+                mediaObject.vote_average >= 5 && mediaObject.vote_average < 7,
+              'bg-gray-500':
+                mediaObject.vote_average === 0 || !mediaObject.vote_average,
+              'bg-red-500':
+                mediaObject.vote_average && mediaObject.vote_average < 5,
+            }"
+            class="absolute bottom-1 left-1 p-1.5 text-xs font-semibold rounded shadow-xl shadow-black/20 z-10"
+          >
+            <span class="font-bold text-white">
+              ⭐
+              {{
+                mediaObject.vote_average?.toFixed(1) === '0.0' ||
+                mediaObject.vote_average === 0 ||
+                !mediaObject.vote_average
+                  ? 'N/A'
+                  : mediaObject.vote_average?.toFixed(1)
+              }}
+            </span>
+          </div>
+        </div>
+      </nuxt-link>
+      <div
+        class="flex flex-col justify-between flex-1 min-w-0 overflow-hidden w-0"
+      >
+        <div class="min-w-0 w-full">
+          <h3
+            class="text-sm sm:text-base font-semibold text-white mb-1 break-words line-clamp-2"
+          >
+            {{ mediaObject.title ? mediaObject.title : mediaObject.name }}
+          </h3>
+          <p
+            v-if="mediaObject.release_date || mediaObject.first_air_date"
+            class="text-xs sm:text-sm text-gray-300 mb-1 sm:mb-2"
+          >
+            {{
+              formatDateToSpanish(
+                (mediaObject.release_date || mediaObject.first_air_date) ?? ''
+              )
+            }}
+          </p>
+          <p
+            v-if="mediaObject.overview"
+            class="text-xs sm:text-sm text-gray-400 line-clamp-3 mb-1 sm:mb-2"
+          >
+            {{ mediaObject.overview }}
+          </p>
+        </div>
+        <div class="flex items-center justify-end mt-2">
+          <!-- Mobile: Link -->
+          <nuxt-link
+            :to="mediaObject.path"
+            class="text-primary hover:text-secondary uppercase text-xs sm:text-sm md:hidden"
+          >
+            Ver detalles
+          </nuxt-link>
+          <!-- Desktop: Button -->
+          <nuxt-link :to="mediaObject.path" class="hidden md:block">
+            <button
+              class="w-auto px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm text-white bg-primary hover:bg-secondary rounded-lg transition-colors"
+            >
+              Ver detalles
+            </button>
+          </nuxt-link>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <!-- Desktop/Tablet: Carousel View -->
+  <section
+    class="desktop-carousel hidden md:flex items-center justify-between gap-4 py-9"
+  >
     <!-- Flecha izquierda -->
     <button
       class="z-10 mb-20 bg-primary disabled:opacity-30"
@@ -15,7 +111,7 @@
         :key="mediaObject.id"
         class="relative flex-shrink-0 w-full transition-all duration-300 md:w-56 rounded-xl group hover:scale-105"
       >
-        <div class="relative aspect-[2/3]">
+        <div class="relative aspect-[2/3] overflow-hidden rounded-xl">
           <RatingBadge :rating="mediaObject.vote_average" />
           <img
             :src="`https://image.tmdb.org/t/p/w780${mediaObject.poster_path}`"
@@ -43,10 +139,14 @@
           {{ mediaObject.title ? mediaObject.title : mediaObject.name }}
         </p>
         <p
-          v-if="mediaObject.release_date"
+          v-if="mediaObject.release_date || mediaObject.first_air_date"
           class="text-lg font-semibold text-center text-white"
         >
-          {{ formatDateToSpanish(mediaObject.release_date) }}
+          {{
+            formatDateToSpanish(
+              (mediaObject.release_date || mediaObject.first_air_date) ?? ''
+            )
+          }}
         </p>
         <div class="flex justify-center lg:hidden">
           <RatingBadge :rating="mediaObject.vote_average" />
@@ -86,13 +186,18 @@ const props = defineProps({
   },
 });
 
+// Initialize based on environment
+// During SSR, we can't detect screen size, so we'll use CSS to handle it
+// On client, we'll detect and update
 const isMobile = ref(false);
 const isTablet = ref(false);
 
 // Detect mobile screen size
 const checkMobile = () => {
-  isMobile.value = window.innerWidth < 768;
-  isTablet.value = window.innerWidth < 1024;
+  if (typeof window !== 'undefined') {
+    isMobile.value = window.innerWidth < 768;
+    isTablet.value = window.innerWidth < 1024;
+  }
 };
 
 const itemsPerPage = computed(() =>
@@ -134,9 +239,11 @@ const handleResize = () => {
 };
 
 onMounted(() => {
-  checkMobile();
-  window.addEventListener('resize', handleResize);
-  console.log(isMobile.value);
+  // Check on mount (client-side only)
+  if (typeof window !== 'undefined') {
+    checkMobile();
+    window.addEventListener('resize', handleResize);
+  }
 });
 
 onUnmounted(() => {
@@ -174,5 +281,58 @@ button:disabled {
 /* Firefox */
 .no-scrollbar {
   scrollbar-width: none;
+}
+
+/* Ensure desktop carousel is completely hidden on mobile */
+@media (max-width: 767px) {
+  section.desktop-carousel {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    position: fixed !important;
+    top: -9999px !important;
+    left: -9999px !important;
+    width: 0 !important;
+    height: 0 !important;
+    overflow: hidden !important;
+    z-index: -1 !important;
+  }
+
+  section.desktop-carousel * {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+  }
+
+  /* Ensure mobile section is visible and above everything */
+  section.mobile-list-view {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: relative !important;
+    z-index: 1 !important;
+    width: 100% !important;
+    max-width: 100vw !important;
+    height: auto !important;
+    overflow-x: hidden !important;
+    overflow-y: visible !important;
+    pointer-events: auto !important;
+    box-sizing: border-box !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  section.mobile-list-view article {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  section.mobile-list-view article > * {
+    box-sizing: border-box !important;
+  }
 }
 </style>

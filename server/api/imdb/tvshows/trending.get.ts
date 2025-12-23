@@ -4,6 +4,41 @@ import type { MediaResponse } from '@/types/Media';
 import type { Media } from '@/types/Media';
 
 /**
+ * Translates English text to Spanish using LibreTranslate
+ * Falls back to English if translation fails
+ */
+async function translateToSpanish(text: string): Promise<string> {
+  try {
+    const translateResponse = await $fetch<{ translatedText: string }>(
+      'https://libretranslate.de/translate',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: {
+          q: text,
+          source: 'en',
+          target: 'es',
+          format: 'text',
+        },
+      }
+    );
+    const translated = translateResponse.translatedText || text;
+    // Small delay after translation to avoid rate limiting
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    return translated;
+  } catch (translateError) {
+    // If translation fails, use English text as fallback
+    console.warn(
+      'Translation failed, using English text:',
+      translateError instanceof Error ? translateError.message : translateError
+    );
+    return text;
+  }
+}
+
+/**
  * Scrapes IMDB trending TV shows page and converts IMDB IDs to TMDB TV show data
  * Fetches the first 20 trending TV shows from IMDB and returns their TMDB equivalents
  * Cached for 1 hour (3600 seconds) to reduce API calls and improve performance
@@ -83,22 +118,81 @@ export default defineCachedEventHandler(
           if (findResponse.tv_results && findResponse.tv_results.length > 0) {
             const tmdbId = findResponse.tv_results[0].id;
 
-            // Fetch full TV show details from TMDB
-            const tvShowResponse = await $fetch<Media>(
+            // Fetch full TV show details from TMDB in Spanish first
+            // Don't type as Media - TMDB returns full TVShow object with all fields including overview
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const tvShowResponse = await $fetch<any>(
               `${config.baseUrl}/tv/${tmdbId}`,
               {
                 query: {
                   api_key: config.apiKey,
-                  language: config.language,
+                  language: config.language, // es-ES
                   include_adult: config.includeAdult,
                 },
               }
             );
 
-            // Add media_type and ensure it's a Media type
+            // Get Spanish overview
+            let overview = tvShowResponse.overview || '';
+
+            // Always fetch English version to compare and translate if needed
+            try {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const englishResponse = await $fetch<any>(
+                `${config.baseUrl}/tv/${tmdbId}`,
+                {
+                  query: {
+                    api_key: config.apiKey,
+                    language: 'en-US',
+                    include_adult: config.includeAdult,
+                  },
+                }
+              );
+
+              const englishOverview = englishResponse.overview || '';
+
+              // If Spanish overview is empty or matches English (TMDB returned English when we asked for Spanish)
+              // Translate English to Spanish
+              if (
+                (!overview || overview.trim().length === 0) &&
+                englishOverview &&
+                englishOverview.trim().length > 0
+              ) {
+                // Spanish overview is empty, translate English
+                overview = await translateToSpanish(englishOverview);
+              } else if (
+                overview &&
+                overview.trim().length > 0 &&
+                englishOverview &&
+                englishOverview.trim().length > 0 &&
+                overview.trim() === englishOverview.trim()
+              ) {
+                // Spanish overview matches English (TMDB returned English when we asked for Spanish)
+                // Translate English to Spanish
+                overview = await translateToSpanish(englishOverview);
+              }
+            } catch (englishFetchError) {
+              console.warn(
+                `Failed to fetch English overview for TV show ${tmdbId}:`,
+                englishFetchError instanceof Error
+                  ? englishFetchError.message
+                  : englishFetchError
+              );
+            }
+
+            // Map TMDB TVShow response to Media type
+            // All data comes from TMDB API, we only use IMDB ID for lookup
             const media: Media = {
-              ...tvShowResponse,
+              id: tvShowResponse.id,
+              name: tvShowResponse.name,
+              original_name: tvShowResponse.original_name,
+              overview: overview, // Overview from TMDB (Spanish or translated from English)
+              poster_path: tvShowResponse.poster_path,
+              backdrop_path: tvShowResponse.backdrop_path,
+              first_air_date: tvShowResponse.first_air_date,
+              vote_average: tvShowResponse.vote_average,
               media_type: 'tv' as const,
+              original_language: tvShowResponse.original_language,
               imdb_id: imdbId,
             };
 

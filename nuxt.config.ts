@@ -2,6 +2,8 @@ import { defineNuxtConfig } from 'nuxt/config';
 import { localStoragePolyfillPlugin } from './vite.localStoragePlugin';
 
 // Mock localStorage for SSR before any modules load
+// Note: Node.js 25 may show a warning about --localstorage-file, but it's harmless
+// since we're using a polyfill. The warning is suppressed via NODE_OPTIONS in package.json
 // This is critical for local development where vite-node processes modules
 // Node.js 25+ has a broken localStorage, so we need to check for getItem too
 const needsPolyfill =
