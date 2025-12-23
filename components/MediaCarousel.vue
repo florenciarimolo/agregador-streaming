@@ -10,53 +10,57 @@
     </button>
 
     <div class="flex flex-row w-full gap-4 no-scrollbar">
-        <article
-          v-for="mediaObject in pagedMedia"
-          :key="mediaObject.id"
-          class="relative flex-shrink-0 w-full transition-all duration-300 md:w-56 rounded-xl group hover:scale-105"
-        >
-          <div class="relative aspect-[2/3]">
-            <RatingBadge :rating="mediaObject.vote_average" />
+      <article
+        v-for="mediaObject in pagedMedia"
+        :key="mediaObject.id"
+        class="relative flex-shrink-0 w-full transition-all duration-300 md:w-56 rounded-xl group hover:scale-105"
+      >
+        <div class="relative aspect-[2/3]">
+          <RatingBadge :rating="mediaObject.vote_average" />
           <img
             :src="`https://image.tmdb.org/t/p/w780${mediaObject.poster_path}`"
             :alt="mediaObject.title ? mediaObject.title : mediaObject.name"
             class="object-cover w-full h-full overflow-hidden shadow-md rounded-xl shadow-primary/20"
+            loading="lazy"
+            decoding="async"
           />
           <div
             class="absolute bottom-0 left-0 flex flex-col items-center justify-center w-full h-full px-4 transition-all duration-300 opacity-0 rounded-xl group-hover:opacity-100 group-hover:shadow-primary/20 group-hover:shadow-lg backdrop-blur-md w-inherit bg-black/20"
           >
             <RatingBadge :rating="mediaObject.vote_average" />
 
-              <nuxt-link :v-if="mediaObject.media_type === MediaTypeEnum.movie" :to="mediaObject.path">
-                <button class="mt-4 text-white bg-primary hover:bg-secondary">
-                    Ver detalles
-                </button>
-              </nuxt-link>
-
-          </div>
-          </div>
-          <p class="mt-4 text-lg font-semibold text-center text-white">
-            {{ mediaObject.title ? mediaObject.title : mediaObject.name }}
-          </p>
-          <p
-            v-if="mediaObject.release_date"
-            class="text-lg font-semibold text-center text-white"
-          >
-            {{ formatDateToSpanish(mediaObject.release_date) }}
-          </p>
-          <div
-            class="flex justify-center lg:hidden"
-          >
-            <RatingBadge :rating="mediaObject.vote_average" />
-            <nuxt-link :v-if="mediaObject.media_type === MediaTypeEnum.movie" :to="mediaObject.path">
+            <nuxt-link
+              :v-if="mediaObject.media_type === MediaTypeEnum.movie"
+              :to="mediaObject.path"
+            >
               <button class="mt-4 text-white bg-primary hover:bg-secondary">
                 Ver detalles
               </button>
             </nuxt-link>
           </div>
-
-        </article>
-      </div>
+        </div>
+        <p class="mt-4 text-lg font-semibold text-center text-white">
+          {{ mediaObject.title ? mediaObject.title : mediaObject.name }}
+        </p>
+        <p
+          v-if="mediaObject.release_date"
+          class="text-lg font-semibold text-center text-white"
+        >
+          {{ formatDateToSpanish(mediaObject.release_date) }}
+        </p>
+        <div class="flex justify-center lg:hidden">
+          <RatingBadge :rating="mediaObject.vote_average" />
+          <nuxt-link
+            :v-if="mediaObject.media_type === MediaTypeEnum.movie"
+            :to="mediaObject.path"
+          >
+            <button class="mt-4 text-white bg-primary hover:bg-secondary">
+              Ver detalles
+            </button>
+          </nuxt-link>
+        </div>
+      </article>
+    </div>
     <!-- Flecha derecha -->
     <button
       :disabled="endReached"
@@ -91,7 +95,9 @@ const checkMobile = () => {
   isTablet.value = window.innerWidth < 1024;
 };
 
-const itemsPerPage = computed(() => isMobile.value ? 1 : isTablet.value ? 2 : 5);
+const itemsPerPage = computed(() =>
+  isMobile.value ? 1 : isTablet.value ? 2 : 5
+);
 const currentPage = ref(0);
 
 const totalPages = computed(() =>
@@ -109,7 +115,6 @@ const prevPage = () => {
     currentPage.value--;
   }
 };
-
 
 const pagedMedia = computed(() =>
   mediaList.value.slice(
@@ -134,7 +139,6 @@ onMounted(() => {
   console.log(isMobile.value);
 });
 
-
 onUnmounted(() => {
   window.removeEventListener('resize', handleResize);
 });
@@ -144,19 +148,17 @@ watch(
   (newList) => {
     mediaList.value = newList;
 
-    mediaList.value.forEach(media => {
+    mediaList.value.forEach((media) => {
       if (media.media_type === MediaTypeEnum.movie) {
-        media.path = `/pelicula/${media.id}`
-      }
-      else {
-        media.path = `/serie/${media.id}`
+        media.path = `/pelicula/${media.id}`;
+      } else {
+        media.path = `/serie/${media.id}`;
       }
     });
     currentPage.value = 0; // Reset to first page when the list changes
   },
   { immediate: true }
 );
-
 </script>
 
 <style scoped>

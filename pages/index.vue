@@ -5,23 +5,101 @@ import { useFetch, useSeoMeta, useHead } from 'nuxt/app';
 import { computed } from 'vue';
 
 // Usar useFetch para SSR/SSG automático
-const { data: trendingMoviesData, pending: moviesPending } = await useFetch(
+// Using IMDB trending movies scraper instead of TMDB trending
+// Fallback to TMDB if IMDB fails
+const {
+  data: trendingMoviesData,
+  pending: moviesPending,
+  error: imdbError,
+} = await useFetch('/api/imdb/movies/trending', {
+  transform: (response: MediaResponse) => response.results as Media[],
+  // useFetch automatically caches responses based on the key
+  // Server-side cache is handled by defineCachedEventHandler
+  // Fallback to TMDB if IMDB fails
+  onResponseError({ response }) {
+    console.warn(
+      'IMDB scraper failed, falling back to TMDB:',
+      response.statusText
+    );
+  },
+});
+
+// Fallback to TMDB if IMDB fails
+const shouldUseFallback = computed(
+  () =>
+    imdbError.value !== null ||
+    (trendingMoviesData.value !== null &&
+      trendingMoviesData.value !== undefined &&
+      (trendingMoviesData.value?.length ?? 0) === 0)
+);
+
+const { data: fallbackMoviesData } = await useFetch(
   '/api/tmdb/movies/trending',
   {
     transform: (response: MediaResponse) => response.results as Media[],
+    // Only fetch if IMDB failed or returned empty
+    lazy: true,
+    server: false,
+    immediate: shouldUseFallback.value,
   }
 );
 
-const { data: trendingTVShowsData, pending: showsPending } = await useFetch(
+// Using IMDB trending TV shows scraper instead of TMDB trending
+// Fallback to TMDB if IMDB fails
+const {
+  data: trendingTVShowsData,
+  pending: showsPending,
+  error: imdbTVError,
+} = await useFetch('/api/imdb/tvshows/trending', {
+  transform: (response: MediaResponse) => response.results as Media[],
+  // useFetch automatically caches responses based on the key
+  // Server-side cache is handled by defineCachedEventHandler
+  // Fallback to TMDB if IMDB fails
+  onResponseError({ response }) {
+    console.warn(
+      'IMDB TV scraper failed, falling back to TMDB:',
+      response.statusText
+    );
+  },
+});
+
+// Fallback to TMDB if IMDB fails
+const shouldUseTVFallback = computed(
+  () =>
+    imdbTVError.value !== null ||
+    (trendingTVShowsData.value !== null &&
+      trendingTVShowsData.value !== undefined &&
+      (trendingTVShowsData.value?.length ?? 0) === 0)
+);
+
+const { data: fallbackTVShowsData } = await useFetch(
   '/api/tmdb/tvshows/trending',
   {
     transform: (response: MediaResponse) => response.results as Media[],
+    // Only fetch if IMDB failed or returned empty
+    lazy: true,
+    server: false,
+    immediate: shouldUseTVFallback.value,
   }
 );
 
 // Computed para manejar los datos
-const trendingMovies = computed(() => trendingMoviesData.value || []);
-const trendingTVShows = computed(() => trendingTVShowsData.value || []);
+// Use IMDB data if available, otherwise fallback to TMDB
+const trendingMovies = computed(() => {
+  const imdbData = trendingMoviesData.value;
+  if (imdbData && imdbData.length > 0) {
+    return imdbData;
+  }
+  return fallbackMoviesData.value || [];
+});
+// Use IMDB data if available, otherwise fallback to TMDB
+const trendingTVShows = computed(() => {
+  const imdbData = trendingTVShowsData.value;
+  if (imdbData && imdbData.length > 0) {
+    return imdbData;
+  }
+  return fallbackTVShowsData.value || [];
+});
 
 // Loading state
 const isLoading = computed(() => moviesPending.value || showsPending.value);
