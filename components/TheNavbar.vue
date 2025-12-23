@@ -10,9 +10,10 @@
         <!-- Logo -->
         <nuxt-link
           to="/"
-          class="text-xl font-bold text-white transition-colors hover:text-primary"
+          class="flex items-center gap-2 transition-opacity hover:opacity-80"
         >
-          Agregador Streaming
+          <img src="/logo.svg" alt="Agregador Streaming" class="h-8 w-8" />
+          <span class="text-xl font-bold text-white">Agregador Streaming</span>
         </nuxt-link>
 
         <!-- Desktop Menu -->
@@ -34,8 +35,9 @@
     <nav class="border-b bg-gray-900/95 backdrop-blur-sm border-gray-700/50">
       <div class="flex items-center justify-between px-4 py-3">
         <!-- Logo -->
-        <nuxt-link to="/" class="text-lg font-bold text-white">
-          Agregador Streaming
+        <nuxt-link to="/" class="flex items-center gap-2">
+          <img src="/logo.svg" alt="Agregador Streaming" class="h-6 w-6" />
+          <span class="text-lg font-bold text-white">Agregador Streaming</span>
         </nuxt-link>
 
         <!-- Hamburger Button -->
