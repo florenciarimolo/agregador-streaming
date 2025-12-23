@@ -1,9 +1,44 @@
 import { defineNuxtConfig } from 'nuxt/config';
+import { localStoragePolyfillPlugin } from './vite.localStoragePlugin';
+
+// Mock localStorage for SSR before any modules load
+// This is critical for local development where vite-node processes modules
+// Node.js 25+ has a broken localStorage, so we need to check for getItem too
+const needsPolyfill =
+  typeof globalThis.localStorage === 'undefined' ||
+  typeof globalThis.localStorage.getItem !== 'function';
+
+if (needsPolyfill) {
+  const storage: Record<string, string> = {};
+  globalThis.localStorage = {
+    getItem: (key: string) => storage[key] || null,
+    setItem: (key: string, value: string) => {
+      storage[key] = value;
+    },
+    removeItem: (key: string) => {
+      delete storage[key];
+    },
+    clear: () => {
+      Object.keys(storage).forEach((k) => delete storage[k]);
+    },
+    get length() {
+      return Object.keys(storage).length;
+    },
+    key: (index: number) => Object.keys(storage)[index] || null,
+  } as Storage;
+}
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
+  compatibilityDate: '2025-12-23',
   devtools: { enabled: true },
   modules: ['@pinia/nuxt'],
+  vite: {
+    plugins: [localStoragePolyfillPlugin()],
+    ssr: {
+      noExternal: [],
+    },
+  },
   css: ['./assets/css/main.css'],
   postcss: {
     plugins: {
