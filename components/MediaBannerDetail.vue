@@ -95,7 +95,7 @@
           />
         </section>
         <section v-else class="text-gray-400">
-          <p>No disponible en ninguna plataforma</p>
+          <p class="italic">No disponible en ninguna plataforma</p>
         </section>
       </section>
     </div>

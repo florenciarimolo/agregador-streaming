@@ -48,9 +48,12 @@
         </div>
 
         <h1 class="text-3xl font-bold">{{ seasonWithProviders?.name }}</h1>
-        <p class="text-gray-300">{{
-          seasonWithProviders?.overview || 'Sin descripción disponible'
-        }}</p>
+        <p
+          :class="['text-gray-300', { italic: !seasonWithProviders?.overview }]"
+          >{{
+            seasonWithProviders?.overview || 'Sin descripción disponible'
+          }}</p
+        >
 
         <div class="flex items-center gap-6 text-sm">
           <p
@@ -84,7 +87,7 @@
           </article>
         </article>
         <article v-else class="text-gray-400">
-          <p>No disponible en ninguna plataforma</p>
+          <p class="italic">No disponible en ninguna plataforma</p>
         </article>
       </article>
     </section>
@@ -132,9 +135,13 @@
             <p v-if="episode.runtime" class="mb-2 text-sm text-gray-400"
               >{{ episode.runtime }} min</p
             >
-            <p class="text-sm text-gray-300 line-clamp-3">{{
-              episode.overview || 'Sin descripción disponible'
-            }}</p>
+            <p
+              :class="[
+                'text-sm text-gray-300 line-clamp-3',
+                { italic: !episode.overview },
+              ]"
+              >{{ episode.overview || 'Sin descripción disponible' }}</p
+            >
           </div>
         </article>
       </div>
@@ -171,15 +178,20 @@ const {
   error: seasonError,
 } = await useFetch<Season>(`/api/tmdb/tvshows/${seriesId}/seasons/${seasonId}`);
 
-const isLoading = computed(() => seasonPending.value || seasonProvidersPending.value);
-const hasError = computed(() => seasonError.value || seasonProvidersError.value);
-
+const isLoading = computed(
+  () => seasonPending.value || seasonProvidersPending.value
+);
+const hasError = computed(
+  () => seasonError.value || seasonProvidersError.value
+);
 
 const {
   data: seasonProviders,
   pending: seasonProvidersPending,
   error: seasonProvidersError,
-} = await useFetch<WatchProviderTypes>(`/api/tmdb/tvshows/${seriesId}/seasons/${seasonId}/providers`);
+} = await useFetch<WatchProviderTypes>(
+  `/api/tmdb/tvshows/${seriesId}/seasons/${seasonId}/providers`
+);
 
 const seasonWithProviders = computed(() => {
   return {

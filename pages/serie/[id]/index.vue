@@ -29,29 +29,27 @@
         :key="season.id"
         class="rounded-xl relative flex flex-col text-sm overflow-hidden shadow-primary/20 shadow-sm w-[300px] cursor-pointer hover:shadow-xl group hover:scale-105 transition-all duration-300"
       >
-        <div class="aspect-[2/3] overflow-hidden relative">
-          <RatingBadge :rating="season.vote_average" />
-
-          <img
-            v-if="season.poster_path"
-            :src="`https://image.tmdb.org/t/p/w780${season.poster_path}`"
-            :alt="season.name"
-            class="w-[300px] h-full object-cover"
-          />
-          <div
-            class="absolute bottom-0 left-0 flex flex-col items-center justify-center w-full h-full px-4 transition-all duration-300 rounded opacity-0 group-hover:opacity-100 backdrop-blur-md w-inherit bg-black/20"
-          >
+        <nuxt-link
+          :to="`/serie/${tvShowId}/temporada/${season.season_number}`"
+          class="block"
+        >
+          <div class="aspect-[2/3] overflow-hidden relative">
             <RatingBadge :rating="season.vote_average" />
 
-            <nuxt-link
-              :to="`/serie/${tvShowId}/temporada/${season.season_number}`"
+            <img
+              v-if="season.poster_path"
+              :src="`https://image.tmdb.org/t/p/w780${season.poster_path}`"
+              :alt="season.name"
+              class="w-[300px] h-full object-cover"
+            />
+            <div
+              class="absolute bottom-0 left-0 flex flex-col items-center justify-center w-full h-full px-4 transition-all duration-300 rounded opacity-0 group-hover:opacity-100 backdrop-blur-md w-inherit bg-black/20"
             >
-              <button class="text-white bg-primary hover:bg-secondary">
-                Ver episodios
-              </button>
-            </nuxt-link>
+              <RatingBadge :rating="season.vote_average" />
+              <p class="mt-4 text-white font-semibold">Ver episodios</p>
+            </div>
           </div>
-        </div>
+        </nuxt-link>
 
         <div
           class="flex flex-col justify-around py-5 px-6 bg-gray-800 min-h-[120px]"
