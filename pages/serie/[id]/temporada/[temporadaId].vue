@@ -18,7 +18,7 @@
   <div v-else>
     <!-- Header de temporada -->
     <section
-      class="relative flex flex-row items-center justify-between p-8 mb-8 dark:text-white text-gray-900 dark:bg-gray-800 bg-gray-100 border gap-7 rounded-xl border-primary"
+      class="relative flex flex-row items-center justify-between p-8 my-8 dark:text-white text-gray-900 dark:bg-gray-800 bg-gray-100 border gap-7 rounded-xl border-primary"
       :style="sectionStyle"
     >
       <div
@@ -26,7 +26,7 @@
       ></div>
 
       <article
-        class="relative overflow-hidden shadow-xl shadow-primary/20 rounded-xl max-w-80"
+        class="relative overflow-hidden shadow-xl shadow-primary/20 rounded-xl max-w-80 hidden md:block"
       >
         <RatingBadge :rating="seasonWithProviders?.vote_average || 0" />
         <img
@@ -38,18 +38,23 @@
       </article>
 
       <article
-        class="z-10 flex flex-col content-start justify-between flex-1 gap-6 p-6 ml-8 rounded-lg"
+        class="z-10 flex flex-col content-start justify-between flex-1 gap-6 p-6 md:ml-8 rounded-lg relative"
       >
-        <div class="flex items-center gap-4">
-          <button
-            class="text-xl dark:text-white text-gray-900 transition-all duration-300 dark:hover:text-gray-300 hover:text-gray-600"
-            @click="goBack"
-          >
-            ← Volver a la serie
-          </button>
+        <!-- Rating badge for mobile (top right) -->
+        <div class="absolute top-2 right-2 md:hidden z-20">
+          <RatingBadge :rating="seasonWithProviders?.vote_average || 0" />
         </div>
+        <!-- Back link aligned with rating badge on mobile -->
+        <nuxt-link
+          :to="`/serie/${seriesId}`"
+          class="absolute top-4 left-2 md:relative md:top-0 md:left-0 text-xl dark:text-white text-gray-900 transition-all duration-300 dark:hover:text-gray-300 hover:text-gray-600 no-underline md:underline"
+        >
+          ← Volver a la serie
+        </nuxt-link>
 
-        <h1 class="text-3xl font-bold">{{ seasonWithProviders?.name }}</h1>
+        <h1 class="text-3xl font-bold mt-10 md:mt-0">{{
+          seasonWithProviders?.name
+        }}</h1>
         <p
           :class="[
             'dark:text-gray-300 text-gray-700',
@@ -165,7 +170,7 @@
 </template>
 
 <script setup lang="ts">
-import { useRoute, useRouter } from 'vue-router';
+import { useRoute } from 'vue-router';
 import { useFetch } from 'nuxt/app';
 import { computed, onMounted, ref, watch } from 'vue';
 
@@ -176,7 +181,6 @@ import ProviderList from '@/components/ProviderList.vue';
 import RatingBadge from '@/components/RatingBadge.vue';
 
 const route = useRoute();
-const router = useRouter();
 
 // Necesitamos obtener el seriesId desde la URL padre y el seasonId de los parámetros actuales
 const seriesId = route.params.id;
@@ -233,10 +237,6 @@ const sectionStyle = computed(() => ({
   backgroundSize: 'cover',
   backgroundPosition: 'center',
 }));
-
-const goBack = () => {
-  router.push(`/serie/${seriesId}`);
-};
 
 onMounted(() => {
   setBackgroundImage();

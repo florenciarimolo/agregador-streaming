@@ -10,6 +10,10 @@
       class="relative overflow-hidden rounded-lg shadow-lg shadow-primary/20 w-full max-w-80 md:w-80 flex-shrink-0"
     >
       <RatingBadge :rating="mediaWithProviders.vote_average" />
+      <MediaStatusBagde
+        v-if="mediaType === MediaTypeEnum.tv"
+        :in-production="inProduction"
+      />
       <img
         :src="
           `https://image.tmdb.org/t/p/w780` + mediaWithProviders.poster_path
@@ -37,10 +41,6 @@
         >Fecha de lanzamiento:
         {{ formatDateToSpanish(mediaWithProviders.release_date || '') }}</p
       >
-      <MediaStatusBagde
-        v-if="mediaType === MediaTypeEnum.tv"
-        :in-production="inProduction"
-      />
       <p class="dark:text-gray-200 text-gray-700"
         >Géneros:
         {{

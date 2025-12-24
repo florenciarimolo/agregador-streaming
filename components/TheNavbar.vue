@@ -37,7 +37,7 @@
     :style="{ transform: `translateY(${isNavbarVisible ? '0' : '-100%'})` }"
   >
     <nav
-      class="dark:bg-gray-800/70 bg-gray-100/90 backdrop-blur-xs rounded-lg mx-4"
+      class="dark:bg-gray-800/70 bg-gray-100/90 backdrop-blur-xs rounded-lg"
     >
       <div class="flex items-center justify-between px-4 py-3">
         <!-- Logo -->
