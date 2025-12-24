@@ -1,13 +1,13 @@
 <template>
   <section
-    class="relative flex flex-col items-center justify-between gap-20 pb-8 text-white md:flex-row md:p-8 md:bg-gray-800 md:border md:gap-7 rounded-xl md:border-primary"
+    class="relative flex flex-col items-center justify-between gap-20 pb-8 text-white w-full min-w-full flex-shrink-0 min-h-[400px] md:flex-row md:items-stretch md:p-8 md:bg-gray-800 md:border md:gap-7 rounded-xl md:border-primary"
     :style="sectionStyle"
   >
     <div
       class="absolute inset-0 z-0 hidden overflow-hidden md:block rounded-xl bg-gradient-to-b from-black/70 to-black/90"
     ></div>
     <div
-      class="relative overflow-hidden rounded-lg shadow-lg shadow-primary/20 max-w-80"
+      class="relative overflow-hidden rounded-lg shadow-lg shadow-primary/20 w-full max-w-80 md:w-80 flex-shrink-0"
     >
       <RatingBadge :rating="mediaWithProviders.vote_average" />
       <img
@@ -19,17 +19,11 @@
       />
     </div>
     <div
-      class="z-10 flex flex-col content-start justify-between flex-1 gap-6 rounded-lg md:p-6 md:ml-8"
+      class="z-10 flex flex-col content-start justify-between flex-1 gap-6 rounded-lg md:p-6 md:ml-8 w-full min-w-[300px] flex-shrink-0 min-h-[300px]"
     >
       <div class="text-center md:text-left">
-        <h1 v-if="mediaType === MediaTypeEnum.movie && displayAlternativeTitle" class="text-2xl font-bold">{{
-          displayAlternativeTitle
-        }}</h1>
-        <h1 v-if="mediaType === MediaTypeEnum.movie && !displayAlternativeTitle" class="text-2xl font-bold">{{
-          mediaWithProviders.title
-        }}</h1>
-        <h1 v-if="mediaType === MediaTypeEnum.tv" class="text-2xl font-bold">{{
-          (mediaWithProviders as any).name
+        <h1 class="text-2xl font-bold">{{
+          mediaWithProviders.title || (mediaWithProviders as any).name
         }}</h1>
       </div>
       <p class="text-gray-300">{{ mediaWithProviders.overview }}</p>
@@ -119,7 +113,6 @@ import ProviderList from './ProviderList.vue';
 import type { Movie } from '@/types/Movie';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 import MediaStatusBagde from './MediaStatusBagde.vue';
-import { getBestAlternativeTitle } from '@/types/AlternativeTitle';
 
 const props = defineProps({
   media: {
@@ -160,30 +153,6 @@ const alternativeTitles = computed(() => {
       .map((alt) => ({ title: alt.title, type: alt.type }));
   }
   return [];
-});
-
-// Get the best alternative title to display (reissue or modern)
-const displayAlternativeTitle = computed(() => {
-  const media = mediaWithProviders.value as Movie & {
-    alternative_titles?: {
-      titles: Array<{ title: string; type: string; iso_3166_1: string }>;
-    };
-    name?: string;
-  };
-  if (media.alternative_titles?.titles) {
-    // Look for reissue title first, then modern title
-    const bestTitle = getBestAlternativeTitle(
-      media.alternative_titles.titles,
-      'ES',
-      ['reissue title', 'modern title']
-    );
-
-    // Only show if it's different from the main title
-    if (bestTitle && bestTitle !== media.title) {
-      return bestTitle;
-    }
-  }
-  return null;
 });
 
 const isMobile = ref(false);
