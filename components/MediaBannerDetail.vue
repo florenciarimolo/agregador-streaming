@@ -1,6 +1,6 @@
 <template>
   <section
-    class="relative flex flex-col items-center justify-between gap-20 pb-8 dark:text-white text-gray-900 w-full min-w-full flex-shrink-0 min-h-[400px] md:flex-row md:items-stretch md:p-8 dark:md:bg-gray-800 md:bg-gray-100 md:border md:gap-7 rounded-xl md:border-primary"
+    class="relative flex flex-col items-center justify-between gap-20 pb-8 dark:text-white text-gray-900 w-full min-w-full flex-shrink-0 min-h-[400px] md:flex-row md:items-stretch md:p-8 dark:md:bg-gray-800 md:bg-gray-100 md:border md:gap-7 rounded-xl md:border-primary py-8"
     :style="sectionStyle"
   >
     <div
@@ -21,7 +21,7 @@
     <div
       class="z-10 flex flex-col content-start justify-between flex-1 gap-6 rounded-lg md:p-6 md:ml-8 w-full min-w-[300px] flex-shrink-0 min-h-[300px]"
     >
-      <div class="text-center md:text-left">
+      <div class="text-left">
         <h1 class="text-2xl font-bold dark:text-white text-gray-900">{{
           mediaWithProviders.title || (mediaWithProviders as any).name
         }}</h1>

@@ -166,7 +166,7 @@ h6 {
   font-weight: 600;
 }
 
-button:not([role='switch']) {
+button:not([role='switch']):not([aria-label='Toggle menu']) {
   border-radius: 4px;
   border: 1px solid var(--color-primary);
   padding: 0.6em 1.2em;
@@ -177,13 +177,32 @@ button:not([role='switch']) {
   transition: all 0.3s linear;
 }
 
-button:not([role='switch']):hover {
+/* Icon-only buttons (hamburger, etc.) should not have borders */
+button[aria-label='Toggle menu'] {
+  border: none !important;
+  border-radius: 0 !important;
+  padding: 0.5rem !important;
+}
+
+button:not([role='switch']):not([aria-label='Toggle menu']):hover {
   border-color: var(--color-secondary);
 }
 
-button:not([role='switch']):focus,
-button:not([role='switch']):focus-visible {
+button:not([role='switch']):not([aria-label='Toggle menu']):focus,
+button:not([role='switch']):not([aria-label='Toggle menu']):focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
+}
+
+/* Explicitly reset styles for switch buttons */
+button[role='switch'] {
+  border-radius: 9999px !important;
+  border: 0 !important;
+  padding: 0 0.25rem !important;
+  font-size: inherit !important;
+  font-weight: inherit !important;
+  font-family: inherit !important;
+  cursor: pointer !important;
+  transition: all 0.3s linear !important;
 }
 
 .card {
@@ -199,10 +218,10 @@ button:not([role='switch']):focus-visible {
 
 @media screen and (width < 1024px) {
   #__nuxt {
-    width: 90%;
+    width: 100%;
   }
 
-  button {
+  button:not([role='switch']):not([aria-label='Toggle menu']) {
     padding: 0.4em 0.8em;
   }
 }

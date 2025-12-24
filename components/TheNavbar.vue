@@ -13,8 +13,8 @@
           class="flex items-center gap-2 transition-opacity hover:opacity-80"
         >
           <img src="/logo.svg" alt="Agregador Streaming" class="h-8 w-8" />
-          <span class="text-xl font-bold dark:text-white text-gray-900"
-            >Agregador Streaming</span
+          <span class="text-md font-bold dark:text-white text-gray-900"
+            >StreamHub</span
           >
         </nuxt-link>
 
@@ -37,14 +37,14 @@
     :style="{ transform: `translateY(${isNavbarVisible ? '0' : '-100%'})` }"
   >
     <nav
-      class="bg-gray-800/70 dark:bg-gray-800/70 bg-gray-100/90 backdrop-blur-xs rounded-lg mx-4"
+      class="dark:bg-gray-800/70 bg-gray-100/90 backdrop-blur-xs rounded-lg mx-4"
     >
       <div class="flex items-center justify-between px-4 py-3">
         <!-- Logo -->
         <nuxt-link to="/" class="flex items-center gap-2">
           <img src="/logo.svg" alt="Agregador Streaming" class="h-6 w-6" />
-          <span class="text-lg font-bold dark:text-white text-gray-900"
-            >Agregador Streaming</span
+          <span class="text-md font-bold dark:text-white text-gray-900"
+            >StreamHub</span
           >
         </nuxt-link>
 
@@ -53,7 +53,7 @@
           <ThemeSwitcher />
           <!-- Hamburger Button -->
           <button
-            class="p-2 dark:text-white text-gray-900 transition-colors hover:text-primary border-none"
+            class="p-2 dark:text-white text-gray-900 transition-colors hover:text-primary !border-none"
             aria-label="Toggle menu"
             @click="toggleMobileMenu"
           >
@@ -86,7 +86,7 @@
       <!-- Mobile Menu Dropdown -->
       <div
         v-show="isMobileMenuOpen"
-        class="absolute left-0 w-full shadow-lg top-full dark:bg-gray-800/70 bg-gray-100/90 backdrop-blur-xs"
+        class="absolute left-0 w-full shadow-lg top-full dark:bg-gray-800 bg-gray-100 backdrop-blur-xs mt-1 rounded-lg"
       >
         <div class="px-4 py-3 space-y-3">
           <!-- Mobile Search Bar -->

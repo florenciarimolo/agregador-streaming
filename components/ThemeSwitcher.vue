@@ -5,13 +5,13 @@
     role="switch"
     :aria-checked="theme === 'dark'"
     :aria-label="theme === 'dark' ? 'Dark mode enabled' : 'Light mode enabled'"
-    class="relative w-16 h-7 bg-gray-200 dark:bg-gray-700 !rounded-full p-1 transition-colors duration-300 hover:bg-gray-300 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:focus:ring-offset-gray-900 border-0"
+    class="relative w-12 md:w-16 md:h-7 h-6 bg-gray-200 dark:bg-gray-700 rounded-full p-1 transition-colors duration-300 hover:bg-gray-300 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:focus:ring-offset-gray-900"
     @click="toggleTheme"
   >
     <div class="flex justify-between items-center gap-x-3 h-full px-1">
       <!-- Sun icon (light theme) -->
       <svg
-        class="w-5 h-5 z-10 transition-all duration-300"
+        class="z-10 transition-all duration-300"
         :class="
           theme === 'dark'
             ? 'text-gray-400'
@@ -28,7 +28,7 @@
       </svg>
       <!-- Moon icon (dark theme) -->
       <svg
-        class="w-5 h-5 z-10 transition-all duration-300"
+        class="z-10 transition-all duration-300"
         :class="
           theme === 'dark'
             ? 'text-blue-400 bg-gray-400 dark:bg-gray-800 rounded-full p-1'
@@ -47,9 +47,10 @@
   <button
     v-else
     type="button"
+    role="switch"
     aria-label="Toggle theme"
     disabled
-    class="relative w-16 h-7 bg-gray-200 dark:bg-gray-700 !rounded-full p-1 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:focus:ring-offset-gray-900 border-0"
+    class="relative w-16 h-7 bg-gray-200 dark:bg-gray-700 rounded-full p-1 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:focus:ring-offset-gray-900"
   >
     <div
       class="absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow-md"
