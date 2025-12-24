@@ -6,7 +6,7 @@
         v-model="searchQuery"
         type="text"
         placeholder="Buscar películas y series..."
-        class="w-full px-4 py-2 pl-10 pr-4 text-sm text-white bg-gray-800/50 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent backdrop-blur-sm"
+        class="w-full px-4 py-2 pl-10 pr-4 text-sm dark:text-white text-gray-900 dark:bg-gray-800/50 bg-white/80 dark:border-gray-600 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent backdrop-blur-xs"
         @input="handleSearch"
         @focus="showResults = true"
         @blur="handleBlur"
@@ -68,19 +68,19 @@
           showResults &&
           (searchResults.length > 0 || (searchQuery.length >= 4 && !isLoading))
         "
-        class="absolute z-[60] w-full mt-2 bg-gray-900/95 backdrop-blur-md border border-gray-600 rounded-lg shadow-xl max-h-96 overflow-y-auto"
+        class="absolute z-[60] w-full mt-2 dark:bg-gray-900/95 bg-white/95 backdrop-blur-sm dark:border-gray-600 border-gray-300 rounded-lg shadow-xl max-h-96 overflow-y-auto"
       >
         <!-- Results -->
         <div v-if="searchResults.length > 0" class="py-2">
           <div
             v-for="result in searchResults"
             :key="`${result.media_type}-${result.id}`"
-            class="flex items-center px-4 py-3 cursor-pointer hover:bg-gray-800/50 transition-colors duration-150"
+            class="flex items-center px-4 py-3 cursor-pointer dark:hover:bg-gray-800/50 hover:bg-gray-100/50 transition-colors duration-150"
             @click="navigateToDetail(result)"
           >
             <!-- Thumbnail -->
             <div
-              class="flex-shrink-0 w-12 h-16 mr-3 bg-gray-700 rounded overflow-hidden"
+              class="flex-shrink-0 w-12 h-16 mr-3 dark:bg-gray-700 bg-gray-200 rounded overflow-hidden"
             >
               <img
                 v-if="result.poster_path"
@@ -107,10 +107,12 @@
             <div class="flex-1 min-w-0">
               <div class="flex items-start justify-between">
                 <div class="flex-1 min-w-0">
-                  <h3 class="text-sm font-medium text-white truncate">
+                  <h3
+                    class="text-sm font-medium dark:text-white text-gray-900 truncate"
+                  >
                     {{ getTitle(result) }}
                   </h3>
-                  <p class="text-xs text-gray-400 mt-1">
+                  <p class="text-xs dark:text-gray-400 text-gray-600 mt-1">
                     {{ result.media_type === 'movie' ? 'Película' : 'Serie' }}
                     <span v-if="getYear(result)" class="ml-1">
                       ({{ getYear(result) }})
@@ -149,7 +151,7 @@
         <!-- No Results -->
         <div
           v-else-if="searchQuery.length >= 4 && !isLoading"
-          class="px-4 py-6 text-center text-gray-400"
+          class="px-4 py-6 text-center dark:text-gray-400 text-gray-600"
         >
           <svg
             class="w-12 h-12 mx-auto mb-2 text-gray-500"

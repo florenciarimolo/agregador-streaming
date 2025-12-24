@@ -122,19 +122,21 @@ useSeoMeta({
 </script>
 
 <template>
-  <div v-if="isLoading">Cargando...</div>
+  <div v-if="isLoading" class="dark:text-white text-gray-900">Cargando...</div>
   <div v-else class="w-full max-w-full overflow-x-hidden">
     <div
       class="flex flex-col gap-6 md:gap-12 py-4 md:py-4 lg:p-4 w-full max-w-full"
     >
       <section class="flex-1 w-full max-w-full overflow-x-hidden">
-        <h1 class="mb-4 text-2xl font-bold text-center uppercase md:text-left"
+        <h1
+          class="mb-4 text-2xl font-bold text-center uppercase md:text-left dark:text-white text-gray-900"
           >Películas en tendencia</h1
         >
         <MediaCarousel :media-trending-list="trendingMovies" />
       </section>
       <section class="flex-1 w-full max-w-full overflow-x-hidden">
-        <h1 class="mb-4 text-2xl font-bold text-center uppercase md:text-left"
+        <h1
+          class="mb-4 text-2xl font-bold text-center uppercase md:text-left dark:text-white text-gray-900"
           >Series en tendencia</h1
         >
         <MediaCarousel :media-trending-list="trendingTVShows" />

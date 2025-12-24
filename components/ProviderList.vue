@@ -3,7 +3,9 @@
     v-if="mediaProviderPropList.length > 0"
     class="flex flex-row flex-wrap items-center justify-start gap-4"
   >
-    <p class="font-semibold"> {{ watchTypeProp }}</p>
+    <p class="font-semibold dark:text-white text-gray-900">
+      {{ watchTypeProp }}</p
+    >
     <a
       v-for="provider in mediaProviderPropList"
       :key="provider.provider_id"

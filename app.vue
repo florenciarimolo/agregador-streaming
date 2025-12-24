@@ -5,9 +5,13 @@
 </template>
 
 <script setup lang="ts">
-// Nuxt automáticamente importa los componentes
+// Initialize theme
+useTheme();
 </script>
 
 <style>
 /* Los estilos globales van aquí */
+#__nuxt {
+  background-color: inherit;
+}
 </style>

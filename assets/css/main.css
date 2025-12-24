@@ -67,11 +67,13 @@
   font-display: swap;
 }
 
-@theme static {
+@theme {
   --color-primary: #2731f5;
   --color-secondary: #646cff;
   --color-background: #011627;
 }
+
+@variant dark (.dark &);
 
 :root {
   font-family:
@@ -85,10 +87,6 @@
   line-height: 1.5;
   font-weight: 400;
 
-  color-scheme: dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #011627;
-
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -97,12 +95,49 @@
   --secondary-color: #646cff;
 }
 
+/* Dark theme (default) */
+:root.dark,
+.dark {
+  color-scheme: dark;
+  --text-color: rgba(255, 255, 255, 0.87);
+  --bg-color: #011627;
+}
+
+:root.dark,
+:root.dark html,
+.dark,
+.dark html,
+.dark body {
+  background-color: #011627 !important;
+}
+
+/* Light theme */
+:root.light,
+.light {
+  color-scheme: light;
+  --text-color: rgba(0, 0, 0, 0.87);
+  --bg-color: #ffffff;
+}
+
+:root.light,
+:root.light html,
+.light,
+.light html,
+.light body {
+  background-color: #ffffff !important;
+}
+
+html {
+  background-color: #011627; /* Default dark background */
+}
+
 body {
   margin: 0;
   display: flex;
   place-items: center;
   min-width: 320px;
   min-height: 100vh;
+  background-color: #011627; /* Default dark background */
 }
 
 h1,
@@ -151,6 +186,7 @@ button:focus-visible {
   width: 1400px;
   margin: 0 auto;
   padding-inline: 20px;
+  background-color: inherit;
 }
 
 @media screen and (width < 1024px) {

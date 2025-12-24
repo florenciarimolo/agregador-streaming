@@ -1,7 +1,9 @@
 <template>
   <!-- Loading state -->
   <div v-if="isLoading" class="flex items-center justify-center min-h-screen">
-    <div class="text-xl text-white">Cargando temporada...</div>
+    <div class="text-xl dark:text-white text-gray-900"
+      >Cargando temporada...</div
+    >
   </div>
 
   <!-- Error state -->
@@ -16,7 +18,7 @@
   <div v-else>
     <!-- Header de temporada -->
     <section
-      class="relative flex flex-row items-center justify-between p-8 mb-8 text-white bg-gray-800 border gap-7 rounded-xl border-primary"
+      class="relative flex flex-row items-center justify-between p-8 mb-8 dark:text-white text-gray-900 dark:bg-gray-800 bg-gray-100 border gap-7 rounded-xl border-primary"
       :style="sectionStyle"
     >
       <div
@@ -40,7 +42,7 @@
       >
         <div class="flex items-center gap-4">
           <button
-            class="text-xl text-white transition-all duration-300 hover:text-gray-300"
+            class="text-xl dark:text-white text-gray-900 transition-all duration-300 dark:hover:text-gray-300 hover:text-gray-600"
             @click="goBack"
           >
             ← Volver a la serie
@@ -49,7 +51,10 @@
 
         <h1 class="text-3xl font-bold">{{ seasonWithProviders?.name }}</h1>
         <p
-          :class="['text-gray-300', { italic: !seasonWithProviders?.overview }]"
+          :class="[
+            'dark:text-gray-300 text-gray-700',
+            { italic: !seasonWithProviders?.overview },
+          ]"
           >{{
             seasonWithProviders?.overview || 'Sin descripción disponible'
           }}</p
@@ -86,7 +91,7 @@
             />
           </article>
         </article>
-        <article v-else class="text-gray-400">
+        <article v-else class="dark:text-gray-400 text-gray-600">
           <p class="italic">No disponible en ninguna plataforma</p>
         </article>
       </article>
@@ -94,7 +99,9 @@
 
     <!-- Episodios -->
     <section>
-      <h2 class="mb-8 text-2xl font-semibold text-white">Episodios</h2>
+      <h2 class="mb-8 text-2xl font-semibold dark:text-white text-gray-900"
+        >Episodios</h2
+      >
 
       <div
         v-if="seasonWithProviders?.episodes?.length"
@@ -103,7 +110,7 @@
         <article
           v-for="(episode, index) in seasonWithProviders.episodes"
           :key="episode.id"
-          class="overflow-hidden transition-shadow duration-300 bg-gray-800 rounded-md shadow-lg hover:shadow-xl"
+          class="overflow-hidden transition-shadow duration-300 dark:bg-gray-800 bg-gray-100 rounded-md shadow-lg hover:shadow-xl"
         >
           <div class="relative bg-gray-700 aspect-video">
             <img
@@ -114,30 +121,33 @@
             />
             <div
               v-else
-              class="flex items-center justify-center h-full text-gray-400"
+              class="flex items-center justify-center h-full dark:text-gray-400 text-gray-500"
             >
               <span class="text-4xl">📺</span>
             </div>
             <div
-              class="absolute px-2 py-1 text-sm text-white rounded top-2 left-2 bg-black/70"
+              class="absolute px-2 py-1 text-sm dark:text-white text-gray-900 rounded top-2 left-2 dark:bg-black/70 bg-white/70"
             >
               Episodio {{ index + 1 }}
             </div>
             <RatingBadge :rating="episode.vote_average" />
           </div>
           <div class="p-4">
-            <h4 class="mb-2 font-semibold text-white line-clamp-1">{{
-              episode.name
-            }}</h4>
-            <p class="mb-2 text-sm text-gray-400">{{
+            <h4
+              class="mb-2 font-semibold dark:text-white text-gray-900 line-clamp-1"
+              >{{ episode.name }}</h4
+            >
+            <p class="mb-2 text-sm dark:text-gray-400 text-gray-600">{{
               formatDateToSpanish(episode.air_date)
             }}</p>
-            <p v-if="episode.runtime" class="mb-2 text-sm text-gray-400"
+            <p
+              v-if="episode.runtime"
+              class="mb-2 text-sm dark:text-gray-400 text-gray-600"
               >{{ episode.runtime }} min</p
             >
             <p
               :class="[
-                'text-sm text-gray-300 line-clamp-3',
+                'text-sm dark:text-gray-300 text-gray-700 line-clamp-3',
                 { italic: !episode.overview },
               ]"
               >{{ episode.overview || 'Sin descripción disponible' }}</p
@@ -147,7 +157,7 @@
       </div>
 
       <!-- Empty state -->
-      <div v-else class="py-12 text-center text-gray-400">
+      <div v-else class="py-12 text-center dark:text-gray-400 text-gray-600">
         <div class="text-xl">No hay episodios disponibles</div>
       </div>
     </section>

@@ -3,7 +3,9 @@
   <header
     class="sticky top-4 left-1/2 transform -translate-x-1/2 z-50 w-full container hidden md:block"
   >
-    <nav class="shadow-2xl bg-gray-800/60 backdrop-blur-md rounded-2xl">
+    <nav
+      class="shadow-2xl dark:bg-gray-800/60 bg-gray-100/80 backdrop-blur-sm rounded-2xl"
+    >
       <div class="flex items-center justify-between px-6 py-4">
         <!-- Logo -->
         <nuxt-link
@@ -11,15 +13,19 @@
           class="flex items-center gap-2 transition-opacity hover:opacity-80"
         >
           <img src="/logo.svg" alt="Agregador Streaming" class="h-8 w-8" />
-          <span class="text-xl font-bold text-white">Agregador Streaming</span>
+          <span class="text-xl font-bold dark:text-white text-gray-900"
+            >Agregador Streaming</span
+          >
         </nuxt-link>
 
         <!-- Desktop Menu -->
-        <div class="flex items-center w-[70%]">
+        <div class="flex items-center gap-4 w-[70%]">
           <!-- Search Bar -->
           <div class="flex-1">
             <SearchBar />
           </div>
+          <!-- Theme Switcher -->
+          <ThemeSwitcher />
         </div>
       </div>
     </nav>
@@ -30,49 +36,57 @@
     class="fixed top-4 left-0 z-50 w-full transition-transform duration-300 md:hidden"
     :style="{ transform: `translateY(${isNavbarVisible ? '0' : '-100%'})` }"
   >
-    <nav class="bg-gray-800/70 backdrop-blur-sm rounded-lg mx-4">
+    <nav
+      class="bg-gray-800/70 dark:bg-gray-800/70 bg-gray-100/90 backdrop-blur-xs rounded-lg mx-4"
+    >
       <div class="flex items-center justify-between px-4 py-3">
         <!-- Logo -->
         <nuxt-link to="/" class="flex items-center gap-2">
           <img src="/logo.svg" alt="Agregador Streaming" class="h-6 w-6" />
-          <span class="text-lg font-bold text-white">Agregador Streaming</span>
+          <span class="text-lg font-bold dark:text-white text-gray-900"
+            >Agregador Streaming</span
+          >
         </nuxt-link>
 
-        <!-- Hamburger Button -->
-        <button
-          class="p-2 text-white transition-colors hover:text-primary border-none"
-          aria-label="Toggle menu"
-          @click="toggleMobileMenu"
-        >
-          <svg
-            :class="{ 'rotate-90': isMobileMenuOpen }"
-            class="w-6 h-6 transition-transform duration-200"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+        <div class="flex items-center gap-2">
+          <!-- Theme Switcher -->
+          <ThemeSwitcher />
+          <!-- Hamburger Button -->
+          <button
+            class="p-2 dark:text-white text-gray-900 transition-colors hover:text-primary border-none"
+            aria-label="Toggle menu"
+            @click="toggleMobileMenu"
           >
-            <path
-              v-if="!isMobileMenuOpen"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M4 6h16M4 12h16M4 18h16"
-            />
-            <path
-              v-else
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
-        </button>
+            <svg
+              :class="{ 'rotate-90': isMobileMenuOpen }"
+              class="w-6 h-6 transition-transform duration-200"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                v-if="!isMobileMenuOpen"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 6h16M4 12h16M4 18h16"
+              />
+              <path
+                v-else
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        </div>
       </div>
 
       <!-- Mobile Menu Dropdown -->
       <div
         v-show="isMobileMenuOpen"
-        class="absolute left-0 w-full shadow-lg top-full bg-gray-800/70 backdrop-blur-sm"
+        class="absolute left-0 w-full shadow-lg top-full dark:bg-gray-800/70 bg-gray-100/90 backdrop-blur-xs"
       >
         <div class="px-4 py-3 space-y-3">
           <!-- Mobile Search Bar -->

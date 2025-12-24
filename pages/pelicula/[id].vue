@@ -1,7 +1,7 @@
 <template>
   <!-- Loading state -->
   <div v-if="isLoading" class="flex items-center justify-center min-h-screen">
-    <div class="text-xl text-white">Cargando...</div>
+    <div class="text-xl dark:text-white text-gray-900">Cargando...</div>
   </div>
 
   <!-- Error state -->
@@ -117,7 +117,9 @@ const hasError = computed(
 // Meta tags dinámicos
 const pageTitle = computed(() => movie.value?.title || 'Película');
 const pageDescription = computed(() => {
-  const overview = movie.value?.overview || 'Descubre esta película y dónde verla en streaming.';
+  const overview =
+    movie.value?.overview ||
+    'Descubre esta película y dónde verla en streaming.';
   return overview.length > 160 ? overview.substring(0, 160) + '...' : overview;
 });
 const ogImage = computed(() => {

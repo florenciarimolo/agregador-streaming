@@ -6,7 +6,7 @@
     <article
       v-for="mediaObject in mediaList"
       :key="mediaObject.id"
-      class="flex items-center gap-2 sm:gap-4 bg-black/20 rounded-xl p-2 sm:p-4 hover:bg-black/30 transition-all w-full max-w-full overflow-hidden"
+      class="flex items-center gap-2 sm:gap-4 dark:bg-black/20 bg-gray-100/50 rounded-xl p-2 sm:p-4 dark:hover:bg-black/30 hover:bg-gray-200/50 transition-all w-full max-w-full overflow-hidden"
     >
       <nuxt-link :to="mediaObject.path" class="flex-shrink-0 self-center">
         <div
@@ -50,13 +50,13 @@
       >
         <div class="min-w-0 w-full">
           <h3
-            class="text-sm sm:text-base font-semibold text-white mb-1 break-words line-clamp-2"
+            class="text-sm sm:text-base font-semibold dark:text-white text-gray-900 mb-1 break-words line-clamp-2"
           >
             {{ mediaObject.title ? mediaObject.title : mediaObject.name }}
           </h3>
           <p
             v-if="mediaObject.release_date || mediaObject.first_air_date"
-            class="text-xs sm:text-sm text-gray-300 mb-1 sm:mb-2"
+            class="text-xs sm:text-sm dark:text-gray-100 text-gray-700 mb-1 sm:mb-2"
           >
             {{
               formatDateToSpanish(
@@ -66,7 +66,7 @@
           </p>
           <p
             v-if="mediaObject.overview"
-            class="text-xs sm:text-sm text-gray-400 line-clamp-3 mb-1 sm:mb-2"
+            class="text-xs sm:text-sm dark:text-gray-300 text-gray-500 line-clamp-3 mb-1 sm:mb-2"
           >
             {{ mediaObject.overview }}
           </p>
@@ -122,19 +122,23 @@
               decoding="async"
             />
             <div
-              class="absolute bottom-0 left-0 flex flex-col items-center justify-center w-full h-full px-4 transition-all duration-300 opacity-0 rounded-xl group-hover:opacity-100 group-hover:shadow-primary/20 group-hover:shadow-lg backdrop-blur-md w-inherit bg-black/20"
+              class="absolute bottom-0 left-0 flex flex-col items-center justify-center w-full h-full px-4 transition-all duration-300 opacity-0 rounded-xl group-hover:opacity-100 group-hover:shadow-primary/20 group-hover:shadow-lg backdrop-blur-md w-inherit dark:bg-black/80 bg-white/80"
             >
               <RatingBadge :rating="mediaObject.vote_average" />
-              <p class="mt-4 text-white font-semibold">Ver detalles</p>
+              <p class="mt-4 dark:text-white text-gray-900 font-semibold"
+                >Ver detalles</p
+              >
             </div>
           </div>
         </nuxt-link>
-        <p class="mt-2 text-base font-semibold text-center text-white">
+        <p
+          class="mt-2 text-base font-semibold text-center dark:text-white text-gray-900"
+        >
           {{ mediaObject.title ? mediaObject.title : mediaObject.name }}
         </p>
         <p
           v-if="mediaObject.release_date || mediaObject.first_air_date"
-          class="text-sm text-center text-gray-300"
+          class="text-sm text-center dark:text-gray-100 text-gray-700"
         >
           {{
             formatDateToSpanish(

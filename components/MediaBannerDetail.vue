@@ -1,10 +1,10 @@
 <template>
   <section
-    class="relative flex flex-col items-center justify-between gap-20 pb-8 text-white w-full min-w-full flex-shrink-0 min-h-[400px] md:flex-row md:items-stretch md:p-8 md:bg-gray-800 md:border md:gap-7 rounded-xl md:border-primary"
+    class="relative flex flex-col items-center justify-between gap-20 pb-8 dark:text-white text-gray-900 w-full min-w-full flex-shrink-0 min-h-[400px] md:flex-row md:items-stretch md:p-8 dark:md:bg-gray-800 md:bg-gray-100 md:border md:gap-7 rounded-xl md:border-primary"
     :style="sectionStyle"
   >
     <div
-      class="absolute inset-0 z-0 hidden overflow-hidden md:block rounded-xl bg-gradient-to-b from-black/70 to-black/90"
+      class="absolute inset-0 z-0 hidden overflow-hidden md:block rounded-xl dark:bg-gradient-to-b dark:from-black/80 dark:to-black/90 bg-white/80"
     ></div>
     <div
       class="relative overflow-hidden rounded-lg shadow-lg shadow-primary/20 w-full max-w-80 md:w-80 flex-shrink-0"
@@ -22,12 +22,18 @@
       class="z-10 flex flex-col content-start justify-between flex-1 gap-6 rounded-lg md:p-6 md:ml-8 w-full min-w-[300px] flex-shrink-0 min-h-[300px]"
     >
       <div class="text-center md:text-left">
-        <h1 class="text-2xl font-bold">{{
+        <h1 class="text-2xl font-bold dark:text-white text-gray-900">{{
           mediaWithProviders.title || (mediaWithProviders as any).name
         }}</h1>
       </div>
-      <p class="text-gray-300">{{ mediaWithProviders.overview }}</p>
-      <p class="mt-2"
+      <p
+        :class="[
+          'dark:text-gray-200 text-gray-700',
+          { italic: !mediaWithProviders.overview },
+        ]"
+        >{{ mediaWithProviders.overview || 'Sin descripción disponible' }}</p
+      >
+      <p class="mt-2 dark:text-gray-200 text-gray-700"
         >Fecha de lanzamiento:
         {{ formatDateToSpanish(mediaWithProviders.release_date || '') }}</p
       >
@@ -35,7 +41,7 @@
         v-if="mediaType === MediaTypeEnum.tv"
         :in-production="inProduction"
       />
-      <p
+      <p class="dark:text-gray-200 text-gray-700"
         >Géneros:
         {{
           mediaWithProviders?.genres
@@ -45,7 +51,9 @@
       >
       <!-- Displaying watch providers with their logos-->
       <section class="flex flex-col gap-6">
-        <h2 class="font-semibold text-md">Plataformas</h2>
+        <h2 class="font-semibold text-md dark:text-white text-gray-900"
+          >Plataformas</h2
+        >
         <section v-if="hasAvailableProviders" class="flex flex-col gap-8">
           <ProviderList
             :media-provider-prop-list="
@@ -94,7 +102,7 @@
             :media-type="mediaType"
           />
         </section>
-        <section v-else class="text-gray-400">
+        <section v-else class="dark:text-gray-400 text-gray-600">
           <p class="italic">No disponible en ninguna plataforma</p>
         </section>
       </section>
