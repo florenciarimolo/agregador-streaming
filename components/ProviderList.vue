@@ -7,7 +7,7 @@
     <a
       v-for="provider in mediaProviderPropList"
       :key="provider.provider_id"
-      :href="getProviderUrl(provider.provider_name)"
+      :href="_getProviderUrl(provider.provider_name)"
       target="_blank"
       rel="noopener noreferrer"
       class="inline-block mr-2 transition-transform duration-200 hover:scale-110 hover:shadow-lg"
@@ -23,7 +23,7 @@
 </template>
 <script setup lang="ts">
 import type { WatchProvider } from '@/types/WatchProvider';
-import { watch, PropType } from 'vue';
+import { watch, PropType, ref, onMounted } from 'vue';
 import {
   generateProviderSearchUrl,
   getFallbackSearchUrl,
@@ -57,20 +57,20 @@ const props = defineProps({
   },
 });
 
+// Store provider URLs (for async providers like Atres Player)
+const providerUrls = ref<Record<string, string>>({});
+
 // Generate provider URL with search functionality
-const getProviderUrl = (providerName: string): string => {
+const _getProviderUrl = (providerName: string): string => {
+  // Check if we have a pre-computed URL (for async providers)
+  if (providerUrls.value[providerName]) {
+    return providerUrls.value[providerName];
+  }
+
   if (props.mediaTitle) {
-    // Try to get a direct search URL with original title and alternative titles support
-    const searchUrl = generateProviderSearchUrl(
-      providerName,
-      props.mediaTitle,
-      props.originalTitle || undefined,
-      props.alternativeTitles.length > 0 ? props.alternativeTitles : undefined,
-      props.mediaType
-    );
-    if (searchUrl) {
-      return searchUrl;
-    }
+    // For non-async providers, we'll generate synchronously
+    // Note: This won't work for Atres Player, but we handle that in onMounted
+    // Fallback to Google site-specific search for now
   }
 
   // Fallback to Google site-specific search
@@ -79,6 +79,53 @@ const getProviderUrl = (providerName: string): string => {
     props.mediaTitle || 'movies tv shows'
   );
 };
+
+// Pre-fetch URLs for async providers
+onMounted(async () => {
+  if (!props.mediaTitle) return;
+
+  for (const provider of props.mediaProviderPropList) {
+    const providerName = provider.provider_name;
+
+    // Check if it's Atres Player (needs async API call)
+    if (providerName === 'Atres Player' || providerName === 'atresplayer') {
+      try {
+        const url = await generateProviderSearchUrl(
+          providerName,
+          props.mediaTitle,
+          props.originalTitle || undefined,
+          props.alternativeTitles.length > 0
+            ? props.alternativeTitles
+            : undefined,
+          props.mediaType
+        );
+        if (url) {
+          providerUrls.value[providerName] = url;
+        }
+      } catch (error) {
+        console.error(`Error generating URL for ${providerName}:`, error);
+      }
+    } else {
+      // For other providers, generate synchronously (they're not async)
+      try {
+        const url = await generateProviderSearchUrl(
+          providerName,
+          props.mediaTitle,
+          props.originalTitle || undefined,
+          props.alternativeTitles.length > 0
+            ? props.alternativeTitles
+            : undefined,
+          props.mediaType
+        );
+        if (url) {
+          providerUrls.value[providerName] = url;
+        }
+      } catch (error) {
+        // Fallback handled in _getProviderUrl
+      }
+    }
+  }
+});
 
 watch(
   () => props.mediaProviderPropList,
