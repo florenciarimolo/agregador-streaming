@@ -62,10 +62,6 @@ onUnmounted(() => {
 });
 </script>
 
-<script setup lang="ts">
-// Three-dot loading spinner component
-</script>
-
 <style scoped>
 @keyframes bounce {
   0%,
@@ -91,23 +87,5 @@ onUnmounted(() => {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
-}
-</style>
-
-<style scoped>
-@keyframes bounce {
-  0%,
-  100% {
-    transform: translateY(0);
-    opacity: 1;
-  }
-  50% {
-    transform: translateY(-10px);
-    opacity: 0.7;
-  }
-}
-
-.animate-bounce {
-  animation: bounce 1.4s ease-in-out infinite;
 }
 </style>
