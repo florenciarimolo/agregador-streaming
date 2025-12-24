@@ -4,7 +4,7 @@
     <TheNavbar />
 
     <!-- Contenido principal -->
-    <main class="container mx-auto pb-8 pt-10 lg:pt-32">
+    <main class="container mx-auto pb-4 pt-4 lg:pt-8">
       <slot />
     </main>
   </div>

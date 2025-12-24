@@ -75,7 +75,7 @@
           <!-- Mobile: Link -->
           <nuxt-link
             :to="mediaObject.path"
-            class="text-primary hover:text-secondary uppercase text-xs sm:text-sm md:hidden"
+            class="text-primary hover:text-secondary uppercase text-xs sm:text-sm font-semibold md:hidden"
           >
             Ver detalles
           </nuxt-link>
@@ -94,22 +94,22 @@
 
   <!-- Desktop/Tablet: Carousel View -->
   <section
-    class="desktop-carousel hidden md:flex items-center justify-between gap-4 py-9"
+    class="desktop-carousel hidden md:flex items-center justify-between gap-0 py-4"
   >
     <!-- Flecha izquierda -->
     <button
-      class="z-10 mb-20 bg-primary disabled:opacity-30"
+      class="z-10 mb-20 bg-primary disabled:opacity-30 flex-shrink-0 p-1"
       :disabled="currentPage === 0"
       @click="prevPage"
     >
       ‹
     </button>
 
-    <div class="flex flex-row w-full gap-4 no-scrollbar">
+    <div class="flex flex-row gap-3 no-scrollbar flex-1 justify-center">
       <article
         v-for="mediaObject in pagedMedia"
         :key="mediaObject.id"
-        class="relative flex-shrink-0 w-full transition-all duration-300 md:w-56 rounded-xl group hover:scale-105"
+        class="relative flex-shrink-0 w-full transition-all duration-300 md:w-40 rounded-xl group hover:scale-105"
       >
         <div class="relative aspect-[2/3] overflow-hidden rounded-xl">
           <RatingBadge :rating="mediaObject.vote_average" />
@@ -135,12 +135,12 @@
             </nuxt-link>
           </div>
         </div>
-        <p class="mt-4 text-lg font-semibold text-center text-white">
+        <p class="mt-2 text-base font-semibold text-center text-white">
           {{ mediaObject.title ? mediaObject.title : mediaObject.name }}
         </p>
         <p
           v-if="mediaObject.release_date || mediaObject.first_air_date"
-          class="text-lg font-semibold text-center text-white"
+          class="text-sm text-center text-gray-300"
         >
           {{
             formatDateToSpanish(
@@ -164,7 +164,7 @@
     <!-- Flecha derecha -->
     <button
       :disabled="endReached"
-      class="z-10 p-2 mb-20 rounded-full shadow-md bg-primary disabled:opacity-30"
+      class="z-10 p-1 mb-20 rounded-full shadow-md bg-primary disabled:opacity-30 flex-shrink-0"
       @click="nextPage"
     >
       ›
@@ -201,7 +201,7 @@ const checkMobile = () => {
 };
 
 const itemsPerPage = computed(() =>
-  isMobile.value ? 1 : isTablet.value ? 2 : 5
+  isMobile.value ? 1 : isTablet.value ? 3 : 6
 );
 const currentPage = ref(0);
 

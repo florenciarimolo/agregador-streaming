@@ -3,9 +3,7 @@
   <header
     class="sticky top-4 left-1/2 transform -translate-x-1/2 z-50 w-full container lg:px-4 hidden md:block"
   >
-    <nav
-      class="border shadow-2xl bg-gray-900/80 backdrop-blur-md border-primary rounded-2xl"
-    >
+    <nav class="shadow-2xl bg-gray-800/60 backdrop-blur-md rounded-2xl">
       <div class="flex items-center justify-between px-6 py-4">
         <!-- Logo -->
         <nuxt-link
@@ -29,10 +27,10 @@
 
   <!-- Mobile Navbar -->
   <header
-    class="fixed top-0 left-0 z-50 w-full transition-transform duration-300 md:hidden"
+    class="fixed top-4 left-0 z-50 w-full transition-transform duration-300 md:hidden"
     :style="{ transform: `translateY(${isNavbarVisible ? '0' : '-100%'})` }"
   >
-    <nav class="border-b bg-gray-900/95 backdrop-blur-sm border-gray-700/50">
+    <nav class="bg-gray-800/70 backdrop-blur-sm rounded-lg mx-4">
       <div class="flex items-center justify-between px-4 py-3">
         <!-- Logo -->
         <nuxt-link to="/" class="flex items-center gap-2">
@@ -42,7 +40,7 @@
 
         <!-- Hamburger Button -->
         <button
-          class="p-2 text-white transition-colors hover:text-primary"
+          class="p-2 text-white transition-colors hover:text-primary border-none"
           aria-label="Toggle menu"
           @click="toggleMobileMenu"
         >
@@ -74,7 +72,7 @@
       <!-- Mobile Menu Dropdown -->
       <div
         v-show="isMobileMenuOpen"
-        class="absolute left-0 w-full border-b shadow-lg top-full bg-gray-900/95 backdrop-blur-sm border-gray-700/50"
+        class="absolute left-0 w-full shadow-lg top-full bg-gray-800/70 backdrop-blur-sm"
       >
         <div class="px-4 py-3 space-y-3">
           <!-- Mobile Search Bar -->

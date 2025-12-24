@@ -68,8 +68,7 @@ button:focus-visible {
 }
 
 #__nuxt {
-  max-width: 1480px;
-  min-width: 100%;
+  width: 1400px;
   margin: 0 auto;
   padding-inline: 20px;
 }
