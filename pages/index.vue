@@ -124,7 +124,7 @@ useSeoMeta({
 <template>
   <div v-if="isLoading">Cargando...</div>
   <div v-else class="w-full max-w-full overflow-x-hidden">
-    <div class="flex flex-col gap-10 md:gap-40 lg:p-9 w-full max-w-full">
+    <div class="flex flex-col gap-10 md:gap-40 p-0 lg:p-9 w-full max-w-full">
       <section class="flex-1 w-full max-w-full overflow-x-hidden">
         <h1 class="mb-4 text-2xl font-bold text-center uppercase md:text-left"
           >Películas en tendencia</h1

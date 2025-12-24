@@ -6,7 +6,6 @@
   --color-background: #011627;
 }
 
-
 /* Estilos personalizados de tu aplicación */
 
 :root {
@@ -71,12 +70,12 @@ button:focus-visible {
 #__nuxt {
   max-width: 1480px;
   margin: 0 auto;
-  padding: 2rem;
+  padding: 0;
 }
 
 @media screen and (width < 1024px) {
   #__nuxt {
-    padding: 0 1rem;
+    width: 90%;
   }
 
   button {
