@@ -1,7 +1,7 @@
 <template>
   <!-- Floating Navbar (Desktop/Tablet) -->
   <header
-    class="sticky top-4 left-1/2 transform -translate-x-1/2 z-50 w-full container lg:px-4 hidden md:block"
+    class="sticky top-4 left-1/2 transform -translate-x-1/2 z-50 w-full container hidden md:block"
   >
     <nav class="shadow-2xl bg-gray-800/60 backdrop-blur-md rounded-2xl">
       <div class="flex items-center justify-between px-6 py-4">
