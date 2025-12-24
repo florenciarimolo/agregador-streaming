@@ -5,13 +5,15 @@
     role="switch"
     :aria-checked="theme === 'dark'"
     :aria-label="theme === 'dark' ? 'Dark mode enabled' : 'Light mode enabled'"
-    class="relative w-12 md:w-16 md:h-7 h-6 bg-gray-200 dark:bg-gray-700 rounded-full p-1 transition-colors duration-300 hover:bg-gray-300 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:focus:ring-offset-gray-900"
+    class="relative w-16 md:w-16 md:h-7 h-6 bg-gray-200 dark:bg-gray-700 rounded-full p-1 transition-colors duration-300 hover:bg-gray-300 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:focus:ring-offset-gray-900"
     @click="toggleTheme"
   >
-    <div class="flex justify-between items-center gap-x-3 h-full px-1">
+    <div
+      class="flex justify-between items-center gap-x-3 h-full px-1 overflow-hidden"
+    >
       <!-- Sun icon (light theme) -->
       <svg
-        class="z-10 transition-all duration-300"
+        class="z-10 transition-all duration-300 w-4 h-4 md:w-5 md:h-5 flex-shrink-0"
         :class="
           theme === 'dark'
             ? 'text-gray-400'
@@ -19,6 +21,7 @@
         "
         fill="currentColor"
         viewBox="0 0 20 20"
+        preserveAspectRatio="xMidYMid meet"
       >
         <path
           fill-rule="evenodd"
@@ -28,7 +31,7 @@
       </svg>
       <!-- Moon icon (dark theme) -->
       <svg
-        class="z-10 transition-all duration-300"
+        class="z-10 transition-all duration-300 w-4 h-4 md:w-5 md:h-5 flex-shrink-0"
         :class="
           theme === 'dark'
             ? 'text-blue-400 bg-gray-400 dark:bg-gray-800 rounded-full p-1'
@@ -36,6 +39,7 @@
         "
         fill="currentColor"
         viewBox="0 0 20 20"
+        preserveAspectRatio="xMidYMid meet"
       >
         <path
           d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"
