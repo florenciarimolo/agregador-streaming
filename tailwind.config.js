@@ -10,6 +10,26 @@ export default {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: [
+          'Inter',
+          'system-ui',
+          '-apple-system',
+          'BlinkMacSystemFont',
+          'Segoe UI',
+          'Roboto',
+          'sans-serif',
+        ],
+        heading: [
+          'Poppins',
+          'system-ui',
+          '-apple-system',
+          'BlinkMacSystemFont',
+          'Segoe UI',
+          'Roboto',
+          'sans-serif',
+        ],
+      },
       colors: {
         primary: { DEFAULT: '#2731f5' },
         secondary: { DEFAULT: '#646cff' },

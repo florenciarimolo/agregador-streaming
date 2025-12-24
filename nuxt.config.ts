@@ -80,6 +80,35 @@ export default defineNuxtConfig({
       link: [
         { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
         { rel: 'alternate icon', type: 'image/x-icon', href: '/favicon.ico' },
+        // Preload Inter fonts
+        {
+          rel: 'preload',
+          as: 'font',
+          type: 'font/woff2',
+          href: '/fonts/Inter-Regular.woff2',
+          crossorigin: 'anonymous',
+        },
+        {
+          rel: 'preload',
+          as: 'font',
+          type: 'font/woff2',
+          href: '/fonts/Inter-SemiBold.woff2',
+          crossorigin: 'anonymous',
+        },
+        {
+          rel: 'preload',
+          as: 'font',
+          type: 'font/woff2',
+          href: '/fonts/Poppins-Regular.woff2',
+          crossorigin: 'anonymous',
+        },
+        {
+          rel: 'preload',
+          as: 'font',
+          type: 'font/woff2',
+          href: '/fonts/Poppins-SemiBold.woff2',
+          crossorigin: 'anonymous',
+        },
       ],
     },
   },

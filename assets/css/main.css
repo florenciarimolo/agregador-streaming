@@ -8,6 +8,7 @@
   font-weight: 400;
   font-style: normal;
   font-display: swap;
+  font-feature-settings: normal;
 }
 
 @font-face {
@@ -16,6 +17,7 @@
   font-weight: 500;
   font-style: normal;
   font-display: swap;
+  font-feature-settings: normal;
 }
 
 @font-face {
@@ -24,6 +26,7 @@
   font-weight: 600;
   font-style: normal;
   font-display: swap;
+  font-feature-settings: normal;
 }
 
 @font-face {
@@ -32,6 +35,7 @@
   font-weight: 700;
   font-style: normal;
   font-display: swap;
+  font-feature-settings: normal;
 }
 
 /* Poppins Font Family - Headings */
@@ -41,6 +45,7 @@
   font-weight: 400;
   font-style: normal;
   font-display: swap;
+  font-feature-settings: normal;
 }
 
 @font-face {
@@ -49,6 +54,7 @@
   font-weight: 500;
   font-style: normal;
   font-display: swap;
+  font-feature-settings: normal;
 }
 
 @font-face {
@@ -57,6 +63,7 @@
   font-weight: 600;
   font-style: normal;
   font-display: swap;
+  font-feature-settings: normal;
 }
 
 @font-face {
@@ -65,6 +72,7 @@
   font-weight: 700;
   font-style: normal;
   font-display: swap;
+  font-feature-settings: normal;
 }
 
 @theme {
@@ -158,7 +166,7 @@ h6 {
   font-weight: 600;
 }
 
-button {
+button:not([role='switch']) {
   border-radius: 4px;
   border: 1px solid var(--color-primary);
   padding: 0.6em 1.2em;
@@ -169,12 +177,12 @@ button {
   transition: all 0.3s linear;
 }
 
-button:hover {
+button:not([role='switch']):hover {
   border-color: var(--color-secondary);
 }
 
-button:focus,
-button:focus-visible {
+button:not([role='switch']):focus,
+button:not([role='switch']):focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
 
