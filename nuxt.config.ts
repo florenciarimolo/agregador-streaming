@@ -55,8 +55,8 @@ export default defineNuxtConfig({
   },
   app: {
     head: {
-      title: 'Agregador Streaming',
-      titleTemplate: '%s | Agregador Streaming',
+      title: 'UpNext',
+      titleTemplate: '%s | UpNext',
       meta: [
         { charset: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
@@ -67,7 +67,7 @@ export default defineNuxtConfig({
         },
         // Open Graph / Facebook
         { property: 'og:type', content: 'website' },
-        { property: 'og:site_name', content: 'Agregador Streaming' },
+        { property: 'og:site_name', content: 'UpNext' },
         {
           property: 'og:description',
           content:
@@ -75,38 +75,39 @@ export default defineNuxtConfig({
         },
         // Twitter
         { name: 'twitter:card', content: 'summary_large_image' },
-        { name: 'twitter:site', content: '@agregadorstreaming' },
+        { name: 'twitter:site', content: '@upnext' },
       ],
       link: [
         { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
         { rel: 'alternate icon', type: 'image/x-icon', href: '/favicon.ico' },
-        // Preload Inter fonts
+        // Preload Outfit fonts (body)
         {
           rel: 'preload',
           as: 'font',
-          type: 'font/woff2',
-          href: '/fonts/Inter-Regular.woff2',
+          type: 'font/ttf',
+          href: '/fonts/Outfit-Regular.ttf',
           crossorigin: 'anonymous',
         },
         {
           rel: 'preload',
           as: 'font',
-          type: 'font/woff2',
-          href: '/fonts/Inter-SemiBold.woff2',
+          type: 'font/ttf',
+          href: '/fonts/Outfit-SemiBold.ttf',
+          crossorigin: 'anonymous',
+        },
+        // Preload Space Grotesk fonts (headings)
+        {
+          rel: 'preload',
+          as: 'font',
+          type: 'font/ttf',
+          href: '/fonts/SpaceGrotesk-Regular.ttf',
           crossorigin: 'anonymous',
         },
         {
           rel: 'preload',
           as: 'font',
-          type: 'font/woff2',
-          href: '/fonts/Poppins-Regular.woff2',
-          crossorigin: 'anonymous',
-        },
-        {
-          rel: 'preload',
-          as: 'font',
-          type: 'font/woff2',
-          href: '/fonts/Poppins-SemiBold.woff2',
+          type: 'font/ttf',
+          href: '/fonts/SpaceGrotesk-SemiBold.ttf',
           crossorigin: 'anonymous',
         },
       ],

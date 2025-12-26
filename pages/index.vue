@@ -110,10 +110,10 @@ useHead({
 });
 
 useSeoMeta({
-  title: 'Inicio - StreamHub',
+  title: 'Inicio - UpNext',
   description:
     'Descubre las películas y series más populares del momento. Encuentra dónde ver tu contenido favorito en diferentes plataformas de streaming.',
-  ogTitle: 'StreamHub - Películas y Series en Tendencia',
+  ogTitle: 'UpNext - Películas y Series en Tendencia',
   ogDescription:
     'Descubre las películas y series más populares del momento. Encuentra dónde ver tu contenido favorito en diferentes plataformas de streaming.',
   ogType: 'website',

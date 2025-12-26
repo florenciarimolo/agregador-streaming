@@ -12,7 +12,7 @@ export default {
     extend: {
       fontFamily: {
         sans: [
-          'Inter',
+          'Outfit',
           'system-ui',
           '-apple-system',
           'BlinkMacSystemFont',
@@ -21,7 +21,7 @@ export default {
           'sans-serif',
         ],
         heading: [
-          'Poppins',
+          'Space Grotesk',
           'system-ui',
           '-apple-system',
           'BlinkMacSystemFont',

@@ -12,9 +12,9 @@
           to="/"
           class="flex items-center gap-2 transition-opacity hover:opacity-80"
         >
-          <img src="/logo.svg" alt="Agregador Streaming" class="h-8 w-8" />
+          <img src="/logo.svg" alt="UpNext" class="h-8 w-8" />
           <span class="text-md font-bold dark:text-white text-gray-900"
-            >StreamHub</span
+            >UpNext</span
           >
         </nuxt-link>
 
@@ -42,7 +42,7 @@
       <div class="flex items-center justify-between px-4 py-3">
         <!-- Logo -->
         <nuxt-link to="/" class="flex items-center gap-2">
-          <img src="/logo.svg" alt="Agregador Streaming" class="h-6 w-6" />
+          <img src="/logo.svg" alt="UpNext" class="h-6 w-6" />
           <span class="text-md font-bold dark:text-white text-gray-900"
             >StreamHub</span
           >
