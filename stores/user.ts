@@ -67,7 +67,9 @@ export const useUserStore = defineStore('user', {
     },
 
     async markOnboardingComplete() {
-      if (!this.user) return;
+      if (!this.user || !this.user.id) {
+        throw new Error('User not authenticated');
+      }
 
       try {
         const supabase = useSupabaseClient();

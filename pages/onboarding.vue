@@ -19,6 +19,10 @@
         </div>
       </div>
 
+      <!-- Alert Messages -->
+      <AlertMessage v-if="error" :message="error" type="error" />
+      <AlertMessage v-if="success" :message="success" type="success" />
+
       <!-- Search -->
       <div class="mb-6">
         <div class="relative">
@@ -221,12 +225,15 @@ interface TitleResult {
 const supabase = useSupabaseClient();
 const userStore = useUserStore();
 const router = useRouter();
+const user = useSupabaseUser();
 
 const searchQuery = ref('');
 const searchResults = ref<TitleResult[]>([]);
 const selectedTitles = ref<TitleResult[]>([]);
 const loading = ref(false);
 const saving = ref(false);
+const error = ref<string | null>(null);
+const success = ref<string | null>(null);
 let searchTimeout: ReturnType<typeof setTimeout> | null = null;
 
 const handleSearch = () => {
@@ -269,12 +276,17 @@ const isSelected = (id: number) => {
 const toggleTitle = (title: TitleResult) => {
   if (isSelected(title.id)) {
     removeTitle(title.id);
+    error.value = null; // Clear any previous errors
   } else {
     if (selectedTitles.value.length >= 10) {
-      alert('Solo puedes seleccionar hasta 10 títulos');
+      error.value = 'Solo puedes seleccionar hasta 10 títulos';
+      setTimeout(() => {
+        error.value = null;
+      }, 5000);
       return;
     }
     selectedTitles.value.push(title);
+    error.value = null; // Clear any previous errors
   }
 };
 
@@ -286,8 +298,29 @@ const saveSelections = async () => {
   if (selectedTitles.value.length === 0) return;
 
   saving.value = true;
+  error.value = null; // Clear any previous errors
 
   try {
+    // Get user from store (already initialized by middleware) or from useSupabaseUser
+    const currentUser = userStore.user || user.value;
+
+    if (!currentUser || !currentUser.id) {
+      // If user is not in store, try to get it from Supabase
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session?.user) {
+        error.value = 'Debes estar autenticado para guardar tus selecciones.';
+        saving.value = false;
+        return;
+      }
+      // Set user in store
+      userStore.setUser(session.user);
+      await userStore.fetchProfile();
+    }
+
+    const userId = (userStore.user || user.value)!.id;
+
     // First, ensure all titles exist in the database
     for (const title of selectedTitles.value) {
       // Check if title exists
@@ -326,10 +359,15 @@ const saveSelections = async () => {
       }
 
       // Insert user like (will fail silently if duplicate due to UNIQUE constraint)
-      await supabase.from('user_likes').insert({
-        user_id: userStore.user!.id,
+      const { error: likeError } = await supabase.from('user_likes').insert({
+        user_id: userId,
         title_id: titleId,
       });
+
+      if (likeError && likeError.code !== '23505') {
+        // 23505 is unique_violation, which is expected for duplicates
+        throw likeError;
+      }
     }
 
     // Mark onboarding as complete
@@ -337,9 +375,13 @@ const saveSelections = async () => {
 
     // Redirect to home
     await router.push('/');
-  } catch (error) {
-    console.error('Error saving selections:', error);
-    alert('Error al guardar las selecciones. Por favor, inténtalo de nuevo.');
+  } catch (err: unknown) {
+    console.error('Error saving selections:', err);
+    const errorMessage =
+      err instanceof Error
+        ? err.message
+        : 'Error al guardar las selecciones. Por favor, inténtalo de nuevo.';
+    error.value = errorMessage;
   } finally {
     saving.value = false;
   }

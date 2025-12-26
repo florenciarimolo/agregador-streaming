@@ -301,24 +301,18 @@ const translateAuthError = (errorMessage: string): string => {
           </div>
 
           <!-- Error message -->
-          <div
-            v-if="error"
-            class="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-600 dark:text-red-400 text-sm"
-          >
-            {{ error }}
-          </div>
+          <AlertMessage v-if="error" :message="error" type="error" />
 
           <!-- Success message -->
-          <div
+          <AlertMessage
             v-if="signUpSuccess || magicLinkSent"
-            class="mb-4 p-3 bg-green-500/10 border border-green-500/20 rounded-lg text-green-600 dark:text-green-400 text-sm"
-          >
-            {{
+            :message="
               signUpSuccess
                 ? '¡Revisa tu email para confirmar tu cuenta!'
                 : '¡Revisa tu email para el enlace mágico!'
-            }}
-          </div>
+            "
+            type="success"
+          />
 
           <!-- Password form -->
           <form
