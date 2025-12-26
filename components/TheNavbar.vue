@@ -26,6 +26,47 @@
           </div>
           <!-- Theme Switcher -->
           <ThemeSwitcher />
+          <!-- User Avatar (if logged in) -->
+          <div v-if="user" class="relative">
+            <button
+              type="button"
+              class="w-10 h-10 rounded-full bg-gradient-to-br from-primary via-accent to-secondary flex items-center justify-center text-white font-semibold text-sm hover:ring-2 hover:ring-primary/50 transition-all cursor-pointer shadow-md"
+              :aria-label="`Menú de usuario para ${user.email}`"
+              @click="toggleUserMenu"
+            >
+              {{ getUserInitials(user.email) }}
+            </button>
+            <!-- User Menu Dropdown -->
+            <Transition
+              enter-active-class="transition duration-200 ease-out"
+              enter-from-class="transform scale-95 opacity-0"
+              enter-to-class="transform scale-100 opacity-100"
+              leave-active-class="transition duration-150 ease-in"
+              leave-from-class="transform scale-100 opacity-100"
+              leave-to-class="transform scale-95 opacity-0"
+            >
+              <div
+                v-if="showUserMenu"
+                class="absolute right-0 mt-2 w-64 dark:bg-gray-800/90 bg-white/90 backdrop-blur-sm rounded-lg shadow-xl border border-primary/20 z-50"
+                @click.stop
+              >
+                <div class="p-4">
+                  <p
+                    class="text-sm font-medium dark:text-white text-gray-900 truncate mb-3"
+                  >
+                    {{ user.email }}
+                  </p>
+                  <button
+                    type="button"
+                    class="w-full px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors text-left"
+                    @click="handleLogout"
+                  >
+                    Cerrar sesión
+                  </button>
+                </div>
+              </div>
+            </Transition>
+          </div>
         </div>
       </div>
     </nav>
@@ -49,6 +90,47 @@
         </nuxt-link>
 
         <div class="flex items-center gap-2">
+          <!-- User Avatar (if logged in) -->
+          <div v-if="user" class="relative">
+            <button
+              type="button"
+              class="w-8 h-8 rounded-full bg-gradient-to-br from-primary via-accent to-secondary flex items-center justify-center text-white font-semibold text-xs hover:ring-2 hover:ring-primary/50 transition-all cursor-pointer shadow-md"
+              :aria-label="`Menú de usuario para ${user.email}`"
+              @click="toggleUserMenu"
+            >
+              {{ getUserInitials(user.email) }}
+            </button>
+            <!-- User Menu Dropdown (Mobile) -->
+            <Transition
+              enter-active-class="transition duration-200 ease-out"
+              enter-from-class="transform scale-95 opacity-0"
+              enter-to-class="transform scale-100 opacity-100"
+              leave-active-class="transition duration-150 ease-in"
+              leave-from-class="transform scale-100 opacity-100"
+              leave-to-class="transform scale-95 opacity-0"
+            >
+              <div
+                v-if="showUserMenu"
+                class="absolute right-0 mt-2 w-64 dark:bg-gray-800/90 bg-white/90 backdrop-blur-sm rounded-lg shadow-xl border border-primary/20 z-50"
+                @click.stop
+              >
+                <div class="p-4">
+                  <p
+                    class="text-sm font-medium dark:text-white text-gray-900 truncate mb-3"
+                  >
+                    {{ user.email }}
+                  </p>
+                  <button
+                    type="button"
+                    class="w-full px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors text-left"
+                    @click="handleLogout"
+                  >
+                    Cerrar sesión
+                  </button>
+                </div>
+              </div>
+            </Transition>
+          </div>
           <!-- Theme Switcher -->
           <ThemeSwitcher />
           <!-- Hamburger Button -->
@@ -133,6 +215,47 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
 
+// User state
+const user = useSupabaseUser();
+const { signOut } = useAuth();
+const router = useRouter();
+const showUserMenu = ref(false);
+
+// Get user initials from email
+const getUserInitials = (email: string | undefined): string => {
+  if (!email) return 'U';
+  const parts = email.split('@')[0].split(/[._-]/);
+  if (parts.length >= 2) {
+    return (parts[0][0] + parts[1][0]).toUpperCase();
+  }
+  return email.substring(0, 2).toUpperCase();
+};
+
+// Toggle user menu
+const toggleUserMenu = () => {
+  showUserMenu.value = !showUserMenu.value;
+};
+
+// Handle logout
+const handleLogout = async () => {
+  try {
+    showUserMenu.value = false;
+    await signOut();
+    await router.push('/');
+  } catch (error) {
+    console.error('Error signing out:', error);
+  }
+};
+
+// Close user menu when clicking outside
+const handleClickOutside = (event: MouseEvent) => {
+  if (!showUserMenu.value) return;
+  const target = event.target as HTMLElement;
+  if (!target.closest('.relative')) {
+    showUserMenu.value = false;
+  }
+};
+
 // Mobile menu state
 const isMobileMenuOpen = ref(false);
 
@@ -205,11 +328,15 @@ onMounted(() => {
   checkMobile();
   window.addEventListener('scroll', handleScroll);
   window.addEventListener('resize', handleResize);
+  if (user.value) {
+    document.addEventListener('click', handleClickOutside);
+  }
 });
 
 onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll);
   window.removeEventListener('resize', handleResize);
+  document.removeEventListener('click', handleClickOutside);
 });
 </script>
 
