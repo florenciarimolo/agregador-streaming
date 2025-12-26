@@ -179,7 +179,9 @@ h6 {
   font-weight: 600;
 }
 
-button:not([role='switch']):not([aria-label='Toggle menu']) {
+button:not([role='switch']):not([aria-label='Toggle menu']):not(
+    [data-icon-only]
+  ) {
   border-radius: 4px;
   border: 1px solid var(--color-primary);
   padding: 0.6em 1.2em;
@@ -197,7 +199,18 @@ button[aria-label='Toggle menu'] {
   padding: 0.5rem !important;
 }
 
-button:not([role='switch']):not([aria-label='Toggle menu']):hover {
+/* Icon-only buttons (remove, etc.) should not have default button styles */
+button[data-icon-only] {
+  border: none !important;
+  padding: 0 !important;
+  font-size: inherit !important;
+  font-weight: inherit !important;
+  font-family: inherit !important;
+}
+
+button:not([role='switch']):not([aria-label='Toggle menu']):not(
+    [data-icon-only]
+  ):hover {
   border-color: var(--color-secondary);
   background: linear-gradient(
     135deg,
@@ -208,8 +221,12 @@ button:not([role='switch']):not([aria-label='Toggle menu']):hover {
   color: white;
 }
 
-button:not([role='switch']):not([aria-label='Toggle menu']):focus,
-button:not([role='switch']):not([aria-label='Toggle menu']):focus-visible {
+button:not([role='switch']):not([aria-label='Toggle menu']):not(
+    [data-icon-only]
+  ):focus,
+button:not([role='switch']):not([aria-label='Toggle menu']):not(
+    [data-icon-only]
+  ):focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
 
@@ -335,7 +352,9 @@ button[role='switch'] {
     width: 100%;
   }
 
-  button:not([role='switch']):not([aria-label='Toggle menu']) {
+  button:not([role='switch']):not([aria-label='Toggle menu']):not(
+      [data-icon-only]
+    ) {
     padding: 0.4em 0.8em;
   }
 }

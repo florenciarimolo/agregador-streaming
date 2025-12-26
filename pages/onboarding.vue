@@ -4,17 +4,17 @@
       <!-- Header -->
       <div class="text-center mb-8">
         <h1 class="text-3xl font-bold dark:text-white text-gray-900 mb-2">
-          What do you like to watch?
+          ¿Qué te gusta ver?
         </h1>
         <p class="text-gray-600 dark:text-gray-400">
-          Select up to 10 movies or TV shows you enjoy. This helps us recommend
-          content you'll love.
+          Selecciona hasta 10 películas o series que disfrutes. Esto nos ayuda a
+          recomendarte contenido que te encantará.
         </p>
         <div class="mt-4">
           <span
             class="inline-block px-4 py-2 bg-primary/10 text-primary rounded-full text-sm font-medium"
           >
-            {{ selectedTitles.length }} / 10 selected
+            {{ selectedTitles.length }} / 10 seleccionados
           </span>
         </div>
       </div>
@@ -25,7 +25,7 @@
           <input
             v-model="searchQuery"
             type="text"
-            placeholder="Search for movies or TV shows..."
+            placeholder="Buscar películas o series..."
             class="w-full px-4 py-3 pl-12 dark:bg-gray-800/70 bg-gray-100/90 dark:text-white text-gray-900 border border-primary/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary backdrop-blur-xs"
             @input="handleSearch"
           />
@@ -48,7 +48,7 @@
       <!-- Selected Titles -->
       <div v-if="selectedTitles.length > 0" class="mb-6">
         <h2 class="text-lg font-semibold dark:text-white text-gray-900 mb-3">
-          Your selections
+          Tus selecciones
         </h2>
         <div class="flex flex-wrap gap-3">
           <div
@@ -69,17 +69,21 @@
                 v-else
                 class="w-full h-full bg-gray-700 flex items-center justify-center text-gray-400"
               >
-                No image
+                Sin imagen
               </div>
               <button
-                class="absolute top-1 right-1 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity"
-                @click="removeTitle(title.id)"
+                type="button"
+                :aria-label="`Eliminar ${title.title || title.name}`"
+                data-icon-only="true"
+                class="absolute top-1 right-1 w-7 h-7 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center text-white shadow-lg transition-all duration-200 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-transparent z-10 !p-0 cursor-pointer"
+                @click.stop="removeTitle(title.id)"
               >
                 <svg
                   class="w-4 h-4"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
+                  aria-hidden="true"
                 >
                   <path
                     stroke-linecap="round"
@@ -102,7 +106,7 @@
       <!-- Search Results -->
       <div v-if="searchResults.length > 0" class="mb-6">
         <h2 class="text-lg font-semibold dark:text-white text-gray-900 mb-3">
-          Search results
+          Resultados de búsqueda
         </h2>
         <div
           class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"
@@ -132,7 +136,7 @@
                   v-else
                   class="w-full h-full bg-gray-700 flex items-center justify-center text-gray-400"
                 >
-                  No image
+                  Sin imagen
                 </div>
                 <div
                   v-if="isSelected(result.id)"
@@ -158,7 +162,7 @@
               {{ result.title || result.name }}
             </p>
             <p class="text-xs text-center text-gray-500">
-              {{ result.media_type === 'movie' ? 'Movie' : 'TV Show' }}
+              {{ result.media_type === 'movie' ? 'Película' : 'Serie' }}
             </p>
           </div>
         </div>
@@ -170,7 +174,7 @@
         class="text-center py-12"
       >
         <p class="text-gray-500 dark:text-gray-400">
-          No results found. Try a different search term.
+          No se encontraron resultados. Prueba con otro término de búsqueda.
         </p>
       </div>
 
@@ -188,7 +192,7 @@
           class="px-8 py-3 bg-gradient-to-r from-primary via-accent to-secondary hover:from-secondary hover:via-pink-500 hover:to-primary text-white rounded-lg font-medium transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
           @click="saveSelections"
         >
-          {{ saving ? 'Saving...' : 'Continue' }}
+          {{ saving ? 'Guardando...' : 'Continuar' }}
         </button>
       </div>
     </div>
@@ -217,7 +221,6 @@ interface TitleResult {
 const supabase = useSupabaseClient();
 const userStore = useUserStore();
 const router = useRouter();
-const config = useRuntimeConfig();
 
 const searchQuery = ref('');
 const searchResults = ref<TitleResult[]>([]);
@@ -231,7 +234,7 @@ const handleSearch = () => {
     clearTimeout(searchTimeout);
   }
 
-  if (searchQuery.value.length < 3) {
+  if (searchQuery.value.length < 4) {
     searchResults.value = [];
     return;
   }
@@ -239,7 +242,7 @@ const handleSearch = () => {
   loading.value = true;
   searchTimeout = setTimeout(async () => {
     try {
-      const response = await $fetch<{ results: TitleResult[] }>(
+      const response = await $fetch<{ data: { results: TitleResult[] } }>(
         `/api/tmdb/search/multi`,
         {
           query: { query: searchQuery.value },
@@ -247,7 +250,7 @@ const handleSearch = () => {
       );
 
       // Filter to only movies and TV shows, limit to 20
-      searchResults.value = response.results
+      searchResults.value = response.data.results
         .filter((r) => r.media_type === 'movie' || r.media_type === 'tv')
         .slice(0, 20);
     } catch (error) {
@@ -268,7 +271,7 @@ const toggleTitle = (title: TitleResult) => {
     removeTitle(title.id);
   } else {
     if (selectedTitles.value.length >= 10) {
-      alert('You can only select up to 10 titles');
+      alert('Solo puedes seleccionar hasta 10 títulos');
       return;
     }
     selectedTitles.value.push(title);
@@ -336,7 +339,7 @@ const saveSelections = async () => {
     await router.push('/');
   } catch (error) {
     console.error('Error saving selections:', error);
-    alert('Failed to save selections. Please try again.');
+    alert('Error al guardar las selecciones. Por favor, inténtalo de nuevo.');
   } finally {
     saving.value = false;
   }

@@ -1,3 +1,5 @@
+import { validatePassword } from '../utils/passwordValidation';
+
 /**
  * Authentication composable for UpNext
  * Handles email/password and magic link authentication via Supabase
@@ -9,9 +11,18 @@ export const useAuth = () => {
 
   /**
    * Sign up with email and password
+   * Validates password on server side before sending to Supabase
    */
   const signUp = async (email: string, password: string) => {
     try {
+      // Validate password on server side
+      const validation = validatePassword(password);
+      if (!validation.isValid) {
+        const error = new Error(validation.errors.join('. '));
+        (error as any).name = 'PasswordValidationError';
+        throw error;
+      }
+
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
