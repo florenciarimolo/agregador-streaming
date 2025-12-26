@@ -34,7 +34,15 @@ if (needsPolyfill) {
 export default defineNuxtConfig({
   compatibilityDate: '2025-12-23',
   devtools: { enabled: true },
-  modules: ['@pinia/nuxt'],
+  modules: ['@pinia/nuxt', '@nuxtjs/supabase'],
+  // @ts-expect-error - @nuxtjs/supabase module configuration
+  supabase: {
+    redirectOptions: {
+      login: false, // Disable default redirect to /login
+      callback: '/auth/callback',
+      exclude: ['/'], // Homepage is public
+    },
+  },
   vite: {
     plugins: [localStoragePolyfillPlugin()],
     ssr: {
@@ -51,6 +59,8 @@ export default defineNuxtConfig({
     tmdbApiKey: process.env.NUXT_TMDB_API_KEY || '',
     public: {
       tmdbBaseUrl: process.env.NUXT_TMDB_BASE_URL || '',
+      supabaseUrl: process.env.NUXT_PUBLIC_SUPABASE_URL || '',
+      supabaseAnonKey: process.env.NUXT_PUBLIC_SUPABASE_ANON_KEY || '',
     },
   },
   app: {

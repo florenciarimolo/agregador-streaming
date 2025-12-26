@@ -1,0 +1,129 @@
+-- UpNext Database Schema
+-- Phase 1: Foundation
+
+-- Enable UUID extension
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- Users table (extends Supabase auth.users)
+-- We'll use Supabase's built-in auth.users, but create a profiles table for additional data
+CREATE TABLE IF NOT EXISTS public.profiles (
+  id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
+  email TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL,
+  onboarding_completed BOOLEAN DEFAULT FALSE NOT NULL
+);
+
+-- Titles table (movies and TV shows)
+CREATE TABLE IF NOT EXISTS public.titles (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  tmdb_id INTEGER UNIQUE NOT NULL, -- TMDB ID for reference
+  title TEXT NOT NULL,
+  type TEXT NOT NULL CHECK (type IN ('movie', 'tv')), -- 'movie' or 'tv'
+  poster_path TEXT,
+  backdrop_path TEXT,
+  overview TEXT,
+  release_date DATE, -- For movies
+  first_air_date DATE, -- For TV shows
+  genres JSONB, -- Array of genre objects from TMDB
+  vote_average DECIMAL(3, 1),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL
+);
+
+-- Index for faster lookups
+CREATE INDEX IF NOT EXISTS idx_titles_tmdb_id ON public.titles(tmdb_id);
+CREATE INDEX IF NOT EXISTS idx_titles_type ON public.titles(type);
+
+-- User likes table (user's selected titles)
+CREATE TABLE IF NOT EXISTS public.user_likes (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+  title_id UUID REFERENCES public.titles(id) ON DELETE CASCADE NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL,
+  UNIQUE(user_id, title_id) -- Prevent duplicate likes
+);
+
+-- Index for faster queries
+CREATE INDEX IF NOT EXISTS idx_user_likes_user_id ON public.user_likes(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_likes_title_id ON public.user_likes(title_id);
+
+-- Row Level Security (RLS) Policies
+
+-- Enable RLS on all tables
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.titles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.user_likes ENABLE ROW LEVEL SECURITY;
+
+-- Profiles policies
+-- Users can read their own profile
+CREATE POLICY "Users can view own profile"
+  ON public.profiles FOR SELECT
+  USING (auth.uid() = id);
+
+-- Users can update their own profile
+CREATE POLICY "Users can update own profile"
+  ON public.profiles FOR UPDATE
+  USING (auth.uid() = id);
+
+-- Auto-create profile on user signup
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.profiles (id, email, onboarding_completed)
+  VALUES (NEW.id, NEW.email, FALSE);
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- Titles policies
+-- Everyone can read titles (public data)
+CREATE POLICY "Titles are viewable by everyone"
+  ON public.titles FOR SELECT
+  USING (true);
+
+-- Only authenticated users can insert titles (via API)
+CREATE POLICY "Authenticated users can insert titles"
+  ON public.titles FOR INSERT
+  WITH CHECK (auth.role() = 'authenticated');
+
+-- User likes policies
+-- Users can view their own likes
+CREATE POLICY "Users can view own likes"
+  ON public.user_likes FOR SELECT
+  USING (auth.uid() = user_id);
+
+-- Users can insert their own likes (max 10 enforced in application)
+CREATE POLICY "Users can insert own likes"
+  ON public.user_likes FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+-- Users can delete their own likes
+CREATE POLICY "Users can delete own likes"
+  ON public.user_likes FOR DELETE
+  USING (auth.uid() = user_id);
+
+-- Function to update updated_at timestamp
+CREATE OR REPLACE FUNCTION public.handle_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = TIMEZONE('utc', NOW());
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Triggers for updated_at
+CREATE TRIGGER update_profiles_updated_at
+  BEFORE UPDATE ON public.profiles
+  FOR EACH ROW
+  EXECUTE FUNCTION public.handle_updated_at();
+
+CREATE TRIGGER update_titles_updated_at
+  BEFORE UPDATE ON public.titles
+  FOR EACH ROW
+  EXECUTE FUNCTION public.handle_updated_at();
+
