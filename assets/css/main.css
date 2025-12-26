@@ -216,6 +216,11 @@ button[data-icon-only] {
   background: transparent !important;
 }
 
+/* Exception: allow background color for remove buttons with bg-red classes */
+button[data-icon-only][class*='bg-red'] {
+  background-color: inherit !important;
+}
+
 button:not([role='switch']):not([aria-label='Toggle menu']):not(
     [data-icon-only]
   ):not([class*='bg-gradient']):not([class*='bg-primary']):not(

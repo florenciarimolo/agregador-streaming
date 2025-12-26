@@ -75,7 +75,7 @@
                 type="button"
                 :aria-label="`Eliminar ${title.title || title.name}`"
                 data-icon-only="true"
-                class="absolute top-1 right-1 w-7 h-7 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center text-white shadow-lg transition-all duration-200 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-transparent z-10 !p-0 cursor-pointer"
+                class="absolute top-1 right-1 w-7 h-7 !bg-red-500 hover:!bg-red-600 rounded-full flex items-center justify-center text-white shadow-lg transition-all duration-200 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-transparent z-10 !p-0 cursor-pointer"
                 @click.stop="removeTitle(title.id)"
               >
                 <svg
