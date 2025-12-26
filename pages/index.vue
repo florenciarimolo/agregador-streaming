@@ -30,7 +30,6 @@ useSeoMeta({
 const user = useSupabaseUser();
 const userStore = useUserStore();
 const { signIn, signUp, signInWithMagicLink } = useAuth();
-const router = useRouter();
 
 // Form state
 const email = ref('');
@@ -114,8 +113,26 @@ const handlePasswordAuth = async () => {
       return;
     }
 
-    // If signin, redirect will be handled by middleware
-    await router.push('/');
+    // If signin, wait for user state to update then redirect
+    if (!isSignUp.value) {
+      // Wait for Supabase to update the session
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      // Refresh user state
+      const currentUser = useSupabaseUser();
+      if (currentUser.value) {
+        userStore.setUser(currentUser.value);
+        await userStore.fetchProfile();
+        // Redirect based on onboarding status
+        if (userStore.hasCompletedOnboarding) {
+          await navigateTo('/');
+        } else {
+          await navigateTo('/onboarding');
+        }
+      } else {
+        // Fallback: reload to trigger auth state update
+        window.location.href = '/';
+      }
+    }
   } catch (err: unknown) {
     error.value = err instanceof Error ? err.message : 'Ocurrió un error';
   } finally {
@@ -147,10 +164,11 @@ const handleMagicLink = async () => {
 const handleGetStarted = async () => {
   if (user.value) {
     // User is logged in, check onboarding status
+    await userStore.fetchProfile(); // Ensure profile is up to date
     if (userStore.hasCompletedOnboarding) {
-      router.push('/');
+      await navigateTo('/');
     } else {
-      router.push('/onboarding');
+      await navigateTo('/onboarding');
     }
   } else {
     // Show auth form
@@ -351,10 +369,11 @@ const translateAuthError = (errorMessage: string): string => {
                 />
                 <button
                   type="button"
+                  data-icon-only="true"
                   :aria-label="
                     showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'
                   "
-                  class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary rounded p-1 transition-colors"
+                  class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 focus:outline-none transition-colors"
                   @click="showPassword = !showPassword"
                   @keydown.enter.prevent="showPassword = !showPassword"
                   @keydown.space.prevent="showPassword = !showPassword"

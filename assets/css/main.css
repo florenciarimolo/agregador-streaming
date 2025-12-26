@@ -179,16 +179,23 @@ h6 {
   font-weight: 600;
 }
 
+button {
+  cursor: pointer;
+  transition: all 0.3s linear;
+}
+
+/* Only apply default button styles to buttons without custom classes */
 button:not([role='switch']):not([aria-label='Toggle menu']):not(
     [data-icon-only]
-  ) {
+  ):not([class*='bg-gradient']):not([class*='rounded-full']):not(
+    [class*='rounded-lg']
+  ):not([class*='rounded-xl']):not([class*='rounded-md']) {
   border-radius: 4px;
   border: 1px solid var(--color-primary);
   padding: 0.6em 1.2em;
   font-size: 1em;
   font-weight: 500;
   font-family: inherit;
-  cursor: pointer;
   transition: all 0.3s linear;
 }
 
@@ -206,10 +213,15 @@ button[data-icon-only] {
   font-size: inherit !important;
   font-weight: inherit !important;
   font-family: inherit !important;
+  background: transparent !important;
 }
 
 button:not([role='switch']):not([aria-label='Toggle menu']):not(
     [data-icon-only]
+  ):not([class*='bg-gradient']):not([class*='bg-primary']):not(
+    [class*='rounded-full']
+  ):not([class*='rounded-lg']):not([class*='rounded-xl']):not(
+    [class*='rounded-md']
   ):hover {
   border-color: var(--color-secondary);
   background: linear-gradient(
@@ -223,9 +235,17 @@ button:not([role='switch']):not([aria-label='Toggle menu']):not(
 
 button:not([role='switch']):not([aria-label='Toggle menu']):not(
     [data-icon-only]
+  ):not([class*='bg-gradient']):not([class*='bg-primary']):not(
+    [class*='rounded-full']
+  ):not([class*='rounded-lg']):not([class*='rounded-xl']):not(
+    [class*='rounded-md']
   ):focus,
 button:not([role='switch']):not([aria-label='Toggle menu']):not(
     [data-icon-only]
+  ):not([class*='bg-gradient']):not([class*='bg-primary']):not(
+    [class*='rounded-full']
+  ):not([class*='rounded-lg']):not([class*='rounded-xl']):not(
+    [class*='rounded-md']
   ):focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
@@ -354,7 +374,9 @@ button[role='switch'] {
 
   button:not([role='switch']):not([aria-label='Toggle menu']):not(
       [data-icon-only]
-    ) {
+    ):not([class*='bg-gradient']):not([class*='rounded-full']):not(
+      [class*='rounded-lg']
+    ):not([class*='rounded-xl']):not([class*='rounded-md']) {
     padding: 0.4em 0.8em;
   }
 }
