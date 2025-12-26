@@ -6,15 +6,15 @@
     >
       <div class="flex items-center gap-2">
         <div
-          class="w-3 h-3 rounded-full bg-primary"
+          class="w-3 h-3 rounded-full bg-gradient-to-br from-primary to-accent"
           style="animation-delay: 0s"
         ></div>
         <div
-          class="w-3 h-3 rounded-full bg-primary"
+          class="w-3 h-3 rounded-full bg-gradient-to-br from-accent to-pink-500"
           style="animation-delay: 0.2s"
         ></div>
         <div
-          class="w-3 h-3 rounded-full bg-primary"
+          class="w-3 h-3 rounded-full bg-gradient-to-br from-pink-500 to-secondary"
           style="animation-delay: 0.4s"
         ></div>
       </div>

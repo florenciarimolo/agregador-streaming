@@ -1,13 +1,13 @@
 <template>
   <section
-    class="relative flex flex-col items-center justify-between gap-20 pb-8 dark:text-white text-gray-900 w-full min-w-full flex-shrink-0 min-h-[400px] md:flex-row md:items-stretch md:p-8 dark:md:bg-gray-800 md:bg-gray-100 md:border md:gap-7 rounded-xl md:border-primary py-8"
+    class="relative flex flex-col items-center justify-between gap-20 pb-8 dark:text-white text-gray-900 w-full min-w-full flex-shrink-0 min-h-[400px] md:flex-row md:items-stretch md:p-8 dark:md:bg-gray-800 md:bg-gray-100 md:border md:gap-7 rounded-xl md:border-primary/30 md:shadow-lg md:shadow-primary/20 py-8"
     :style="sectionStyle"
   >
     <div
       class="absolute inset-0 z-0 hidden overflow-hidden md:block rounded-xl dark:bg-gradient-to-b dark:from-black/80 dark:to-black/90 bg-white/80"
     ></div>
     <div
-      class="relative overflow-hidden rounded-lg shadow-lg shadow-primary/20 w-full max-w-80 md:w-80 flex-shrink-0"
+      class="relative overflow-hidden rounded-lg shadow-lg shadow-primary/30 w-full max-w-80 md:w-80 flex-shrink-0"
     >
       <RatingBadge :rating="mediaWithProviders.vote_average" />
       <MediaStatusBagde

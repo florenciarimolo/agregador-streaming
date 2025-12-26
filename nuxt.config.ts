@@ -78,7 +78,7 @@ export default defineNuxtConfig({
         { name: 'twitter:site', content: '@upnext' },
       ],
       link: [
-        { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
+        { rel: 'icon', type: 'image/png', href: '/logo.png' },
         { rel: 'alternate icon', type: 'image/x-icon', href: '/favicon.ico' },
         // Preload Outfit fonts (body)
         {

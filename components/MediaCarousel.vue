@@ -82,7 +82,7 @@
           <!-- Desktop: Button -->
           <nuxt-link :to="mediaObject.path" class="hidden md:block">
             <button
-              class="w-auto px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm text-white bg-primary hover:bg-secondary rounded-lg transition-colors"
+              class="w-auto px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm text-white bg-gradient-to-r from-primary via-accent to-secondary hover:from-secondary hover:via-pink-500 hover:to-primary rounded-lg transition-all duration-300 shadow-lg shadow-primary/30"
             >
               Ver detalles
             </button>
@@ -98,7 +98,7 @@
   >
     <!-- Flecha izquierda -->
     <button
-      class="z-10 mb-20 bg-primary disabled:opacity-30 flex-shrink-0 p-1"
+      class="z-10 mb-20 bg-gradient-to-r from-primary to-accent disabled:opacity-30 flex-shrink-0 p-1 text-white rounded-full shadow-lg shadow-primary/30 hover:from-accent hover:to-secondary transition-all duration-300"
       :disabled="currentPage === 0"
       @click="prevPage"
     >
@@ -117,12 +117,12 @@
             <img
               :src="`https://image.tmdb.org/t/p/w780${mediaObject.poster_path}`"
               :alt="mediaObject.title ? mediaObject.title : mediaObject.name"
-              class="object-cover w-full h-full overflow-hidden shadow-md rounded-xl shadow-primary/20"
+              class="object-cover w-full h-full overflow-hidden shadow-md rounded-xl shadow-primary/30"
               loading="lazy"
               decoding="async"
             />
             <div
-              class="absolute bottom-0 left-0 flex flex-col items-center justify-center w-full h-full px-4 transition-all duration-300 opacity-0 rounded-xl group-hover:opacity-100 group-hover:shadow-primary/20 group-hover:shadow-lg backdrop-blur-md w-inherit dark:bg-black/80 bg-white/80"
+              class="absolute bottom-0 left-0 flex flex-col items-center justify-center w-full h-full px-4 transition-all duration-300 opacity-0 rounded-xl group-hover:opacity-100 group-hover:shadow-primary/40 group-hover:shadow-xl backdrop-blur-md w-inherit dark:bg-black/80 bg-white/80 border border-primary/20"
             >
               <RatingBadge :rating="mediaObject.vote_average" />
               <p class="mt-4 dark:text-white text-gray-900 font-semibold"
@@ -151,7 +151,7 @@
     <!-- Flecha derecha -->
     <button
       :disabled="endReached"
-      class="z-10 p-1 mb-20 rounded-full shadow-md bg-primary disabled:opacity-30 flex-shrink-0"
+      class="z-10 p-1 mb-20 rounded-full shadow-lg shadow-primary/30 bg-gradient-to-r from-primary to-accent disabled:opacity-30 flex-shrink-0 text-white hover:from-accent hover:to-secondary transition-all duration-300"
       @click="nextPage"
     >
       ›

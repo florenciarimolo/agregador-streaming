@@ -4,7 +4,7 @@
     class="sticky top-4 left-1/2 transform -translate-x-1/2 z-50 w-full container hidden md:block"
   >
     <nav
-      class="shadow-2xl dark:bg-gray-800/60 bg-gray-100/80 backdrop-blur-sm rounded-2xl"
+      class="shadow-md dark:bg-gray-800/60 bg-gray-100/80 backdrop-blur-sm rounded-2xl border border-primary/20"
     >
       <div class="flex items-center justify-between px-6 py-4">
         <!-- Logo -->
@@ -12,7 +12,7 @@
           to="/"
           class="flex items-center gap-2 transition-opacity hover:opacity-80"
         >
-          <img src="/logo.svg" alt="UpNext" class="h-8 w-8" />
+          <img src="/logo.png" alt="UpNext" class="h-8 w-8" />
           <span class="text-md font-bold dark:text-white text-gray-900"
             >UpNext</span
           >
@@ -37,12 +37,12 @@
     :style="{ transform: `translateY(${isNavbarVisible ? '0' : '-100%'})` }"
   >
     <nav
-      class="dark:bg-gray-800/70 bg-gray-100/90 backdrop-blur-xs rounded-lg"
+      class="dark:bg-gray-800/70 bg-gray-100/90 backdrop-blur-xs rounded-lg border border-primary/20"
     >
       <div class="flex items-center justify-between px-4 py-3">
         <!-- Logo -->
         <nuxt-link to="/" class="flex items-center gap-2">
-          <img src="/logo.svg" alt="UpNext" class="h-6 w-6" />
+          <img src="/logo.png" alt="UpNext" class="h-6 w-6" />
           <span class="text-md font-bold dark:text-white text-gray-900"
             >StreamHub</span
           >
@@ -109,7 +109,7 @@
   >
     <button
       v-show="showScrollToTop && isMobile"
-      class="fixed z-40 p-3 text-white transition-all duration-300 rounded-full shadow-lg bottom-6 right-6 bg-primary hover:bg-secondary hover:shadow-xl md:hidden"
+      class="fixed z-40 p-3 text-white transition-all duration-300 rounded-full shadow-lg bottom-6 right-6 bg-gradient-to-br from-primary via-accent to-secondary hover:from-secondary hover:via-pink-500 hover:to-primary hover:shadow-xl md:hidden"
       aria-label="Scroll to top"
       @click="scrollToTop"
     >

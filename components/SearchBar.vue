@@ -6,7 +6,7 @@
         v-model="searchQuery"
         type="text"
         placeholder="Buscar películas y series..."
-        class="w-full px-4 py-2 pl-10 pr-4 text-sm dark:text-white text-gray-900 dark:bg-gray-800/50 bg-white/80 dark:border-gray-600 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent backdrop-blur-xs"
+        class="w-full px-4 py-2 pl-10 pr-4 text-sm dark:text-white text-gray-900 dark:bg-gray-800/50 bg-white/80 dark:border-gray-600 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-transparent focus:border-transparent backdrop-blur-xs transition-all"
         @input="handleSearch"
         @focus="showResults = true"
         @blur="handleBlur"

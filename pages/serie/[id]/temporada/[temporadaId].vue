@@ -18,7 +18,7 @@
   <div v-else>
     <!-- Header de temporada -->
     <section
-      class="relative flex flex-row items-center justify-between p-8 my-8 dark:text-white text-gray-900 dark:bg-gray-800 bg-gray-100 border gap-7 rounded-xl border-primary"
+      class="relative flex flex-row items-center justify-between p-8 my-8 dark:text-white text-gray-900 dark:bg-gray-800 bg-gray-100 border gap-7 rounded-xl border-primary/30 shadow-lg shadow-primary/20"
       :style="sectionStyle"
     >
       <div

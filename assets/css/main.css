@@ -76,8 +76,10 @@
 }
 
 @theme {
-  --color-primary: #2731f5;
-  --color-secondary: #646cff;
+  --color-primary: #6366f1;
+  --color-secondary: #f97316;
+  --color-accent: #8b5cf6;
+  --color-pink: #ec4899;
   --color-background: #011627;
 }
 
@@ -99,8 +101,10 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  --primary-color: #2731f5;
-  --secondary-color: #646cff;
+  --primary-color: #6366f1;
+  --secondary-color: #f97316;
+  --accent-color: #8b5cf6;
+  --pink-color: #ec4899;
 }
 
 /* Dark theme (default) */
@@ -146,6 +150,7 @@ body {
   min-width: 320px;
   min-height: 100vh;
   background-color: #011627; /* Default dark background */
+  position: relative;
 }
 
 h1,
@@ -186,6 +191,13 @@ button[aria-label='Toggle menu'] {
 
 button:not([role='switch']):not([aria-label='Toggle menu']):hover {
   border-color: var(--color-secondary);
+  background: linear-gradient(
+    135deg,
+    var(--color-primary) 0%,
+    var(--color-accent) 50%,
+    var(--color-secondary) 100%
+  );
+  color: white;
 }
 
 button:not([role='switch']):not([aria-label='Toggle menu']):focus,
@@ -207,6 +219,82 @@ button[role='switch'] {
 
 .card {
   padding: 2em;
+}
+
+/* Brand gradient utility classes */
+.bg-gradient-brand {
+  background: linear-gradient(
+    135deg,
+    #6366f1 0%,
+    #8b5cf6 50%,
+    #ec4899 75%,
+    #f97316 100%
+  );
+}
+
+.bg-gradient-brand-hover {
+  background: linear-gradient(
+    135deg,
+    #f97316 0%,
+    #ec4899 50%,
+    #8b5cf6 75%,
+    #6366f1 100%
+  );
+}
+
+.text-gradient-brand {
+  background: linear-gradient(
+    135deg,
+    #6366f1 0%,
+    #8b5cf6 50%,
+    #ec4899 75%,
+    #f97316 100%
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Radial gradient utility */
+.bg-gradient-radial {
+  background: radial-gradient(circle, var(--tw-gradient-stops));
+}
+
+/* Gradient background overlays */
+.gradient-bg-light {
+  background: linear-gradient(
+    135deg,
+    rgba(99, 102, 241, 0.1) 0%,
+    rgba(139, 92, 246, 0.08) 30%,
+    rgba(236, 72, 153, 0.06) 60%,
+    rgba(249, 115, 22, 0.1) 100%
+  );
+}
+
+.gradient-bg-dark {
+  background: linear-gradient(
+    135deg,
+    rgba(99, 102, 241, 0.2) 0%,
+    rgba(139, 92, 246, 0.15) 30%,
+    rgba(236, 72, 153, 0.12) 60%,
+    rgba(249, 115, 22, 0.2) 100%
+  );
+}
+
+.gradient-radial {
+  background: radial-gradient(
+    circle at 20% 30%,
+    rgba(99, 102, 241, 0.05) 0%,
+    transparent 50%
+  );
+}
+
+.dark .gradient-radial {
+  background: radial-gradient(
+    circle at 20% 30%,
+    rgba(99, 102, 241, 0.1) 0%,
+    transparent 50%
+  );
 }
 
 #__nuxt {
