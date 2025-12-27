@@ -237,17 +237,6 @@ const handleGetStarted = async () => {
     <!-- Personalized Recommendations -->
     <section v-if="user" class="py-12 md:py-16 px-4">
       <div class="container mx-auto max-w-7xl">
-        <!-- Welcome message -->
-        <div class="mb-8 text-center">
-          <h1
-            class="text-3xl md:text-4xl font-bold dark:text-white text-gray-900 mb-2 font-heading"
-          >
-            Tus recomendaciones
-          </h1>
-          <p class="text-gray-600 dark:text-gray-300">
-            Basadas en lo que te gusta
-          </p>
-        </div>
 
         <!-- Loading State -->
         <div v-if="loadingRecommendations" class="text-center py-12">
@@ -310,6 +299,7 @@ const handleGetStarted = async () => {
             "
             :key="`rec-${recommendations.recommended.length}`"
             title="Recomendado para ti"
+            description="Elegidas pensando en ti y en lo que sueles disfrutar."
             :recommendations="recommendations.recommended"
           />
 
@@ -320,6 +310,7 @@ const handleGetStarted = async () => {
             "
             :key="`easy-${recommendations.easyToWatch.length}`"
             title="Fácil de ver / Baja atención"
+            description="Para esos momentos en los que quieres ver algo sin complicarte."
             :recommendations="recommendations.easyToWatch"
           />
 
@@ -330,6 +321,7 @@ const handleGetStarted = async () => {
             "
             :key="`based-${recommendations.basedOnLikes.length}`"
             title="Basado en lo que te gusta"
+            description="Porque ya nos has dicho qué te funciona."
             :recommendations="recommendations.basedOnLikes"
           />
         </div>
@@ -407,9 +399,12 @@ const handleGetStarted = async () => {
     <section v-if="!user" class="py-16 md:py-24 px-4">
       <div class="container mx-auto max-w-3xl text-center">
         <p
-          class="text-xl md:text-2xl text-gray-700 dark:text-gray-200 leading-relaxed"
+          class="text-xl md:text-3xl text-gray-700 dark:text-gray-200 leading-relaxed font-semibold"
         >
-          No es otra lista más. Es una decisión hecha por ti, pero sin pensar.
+          No es otra lista más. 
+        </p>
+        <p class="text-xl md:text-3xl text-primary leading-relaxed font-semibold">
+          Es una decisión hecha por ti, pero sin pensar.
         </p>
       </div>
     </section>
