@@ -186,11 +186,18 @@ const router = useRouter();
 // Props
 interface Props {
   placeholder?: string;
+  emitOnSelect?: boolean; // If true, emit event instead of navigating
 }
 
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
   placeholder: 'Buscar películas y series...',
+  emitOnSelect: false,
 });
+
+// Emit
+const emit = defineEmits<{
+  'title-selected': [result: TMDBSearchResult];
+}>();
 
 // Reactive state
 const searchQuery = ref('');
@@ -210,15 +217,19 @@ const getYear = (result: TMDBSearchResult): string => {
   return date ? new Date(date).getFullYear().toString() : '';
 };
 
-// Navigate to detail page
+// Navigate to detail page or emit event
 const navigateToDetail = (result: TMDBSearchResult) => {
   showResults.value = false;
   searchQuery.value = '';
 
-  if (result.media_type === 'movie') {
-    router.push(`/pelicula/${result.id}`);
-  } else if (result.media_type === 'tv') {
-    router.push(`/serie/${result.id}`);
+  if (props.emitOnSelect) {
+    emit('title-selected', result);
+  } else {
+    if (result.media_type === 'movie') {
+      router.push(`/pelicula/${result.id}`);
+    } else if (result.media_type === 'tv') {
+      router.push(`/serie/${result.id}`);
+    }
   }
 };
 

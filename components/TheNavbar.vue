@@ -57,6 +57,13 @@
                   >
                     {{ user.email }}
                   </p>
+                  <nuxt-link
+                    to="/preferences"
+                    class="block w-full px-4 py-2 text-sm dark:text-white text-gray-900 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-left mb-2"
+                    @click="showUserMenu = false"
+                  >
+                    Editar preferencias
+                  </nuxt-link>
                   <button
                     type="button"
                     class="w-full px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors text-left"
@@ -121,6 +128,13 @@
                   >
                     {{ user.email }}
                   </p>
+                  <nuxt-link
+                    to="/preferences"
+                    class="block w-full px-4 py-2 text-sm dark:text-white text-gray-900 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-left mb-2"
+                    @click="showUserMenu = false"
+                  >
+                    Editar preferencias
+                  </nuxt-link>
                   <button
                     type="button"
                     class="w-full px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors text-left"
