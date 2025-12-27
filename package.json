@@ -18,22 +18,22 @@
     "@astrojs/sitemap": "^3.6.0",
     "@nuxtjs/supabase": "^2.0.3",
     "@nuxtjs/tailwindcss": "^6.14.0",
-    "@pinia/nuxt": "^0.11.2",
+    "@pinia/nuxt": "^0.11.3",
     "@supabase/supabase-js": "^2.89.0",
-    "axios": "^1.11.0",
-    "nuxt": "^4.0.3",
-    "pinia": "^3.0.3"
+    "axios": "^1.13.2",
+    "nuxt": "^4.2.2",
+    "pinia": "^3.0.4"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4.1.11",
-    "@types/node": "^24.1.0",
-    "eslint": "^9.32.0",
+    "@tailwindcss/postcss": "^4.1.18",
+    "@types/node": "^25.0.3",
+    "eslint": "^9.39.2",
     "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-prettier": "^5.5.3",
-    "eslint-plugin-vue": "^10.4.0",
-    "prettier": "^3.6.2",
-    "tailwindcss": "^4.0.0",
-    "typescript": "~5.8.3",
-    "typescript-eslint": "^8.39.0"
+    "eslint-plugin-prettier": "^5.5.4",
+    "eslint-plugin-vue": "^10.6.2",
+    "prettier": "^3.7.4",
+    "tailwindcss": "^4.1.18",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.50.1"
   }
 }
