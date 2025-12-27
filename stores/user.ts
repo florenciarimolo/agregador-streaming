@@ -125,6 +125,13 @@ export const useUserStore = defineStore('user', {
       }
     },
 
+    async ensureProfile() {
+      // Only fetch if profile is missing
+      if (!this.profile && this.user) {
+        await this.fetchProfile();
+      }
+    },
+
     reset() {
       this.user = null;
       this.profile = null;

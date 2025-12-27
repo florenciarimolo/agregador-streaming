@@ -111,8 +111,8 @@ const fetchRecommendations = async (): Promise<Recommendations> => {
   }
 };
 
-// Single function to load all user-dependent data
-const loadUserData = async () => {
+// Handle user state changes
+const handleUserStateChange = async () => {
   const userId = getUserId(user.value);
 
   if (!user.value || !userId) {
@@ -132,46 +132,38 @@ const loadUserData = async () => {
     userStore.setUser(user.value);
   }
 
-  // Fetch profile if missing
-  if (!userStore.profile) {
-    userStore.setLoading(true);
-    try {
-      await userStore.fetchProfile();
-    } catch (error) {
-      console.error('Error fetching profile:', error);
-    } finally {
-      userStore.setLoading(false);
-    }
-  }
-
   initialProfileLoaded.value = true;
-
-  // Load recommendations if onboarding is complete
-  if (userStore.hasCompletedOnboarding) {
-    const hasRecommendations =
-      recommendations.value.recommended.length > 0 ||
-      recommendations.value.easyToWatch.length > 0 ||
-      recommendations.value.basedOnLikes.length > 0;
-
-    if (!hasRecommendations) {
-      try {
-        const fetched = await fetchRecommendations();
-        // CRITICAL: Create new object reference to trigger reactivity
-        recommendations.value = {
-          recommended: [...fetched.recommended],
-          easyToWatch: [...fetched.easyToWatch],
-          basedOnLikes: [...fetched.basedOnLikes],
-        };
-        await nextTick();
-      } catch (error) {
-        console.error('Error fetching recommendations:', error);
-      }
-    }
-  }
 };
 
-// Single watch on user - reacts when useSupabaseUser() is fully hydrated
-watch(user, loadUserData, { immediate: true });
+// Single reactive watcher as the single source of truth
+watch(
+  () => ({
+    user: user.value,
+    onboarding: userStore.hasCompletedOnboarding,
+  }),
+  async ({ user, onboarding }) => {
+    // Handle user state changes first
+    await handleUserStateChange();
+
+    // If no user or onboarding not complete, don't fetch recommendations
+    if (!user || !onboarding) {
+      recommendations.value = {
+        recommended: [],
+        easyToWatch: [],
+        basedOnLikes: [],
+      };
+      return;
+    }
+
+    // Ensure profile is loaded
+    await userStore.ensureProfile();
+
+    // Fetch recommendations
+    const fetched = await fetchRecommendations();
+    recommendations.value = fetched;
+  },
+  { immediate: true }
+);
 
 const scrollToHowItWorks = () => {
   if (typeof window !== 'undefined') {
@@ -183,7 +175,7 @@ const scrollToHowItWorks = () => {
 };
 
 const handleAuthSuccess = async () => {
-  // User will be updated by useSupabaseUser() and watch will trigger loadUserData()
+  // User will be updated by useSupabaseUser() and watch will trigger recommendations fetch
   // Just navigate based on current state
   if (userStore.hasLikes) {
     await navigateTo('/');
