@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useUserStore } from '../stores/user';
 import { Recommendations } from '@/types/Recommendation';
-import { watchEffect, nextTick } from 'vue';
+import { nextTick } from 'vue';
 
 // Type for Supabase user that may have either 'id' or 'sub' as identifier
 type SupabaseUserWithSub = {
@@ -20,7 +20,6 @@ function getUserId(
 // Homepage is public - no auth required
 definePageMeta({
   middleware: [],
-  ssr: false, // Disable SSR to test client-side reactivity
 });
 
 useHead({
@@ -55,13 +54,7 @@ const recommendations = ref<Recommendations>({
 
 // Fetch recommendations function
 const fetchRecommendations = async (): Promise<Recommendations> => {
-  console.log('🟢 fetchRecommendations called', {
-    hasUser: !!user.value,
-    hasCompleted: userStore.hasCompletedOnboarding,
-  });
-
   if (!user.value || !userStore.hasCompletedOnboarding) {
-    console.log('🟢 Early return - missing requirements');
     return {
       recommended: [],
       easyToWatch: [],
@@ -71,16 +64,13 @@ const fetchRecommendations = async (): Promise<Recommendations> => {
 
   loadingRecommendations.value = true;
   try {
-    // Wait a bit to ensure session is ready
-    await new Promise((resolve) => setTimeout(resolve, 50));
-
     const {
       data: { session },
       error: sessionError,
     } = await supabase.auth.getSession();
 
     if (sessionError) {
-      console.error('🟢 Session error:', sessionError);
+      console.error('Error getting session:', sessionError);
       return {
         recommended: [],
         easyToWatch: [],
@@ -89,20 +79,12 @@ const fetchRecommendations = async (): Promise<Recommendations> => {
     }
 
     if (!session || !session.access_token) {
-      console.log('🟢 No session or token available', {
-        hasSession: !!session,
-      });
       return {
         recommended: [],
         easyToWatch: [],
         basedOnLikes: [],
       };
     }
-
-    console.log('🟢 Fetching from API with token...', {
-      hasToken: !!session.access_token,
-      tokenLength: session.access_token.length,
-    });
 
     const data = await $fetch<Recommendations>('/api/recommendations', {
       headers: {
@@ -111,28 +93,14 @@ const fetchRecommendations = async (): Promise<Recommendations> => {
       credentials: 'include',
     });
 
-    console.log('🟢 API response:', {
-      recommended: data.recommended?.length || 0,
-      easyToWatch: data.easyToWatch?.length || 0,
-      basedOnLikes: data.basedOnLikes?.length || 0,
-    });
-
     // Ensure arrays are not undefined
-    const result = {
+    return {
       recommended: Array.isArray(data.recommended) ? data.recommended : [],
       easyToWatch: Array.isArray(data.easyToWatch) ? data.easyToWatch : [],
       basedOnLikes: Array.isArray(data.basedOnLikes) ? data.basedOnLikes : [],
     };
-
-    console.log('🟢 Returning:', {
-      recommended: result.recommended.length,
-      easyToWatch: result.easyToWatch.length,
-      basedOnLikes: result.basedOnLikes.length,
-    });
-
-    return result;
   } catch (error) {
-    console.error('❌ Error fetching recommendations:', error);
+    console.error('Error fetching recommendations:', error);
     return {
       recommended: [],
       easyToWatch: [],
@@ -143,162 +111,67 @@ const fetchRecommendations = async (): Promise<Recommendations> => {
   }
 };
 
-// Load profile and recommendations on mount
-onMounted(async () => {
-  console.log('🔵 onMounted START', {
-    hasUser: !!user.value,
-    hasProfile: !!userStore.profile,
-    hasCompleted: userStore.hasCompletedOnboarding,
-  });
-
-  // Wait for auth state to settle (especially after SSR or login)
-  await new Promise((resolve) => setTimeout(resolve, 100));
-
+// Single function to load all user-dependent data
+const loadUserData = async () => {
   const userId = getUserId(user.value);
 
-  if (user.value && userId) {
-    // Set user in store
-    if (!userStore.user || getUserId(userStore.user) !== userId) {
-      console.log('🔵 Setting user in store');
-      userStore.setUser(user.value);
-    }
-
-    // Load profile
-    if (!userStore.profile) {
-      console.log('🔵 Fetching profile...');
-      userStore.setLoading(true);
-      try {
-        await userStore.fetchProfile();
-        console.log('🔵 Profile fetched:', {
-          hasProfile: !!userStore.profile,
-          hasCompleted: userStore.hasCompletedOnboarding,
-        });
-      } catch (error) {
-        console.error('❌ Error fetching profile:', error);
-      } finally {
-        userStore.setLoading(false);
-      }
-    } else {
-      console.log('🔵 Profile already loaded');
-    }
-
-    initialProfileLoaded.value = true;
-
-    // Load recommendations if onboarding is complete
-    if (userStore.hasCompletedOnboarding) {
-      console.log('🔵 Fetching recommendations...');
-      const fetched = await fetchRecommendations();
-      console.log('🔵 Recommendations fetched:', {
-        recommended: fetched.recommended.length,
-        easyToWatch: fetched.easyToWatch.length,
-        basedOnLikes: fetched.basedOnLikes.length,
-      });
-
-      // CRITICAL: Create new object reference to trigger reactivity
-      recommendations.value = {
-        recommended: [...fetched.recommended],
-        easyToWatch: [...fetched.easyToWatch],
-        basedOnLikes: [...fetched.basedOnLikes],
-      };
-
-      // Force DOM update after next tick
-      await nextTick();
-
-      console.log('🔵 Recommendations assigned to ref:', {
-        recommended: recommendations.value.recommended.length,
-        easyToWatch: recommendations.value.easyToWatch.length,
-        basedOnLikes: recommendations.value.basedOnLikes.length,
-      });
-
-      // Verify reactivity
-      watchEffect(() => {
-        console.log('🟡 watchEffect - recommendations changed:', {
-          recommended: recommendations.value.recommended.length,
-          easyToWatch: recommendations.value.easyToWatch.length,
-          basedOnLikes: recommendations.value.basedOnLikes.length,
-        });
-      });
-    } else {
-      console.log('🔵 Onboarding not completed, skipping recommendations');
-    }
-  } else {
-    console.log('🔵 No user, skipping');
-    initialProfileLoaded.value = true;
-  }
-
-  console.log('🔵 onMounted END');
-});
-
-// Watch for user changes
-watch(user, async (newUser) => {
-  const userId = getUserId(newUser);
-
-  if (newUser && userId) {
-    if (!userStore.user || getUserId(userStore.user) !== userId) {
-      userStore.setUser(newUser);
-    }
-
-    if (!userStore.profile) {
-      await userStore.fetchProfile();
-    }
-
-    if (
-      userStore.hasCompletedOnboarding &&
-      recommendations.value.recommended.length === 0 &&
-      recommendations.value.easyToWatch.length === 0 &&
-      recommendations.value.basedOnLikes.length === 0
-    ) {
-      const fetched = await fetchRecommendations();
-      recommendations.value = {
-        recommended: [...fetched.recommended],
-        easyToWatch: [...fetched.easyToWatch],
-        basedOnLikes: [...fetched.basedOnLikes],
-      };
-      await nextTick();
-    }
-  } else {
+  if (!user.value || !userId) {
+    // No user: reset state
     userStore.reset();
     recommendations.value = {
       recommended: [],
       easyToWatch: [],
       basedOnLikes: [],
     };
+    initialProfileLoaded.value = true;
+    return;
   }
-});
 
-// Watch for profile changes to load recommendations
-watch(
-  () => userStore.hasCompletedOnboarding,
-  async (hasCompleted) => {
-    if (hasCompleted && user.value) {
-      // Wait for session to be ready (especially after login)
-      await new Promise((resolve) => setTimeout(resolve, 300));
+  // Set user in store if different
+  if (!userStore.user || getUserId(userStore.user) !== userId) {
+    userStore.setUser(user.value);
+  }
 
-      const hasRecommendations =
-        recommendations.value.recommended.length > 0 ||
-        recommendations.value.easyToWatch.length > 0 ||
-        recommendations.value.basedOnLikes.length > 0;
+  // Fetch profile if missing
+  if (!userStore.profile) {
+    userStore.setLoading(true);
+    try {
+      await userStore.fetchProfile();
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+    } finally {
+      userStore.setLoading(false);
+    }
+  }
 
-      if (!hasRecommendations) {
-        console.log('🟡 Watch: Fetching recommendations...');
-        try {
-          const fetched = await fetchRecommendations();
-          // Create new object reference
-          recommendations.value = {
-            recommended: [...fetched.recommended],
-            easyToWatch: [...fetched.easyToWatch],
-            basedOnLikes: [...fetched.basedOnLikes],
-          };
-          await nextTick();
-          console.log('🟡 Watch: Recommendations loaded');
-        } catch (error) {
-          console.error('🟡 Watch: Error fetching recommendations:', error);
-        }
+  initialProfileLoaded.value = true;
+
+  // Load recommendations if onboarding is complete
+  if (userStore.hasCompletedOnboarding) {
+    const hasRecommendations =
+      recommendations.value.recommended.length > 0 ||
+      recommendations.value.easyToWatch.length > 0 ||
+      recommendations.value.basedOnLikes.length > 0;
+
+    if (!hasRecommendations) {
+      try {
+        const fetched = await fetchRecommendations();
+        // CRITICAL: Create new object reference to trigger reactivity
+        recommendations.value = {
+          recommended: [...fetched.recommended],
+          easyToWatch: [...fetched.easyToWatch],
+          basedOnLikes: [...fetched.basedOnLikes],
+        };
+        await nextTick();
+      } catch (error) {
+        console.error('Error fetching recommendations:', error);
       }
     }
-  },
-  { immediate: false } // Don't run immediately, only on changes
-);
+  }
+};
+
+// Single watch on user - reacts when useSupabaseUser() is fully hydrated
+watch(user, loadUserData, { immediate: true });
 
 const scrollToHowItWorks = () => {
   if (typeof window !== 'undefined') {
@@ -310,19 +183,12 @@ const scrollToHowItWorks = () => {
 };
 
 const handleAuthSuccess = async () => {
-  await new Promise((resolve) => setTimeout(resolve, 100));
-  const currentUser = useSupabaseUser();
-  const userId = getUserId(currentUser.value);
-  if (currentUser.value && userId) {
-    userStore.setUser(currentUser.value);
-    userStore.setLoading(true);
-    await userStore.fetchProfile();
-    userStore.setLoading(false);
-    if (userStore.hasLikes) {
-      await navigateTo('/');
-    } else {
-      await navigateTo('/onboarding');
-    }
+  // User will be updated by useSupabaseUser() and watch will trigger loadUserData()
+  // Just navigate based on current state
+  if (userStore.hasLikes) {
+    await navigateTo('/');
+  } else {
+    await navigateTo('/onboarding');
   }
 };
 
@@ -445,15 +311,6 @@ const handleGetStarted = async () => {
 
         <!-- Recommendations Sections -->
         <div v-else>
-          <!-- Debug box to verify reactivity -->
-          <div
-            class="mb-4 p-2 bg-yellow-100 dark:bg-yellow-900 text-xs rounded"
-          >
-            🔍 Debug: rec={{ recommendations.recommended.length }}, easy={{
-              recommendations.easyToWatch.length
-            }}, based={{ recommendations.basedOnLikes.length }}
-          </div>
-
           <RecommendationSection
             v-if="
               recommendations.recommended &&

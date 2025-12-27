@@ -1,4 +1,4 @@
-import { serverSupabaseClient, serverSupabaseUser } from '#supabase/server';
+import { serverSupabaseUser } from '#supabase/server';
 import { createClient } from '@supabase/supabase-js';
 import { getTMDBConfig } from '../utils/config';
 import {
@@ -47,30 +47,34 @@ export default defineEventHandler(async (event) => {
       console.log('🔴 [Server] Token received, length:', token.length);
 
       try {
-        // Create a Supabase client to verify the token
-        const supabaseForAuth = await serverSupabaseClient(event);
+        // Decode JWT token to get user ID (sub claim)
+        // JWT format: header.payload.signature
+        const parts = token.split('.');
+        if (parts.length === 3) {
+          // Decode payload (base64url)
+          // Replace URL-safe base64 characters
+          const payload = JSON.parse(
+            Buffer.from(
+              parts[1].replace(/-/g, '+').replace(/_/g, '/'),
+              'base64'
+            ).toString()
+          );
 
-        // Verify the token and get user
-        const {
-          data: { user: userFromToken },
-          error,
-        } = await supabaseForAuth.auth.getUser(token);
+          // Extract user ID from 'sub' claim
+          userId = payload.sub;
+          console.log('🔴 [Server] User ID extracted from token:', userId);
 
-        console.log('🔴 [Server] getUser result:', {
-          hasUser: !!userFromToken,
-          userId: userFromToken?.id,
-          error: error?.message,
-        });
-
-        if (!error && userFromToken) {
-          userId = userFromToken.id;
-          user = { id: userId, sub: userId };
-          console.log('🔴 [Server] User set from token:', user.id);
+          if (userId) {
+            user = { id: userId, sub: userId };
+            console.log('🔴 [Server] User set from token:', userId);
+          } else {
+            console.error('🔴 [Server] No sub claim in token payload');
+          }
         } else {
-          console.error('🔴 [Server] Error getting user from token:', error);
+          console.error('🔴 [Server] Invalid token format');
         }
       } catch (err) {
-        console.error('🔴 [Server] Exception getting user:', err);
+        console.error('🔴 [Server] Exception decoding token:', err);
       }
     }
   }
