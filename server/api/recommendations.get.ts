@@ -4,7 +4,8 @@ import { getTMDBConfig } from '../utils/config';
 import {
   Recommendations,
   Recommendation,
-  Provider,} from '@/types/Recommendation';
+  Provider,
+} from '@/types/Recommendation';
 import { UserLike } from '@/types/UserLike';
 
 /**
@@ -16,46 +17,80 @@ import { UserLike } from '@/types/UserLike';
  * 4. Return recommendations with explanations
  */
 export default defineEventHandler(async (event) => {
-  // Try to get user from cookies first (default Supabase behavior)
-  let user = await serverSupabaseUser(event);
+  const config = useRuntimeConfig();
+  let user = null;
+  let userId: string | null = null;
 
-  // If no user from cookies, try to get from Authorization header
-  if (!user) {
+  // Try to get user from cookies first (default Supabase behavior)
+  const userFromCookies = await serverSupabaseUser(event);
+
+  if (userFromCookies) {
+    // serverSupabaseUser returns the JWT payload, which has 'sub' not 'id'
+    userId =
+      userFromCookies.id || (userFromCookies as { sub?: string }).sub || null;
+    console.log('🔴 [Server] User from cookies:', {
+      hasId: !!userFromCookies.id,
+      hasSub: !!(userFromCookies as { sub?: string }).sub,
+      userId,
+    });
+
+    if (userId) {
+      user = { id: userId, sub: userId };
+    }
+  } else {
+    // If no user from cookies, try to get from Authorization header
     const authHeader = event.node.req.headers.authorization;
+    console.log('🔴 [Server] Auth header:', authHeader ? 'Present' : 'Missing');
+
     if (authHeader && authHeader.startsWith('Bearer ')) {
       const token = authHeader.substring(7);
-      // Create a new Supabase client with the token to ensure RLS works
-      const supabase = await serverSupabaseClient(event);
-      const {
-        data: { user: userFromToken },
-        error,
-      } = await supabase.auth.getUser(token);
-      if (!error && userFromToken) {
-        user = { id: userFromToken.id, sub: userFromToken.id } as any;
+      console.log('🔴 [Server] Token received, length:', token.length);
+
+      try {
+        // Create a Supabase client to verify the token
+        const supabaseForAuth = await serverSupabaseClient(event);
+
+        // Verify the token and get user
+        const {
+          data: { user: userFromToken },
+          error,
+        } = await supabaseForAuth.auth.getUser(token);
+
+        console.log('🔴 [Server] getUser result:', {
+          hasUser: !!userFromToken,
+          userId: userFromToken?.id,
+          error: error?.message,
+        });
+
+        if (!error && userFromToken) {
+          userId = userFromToken.id;
+          user = { id: userId, sub: userId };
+          console.log('🔴 [Server] User set from token:', user.id);
+        } else {
+          console.error('🔴 [Server] Error getting user from token:', error);
+        }
+      } catch (err) {
+        console.error('🔴 [Server] Exception getting user:', err);
       }
     }
   }
 
-  // Logs removed for production
-
-  if (!user) {
+  if (!user || !userId) {
+    console.error('🔴 [Server] No user found, returning 401');
     throw createError({
       statusCode: 401,
       message: 'Unauthorized',
     });
   }
 
-  // Get Supabase client
-  // For RLS to work, we need to use service role key OR properly set auth context
-  // Using service role key temporarily to bypass RLS (ONLY FOR DEVELOPMENT)
-  const config = useRuntimeConfig();
-  const authHeader = event.node.req.headers.authorization;
+  console.log('🔴 [Server] User authenticated:', user.id);
 
-  // Use service role key if available (bypasses RLS) - ONLY FOR DEVELOPMENT
-  // In production, we should use the anon key with proper RLS setup
+  // For RLS to work properly, we need to use service role key OR properly set auth context
+  // Using service role key temporarily to bypass RLS (ONLY FOR DEVELOPMENT)
   const supabaseKey =
     process.env.SUPABASE_SERVICE_ROLE_KEY || config.public.supabaseAnonKey;
 
+  // Create a new client with service role key for queries (bypasses RLS)
   const supabase = createClient(config.public.supabaseUrl, supabaseKey, {
     auth: {
       persistSession: false,
@@ -64,33 +99,18 @@ export default defineEventHandler(async (event) => {
     },
   });
 
-  // Verify the user from the token matches the user we're querying for
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    const token = authHeader.substring(7);
-    const {
-      data: { user: tokenUser },
-      error: tokenError,
-    } = await supabase.auth.getUser(token);
-    if (tokenError || !tokenUser || tokenUser.id !== user.id) {
-      throw createError({
-        statusCode: 401,
-        message: 'Unauthorized - token mismatch',
-      });
-    }
-  }
-
   try {
     // Debug: Log user ID being used
-    console.log('Server: Using user.id:', user.id);
+    console.log('Server: Using userId:', userId);
     console.log('Server: User object:', JSON.stringify(user, null, 2));
 
     // Get user's liked titles with their genres
-    // Note: We're using user.id directly in the query, which should work even if RLS is blocking
+    // Note: We're using userId directly in the query, which should work even if RLS is blocking
     // because we're explicitly filtering by user_id
     const { data: userLikes, error: likesError } = await supabase
       .from('user_likes')
       .select('title_id, titles!inner(id, genres, type, tmdb_id)')
-      .eq('user_id', user.id);
+      .eq('user_id', userId);
 
     console.log('Server: userLikes with join:', userLikes?.length || 0);
     console.log('Server: likesError:', likesError);
