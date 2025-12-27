@@ -370,8 +370,20 @@ const saveSelections = async () => {
       }
     }
 
-    // Mark onboarding as complete
-    await userStore.markOnboardingComplete();
+    // Mark onboarding as complete in profile
+    const supabase = useSupabaseClient();
+    const { error: updateError } = await supabase
+      .from('profiles')
+      .update({ onboarding_completed: true })
+      .eq('id', userId);
+
+    if (updateError) {
+      console.error('Error updating onboarding status:', updateError);
+    }
+
+    // Ensure profile is fully loaded before redirecting
+    // This will update likesCount and onboarding_completed
+    await userStore.fetchProfile();
 
     // Redirect to home
     await router.push('/');

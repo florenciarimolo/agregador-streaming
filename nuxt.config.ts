@@ -33,21 +33,25 @@ if (needsPolyfill) {
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   compatibilityDate: '2025-12-23',
-  devtools: { enabled: true },
+  debug: true,
+  devtools: {
+    enabled: true,
+    componentInspector: true,
+    timeline: {
+      enabled: true
+    }
+  },
   modules: ['@pinia/nuxt', '@nuxtjs/supabase'],
   // @ts-expect-error - @nuxtjs/supabase module configuration
   supabase: {
     redirectOptions: {
-      login: false, // Disable default redirect to /login
+      login: '/', // Redirect to home instead of /login
       callback: '/auth/callback',
       exclude: ['/'], // Homepage is public
     },
   },
   vite: {
     plugins: [localStoragePolyfillPlugin()],
-    ssr: {
-      noExternal: [],
-    },
   },
   css: ['./assets/css/main.css'],
   postcss: {
@@ -90,36 +94,7 @@ export default defineNuxtConfig({
       link: [
         { rel: 'icon', type: 'image/png', href: '/logo.png' },
         { rel: 'alternate icon', type: 'image/x-icon', href: '/favicon.ico' },
-        // Preload Outfit fonts (body)
-        {
-          rel: 'preload',
-          as: 'font',
-          type: 'font/ttf',
-          href: '/fonts/Outfit-Regular.ttf',
-          crossorigin: 'anonymous',
-        },
-        {
-          rel: 'preload',
-          as: 'font',
-          type: 'font/ttf',
-          href: '/fonts/Outfit-SemiBold.ttf',
-          crossorigin: 'anonymous',
-        },
-        // Preload Space Grotesk fonts (headings)
-        {
-          rel: 'preload',
-          as: 'font',
-          type: 'font/ttf',
-          href: '/fonts/SpaceGrotesk-Regular.ttf',
-          crossorigin: 'anonymous',
-        },
-        {
-          rel: 'preload',
-          as: 'font',
-          type: 'font/ttf',
-          href: '/fonts/SpaceGrotesk-SemiBold.ttf',
-          crossorigin: 'anonymous',
-        },
+        // Fonts are loaded via @font-face in CSS, no need to preload
       ],
     },
   },

@@ -36,7 +36,17 @@ export const useTheme = () => {
     const hasManualTheme = localStorage.getItem('theme-manual') === 'true';
     const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
     
-    if (hasManualTheme && savedTheme) {
+    // Get current theme from DOM (set by plugin) or use saved/system preference
+    const currentTheme = document.documentElement.classList.contains('dark') 
+      ? 'dark' 
+      : document.documentElement.classList.contains('light')
+      ? 'light'
+      : 'dark';
+    
+    // Sync theme state with DOM
+    if (currentTheme) {
+      theme.value = currentTheme;
+    } else if (hasManualTheme && savedTheme) {
       // User has changed theme before, use saved preference
       setTheme(savedTheme, false);
     } else {
@@ -46,8 +56,10 @@ export const useTheme = () => {
       ).matches;
       const initialTheme = systemPrefersDark ? 'dark' : 'light';
       setTheme(initialTheme, false);
-      
-      // Listen for system theme changes if user hasn't manually changed
+    }
+    
+    // Listen for system theme changes if user hasn't manually changed
+    if (!hasManualTheme) {
       const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
       systemThemeListener = (e: MediaQueryListEvent) => {
         setTheme(e.matches ? 'dark' : 'light', false);

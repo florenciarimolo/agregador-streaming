@@ -32,6 +32,9 @@ export default tseslint.config(
     rules: {
       ...eslintConfigPrettier.rules,
       'vue/multi-word-component-names': 'off',
+      // Nuxt auto-imports are available at runtime
+      'no-undef': 'off',
+      '@typescript-eslint/no-undef': 'off',
     },
   },
   eslintConfigPrettier

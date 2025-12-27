@@ -1,8 +1,19 @@
 <script setup lang="ts">
-import {
-  validatePassword,
-  getPasswordHelperText,
-} from '../utils/passwordValidation';
+import { useUserStore } from '../stores/user';
+
+// Type for Supabase user that may have either 'id' or 'sub' as identifier
+type SupabaseUserWithSub = {
+  id?: string;
+  sub?: string;
+  [key: string]: unknown;
+};
+
+// Helper function to safely get user ID from Supabase user object
+function getUserId(
+  user: SupabaseUserWithSub | null | undefined
+): string | undefined {
+  return user?.id || user?.sub;
+}
 
 // Homepage is public - no auth required
 // Note: All composables (useHead, useSeoMeta, ref, watch, etc.) are auto-imported by Nuxt at runtime
@@ -27,45 +38,234 @@ useSeoMeta({
 });
 
 // Auth state
+// Note: These are auto-imported by Nuxt - see types/vue-shims.d.ts
 const user = useSupabaseUser();
 const userStore = useUserStore();
-const { signIn, signUp, signInWithMagicLink } = useAuth();
+const supabase = useSupabaseClient();
+
+// Note: Pinia stores are reactive by default, so we can use userStore directly in templates
+
+// Track if initial profile load is complete
+const initialProfileLoaded = ref(false);
 
 // Form state
-const email = ref('');
-const password = ref('');
-const authMethod = ref<'password' | 'magic'>('password');
-const isSignUp = ref(false);
-const loading = ref(false);
-const error = ref('');
-const magicLinkSent = ref(false);
-const signUpSuccess = ref(false);
 const showAuthForm = ref(false);
-const showPassword = ref(false);
 
-// Password validation
-const passwordValidation = computed(() => {
-  if (!isSignUp.value || !password.value) {
-    return null;
-  }
-  return validatePassword(password.value);
+// Recommendations state
+interface Provider {
+  provider_id: number;
+  provider_name: string;
+  logo_path: string | null;
+}
+
+interface Recommendation {
+  id: string;
+  tmdb_id: number;
+  title: string;
+  type: 'movie' | 'tv';
+  poster_path: string | null;
+  overview: string | null;
+  vote_average: number | null;
+  genres: number[] | null;
+  release_date: string | null;
+  first_air_date: string | null;
+  explanation: string;
+  providers?: Provider[];
+}
+
+const loadingRecommendations = ref(false);
+
+const recommendations = ref<{
+  recommended: Recommendation[];
+  easyToWatch: Recommendation[];
+  basedOnLikes: Recommendation[];
+}>({
+  recommended: [],
+  easyToWatch: [],
+  basedOnLikes: [],
 });
 
-const showPasswordValidation = computed(() => {
-  return isSignUp.value && password.value.length > 0;
-});
-
-// Initialize user store if user is logged in
+// Fetch recommendations when user has completed onboarding
+// This watch depends on the user watch above to fetch the profile first
 watch(
-  user,
-  async (newUser) => {
-    if (newUser) {
-      userStore.setUser(newUser);
-      await userStore.fetchProfile();
+  [() => userStore.hasCompletedOnboarding, () => userStore.profile],
+  async ([hasCompleted, profile]) => {
+    const currentUser = user.value;
+    const userId = getUserId(currentUser);
+
+    if (currentUser && userId && hasCompleted && profile) {
+      // Fetch recommendations if user has completed onboarding
+      await fetchRecommendations();
     }
   },
   { immediate: true }
 );
+
+const fetchRecommendations = async () => {
+  console.log('Frontend: fetchRecommendations called', {
+    hasUser: !!user.value,
+    hasCompletedOnboarding: userStore.hasCompletedOnboarding,
+    profile: !!userStore.profile,
+  });
+
+  if (!user.value || !userStore.hasCompletedOnboarding) {
+    console.log('Frontend: fetchRecommendations early return');
+    return;
+  }
+
+  loadingRecommendations.value = true;
+  try {
+    // Get the session token from Supabase client
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session) {
+      console.error('No session available');
+      // Set empty recommendations to show empty state
+      recommendations.value = {
+        recommended: [],
+        easyToWatch: [],
+        basedOnLikes: [],
+      };
+      return;
+    }
+
+    // Use $fetch with the session token in headers
+    const data = await $fetch<{
+      recommended: Recommendation[];
+      easyToWatch: Recommendation[];
+      basedOnLikes: Recommendation[];
+    }>('/api/recommendations', {
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      credentials: 'include', // Include cookies for session
+    });
+
+    console.log('Frontend: Received recommendations data:', {
+      recommended: data.recommended?.length || 0,
+      easyToWatch: data.easyToWatch?.length || 0,
+      basedOnLikes: data.basedOnLikes?.length || 0,
+      fullData: data,
+    });
+
+    // Ensure we're assigning arrays, not undefined
+    const recommendedArray = Array.isArray(data.recommended)
+      ? data.recommended
+      : [];
+    const easyToWatchArray = Array.isArray(data.easyToWatch)
+      ? data.easyToWatch
+      : [];
+    const basedOnLikesArray = Array.isArray(data.basedOnLikes)
+      ? data.basedOnLikes
+      : [];
+
+    recommendations.value = {
+      recommended: recommendedArray,
+      easyToWatch: easyToWatchArray,
+      basedOnLikes: basedOnLikesArray,
+    };
+
+    console.log('Frontend: recommendations.value after assignment:', {
+      recommended: recommendations.value.recommended.length,
+      easyToWatch: recommendations.value.easyToWatch.length,
+      basedOnLikes: recommendations.value.basedOnLikes.length,
+      recommendedData: recommendations.value.recommended.slice(0, 2),
+    });
+  } catch (error) {
+    console.error('Error fetching recommendations:', error);
+    // Set empty recommendations to show empty state even on error
+    recommendations.value = {
+      recommended: [],
+      easyToWatch: [],
+      basedOnLikes: [],
+    };
+  } finally {
+    loadingRecommendations.value = false;
+  }
+};
+
+// Password validation
+// Password validation moved to AuthForm component
+
+// Initialize user store if user is logged in
+// This watch ensures the profile is loaded when user changes
+watch(
+  user,
+  async (newUser, oldUser) => {
+    console.log('User watch triggered:', {
+      hasNewUser: !!newUser,
+      hasOldUser: !!oldUser,
+      currentProfile: !!userStore.profile,
+      currentLoading: userStore.loading,
+    });
+
+    // Supabase user can have either 'id' or 'sub' as the identifier
+    const userId = getUserId(newUser);
+    const oldUserId = getUserId(oldUser);
+
+    // Only fetch if user changed or if we don't have a profile yet
+    if (newUser && userId) {
+      // Set user first if not already set
+      const currentUserId = getUserId(userStore.user);
+      if (!userStore.user || currentUserId !== userId) {
+        console.log('Setting user in store');
+        userStore.setUser(newUser);
+      }
+
+      // Only fetch profile if we don't have one or if user changed
+      if (!userStore.profile || (oldUser && oldUserId !== userId)) {
+        console.log('Fetching profile...');
+        await userStore.fetchProfile();
+        // Force reactivity update by accessing the store directly after fetch
+        await nextTick();
+        console.log('Profile fetched:', {
+          hasProfile: !!userStore.profile,
+          onboardingCompleted: userStore.hasCompletedOnboarding,
+          loading: userStore.loading,
+        });
+
+        // If onboarding is complete, fetch recommendations immediately
+        if (userStore.hasCompletedOnboarding) {
+          console.log('Onboarding complete, fetching recommendations...');
+          await fetchRecommendations();
+        }
+      } else {
+        console.log('Profile already exists, skipping fetch');
+        // If profile already exists and onboarding is complete, fetch recommendations
+        if (userStore.hasCompletedOnboarding) {
+          console.log(
+            'Profile exists and onboarding complete, fetching recommendations...'
+          );
+          await fetchRecommendations();
+        }
+      }
+      // Always set initialProfileLoaded to true after checking/fetching profile
+      initialProfileLoaded.value = true;
+    } else if (!newUser && oldUser) {
+      // Clear store when user logs out (only if there was a previous user)
+      console.log('Clearing user store - user logged out');
+      userStore.reset();
+      initialProfileLoaded.value = false;
+    }
+  },
+  { immediate: true }
+);
+
+// Also reload profile when page is mounted (useful when navigating back from onboarding)
+onMounted(async () => {
+  // Supabase user can have either 'id' or 'sub' as the identifier
+  const userId = getUserId(user.value);
+  if (user.value && userId) {
+    // If profile is not loaded yet, fetch it
+    if (!userStore.profile) {
+      await userStore.fetchProfile();
+    }
+    // Always set initialProfileLoaded to true after checking
+    initialProfileLoaded.value = true;
+  }
+});
 
 const scrollToHowItWorks = () => {
   if (typeof window !== 'undefined') {
@@ -76,102 +276,49 @@ const scrollToHowItWorks = () => {
   }
 };
 
-const handlePasswordAuth = async () => {
-  loading.value = true;
-  error.value = '';
-  signUpSuccess.value = false; // Reset signup success when starting new auth attempt
-
-  // Validate password if signing up
-  if (isSignUp.value) {
-    const validation = validatePassword(password.value);
-    if (!validation.isValid) {
-      error.value = validation.errors.join('. ');
-      loading.value = false;
-      return;
+// Auth handlers moved to AuthForm component
+const handleAuthSuccess = async () => {
+  // Wait for user state to update
+  await new Promise((resolve) => setTimeout(resolve, 100));
+  const currentUser = useSupabaseUser();
+  const userId = getUserId(currentUser.value);
+  if (currentUser.value && userId) {
+    userStore.setUser(currentUser.value);
+    await userStore.fetchProfile();
+    // Redirect based on whether user has likes (records in user_likes table)
+    if (userStore.hasLikes) {
+      await navigateTo('/');
+    } else {
+      await navigateTo('/onboarding');
     }
-  }
-
-  try {
-    const result = isSignUp.value
-      ? await signUp(email.value, password.value)
-      : await signIn(email.value, password.value);
-
-    if (result.error) {
-      // Translate common Supabase errors to Spanish
-      const errorMessage = translateAuthError(result.error.message);
-      error.value = errorMessage;
-      return;
-    }
-
-    // If signup, show success message
-    if (isSignUp.value && result.data) {
-      error.value = '';
-      signUpSuccess.value = true;
-      // Clear form
-      email.value = '';
-      password.value = '';
-      return;
-    }
-
-    // If signin, wait for user state to update then redirect
-    if (!isSignUp.value) {
-      // Wait for Supabase to update the session
-      await new Promise((resolve) => setTimeout(resolve, 300));
-      // Refresh user state
-      const currentUser = useSupabaseUser();
-      if (currentUser.value) {
-        userStore.setUser(currentUser.value);
-        await userStore.fetchProfile();
-        // Redirect based on onboarding status
-        if (userStore.hasCompletedOnboarding) {
-          await navigateTo('/');
-        } else {
-          await navigateTo('/onboarding');
-        }
-      } else {
-        // Fallback: reload to trigger auth state update
-        window.location.href = '/';
-      }
-    }
-  } catch (err: unknown) {
-    error.value = err instanceof Error ? err.message : 'Ocurrió un error';
-  } finally {
-    loading.value = false;
   }
 };
 
-const handleMagicLink = async () => {
-  loading.value = true;
-  error.value = '';
-  magicLinkSent.value = false; // Reset magic link sent when starting new attempt
-
-  try {
-    const result = await signInWithMagicLink(email.value);
-
-    if (result.error) {
-      error.value = result.error.message;
-      return;
-    }
-
-    magicLinkSent.value = true;
-  } catch (err: unknown) {
-    error.value = err instanceof Error ? err.message : 'Ocurrió un error';
-  } finally {
-    loading.value = false;
-  }
+const handleSignupSuccess = () => {
+  // Signup success is handled in AuthForm component
+  // This can be used for any additional logic if needed
 };
 
 const handleGetStarted = async () => {
   if (user.value) {
     // User is logged in, check onboarding status
-    await userStore.fetchProfile(); // Ensure profile is up to date
-    if (userStore.hasCompletedOnboarding) {
-      await navigateTo('/');
-    } else {
-      await navigateTo('/onboarding');
+    const userId = getUserId(user.value);
+    if (userId) {
+      // Ensure user is set in store before fetching profile
+      const currentUserId = getUserId(userStore.user);
+      if (!userStore.user || currentUserId !== userId) {
+        userStore.setUser(user.value);
+      }
+      await userStore.fetchProfile(); // Ensure profile is up to date
+      // Check if user has completed onboarding
+      if (userStore.hasCompletedOnboarding) {
+        await navigateTo('/');
+      } else {
+        await navigateTo('/onboarding');
+      }
     }
   } else {
-    // Show auth form
+    // Show auth form (it's inside HeroSection now)
     showAuthForm.value = true;
     // Scroll to form
     await nextTick();
@@ -182,400 +329,159 @@ const handleGetStarted = async () => {
   }
 };
 
-/**
- * Translate Supabase auth errors to Spanish
- */
-const translateAuthError = (errorMessage: string): string => {
-  const errorMap: Record<string, string> = {
-    'Invalid login credentials': 'Credenciales inválidas',
-    'Email not confirmed':
-      'Por favor, confirma tu email antes de iniciar sesión',
-    'User already registered': 'Este email ya está registrado',
-    'Password should be at least 6 characters':
-      'La contraseña debe tener al menos 6 caracteres',
-    'Invalid email': 'Email inválido',
-    'Email rate limit exceeded':
-      'Demasiados intentos. Por favor, espera un momento',
-  };
-
-  // Check for password validation errors
-  if (errorMessage.includes('Password')) {
-    return 'La contraseña no cumple con los requisitos de seguridad';
-  }
-
-  return errorMap[errorMessage] || errorMessage;
-};
+// translateAuthError moved to AuthForm component
 </script>
 
 <template>
   <div class="w-full">
-    <!-- Hero Section -->
-    <section class="py-12 md:py-20 lg:py-28 px-4">
-      <div class="container mx-auto max-w-4xl text-center">
-        <h1
-          class="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 dark:text-white text-gray-900 font-heading"
-        >
-          ¿No sabes qué ver ahora?
-        </h1>
-        <p
-          class="text-lg md:text-xl lg:text-2xl text-gray-600 dark:text-gray-300 mb-8 max-w-2xl mx-auto leading-relaxed"
-        >
-          UpNext te recomienda películas y series según tu momento, tu energía y
-          el tiempo que tienes.<br />
-          <span class="font-medium">Menos decidir, más ver.</span>
-        </p>
-        <div
-          class="flex flex-col sm:flex-row gap-4 justify-center items-center"
-        >
-          <button
-            class="px-8 py-4 bg-gradient-to-r from-primary via-accent to-secondary hover:from-secondary hover:via-pink-500 hover:to-primary text-white rounded-lg font-semibold text-lg transition-all duration-300 shadow-lg shadow-primary/30 hover:shadow-xl"
-            @click="handleGetStarted"
-          >
-            {{
-              user
-                ? userStore.hasCompletedOnboarding
-                  ? 'Ver recomendaciones'
-                  : 'Completar perfil'
-                : 'Descubrir qué ver'
-            }}
-          </button>
-          <button
-            class="px-8 py-4 border-2 border-primary text-primary dark:text-primary-400 rounded-lg font-semibold text-lg hover:bg-primary/10 transition-colors"
-            @click="scrollToHowItWorks"
-          >
-            Cómo funciona
-          </button>
-        </div>
-      </div>
-    </section>
+    <!-- Hero Section (only show if user is not logged in or hasn't completed onboarding) -->
+    <!-- Wait for profile to load before showing/hiding hero -->
+    <HeroSection
+      v-if="
+        !user || (initialProfileLoaded && !userStore.hasCompletedOnboarding)
+      "
+      :button-text="!user ? 'Descubrir qué ver' : 'Ver recomendaciones'"
+      :show-auth-form="showAuthForm"
+      :is-authenticated="!!user"
+      :initial-profile-loaded="initialProfileLoaded"
+      :has-completed-onboarding="userStore.hasCompletedOnboarding"
+      @get-started="handleGetStarted"
+      @scroll-to-how-it-works="scrollToHowItWorks"
+      @auth-success="handleAuthSuccess"
+      @signup-success="handleSignupSuccess"
+    />
 
-    <!-- Auth Form Section (shown when user clicks CTA or scrolls) -->
-    <section
-      v-if="!user || showAuthForm"
-      id="auth-form"
-      class="py-12 md:py-16 px-4"
-    >
-      <div class="container mx-auto max-w-md">
+    <!-- Personalized Recommendations (for authenticated users who completed onboarding) -->
+    <!-- Only show if user is authenticated (we'll show loading/empty states inside) -->
+    <section v-if="user" class="py-12 md:py-16 px-4">
+      <div class="container mx-auto max-w-7xl">
+        <!-- Debug info (remove in production) -->
         <div
-          class="dark:bg-gray-800/70 bg-gray-100/90 backdrop-blur-xs rounded-xl p-6 md:p-8 border border-primary/20 shadow-lg"
+          class="mb-4 text-xs text-gray-500 dark:text-gray-400 p-2 bg-gray-100 dark:bg-gray-800 rounded"
         >
-          <div class="text-center mb-6">
-            <h2
-              class="text-2xl font-bold dark:text-white text-gray-900 mb-2 font-heading"
+          Debug: user={{ !!user }}, profile={{ !!userStore.profile }},
+          hasCompleted={{ userStore.hasCompletedOnboarding }},
+          loadingRecommendations={{ loadingRecommendations }}, storeLoading={{
+            userStore.loading
+          }}, recs={{ recommendations.recommended.length }}, easy={{
+            recommendations.easyToWatch.length
+          }}, based={{ recommendations.basedOnLikes.length }}<br />
+          Recommendations:
+          {{
+            JSON.stringify({
+              recs: recommendations.recommended.length,
+              easy: recommendations.easyToWatch.length,
+              based: recommendations.basedOnLikes.length,
+            })
+          }}
+        </div>
+
+        <!-- Show loading state while profile is being fetched -->
+        <div
+          v-if="userStore.loading && !userStore.profile"
+          class="text-center py-12"
+        >
+          <div
+            class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"
+          ></div>
+          <p class="text-gray-600 dark:text-gray-400">Cargando perfil...</p>
+        </div>
+
+        <!-- Show content when profile is loaded -->
+        <template v-else-if="!userStore.loading || userStore.profile">
+          <!-- Welcome message for logged-in users -->
+          <div class="mb-8 text-center">
+            <h1
+              class="text-3xl md:text-4xl font-bold dark:text-white text-gray-900 mb-2 font-heading"
             >
-              {{ isSignUp ? 'Crear cuenta' : 'Iniciar sesión' }}
-            </h2>
-            <p class="text-sm text-gray-600 dark:text-gray-400">
-              {{
-                isSignUp
-                  ? 'Comienza a recibir recomendaciones personalizadas'
-                  : 'Accede a tus recomendaciones'
-              }}
+              Tus recomendaciones
+            </h1>
+            <p class="text-gray-600 dark:text-gray-300">
+              Basadas en lo que te gusta
+            </p>
+          </div>
+          <!-- Loading State for Recommendations -->
+          <div v-if="loadingRecommendations" class="text-center py-12">
+            <div
+              class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"
+            ></div>
+            <p class="text-gray-600 dark:text-gray-400">
+              Cargando recomendaciones...
             </p>
           </div>
 
-          <!-- Tabs (only show magic link option when logging in, not signing up) -->
-          <div v-if="!isSignUp" class="flex gap-2 mb-6">
-            <button
-              :class="[
-                'flex-1 py-2 px-4 rounded-lg font-medium transition-colors text-sm',
-                authMethod === 'password'
-                  ? 'bg-primary text-white'
-                  : 'dark:bg-gray-700 bg-gray-200 dark:text-gray-300 text-gray-700',
-              ]"
-              @click="authMethod = 'password'"
-            >
-              Contraseña
-            </button>
-            <button
-              :class="[
-                'flex-1 py-2 px-4 rounded-lg font-medium transition-colors text-sm',
-                authMethod === 'magic'
-                  ? 'bg-primary text-white'
-                  : 'dark:bg-gray-700 bg-gray-200 dark:text-gray-300 text-gray-700',
-              ]"
-              @click="authMethod = 'magic'"
-            >
-              Enlace mágico
-            </button>
-          </div>
-
-          <!-- Error message -->
-          <AlertMessage v-if="error" :message="error" type="error" />
-
-          <!-- Success message -->
-          <AlertMessage
-            v-if="signUpSuccess || magicLinkSent"
-            :message="
-              signUpSuccess
-                ? '¡Revisa tu email para confirmar tu cuenta!'
-                : '¡Revisa tu email para el enlace mágico!'
+          <!-- Empty State - Show when not loading and no recommendations -->
+          <div
+            v-else-if="
+              recommendations.recommended.length === 0 &&
+              recommendations.easyToWatch.length === 0 &&
+              recommendations.basedOnLikes.length === 0
             "
-            type="success"
-          />
-
-          <!-- Password form -->
-          <form
-            v-if="authMethod === 'password'"
-            @submit.prevent="handlePasswordAuth"
+            class="text-center py-12"
           >
-            <div class="mb-4">
-              <label
-                for="email"
-                class="block text-sm font-medium dark:text-gray-300 text-gray-700 mb-2"
+            <div class="max-w-md mx-auto">
+              <svg
+                class="w-16 h-16 text-gray-400 mx-auto mb-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
               >
-                Email
-              </label>
-              <input
-                id="email"
-                v-model="email"
-                type="email"
-                required
-                class="w-full px-4 py-2 dark:bg-gray-700 bg-white dark:text-white text-gray-900 border dark:border-gray-600 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                placeholder="tu@email.com"
-              />
-            </div>
-
-            <div class="mb-4">
-              <label
-                for="password"
-                class="block text-sm font-medium dark:text-gray-300 text-gray-700 mb-2"
-              >
-                Contraseña
-              </label>
-              <div class="relative">
-                <input
-                  id="password"
-                  v-model="password"
-                  :type="showPassword ? 'text' : 'password'"
-                  :autocomplete="isSignUp ? 'new-password' : 'current-password'"
-                  :required="isSignUp"
-                  :class="[
-                    'w-full px-4 py-2 pr-10 dark:bg-gray-700 bg-white dark:text-white text-gray-900 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary transition-colors',
-                    isSignUp &&
-                    passwordValidation &&
-                    !passwordValidation.isValid &&
-                    password.length > 0
-                      ? 'border-red-500 dark:border-red-500'
-                      : 'dark:border-gray-600 border-gray-300',
-                  ]"
-                  placeholder="••••••••"
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
                 />
-                <button
-                  type="button"
-                  data-icon-only="true"
-                  :aria-label="
-                    showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'
-                  "
-                  class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 focus:outline-none transition-colors"
-                  @click="showPassword = !showPassword"
-                  @keydown.enter.prevent="showPassword = !showPassword"
-                  @keydown.space.prevent="showPassword = !showPassword"
-                >
-                  <!-- Eye icon (visible) -->
-                  <svg
-                    v-if="showPassword"
-                    class="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                    />
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                    />
-                  </svg>
-                  <!-- Eye slash icon (hidden) -->
-                  <svg
-                    v-else
-                    class="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.29 3.29m0 0A9.97 9.97 0 015.12 5.12m3.29 3.29L3 3m14.29 14.29L21 21M14.88 14.88a3 3 0 11-4.243-4.243m4.242 4.242L21 21"
-                    />
-                  </svg>
-                </button>
-              </div>
-              <!-- Helper text (only show for signup) -->
-              <p
-                v-if="isSignUp"
-                class="mt-1.5 text-xs text-gray-500 dark:text-gray-400"
+              </svg>
+              <h3
+                class="text-xl font-semibold dark:text-white text-gray-900 mb-2 font-heading"
               >
-                {{ getPasswordHelperText() }}
+                Aún no hay recomendaciones
+              </h3>
+              <p class="text-gray-600 dark:text-gray-400 mb-6">
+                Para recibir recomendaciones personalizadas, primero necesitas
+                agregar películas y series que te gusten. Esto nos ayuda a
+                conocerte mejor y sugerirte contenido que realmente disfrutarás.
               </p>
-              <!-- Real-time validation checklist (only show for signup when typing) -->
-              <div
-                v-if="showPasswordValidation && passwordValidation"
-                class="mt-2 space-y-1.5"
+              <nuxt-link
+                to="/onboarding"
+                class="inline-block px-6 py-3 bg-gradient-to-r from-primary via-accent to-secondary hover:from-secondary hover:via-pink-500 hover:to-primary text-white rounded-lg font-medium transition-all duration-300 shadow-lg shadow-primary/30 hover:shadow-xl"
               >
-                <div
-                  v-for="check in [
-                    {
-                      key: 'minLength',
-                      label: 'Al menos 8 caracteres',
-                    },
-                    {
-                      key: 'hasUppercase',
-                      label: 'Una letra mayúscula',
-                    },
-                    {
-                      key: 'hasLowercase',
-                      label: 'Una letra minúscula',
-                    },
-                    {
-                      key: 'hasNumber',
-                      label: 'Un número',
-                    },
-                    {
-                      key: 'hasSpecialChar',
-                      label: 'Un símbolo',
-                    },
-                  ]"
-                  :key="check.key"
-                  class="flex items-center gap-2 text-xs"
-                >
-                  <svg
-                    v-if="
-                      passwordValidation.checks[
-                        check.key as keyof typeof passwordValidation.checks
-                      ]
-                    "
-                    class="w-4 h-4 text-green-500 flex-shrink-0"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                  <svg
-                    v-else
-                    class="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
-                  <span
-                    :class="[
-                      passwordValidation.checks[
-                        check.key as keyof typeof passwordValidation.checks
-                      ]
-                        ? 'text-green-600 dark:text-green-400'
-                        : 'text-gray-500 dark:text-gray-400',
-                    ]"
-                  >
-                    {{ check.label }}
-                  </span>
-                </div>
-              </div>
+                Agregar favoritos
+              </nuxt-link>
             </div>
-
-            <button
-              type="submit"
-              :disabled="loading"
-              class="w-full py-2 px-4 bg-gradient-to-r from-primary via-accent to-secondary hover:from-secondary hover:via-pink-500 hover:to-primary text-white rounded-lg font-medium transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {{
-                loading
-                  ? 'Cargando...'
-                  : isSignUp
-                    ? 'Crear cuenta'
-                    : 'Iniciar sesión'
-              }}
-            </button>
-          </form>
-
-          <!-- Magic link form -->
-          <form v-else @submit.prevent="handleMagicLink">
-            <div class="mb-4">
-              <label
-                for="magic-email"
-                class="block text-sm font-medium dark:text-gray-300 text-gray-700 mb-2"
-              >
-                Email
-              </label>
-              <input
-                id="magic-email"
-                v-model="email"
-                type="email"
-                required
-                class="w-full px-4 py-2 dark:bg-gray-700 bg-white dark:text-white text-gray-900 border dark:border-gray-600 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                placeholder="tu@email.com"
-              />
-            </div>
-
-            <button
-              type="submit"
-              :disabled="loading || magicLinkSent"
-              class="w-full py-2 px-4 bg-gradient-to-r from-primary via-accent to-secondary hover:from-secondary hover:via-pink-500 hover:to-primary text-white rounded-lg font-medium transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {{
-                magicLinkSent
-                  ? '¡Enviado!'
-                  : loading
-                    ? 'Enviando...'
-                    : 'Enviar enlace mágico'
-              }}
-            </button>
-          </form>
-
-          <!-- Toggle sign up/sign in -->
-          <div class="mt-4 text-center">
-            <button
-              v-if="authMethod === 'password'"
-              type="button"
-              class="text-sm text-primary hover:text-secondary transition-colors"
-              @click="
-                const wasSignUp = isSignUp;
-                isSignUp = !isSignUp;
-                signUpSuccess = false;
-                error = '';
-                // Reset to password method when switching to sign up
-                if (!wasSignUp && isSignUp) {
-                  authMethod = 'password';
-                }
-              "
-            >
-              {{
-                isSignUp
-                  ? '¿Ya tienes cuenta? Inicia sesión'
-                  : '¿No tienes cuenta? Regístrate'
-              }}
-            </button>
           </div>
-        </div>
+
+          <!-- Recommendations Sections - Show when not loading and there are recommendations -->
+          <div v-else>
+            <RecommendationSection
+              v-if="recommendations.recommended.length > 0"
+              title="Recomendado para ti"
+              :recommendations="recommendations.recommended"
+            />
+
+            <RecommendationSection
+              v-if="recommendations.easyToWatch.length > 0"
+              title="Fácil de ver / Baja atención"
+              :recommendations="recommendations.easyToWatch"
+            />
+
+            <RecommendationSection
+              v-if="recommendations.basedOnLikes.length > 0"
+              title="Basado en lo que te gusta"
+              :recommendations="recommendations.basedOnLikes"
+            />
+          </div>
+        </template>
       </div>
     </section>
 
     <!-- How It Works Section -->
+    <!-- How it Works Section (only show if user hasn't completed onboarding) -->
     <section
+      v-if="
+        !user || (initialProfileLoaded && !userStore.hasCompletedOnboarding)
+      "
       id="como-funciona"
       class="py-16 md:py-24 px-4 dark:bg-gray-900/50 bg-gray-50/50"
     >
@@ -645,16 +551,16 @@ const translateAuthError = (errorMessage: string): string => {
       </div>
     </section>
 
-    <!-- Value Proposition Section -->
-    <section class="py-16 md:py-24 px-4">
-      <div class="container mx-auto max-w-3xl text-center">
+    <!-- Value Proposition Section (only show if user is not logged in) -->
+    <section v-if="!user" class="py-16 md:py-24 px-4">
+      <div class="container mx-auto max-w-3xl">
         <p
-          class="text-2xl md:text-3xl lg:text-4xl font-semibold dark:text-white text-gray-900 mb-4 font-heading"
+          class="text-center text-2xl md:text-3xl lg:text-4xl font-semibold dark:text-white text-gray-900 mb-4 font-heading"
         >
           No es otra lista más.
         </p>
         <p
-          class="text-2xl md:text-3xl lg:text-4xl font-semibold text-primary dark:text-primary-400 font-heading"
+          class="text-center text-2xl md:text-3xl lg:text-4xl font-semibold text-primary dark:text-primary-400 font-heading"
         >
           Es una decisión hecha por ti, pero sin pensar.
         </p>

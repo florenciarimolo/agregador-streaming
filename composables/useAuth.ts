@@ -118,14 +118,6 @@ export const useAuth = () => {
     }
   };
 
-  /**
-   * Check if user has completed onboarding
-   */
-  const hasCompletedOnboarding = async (): Promise<boolean> => {
-    const profile = await getUserProfile();
-    return profile?.onboarding_completed ?? false;
-  };
-
   return {
     user: readonly(user),
     signUp,
@@ -133,6 +125,5 @@ export const useAuth = () => {
     signInWithMagicLink,
     signOut,
     getUserProfile,
-    hasCompletedOnboarding,
   };
 };

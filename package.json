@@ -11,7 +11,7 @@
     "dev": "NODE_OPTIONS='--no-warnings' nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare",
+    "postinstall": "NODE_OPTIONS='--no-warnings' nuxt prepare",
     "lint": "eslint . --ext .ts,.vue"
   },
   "dependencies": {

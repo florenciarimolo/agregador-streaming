@@ -29,7 +29,7 @@ onMounted(async () => {
       userStore.setUser(data.session.user);
       await userStore.fetchProfile();
 
-      // Check if onboarding is needed
+      // Check if user has completed onboarding
       if (!userStore.hasCompletedOnboarding) {
         await router.push('/onboarding');
       } else {
