@@ -38,11 +38,10 @@ export default defineNuxtConfig({
     enabled: true,
     componentInspector: true,
     timeline: {
-      enabled: true
-    }
+      enabled: true,
+    },
   },
   modules: ['@pinia/nuxt', '@nuxtjs/supabase'],
-  // @ts-expect-error - @nuxtjs/supabase module configuration
   supabase: {
     redirectOptions: {
       login: '/', // Redirect to home instead of /login
@@ -92,8 +91,7 @@ export default defineNuxtConfig({
         { name: 'twitter:site', content: '@upnext' },
       ],
       link: [
-        { rel: 'icon', type: 'image/png', href: '/logo.png' },
-        { rel: 'alternate icon', type: 'image/x-icon', href: '/favicon.ico' },
+        { rel: 'icon', type: 'image/png', href: '/favicon.png' },
         // Fonts are loaded via @font-face in CSS, no need to preload
       ],
     },

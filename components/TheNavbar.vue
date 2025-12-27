@@ -12,7 +12,11 @@
           to="/"
           class="flex items-center gap-2 transition-opacity hover:opacity-80"
         >
-          <img src="/logo.png" alt="UpNext" class="h-8 w-8" />
+          <img
+            :src="theme === 'dark' ? '/logo-dark.png' : '/logo-light.png'"
+            alt="UpNext"
+            class="h-8 w-8"
+          />
           <span class="text-md font-bold dark:text-white text-gray-900"
             >UpNext</span
           >
@@ -98,7 +102,11 @@
       <div class="flex items-center justify-between px-4 py-3">
         <!-- Logo -->
         <nuxt-link to="/" class="flex items-center gap-2">
-          <img src="/logo.png" alt="UpNext" class="h-6 w-6" />
+          <img
+            :src="theme === 'dark' ? '/logo-dark.png' : '/logo-light.png'"
+            alt="UpNext"
+            class="h-6 w-6"
+          />
           <span class="text-md font-bold dark:text-white text-gray-900"
             >UpNext</span
           >
@@ -201,6 +209,9 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
+
+// Theme
+const { theme } = useTheme();
 
 // User state
 const user = useSupabaseUser();

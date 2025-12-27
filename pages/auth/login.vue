@@ -2,7 +2,11 @@
   <div class="min-h-screen flex items-center justify-center px-4">
     <div class="w-full max-w-md">
       <div class="text-center mb-8">
-        <img src="/logo.png" alt="UpNext" class="h-12 w-12 mx-auto mb-4" />
+        <img
+          :src="theme === 'dark' ? '/logo-dark.png' : '/logo-light.png'"
+          alt="UpNext"
+          class="h-12 w-12 mx-auto mb-4"
+        />
         <h1 class="text-3xl font-bold dark:text-white text-gray-900 mb-2">
           Welcome to UpNext
         </h1>
@@ -158,6 +162,9 @@ definePageMeta({
   middleware: 'guest', // Only allow unauthenticated users
 });
 
+// Theme
+const { theme } = useTheme();
+
 const { signIn, signUp, signInWithMagicLink } = useAuth();
 const router = useRouter();
 
@@ -185,8 +192,8 @@ const handlePasswordAuth = async () => {
 
     // Redirect will be handled by middleware
     await router.push('/');
-  } catch (err: any) {
-    error.value = err.message || 'An error occurred';
+  } catch (err: unknown) {
+    error.value = err instanceof Error ? err.message : 'An error occurred';
   } finally {
     loading.value = false;
   }
@@ -205,8 +212,8 @@ const handleMagicLink = async () => {
     }
 
     magicLinkSent.value = true;
-  } catch (err: any) {
-    error.value = err.message || 'An error occurred';
+  } catch (err: unknown) {
+    error.value = err instanceof Error ? err.message : 'An error occurred';
   } finally {
     loading.value = false;
   }
