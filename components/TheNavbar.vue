@@ -100,11 +100,13 @@
         <nuxt-link to="/" class="flex items-center gap-2">
           <img src="/logo.png" alt="UpNext" class="h-6 w-6" />
           <span class="text-md font-bold dark:text-white text-gray-900"
-            >StreamHub</span
+            >UpNext</span
           >
         </nuxt-link>
 
         <div class="flex items-center gap-2">
+          <!-- Theme Switcher -->
+          <ThemeSwitcher />
           <!-- User Avatar (if logged in) -->
           <div v-if="user" class="relative">
             <button
@@ -126,7 +128,7 @@
             >
               <div
                 v-if="showUserMenu"
-                class="absolute right-0 mt-2 w-64 dark:bg-gray-800/90 bg-white/90 backdrop-blur-sm rounded-lg shadow-xl border border-primary/20 z-50"
+                class="absolute right-0 mt-2 w-64 dark:bg-gray-800 bg-white backdrop-blur-sm rounded-lg shadow-xl border border-primary/20 z-50"
                 @click.stop
               >
                 <div class="p-4">
@@ -160,52 +162,8 @@
               </div>
             </Transition>
           </div>
-          <!-- Theme Switcher -->
-          <ThemeSwitcher />
-          <!-- Hamburger Button -->
-          <button
-            class="p-2 dark:text-white text-gray-900 transition-colors hover:text-primary !border-none"
-            aria-label="Toggle menu"
-            @click="toggleMobileMenu"
-          >
-            <svg
-              :class="{ 'rotate-90': isMobileMenuOpen }"
-              class="w-6 h-6 transition-transform duration-200"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                v-if="!isMobileMenuOpen"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M4 6h16M4 12h16M4 18h16"
-              />
-              <path
-                v-else
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
         </div>
       </div>
-
-      <!-- Mobile Menu Dropdown
-      <div
-        v-show="isMobileMenuOpen"
-        class="absolute left-0 w-full shadow-lg top-full dark:bg-gray-800 bg-gray-100 backdrop-blur-xs mt-1 rounded-lg"
-      >
-        <div class="px-4 py-3 space-y-3">
-          Mobile Search Bar
-        <div class="mb-2">
-          <SearchBar />
-        </div>
-      </div>
-      -->
     </nav>
   </header>
 
@@ -285,9 +243,6 @@ const handleClickOutside = (event: MouseEvent) => {
   }
 };
 
-// Mobile menu state
-const isMobileMenuOpen = ref(false);
-
 // Scroll to top state
 const showScrollToTop = ref(false);
 const isMobile = ref(false);
@@ -295,11 +250,6 @@ const isMobile = ref(false);
 // Navbar visibility state
 const isNavbarVisible = ref(true);
 const lastScrollY = ref(0);
-
-// Toggle mobile menu
-const toggleMobileMenu = () => {
-  isMobileMenuOpen.value = !isMobileMenuOpen.value;
-};
 
 // Scroll to top functionality
 const scrollToTop = () => {
@@ -344,9 +294,6 @@ const checkMobile = () => {
 // Handle resize
 const handleResize = () => {
   checkMobile();
-  if (!isMobile.value) {
-    isMobileMenuOpen.value = false;
-  }
 };
 
 onMounted(() => {
