@@ -6,7 +6,7 @@ export const tmdbConfig = {
   baseURL: TMDB_BASE_URL,
   apiKey: TMDB_API_KEY,
   language: 'es-ES',
-  includeAdult: true,
+  includeAdult: false,
 };
 
 export async function tmdbFetch<T>(

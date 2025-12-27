@@ -6,15 +6,56 @@ import {
   Recommendation,
   Provider,
 } from '@/types/Recommendation';
-import { UserLike } from '@/types/UserLike';
+
+/**
+ * Type for Supabase user_likes query result with joined titles
+ */
+type UserLikeWithTitle = {
+  title_id: string;
+  titles: {
+    id: string;
+    genres: number[] | Array<{ id?: number }>;
+    type: 'movie' | 'tv';
+    tmdb_id: number;
+    vote_average: number | null;
+  };
+};
+
+/**
+ * TMDB Discover API response type
+ */
+type TMDBDiscoverResult = {
+  id: number;
+  title?: string; // movies
+  name?: string; // tv shows
+  overview: string;
+  poster_path: string | null;
+  backdrop_path: string | null;
+  release_date?: string; // movies
+  first_air_date?: string; // tv shows
+  vote_average: number;
+  genre_ids: number[];
+  popularity: number;
+  runtime?: number; // movies
+  episode_run_time?: number[]; // tv shows
+};
+
+type TMDBDiscoverResponse = {
+  page: number;
+  results: TMDBDiscoverResult[];
+  total_pages: number;
+  total_results: number;
+};
 
 /**
  * Get recommendations for the authenticated user
- * Logic:
- * 1. Get user's liked titles and their genres
- * 2. Find titles with shared genres (excluding already liked)
- * 3. Prioritize by genre match count, then popularity (vote_average)
- * 4. Return recommendations with explanations
+ *
+ * Strategy:
+ * 1. Fetch user likes from Supabase
+ * 2. Extract top 3 genres from liked titles
+ * 3. Use TMDB Discover endpoints to fetch recommendations
+ * 4. Filter out already liked titles
+ * 5. Return 3 buckets: recommended, easyToWatch, basedOnLikes
  */
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig();
@@ -25,14 +66,8 @@ export default defineEventHandler(async (event) => {
   const userFromCookies = await serverSupabaseUser(event);
 
   if (userFromCookies) {
-    // serverSupabaseUser returns the JWT payload, which has 'sub' not 'id'
     userId =
       userFromCookies.id || (userFromCookies as { sub?: string }).sub || null;
-    console.log('🔴 [Server] User from cookies:', {
-      hasId: !!userFromCookies.id,
-      hasSub: !!(userFromCookies as { sub?: string }).sub,
-      userId,
-    });
 
     if (userId) {
       user = { id: userId, sub: userId };
@@ -40,19 +75,13 @@ export default defineEventHandler(async (event) => {
   } else {
     // If no user from cookies, try to get from Authorization header
     const authHeader = event.node.req.headers.authorization;
-    console.log('🔴 [Server] Auth header:', authHeader ? 'Present' : 'Missing');
 
     if (authHeader && authHeader.startsWith('Bearer ')) {
       const token = authHeader.substring(7);
-      console.log('🔴 [Server] Token received, length:', token.length);
 
       try {
-        // Decode JWT token to get user ID (sub claim)
-        // JWT format: header.payload.signature
         const parts = token.split('.');
         if (parts.length === 3) {
-          // Decode payload (base64url)
-          // Replace URL-safe base64 characters
           const payload = JSON.parse(
             Buffer.from(
               parts[1].replace(/-/g, '+').replace(/_/g, '/'),
@@ -60,41 +89,29 @@ export default defineEventHandler(async (event) => {
             ).toString()
           );
 
-          // Extract user ID from 'sub' claim
           userId = payload.sub;
-          console.log('🔴 [Server] User ID extracted from token:', userId);
 
           if (userId) {
             user = { id: userId, sub: userId };
-            console.log('🔴 [Server] User set from token:', userId);
-          } else {
-            console.error('🔴 [Server] No sub claim in token payload');
           }
-        } else {
-          console.error('🔴 [Server] Invalid token format');
         }
       } catch (err) {
-        console.error('🔴 [Server] Exception decoding token:', err);
+        console.error('Error decoding token:', err);
       }
     }
   }
 
   if (!user || !userId) {
-    console.error('🔴 [Server] No user found, returning 401');
     throw createError({
       statusCode: 401,
       message: 'Unauthorized',
     });
   }
 
-  console.log('🔴 [Server] User authenticated:', user.id);
-
-  // For RLS to work properly, we need to use service role key OR properly set auth context
-  // Using service role key temporarily to bypass RLS (ONLY FOR DEVELOPMENT)
+  // Create Supabase client
   const supabaseKey =
     process.env.SUPABASE_SERVICE_ROLE_KEY || config.public.supabaseAnonKey;
 
-  // Create a new client with service role key for queries (bypasses RLS)
   const supabase = createClient(config.public.supabaseUrl, supabaseKey, {
     auth: {
       persistSession: false,
@@ -104,23 +121,14 @@ export default defineEventHandler(async (event) => {
   });
 
   try {
-    // Debug: Log user ID being used
-    console.log('Server: Using userId:', userId);
-    console.log('Server: User object:', JSON.stringify(user, null, 2));
-
     // Get user's liked titles with their genres
-    // Note: We're using userId directly in the query, which should work even if RLS is blocking
-    // because we're explicitly filtering by user_id
     const { data: userLikes, error: likesError } = await supabase
       .from('user_likes')
-      .select('title_id, titles!inner(id, genres, type, tmdb_id)')
+      .select('title_id, titles!inner(id, genres, type, tmdb_id, vote_average)')
       .eq('user_id', userId);
 
-    console.log('Server: userLikes with join:', userLikes?.length || 0);
-    console.log('Server: likesError:', likesError);
-
     if (likesError) {
-      console.error('Server: Error fetching user_likes:', likesError);
+      console.error('Error fetching user_likes:', likesError);
       throw likesError;
     }
 
@@ -132,280 +140,327 @@ export default defineEventHandler(async (event) => {
       };
     }
 
-    // Extract genre IDs from liked titles
-    const likedGenreIds = new Set<number>();
-    const likedTitleIds = new Set<string>();
+    // Extract data from user likes
     const likedTmdbIds = new Set<number>();
-    const likedTypes = new Set<'movie' | 'tv'>();
+    const likedMovies: Array<{ tmdb_id: number; genres: number[] }> = [];
+    const likedTVShows: Array<{ tmdb_id: number; genres: number[] }> = [];
+    const genreFrequency = new Map<number, number>();
 
-    userLikes.forEach((like: UserLike) => {
-      likedTitleIds.add(like.title_id);
-      if (like.titles?.tmdb_id) {
-        likedTmdbIds.add(like.titles.tmdb_id);
+    // Type assertion: Supabase returns titles as object (not array) with !inner join
+    (userLikes as unknown as UserLikeWithTitle[]).forEach((like) => {
+      const title = like.titles;
+      if (title?.tmdb_id) {
+        likedTmdbIds.add(title.tmdb_id);
+
+        // Extract genre IDs
+        const genreIds: number[] = [];
+        if (title.genres && Array.isArray(title.genres)) {
+          title.genres.forEach((genre: number | { id?: number }) => {
+            const genreId = typeof genre === 'number' ? genre : genre?.id;
+            if (genreId) {
+              genreIds.push(genreId);
+              genreFrequency.set(
+                genreId,
+                (genreFrequency.get(genreId) || 0) + 1
+              );
+            }
+          });
+        }
+
+        if (title.type === 'movie') {
+          likedMovies.push({ tmdb_id: title.tmdb_id, genres: genreIds });
+        } else if (title.type === 'tv') {
+          likedTVShows.push({ tmdb_id: title.tmdb_id, genres: genreIds });
+        }
       }
-      if (like.titles?.type) {
-        likedTypes.add(like.titles.type);
+    });
+
+    // Get top 3 genres by frequency
+    const topGenres = Array.from(genreFrequency.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
+      .map(([genreId]) => genreId);
+
+    if (topGenres.length === 0) {
+      return {
+        recommended: [],
+        easyToWatch: [],
+        basedOnLikes: [],
+      };
+    }
+
+    const tmdbConfig = getTMDBConfig();
+
+    // Helper function to transform TMDB result to Recommendation
+    const transformToRecommendation = async (
+      result: TMDBDiscoverResult,
+      type: 'movie' | 'tv'
+    ): Promise<Recommendation | null> => {
+      // Skip if already liked
+      if (likedTmdbIds.has(result.id)) {
+        return null;
       }
-      if (like.titles?.genres && Array.isArray(like.titles.genres)) {
-        // Genres can be array of numbers (genre_ids) or array of objects with id
-        like.titles.genres.forEach((genre: number | { id?: number }) => {
-          const genreId = typeof genre === 'number' ? genre : genre?.id;
-          if (genreId) {
-            likedGenreIds.add(genreId);
-          }
+
+      // Fetch providers
+      let providers: Provider[] = [];
+      try {
+        const providerPath =
+          type === 'movie'
+            ? `/movie/${result.id}/watch/providers`
+            : `/tv/${result.id}/watch/providers`;
+        const providerResponse = await $fetch<{
+          results?: {
+            ES?: {
+              flatrate?: Provider[];
+              buy?: Provider[];
+              rent?: Provider[];
+            };
+          };
+        }>(`${tmdbConfig.baseUrl}${providerPath}`, {
+          query: {
+            api_key: tmdbConfig.apiKey,
+            language: tmdbConfig.language,
+          },
         });
+
+        const esProviders = providerResponse.results?.ES;
+        if (esProviders) {
+          const streamingProviders = esProviders.flatrate || [];
+          const buyProviders = esProviders.buy || [];
+          const rentProviders = esProviders.rent || [];
+          providers = [
+            ...streamingProviders,
+            ...buyProviders,
+            ...rentProviders,
+          ].slice(0, 5);
+        }
+      } catch (error) {
+        console.error(`Error fetching providers for ${result.id}:`, error);
       }
-    });
 
-    console.log('Server: Extracted from user likes:', {
-      likedGenreIds: Array.from(likedGenreIds),
-      likedTitleIds: Array.from(likedTitleIds).slice(0, 5),
-      likedTmdbIds: Array.from(likedTmdbIds).slice(0, 5),
-      likedTypes: Array.from(likedTypes),
-    });
-
-    if (likedGenreIds.size === 0) {
-      console.log(
-        'Server: No liked genres found, returning empty recommendations.'
-      );
       return {
-        recommended: [],
-        easyToWatch: [],
-        basedOnLikes: [],
+        id: `tmdb-${result.id}`, // Generate a temporary ID
+        tmdb_id: result.id,
+        title: result.title || result.name || '',
+        type,
+        poster_path: result.poster_path,
+        overview: result.overview,
+        vote_average: result.vote_average,
+        genres: result.genre_ids,
+        release_date: result.release_date || null,
+        first_air_date: result.first_air_date || null,
+        explanation: '', // Will be set by caller
+        providers,
       };
-    }
-
-    // Get all titles (we'll filter out liked ones in JavaScript)
-    const { data: allTitles, error: titlesError } = await supabase
-      .from('titles')
-      .select('*');
-
-    if (titlesError) throw titlesError;
-
-    console.log('Server: Total titles in database:', allTitles?.length || 0);
-
-    // Filter out titles already liked by the user
-    const filteredTitles = (allTitles || []).filter(
-      (title) =>
-        !likedTitleIds.has(title.id) && !likedTmdbIds.has(title.tmdb_id)
-    );
-
-    console.log(
-      'Server: Filtered titles (excluding liked):',
-      filteredTitles.length
-    );
-
-    if (filteredTitles.length === 0) {
-      console.log(
-        'Server: No filtered titles after excluding liked ones, returning empty recommendations.'
-      );
-      return {
-        recommended: [],
-        easyToWatch: [],
-        basedOnLikes: [],
-      };
-    }
-
-    // Score titles based on genre matches and popularity
-    const scoredTitles = filteredTitles
-      .map((title) => {
-        const titleGenres = Array.isArray(title.genres)
-          ? title.genres.map((g: number | { id?: number }) =>
-              typeof g === 'number' ? g : g?.id || 0
-            )
-          : [];
-        const matchingGenres = titleGenres.filter((g: number) =>
-          likedGenreIds.has(g)
-        );
-        const genreMatchScore = matchingGenres.length;
-        const popularityScore = title.vote_average || 0;
-        const typeMatch = likedTypes.has(title.type) ? 1 : 0;
-
-        // Combined score: genre matches (weighted heavily) + popularity + type match
-        const score =
-          genreMatchScore * 10 + popularityScore * 2 + typeMatch * 5;
-
-        return {
-          ...title,
-          genreMatchScore,
-          matchingGenres,
-          score,
-        };
-      })
-      .filter((title) => title.genreMatchScore > 0) // Only titles with at least one matching genre
-      .sort((a, b) => b.score - a.score);
-
-    console.log(
-      'Server: Scored titles (with genre matches):',
-      scoredTitles.length
-    );
-
-    // Get top recommendations (up to 20)
-    const topRecommendations = scoredTitles.slice(0, 20);
-
-    console.log(
-      'Server: Top recommendations (before fetching providers):',
-      topRecommendations.length
-    );
-
-    // Fetch providers and generate explanations for recommendations
-    const config = getTMDBConfig();
-    const userRecommendations: Recommendation[] = await Promise.all(
-      topRecommendations.map(async (title) => {
-        // Fetch providers from TMDB
-        let providers: Provider[] = [];
-        try {
-          const providerPath =
-            title.type === 'movie'
-              ? `/movie/${title.tmdb_id}/watch/providers`
-              : `/tv/${title.tmdb_id}/watch/providers`;
-          const providerResponse = await $fetch<{
-            results?: {
-              ES?: {
-                flatrate?: Provider[];
-                buy?: Provider[];
-                rent?: Provider[];
-              };
-            };
-          }>(`${config.baseUrl}${providerPath}`, {
-            query: {
-              api_key: config.apiKey,
-              language: config.language,
-            },
-          });
-
-          const esProviders = providerResponse.results?.ES;
-          if (esProviders) {
-            // Prioritize streaming (flatrate) over buy/rent
-            const streamingProviders = esProviders.flatrate || [];
-            const buyProviders = esProviders.buy || [];
-            const rentProviders = esProviders.rent || [];
-            providers = [
-              ...streamingProviders,
-              ...buyProviders,
-              ...rentProviders,
-            ].slice(0, 5); // Limit to 5 providers
-          }
-        } catch (error) {
-          console.error(`Error fetching providers for ${title.title}:`, error);
-        }
-
-        // Generate better explanations based on genre matches
-        const genreCount = title.matchingGenres.length;
-        const typeText = title.type === 'movie' ? 'películas' : 'series';
-        let explanation = '';
-
-        if (genreCount >= 3) {
-          explanation = `Porque te gustan las ${typeText} de estos géneros`;
-        } else if (genreCount === 2) {
-          explanation = `Porque te gustan ${typeText} con géneros similares`;
-        } else {
-          explanation = `Porque te gustan ${typeText} similares`;
-        }
-
-        // Add popularity context if high rating
-        if (title.vote_average && title.vote_average >= 8.0) {
-          explanation += ' y tiene excelentes críticas';
-        } else if (title.vote_average && title.vote_average >= 7.0) {
-          explanation += ' y tiene buenas críticas';
-        }
-
-        return {
-          id: title.id,
-          tmdb_id: title.tmdb_id,
-          title: title.title,
-          type: title.type,
-          poster_path: title.poster_path,
-          overview: title.overview,
-          vote_average: title.vote_average,
-          genres: title.genres as number[],
-          release_date: title.release_date,
-          first_air_date: title.first_air_date,
-          explanation,
-          providers,
-        };
-      })
-    );
-
-    // "Easy to watch" - High rating, popular titles (top 10 by vote_average)
-    // Fetch providers for easy to watch titles
-    const easyToWatchTitles = scoredTitles
-      .filter((title) => (title.vote_average || 0) >= 7.5)
-      .slice(0, 10);
-
-    const easyToWatch: Recommendation[] = await Promise.all(
-      easyToWatchTitles.map(async (title) => {
-        // Fetch providers from TMDB
-        let providers: Provider[] = [];
-        try {
-          const providerPath =
-            title.type === 'movie'
-              ? `/movie/${title.tmdb_id}/watch/providers`
-              : `/tv/${title.tmdb_id}/watch/providers`;
-          const providerResponse = await $fetch<{
-            results?: {
-              ES?: {
-                flatrate?: Provider[];
-                buy?: Provider[];
-                rent?: Provider[];
-              };
-            };
-          }>(`${config.baseUrl}${providerPath}`, {
-            query: {
-              api_key: config.apiKey,
-              language: config.language,
-            },
-          });
-
-          const esProviders = providerResponse.results?.ES;
-          if (esProviders) {
-            const streamingProviders = esProviders.flatrate || [];
-            const buyProviders = esProviders.buy || [];
-            const rentProviders = esProviders.rent || [];
-            providers = [
-              ...streamingProviders,
-              ...buyProviders,
-              ...rentProviders,
-            ].slice(0, 5);
-          }
-        } catch (error) {
-          console.error(`Error fetching providers for ${title.title}:`, error);
-        }
-
-        const recommendation: Recommendation = {
-          id: title.id,
-          tmdb_id: title.tmdb_id,
-          title: title.title,
-          type: title.type,
-          poster_path: title.poster_path,
-          overview: title.overview,
-          vote_average: title.vote_average,
-          genres: title.genres as number[],
-          release_date: title.release_date,
-          first_air_date: title.first_air_date,
-          explanation: title.explanation,
-          providers,
-        };
-
-        return recommendation;
-      })
-    );
-
-    // "Based on what you like" - Top matches (top 10)
-    const basedOnLikes = userRecommendations.slice(0, 10);
-
-    // "Recommended for you" - All recommendations (up to 20)
-    const recommended = userRecommendations.slice(0, 20);
-
-    const recommendationsResponse: Recommendations = {
-      recommended: recommended,
-      easyToWatch: easyToWatch,
-      basedOnLikes: basedOnLikes,
     };
 
-    console.log('Server: Returning recommendations:', {
-      recommendationsResponse,
+    // 1. RECOMMENDED: Based on top genres
+    const recommended: Recommendation[] = [];
+
+    // Fetch movies
+    if (likedMovies.length > 0) {
+      try {
+        const movieResponse = await $fetch<TMDBDiscoverResponse>(
+          `${tmdbConfig.baseUrl}/discover/movie`,
+          {
+            query: {
+              api_key: tmdbConfig.apiKey,
+              language: tmdbConfig.language,
+              with_genres: topGenres.join(','),
+              'vote_average.gte': 6.5,
+              sort_by: 'popularity.desc',
+              include_adult: false,
+              page: 1,
+            },
+          }
+        );
+
+        for (const result of movieResponse.results.slice(0, 10)) {
+          const rec = await transformToRecommendation(result, 'movie');
+          if (rec) {
+            rec.explanation = 'Basado en tus géneros favoritos';
+            recommended.push(rec);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching recommended movies:', error);
+      }
+    }
+
+    // Fetch TV shows
+    if (likedTVShows.length > 0) {
+      try {
+        const tvResponse = await $fetch<TMDBDiscoverResponse>(
+          `${tmdbConfig.baseUrl}/discover/tv`,
+          {
+            query: {
+              api_key: tmdbConfig.apiKey,
+              language: tmdbConfig.language,
+              with_genres: topGenres.join(','),
+              'vote_average.gte': 6.5,
+              sort_by: 'popularity.desc',
+              include_adult: false,
+              page: 1,
+            },
+          }
+        );
+
+        for (const result of tvResponse.results.slice(0, 10)) {
+          const rec = await transformToRecommendation(result, 'tv');
+          if (rec) {
+            rec.explanation = 'Basado en tus géneros favoritos';
+            recommended.push(rec);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching recommended TV shows:', error);
+      }
+    }
+
+    // Deduplicate and limit recommended
+    const recommendedMap = new Map<number, Recommendation>();
+    recommended.forEach((rec) => {
+      if (!recommendedMap.has(rec.tmdb_id)) {
+        recommendedMap.set(rec.tmdb_id, rec);
+      }
     });
+    const finalRecommended = Array.from(recommendedMap.values()).slice(0, 10);
+
+    // 2. EASY TO WATCH: Low attention content
+    const easyToWatch: Recommendation[] = [];
+
+    // Movies with runtime <= 45 minutes
+    if (likedMovies.length > 0) {
+      try {
+        const movieResponse = await $fetch<TMDBDiscoverResponse>(
+          `${tmdbConfig.baseUrl}/discover/movie`,
+          {
+            query: {
+              api_key: tmdbConfig.apiKey,
+              language: tmdbConfig.language,
+              'with_runtime.lte': 45,
+              'vote_average.gte': 6,
+              sort_by: 'popularity.desc',
+              include_adult: false,
+              page: 1,
+            },
+          }
+        );
+
+        for (const result of movieResponse.results.slice(0, 10)) {
+          const rec = await transformToRecommendation(result, 'movie');
+          if (rec) {
+            rec.explanation = 'Fácil de ver, perfecto para relajarse';
+            easyToWatch.push(rec);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching easy to watch movies:', error);
+      }
+    }
+
+    // TV shows - prefer light genres (comedy, animation) if available
+    if (likedTVShows.length > 0) {
+      // Check all liked genres for light genres (35 = Comedy, 16 = Animation)
+      const allLikedGenres = Array.from(genreFrequency.keys());
+      const lightGenres = [35, 16].filter((g) => allLikedGenres.includes(g));
+      const genresToUse = lightGenres.length > 0 ? lightGenres : topGenres;
+
+      try {
+        const tvResponse = await $fetch<TMDBDiscoverResponse>(
+          `${tmdbConfig.baseUrl}/discover/tv`,
+          {
+            query: {
+              api_key: tmdbConfig.apiKey,
+              language: tmdbConfig.language,
+              with_genres: genresToUse.join(','),
+              'vote_average.gte': 6,
+              sort_by: 'popularity.desc',
+              include_adult: false,
+              page: 1,
+            },
+          }
+        );
+
+        for (const result of tvResponse.results.slice(0, 10)) {
+          const rec = await transformToRecommendation(result, 'tv');
+          if (rec) {
+            rec.explanation = 'Fácil de ver, perfecto para relajarse';
+            easyToWatch.push(rec);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching easy to watch TV shows:', error);
+      }
+    }
+
+    // Deduplicate and limit easyToWatch
+    const easyToWatchMap = new Map<number, Recommendation>();
+    easyToWatch.forEach((rec) => {
+      if (!easyToWatchMap.has(rec.tmdb_id)) {
+        easyToWatchMap.set(rec.tmdb_id, rec);
+      }
+    });
+    const finalEasyToWatch = Array.from(easyToWatchMap.values()).slice(0, 10);
+
+    // 3. BASED ON LIKES: Similar titles to 1-2 liked titles
+    const basedOnLikes: Recommendation[] = [];
+
+    // Pick 1-2 liked titles (prefer those with higher ratings)
+    const titlesToUse = [
+      ...likedMovies.map((m) => ({ ...m, type: 'movie' as const })),
+      ...likedTVShows.map((t) => ({ ...t, type: 'tv' as const })),
+    ]
+      .sort(() => Math.random() - 0.5) // Randomize selection
+      .slice(0, 2);
+
+    for (const likedTitle of titlesToUse) {
+      try {
+        const similarPath =
+          likedTitle.type === 'movie'
+            ? `/movie/${likedTitle.tmdb_id}/similar`
+            : `/tv/${likedTitle.tmdb_id}/similar`;
+
+        const similarResponse = await $fetch<TMDBDiscoverResponse>(
+          `${tmdbConfig.baseUrl}${similarPath}`,
+          {
+            query: {
+              api_key: tmdbConfig.apiKey,
+              language: tmdbConfig.language,
+              page: 1,
+            },
+          }
+        );
+
+        for (const result of similarResponse.results.slice(0, 10)) {
+          const rec = await transformToRecommendation(result, likedTitle.type);
+          if (rec) {
+            rec.explanation = 'Similar a algo que te gusta';
+            basedOnLikes.push(rec);
+          }
+        }
+      } catch (error) {
+        console.error(
+          `Error fetching similar titles for ${likedTitle.tmdb_id}:`,
+          error
+        );
+      }
+    }
+
+    // Deduplicate and limit basedOnLikes
+    const basedOnLikesMap = new Map<number, Recommendation>();
+    basedOnLikes.forEach((rec) => {
+      if (!basedOnLikesMap.has(rec.tmdb_id)) {
+        basedOnLikesMap.set(rec.tmdb_id, rec);
+      }
+    });
+    const finalBasedOnLikes = Array.from(basedOnLikesMap.values()).slice(0, 10);
+
+    const recommendationsResponse: Recommendations = {
+      recommended: finalRecommended,
+      easyToWatch: finalEasyToWatch,
+      basedOnLikes: finalBasedOnLikes,
+    };
 
     return recommendationsResponse;
   } catch (error: unknown) {
