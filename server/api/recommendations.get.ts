@@ -1,27 +1,11 @@
 import { serverSupabaseClient, serverSupabaseUser } from '#supabase/server';
 import { createClient } from '@supabase/supabase-js';
 import { getTMDBConfig } from '../utils/config';
-
-interface Provider {
-  provider_id: number;
-  provider_name: string;
-  logo_path: string | null;
-}
-
-interface Recommendation {
-  id: string;
-  tmdb_id: number;
-  title: string;
-  type: 'movie' | 'tv';
-  poster_path: string | null;
-  overview: string | null;
-  vote_average: number | null;
-  genres: number[] | null;
-  release_date: string | null;
-  first_air_date: string | null;
-  explanation: string;
-  providers: Provider[];
-}
+import {
+  Recommendations,
+  Recommendation,
+  Provider,} from '@/types/Recommendation';
+import { UserLike } from '@/types/UserLike';
 
 /**
  * Get recommendations for the authenticated user
@@ -130,33 +114,24 @@ export default defineEventHandler(async (event) => {
     const likedTmdbIds = new Set<number>();
     const likedTypes = new Set<'movie' | 'tv'>();
 
-    userLikes.forEach(
-      (like: {
-        title_id: string;
-        titles?: {
-          tmdb_id?: number;
-          type?: 'movie' | 'tv';
-          genres?: number[] | Array<{ id?: number }>;
-        };
-      }) => {
-        likedTitleIds.add(like.title_id);
-        if (like.titles?.tmdb_id) {
-          likedTmdbIds.add(like.titles.tmdb_id);
-        }
-        if (like.titles?.type) {
-          likedTypes.add(like.titles.type);
-        }
-        if (like.titles?.genres && Array.isArray(like.titles.genres)) {
-          // Genres can be array of numbers (genre_ids) or array of objects with id
-          like.titles.genres.forEach((genre: number | { id?: number }) => {
-            const genreId = typeof genre === 'number' ? genre : genre?.id;
-            if (genreId) {
-              likedGenreIds.add(genreId);
-            }
-          });
-        }
+    userLikes.forEach((like: UserLike) => {
+      likedTitleIds.add(like.title_id);
+      if (like.titles?.tmdb_id) {
+        likedTmdbIds.add(like.titles.tmdb_id);
       }
-    );
+      if (like.titles?.type) {
+        likedTypes.add(like.titles.type);
+      }
+      if (like.titles?.genres && Array.isArray(like.titles.genres)) {
+        // Genres can be array of numbers (genre_ids) or array of objects with id
+        like.titles.genres.forEach((genre: number | { id?: number }) => {
+          const genreId = typeof genre === 'number' ? genre : genre?.id;
+          if (genreId) {
+            likedGenreIds.add(genreId);
+          }
+        });
+      }
+    });
 
     console.log('Server: Extracted from user likes:', {
       likedGenreIds: Array.from(likedGenreIds),
@@ -251,7 +226,7 @@ export default defineEventHandler(async (event) => {
 
     // Fetch providers and generate explanations for recommendations
     const config = getTMDBConfig();
-    const recommendations: Recommendation[] = await Promise.all(
+    const userRecommendations: Recommendation[] = await Promise.all(
       topRecommendations.map(async (title) => {
         // Fetch providers from TMDB
         let providers: Provider[] = [];
@@ -373,7 +348,7 @@ export default defineEventHandler(async (event) => {
           console.error(`Error fetching providers for ${title.title}:`, error);
         }
 
-        return {
+        const recommendation: Recommendation = {
           id: title.id,
           tmdb_id: title.tmdb_id,
           title: title.title,
@@ -384,29 +359,31 @@ export default defineEventHandler(async (event) => {
           genres: title.genres as number[],
           release_date: title.release_date,
           first_air_date: title.first_air_date,
-          explanation: 'Fácil de ver - Alta calificación',
+          explanation: title.explanation,
           providers,
         };
+
+        return recommendation;
       })
     );
 
     // "Based on what you like" - Top matches (top 10)
-    const basedOnLikes = recommendations.slice(0, 10);
+    const basedOnLikes = userRecommendations.slice(0, 10);
 
     // "Recommended for you" - All recommendations (up to 20)
-    const recommended = recommendations.slice(0, 20);
+    const recommended = userRecommendations.slice(0, 20);
+
+    const recommendationsResponse: Recommendations = {
+      recommended: recommended,
+      easyToWatch: easyToWatch,
+      basedOnLikes: basedOnLikes,
+    };
 
     console.log('Server: Returning recommendations:', {
-      recommended: recommended.length,
-      easyToWatch: easyToWatch.length,
-      basedOnLikes: basedOnLikes.length,
+      recommendationsResponse,
     });
 
-    return {
-      recommended,
-      easyToWatch,
-      basedOnLikes,
-    };
+    return recommendationsResponse;
   } catch (error: unknown) {
     console.error('Error fetching recommendations:', error);
     const errorMessage =

@@ -48,15 +48,15 @@ export const useUserStore = defineStore('user', {
 
     async fetchProfile() {
       // Supabase user can have either 'id' or 'sub' as the identifier
-      const userId = this.user?.id || (this.user as any)?.sub;
+      const userId = this.user?.id || (this.user as { sub?: string })?.sub;
 
       if (!this.user || !userId) {
         this.profile = null;
         this.likesCount = null;
+        this.loading = false;
         return;
       }
 
-      this.loading = true;
       try {
         const supabase = useSupabaseClient();
 
@@ -66,7 +66,6 @@ export const useUserStore = defineStore('user', {
           .select('*')
           .eq('id', userId)
           .single();
-
         if (profileError) {
           // If profile doesn't exist, try to create it
           if (profileError.code === 'PGRST116') {
@@ -74,7 +73,8 @@ export const useUserStore = defineStore('user', {
               .from('profiles')
               .insert({
                 id: userId,
-                email: (this.user as any).email || this.user.email,
+                email:
+                  (this.user as { email?: string }).email || this.user.email,
                 onboarding_completed: false,
               })
               .select()
@@ -115,9 +115,11 @@ export const useUserStore = defineStore('user', {
         console.error('Error fetching profile:', error);
         this.profile = null;
         this.likesCount = null;
-      } finally {
-        console.log('Store: Setting loading to false');
         this.loading = false;
+      } finally {
+        // Ensure loading is set to false after fetch completes
+        this.loading = false;
+        console.log('Store: Setting loading to false');
         console.log('Store: loading is now:', this.loading);
         console.log('Store: profile is now:', !!this.profile);
       }

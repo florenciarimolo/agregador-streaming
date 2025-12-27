@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useUserStore } from '../stores/user';
+import { Recommendations } from '@/types/Recommendation';
 
 // Type for Supabase user that may have either 'id' or 'sub' as identifier
 type SupabaseUserWithSub = {
@@ -43,6 +44,15 @@ const user = useSupabaseUser();
 const userStore = useUserStore();
 const supabase = useSupabaseClient();
 
+// Log only on client to avoid SSR noise
+if (import.meta.client) {
+  console.log('Frontend: Script setup - composables initialized (CLIENT)', {
+    hasUser: !!user.value,
+    hasStore: !!userStore,
+    userValue: user.value,
+  });
+}
+
 // Note: Pinia stores are reactive by default, so we can use userStore directly in templates
 
 // Track if initial profile load is complete
@@ -52,56 +62,18 @@ const initialProfileLoaded = ref(false);
 const showAuthForm = ref(false);
 
 // Recommendations state
-interface Provider {
-  provider_id: number;
-  provider_name: string;
-  logo_path: string | null;
-}
-
-interface Recommendation {
-  id: string;
-  tmdb_id: number;
-  title: string;
-  type: 'movie' | 'tv';
-  poster_path: string | null;
-  overview: string | null;
-  vote_average: number | null;
-  genres: number[] | null;
-  release_date: string | null;
-  first_air_date: string | null;
-  explanation: string;
-  providers?: Provider[];
-}
-
 const loadingRecommendations = ref(false);
 
-const recommendations = ref<{
-  recommended: Recommendation[];
-  easyToWatch: Recommendation[];
-  basedOnLikes: Recommendation[];
-}>({
+// Use reactive instead of ref for nested object to ensure proper reactivity
+const recommendations = ref<Recommendations>({
   recommended: [],
   easyToWatch: [],
   basedOnLikes: [],
 });
 
-// Fetch recommendations when user has completed onboarding
-// This watch depends on the user watch above to fetch the profile first
-watch(
-  [() => userStore.hasCompletedOnboarding, () => userStore.profile],
-  async ([hasCompleted, profile]) => {
-    const currentUser = user.value;
-    const userId = getUserId(currentUser);
+// All watches will be set up in onMounted to avoid SSR issues
 
-    if (currentUser && userId && hasCompleted && profile) {
-      // Fetch recommendations if user has completed onboarding
-      await fetchRecommendations();
-    }
-  },
-  { immediate: true }
-);
-
-const fetchRecommendations = async () => {
+const fetchRecommendations = async (): Promise<Recommendations> => {
   console.log('Frontend: fetchRecommendations called', {
     hasUser: !!user.value,
     hasCompletedOnboarding: userStore.hasCompletedOnboarding,
@@ -109,8 +81,14 @@ const fetchRecommendations = async () => {
   });
 
   if (!user.value || !userStore.hasCompletedOnboarding) {
-    console.log('Frontend: fetchRecommendations early return');
-    return;
+    console.log(
+      'Frontend: fetchRecommendations early return - missing requirements'
+    );
+    return {
+      recommended: [],
+      easyToWatch: [],
+      basedOnLikes: [],
+    };
   }
 
   loadingRecommendations.value = true;
@@ -123,20 +101,15 @@ const fetchRecommendations = async () => {
     if (!session) {
       console.error('No session available');
       // Set empty recommendations to show empty state
-      recommendations.value = {
+      return {
         recommended: [],
         easyToWatch: [],
         basedOnLikes: [],
       };
-      return;
     }
 
     // Use $fetch with the session token in headers
-    const data = await $fetch<{
-      recommended: Recommendation[];
-      easyToWatch: Recommendation[];
-      basedOnLikes: Recommendation[];
-    }>('/api/recommendations', {
+    const data = await $fetch<Recommendations>('/api/recommendations', {
       headers: {
         Authorization: `Bearer ${session.access_token}`,
       },
@@ -150,7 +123,7 @@ const fetchRecommendations = async () => {
       fullData: data,
     });
 
-    // Ensure we're assigning arrays, not undefined
+    // Ensure arrays are not undefined
     const recommendedArray = Array.isArray(data.recommended)
       ? data.recommended
       : [];
@@ -161,22 +134,23 @@ const fetchRecommendations = async () => {
       ? data.basedOnLikes
       : [];
 
-    recommendations.value = {
+    const result: Recommendations = {
       recommended: recommendedArray,
       easyToWatch: easyToWatchArray,
       basedOnLikes: basedOnLikesArray,
     };
 
-    console.log('Frontend: recommendations.value after assignment:', {
-      recommended: recommendations.value.recommended.length,
-      easyToWatch: recommendations.value.easyToWatch.length,
-      basedOnLikes: recommendations.value.basedOnLikes.length,
-      recommendedData: recommendations.value.recommended.slice(0, 2),
+    console.log('Frontend: Returning recommendations:', {
+      recommended: recommendedArray.length,
+      easyToWatch: easyToWatchArray.length,
+      basedOnLikes: basedOnLikesArray.length,
     });
+
+    return result;
   } catch (error) {
     console.error('Error fetching recommendations:', error);
     // Set empty recommendations to show empty state even on error
-    recommendations.value = {
+    return {
       recommended: [],
       easyToWatch: [],
       basedOnLikes: [],
@@ -190,81 +164,80 @@ const fetchRecommendations = async () => {
 // Password validation moved to AuthForm component
 
 // Initialize user store if user is logged in
-// This watch ensures the profile is loaded when user changes
-watch(
-  user,
-  async (newUser, oldUser) => {
-    console.log('User watch triggered:', {
-      hasNewUser: !!newUser,
-      hasOldUser: !!oldUser,
-      currentProfile: !!userStore.profile,
-      currentLoading: userStore.loading,
-    });
-
-    // Supabase user can have either 'id' or 'sub' as the identifier
-    const userId = getUserId(newUser);
-    const oldUserId = getUserId(oldUser);
-
-    // Only fetch if user changed or if we don't have a profile yet
-    if (newUser && userId) {
-      // Set user first if not already set
-      const currentUserId = getUserId(userStore.user);
-      if (!userStore.user || currentUserId !== userId) {
-        console.log('Setting user in store');
-        userStore.setUser(newUser);
-      }
-
-      // Only fetch profile if we don't have one or if user changed
-      if (!userStore.profile || (oldUser && oldUserId !== userId)) {
-        console.log('Fetching profile...');
-        await userStore.fetchProfile();
-        // Force reactivity update by accessing the store directly after fetch
-        await nextTick();
-        console.log('Profile fetched:', {
-          hasProfile: !!userStore.profile,
-          onboardingCompleted: userStore.hasCompletedOnboarding,
-          loading: userStore.loading,
-        });
-
-        // If onboarding is complete, fetch recommendations immediately
-        if (userStore.hasCompletedOnboarding) {
-          console.log('Onboarding complete, fetching recommendations...');
-          await fetchRecommendations();
-        }
-      } else {
-        console.log('Profile already exists, skipping fetch');
-        // If profile already exists and onboarding is complete, fetch recommendations
-        if (userStore.hasCompletedOnboarding) {
-          console.log(
-            'Profile exists and onboarding complete, fetching recommendations...'
-          );
-          await fetchRecommendations();
-        }
-      }
-      // Always set initialProfileLoaded to true after checking/fetching profile
-      initialProfileLoaded.value = true;
-    } else if (!newUser && oldUser) {
-      // Clear store when user logs out (only if there was a previous user)
-      console.log('Clearing user store - user logged out');
-      userStore.reset();
-      initialProfileLoaded.value = false;
-    }
-  },
-  { immediate: true }
-);
+// All watches will be set up in onMounted to avoid SSR issues
 
 // Also reload profile when page is mounted (useful when navigating back from onboarding)
 onMounted(async () => {
-  // Supabase user can have either 'id' or 'sub' as the identifier
+  console.log('Frontend: onMounted - START (client-side)', {
+    hasUser: !!user.value,
+    hasStoreUser: !!userStore.user,
+    hasProfile: !!userStore.profile,
+    isClient: import.meta.client,
+    isServer: import.meta.server,
+  });
+
   const userId = getUserId(user.value);
   if (user.value && userId) {
-    // If profile is not loaded yet, fetch it
-    if (!userStore.profile) {
-      await userStore.fetchProfile();
+    // Ensure user is set in store
+    const currentUserId = getUserId(userStore.user);
+    if (!userStore.user || currentUserId !== userId) {
+      console.log('Frontend: onMounted - setting user in store');
+      userStore.setUser(user.value);
     }
+
+    // ALWAYS fetch profile on mount to ensure it's loaded
+    console.log('Frontend: onMounted - fetching profile (always)');
+    userStore.setLoading(true);
+    try {
+      await userStore.fetchProfile();
+      console.log('Frontend: onMounted - profile fetched:', {
+        hasProfile: !!userStore.profile,
+        onboardingCompleted: userStore.hasCompletedOnboarding,
+      });
+
+      // After profile is loaded, trigger recommendations fetch if onboarding is complete
+      if (userStore.hasCompletedOnboarding) {
+        console.log(
+          'Frontend: onMounted - fetching recommendations after profile load'
+        );
+        try {
+          const fetched = await fetchRecommendations();
+          console.log('Frontend: onMounted - fetched recommendations:', {
+            recommended: fetched.recommended?.length || 0,
+            easyToWatch: fetched.easyToWatch?.length || 0,
+            basedOnLikes: fetched.basedOnLikes?.length || 0,
+          });
+          recommendations.value.recommended = [...(fetched.recommended || [])];
+          recommendations.value.easyToWatch = [...(fetched.easyToWatch || [])];
+          recommendations.value.basedOnLikes = [
+            ...(fetched.basedOnLikes || []),
+          ];
+          await nextTick();
+          console.log('Frontend: onMounted - recommendations updated:', {
+            recommended: recommendations.value.recommended.length,
+            easyToWatch: recommendations.value.easyToWatch.length,
+            basedOnLikes: recommendations.value.basedOnLikes.length,
+          });
+        } catch (error) {
+          console.error(
+            'Frontend: Error fetching recommendations after profile load:',
+            error
+          );
+        }
+      }
+    } catch (error) {
+      console.error('Frontend: Error fetching profile in onMounted:', error);
+    } finally {
+      userStore.setLoading(false);
+    }
+
     // Always set initialProfileLoaded to true after checking
     initialProfileLoaded.value = true;
+  } else {
+    console.log('Frontend: onMounted - no user, skipping profile fetch');
   }
+
+  console.log('Frontend: onMounted - END');
 });
 
 const scrollToHowItWorks = () => {
@@ -284,7 +257,9 @@ const handleAuthSuccess = async () => {
   const userId = getUserId(currentUser.value);
   if (currentUser.value && userId) {
     userStore.setUser(currentUser.value);
+    userStore.setLoading(true);
     await userStore.fetchProfile();
+    userStore.setLoading(false);
     // Redirect based on whether user has likes (records in user_likes table)
     if (userStore.hasLikes) {
       await navigateTo('/');
@@ -309,7 +284,9 @@ const handleGetStarted = async () => {
       if (!userStore.user || currentUserId !== userId) {
         userStore.setUser(user.value);
       }
+      userStore.setLoading(true);
       await userStore.fetchProfile(); // Ensure profile is up to date
+      userStore.setLoading(false);
       // Check if user has completed onboarding
       if (userStore.hasCompletedOnboarding) {
         await navigateTo('/');
@@ -361,34 +338,15 @@ const handleGetStarted = async () => {
         >
           Debug: user={{ !!user }}, profile={{ !!userStore.profile }},
           hasCompleted={{ userStore.hasCompletedOnboarding }},
-          loadingRecommendations={{ loadingRecommendations }}, storeLoading={{
-            userStore.loading
-          }}, recs={{ recommendations.recommended.length }}, easy={{
-            recommendations.easyToWatch.length
-          }}, based={{ recommendations.basedOnLikes.length }}<br />
-          Recommendations:
-          {{
-            JSON.stringify({
-              recs: recommendations.recommended.length,
-              easy: recommendations.easyToWatch.length,
-              based: recommendations.basedOnLikes.length,
-            })
+          loadingRecommendations={{ loadingRecommendations }}<br />
+          Recommendations: recs={{ recommendations.recommended?.length || 0 }},
+          easy={{ recommendations.easyToWatch?.length || 0 }}, based={{
+            recommendations.basedOnLikes?.length || 0
           }}
         </div>
 
-        <!-- Show loading state while profile is being fetched -->
-        <div
-          v-if="userStore.loading && !userStore.profile"
-          class="text-center py-12"
-        >
-          <div
-            class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"
-          ></div>
-          <p class="text-gray-600 dark:text-gray-400">Cargando perfil...</p>
-        </div>
-
         <!-- Show content when profile is loaded -->
-        <template v-else-if="!userStore.loading || userStore.profile">
+        <div>
           <!-- Welcome message for logged-in users -->
           <div class="mb-8 text-center">
             <h1
@@ -413,8 +371,11 @@ const handleGetStarted = async () => {
           <!-- Empty State - Show when not loading and no recommendations -->
           <div
             v-else-if="
+              recommendations.recommended &&
               recommendations.recommended.length === 0 &&
+              recommendations.easyToWatch &&
               recommendations.easyToWatch.length === 0 &&
+              recommendations.basedOnLikes &&
               recommendations.basedOnLikes.length === 0
             "
             class="text-center py-12"
@@ -455,24 +416,33 @@ const handleGetStarted = async () => {
           <!-- Recommendations Sections - Show when not loading and there are recommendations -->
           <div v-else>
             <RecommendationSection
-              v-if="recommendations.recommended.length > 0"
+              v-if="
+                recommendations.recommended &&
+                recommendations.recommended.length > 0
+              "
               title="Recomendado para ti"
               :recommendations="recommendations.recommended"
             />
 
             <RecommendationSection
-              v-if="recommendations.easyToWatch.length > 0"
+              v-if="
+                recommendations.easyToWatch &&
+                recommendations.easyToWatch.length > 0
+              "
               title="Fácil de ver / Baja atención"
               :recommendations="recommendations.easyToWatch"
             />
 
             <RecommendationSection
-              v-if="recommendations.basedOnLikes.length > 0"
+              v-if="
+                recommendations.basedOnLikes &&
+                recommendations.basedOnLikes.length > 0
+              "
               title="Basado en lo que te gusta"
               :recommendations="recommendations.basedOnLikes"
             />
           </div>
-        </template>
+        </div>
       </div>
     </section>
 
