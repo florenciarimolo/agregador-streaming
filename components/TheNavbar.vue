@@ -12,10 +12,17 @@
           to="/"
           class="flex items-center transition-opacity hover:opacity-80"
         >
+          <!-- Light mode -->
           <img
-            :src="theme === 'dark' ? '/logo-dark.png' : '/logo-light.png'"
+            src="/logo-light.png"
             alt="UpNext"
-            class="h-8 w-auto object-contain"
+            class="h-8 w-auto object-contain dark:hidden"
+          />
+          <!-- Dark mode -->
+          <img
+            src="/logo-dark.png"
+            alt="UpNext"
+            class="h-8 w-auto object-contain hidden dark:block"
           />
         </nuxt-link>
 
@@ -99,10 +106,17 @@
       <div class="flex items-center justify-between px-4 py-3">
         <!-- Logo -->
         <nuxt-link to="/" class="flex items-center">
+          <!-- Light mode -->
           <img
-            :src="theme === 'dark' ? '/logo-dark.png' : '/logo-light.png'"
+            src="/logo-light.png"
             alt="UpNext"
-            class="h-6 w-auto object-contain"
+            class="h-6 w-auto object-contain dark:hidden"
+          />
+          <!-- Dark mode -->
+          <img
+            src="/logo-dark.png"
+            alt="UpNext"
+            class="h-6 w-auto object-contain hidden dark:block"
           />
         </nuxt-link>
 
@@ -203,9 +217,6 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
-
-// Theme
-const { theme } = useTheme();
 
 // User state
 const user = useSupabaseUser();

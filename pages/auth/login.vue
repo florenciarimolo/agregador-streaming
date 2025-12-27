@@ -2,10 +2,17 @@
   <div class="min-h-screen flex items-center justify-center px-4">
     <div class="w-full max-w-md">
       <div class="text-center mb-8">
+        <!-- Light mode -->
         <img
-          :src="theme === 'dark' ? '/logo-dark.png' : '/logo-light.png'"
+          src="/logo-light.png"
           alt="UpNext"
-          class="h-12 w-12 mx-auto mb-4"
+          class="h-12 w-12 mx-auto mb-4 object-contain dark:hidden"
+        />
+        <!-- Dark mode -->
+        <img
+          src="/logo-dark.png"
+          alt="UpNext"
+          class="h-12 w-12 mx-auto mb-4 object-contain hidden dark:block"
         />
         <h1 class="text-3xl font-bold dark:text-white text-gray-900 mb-2">
           Welcome to UpNext
@@ -161,9 +168,6 @@ definePageMeta({
   layout: false,
   middleware: 'guest', // Only allow unauthenticated users
 });
-
-// Theme
-const { theme } = useTheme();
 
 const { signIn, signUp, signInWithMagicLink } = useAuth();
 const router = useRouter();

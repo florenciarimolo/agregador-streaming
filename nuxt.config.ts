@@ -81,6 +81,7 @@ export default defineNuxtConfig({
         // Open Graph / Facebook
         { property: 'og:type', content: 'website' },
         { property: 'og:site_name', content: 'UpNext' },
+        { property: 'og:image', content: '/logo-banner.png' },
         {
           property: 'og:description',
           content:
@@ -89,6 +90,7 @@ export default defineNuxtConfig({
         // Twitter
         { name: 'twitter:card', content: 'summary_large_image' },
         { name: 'twitter:site', content: '@upnext' },
+        { name: 'twitter:image', content: '/logo-banner.png' },
       ],
       link: [
         { rel: 'icon', type: 'image/png', href: '/favicon.png' },
