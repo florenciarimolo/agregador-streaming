@@ -10,16 +10,13 @@
         <!-- Logo -->
         <nuxt-link
           to="/"
-          class="flex items-center gap-2 transition-opacity hover:opacity-80"
+          class="flex items-center transition-opacity hover:opacity-80"
         >
           <img
             :src="theme === 'dark' ? '/logo-dark.png' : '/logo-light.png'"
             alt="UpNext"
-            class="h-8 w-8"
+            class="h-8 w-auto object-contain"
           />
-          <span class="text-md font-bold dark:text-white text-gray-900"
-            >UpNext</span
-          >
         </nuxt-link>
 
         <!-- Desktop Menu -->
@@ -101,15 +98,12 @@
     >
       <div class="flex items-center justify-between px-4 py-3">
         <!-- Logo -->
-        <nuxt-link to="/" class="flex items-center gap-2">
+        <nuxt-link to="/" class="flex items-center">
           <img
             :src="theme === 'dark' ? '/logo-dark.png' : '/logo-light.png'"
             alt="UpNext"
-            class="h-6 w-6"
+            class="h-6 w-auto object-contain"
           />
-          <span class="text-md font-bold dark:text-white text-gray-900"
-            >UpNext</span
-          >
         </nuxt-link>
 
         <div class="flex items-center gap-2">
