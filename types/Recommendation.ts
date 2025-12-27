@@ -16,7 +16,7 @@ export type Recommendation = {
   release_date: string | null;
   first_air_date: string | null;
   explanation: string;
-  providers: Provider[];
+  providers?: Provider[];
 };
 
 export type Recommendations = {

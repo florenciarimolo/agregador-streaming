@@ -144,6 +144,26 @@ export default defineEventHandler(async (event) => {
       };
     }
 
+    // Get excluded titles (seen + not_interested)
+    const { data: excludedStatuses, error: statusError } = await supabase
+      .from('user_title_status')
+      .select('tmdb_id')
+      .eq('user_id', userId)
+      .in('status', ['seen', 'not_interested']);
+
+    if (statusError) {
+      console.error('Error fetching user_title_status:', statusError);
+      // Don't throw - continue without filtering if there's an error
+    }
+
+    // Build set of excluded tmdb_ids
+    const excludedTmdbIds = new Set<number>();
+    if (excludedStatuses) {
+      excludedStatuses.forEach((status) => {
+        excludedTmdbIds.add(status.tmdb_id);
+      });
+    }
+
     // Extract data from user likes
     const likedTmdbIds = new Set<number>();
     const likedTitlesWithRating: Array<{
@@ -204,6 +224,11 @@ export default defineEventHandler(async (event) => {
     ): Promise<Recommendation | null> => {
       // Skip if already liked
       if (likedTmdbIds.has(result.id)) {
+        return null;
+      }
+
+      // Skip if excluded (seen or not_interested)
+      if (excludedTmdbIds.has(result.id)) {
         return null;
       }
 

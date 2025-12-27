@@ -48,12 +48,27 @@ CREATE TABLE IF NOT EXISTS public.user_likes (
 CREATE INDEX IF NOT EXISTS idx_user_likes_user_id ON public.user_likes(user_id);
 CREATE INDEX IF NOT EXISTS idx_user_likes_title_id ON public.user_likes(title_id);
 
+-- User title status table (tracks seen/not_interested titles)
+CREATE TABLE IF NOT EXISTS public.user_title_status (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+  tmdb_id INTEGER NOT NULL,
+  status TEXT NOT NULL CHECK (status IN ('seen', 'not_interested')),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL,
+  UNIQUE(user_id, tmdb_id) -- Prevent duplicate statuses
+);
+
+-- Index for faster queries
+CREATE INDEX IF NOT EXISTS idx_user_title_status_user_id ON public.user_title_status(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_title_status_tmdb_id ON public.user_title_status(tmdb_id);
+
 -- Row Level Security (RLS) Policies
 
 -- Enable RLS on all tables
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.titles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_likes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.user_title_status ENABLE ROW LEVEL SECURITY;
 
 -- Profiles policies
 -- Users can read their own profile
@@ -105,6 +120,27 @@ CREATE POLICY "Users can insert own likes"
 -- Users can delete their own likes
 CREATE POLICY "Users can delete own likes"
   ON public.user_likes FOR DELETE
+  USING (auth.uid() = user_id);
+
+-- User title status policies
+-- Users can view their own title statuses
+CREATE POLICY "Users can view own title statuses"
+  ON public.user_title_status FOR SELECT
+  USING (auth.uid() = user_id);
+
+-- Users can insert their own title statuses
+CREATE POLICY "Users can insert own title statuses"
+  ON public.user_title_status FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+-- Users can update their own title statuses
+CREATE POLICY "Users can update own title statuses"
+  ON public.user_title_status FOR UPDATE
+  USING (auth.uid() = user_id);
+
+-- Users can delete their own title statuses
+CREATE POLICY "Users can delete own title statuses"
+  ON public.user_title_status FOR DELETE
   USING (auth.uid() = user_id);
 
 -- Function to update updated_at timestamp

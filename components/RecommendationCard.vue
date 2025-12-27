@@ -1,29 +1,38 @@
 <template>
-  <div
-    class="group relative dark:bg-gray-800/50 bg-white rounded-lg overflow-hidden border border-primary/20 hover:border-primary/40 transition-all duration-300 hover:shadow-lg hover:shadow-primary/10"
+  <article
+    class="group relative dark:bg-gray-800/50 bg-white rounded-lg border border-primary/20 hover:border-primary/40 transition-all duration-300 hover:shadow-lg hover:shadow-primary/10"
+    :aria-label="`Recomendación: ${props.title.title}`"
   >
     <!-- Poster -->
     <nuxt-link
       :to="`/${mediaType}/${props.title.tmdb_id}`"
-      class="block aspect-[2/3] relative overflow-hidden bg-gray-800 rounded-t-lg"
+      :aria-label="`Ver detalles de ${props.title.title}`"
+      class="block aspect-[2/3] relative bg-gray-800 rounded-t-lg focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
     >
-      <img
+      <div
         v-if="props.title.poster_path"
-        :src="`https://image.tmdb.org/t/p/w500${props.title.poster_path}`"
-        :alt="props.title.title"
-        class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-        loading="lazy"
-        decoding="async"
-      />
+        class="w-full h-full overflow-hidden rounded-t-lg"
+      >
+        <img
+          :src="`https://image.tmdb.org/t/p/w500${props.title.poster_path}`"
+          :alt="`Poster de ${props.title.title}`"
+          class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+          loading="lazy"
+          decoding="async"
+        />
+      </div>
       <div
         v-else
-        class="w-full h-full flex items-center justify-center text-gray-400"
+        class="w-full h-full flex items-center justify-center text-gray-400 overflow-hidden rounded-t-lg"
+        role="img"
+        :aria-label="`Sin poster disponible para ${props.title.title}`"
       >
         <svg
           class="w-12 h-12"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
+          aria-hidden="true"
         >
           <path
             stroke-linecap="round"
@@ -41,27 +50,61 @@
         class="absolute top-2 right-2 z-10"
       />
 
-      <!-- Bookmark Icon (top-left) -->
-      <button
-        type="button"
-        aria-label="Guardar para después"
-        class="absolute top-2 left-2 z-10 p-2 rounded-full bg-black/50 hover:bg-black/70 backdrop-blur-sm transition-all duration-300"
-        @click.stop="$emit('save-for-later', props.title)"
+      <!-- Action Buttons (top-left) -->
+      <div
+        class="absolute top-2 left-2 z-20 flex gap-2 pointer-events-auto"
+        role="group"
+        aria-label="Acciones de recomendación"
+        @click.stop.prevent
+        @mousedown.stop.prevent
       >
-        <svg
-          class="w-5 h-5 text-white"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
+        <button
+          type="button"
+          :aria-label="`Marcar ${props.title.title} como ya vista`"
+          class="tooltip-container p-2 rounded-full bg-black/50 hover:bg-green-600/80 backdrop-blur-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-black/50"
+          @click.stop.prevent="$emit('mark-seen', props.title)"
+          @mousedown.stop.prevent
         >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
-          />
-        </svg>
-      </button>
+          <svg
+            class="w-4 h-4 text-white"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M5 13l4 4L19 7"
+            />
+          </svg>
+          <span class="tooltip">Ya la he visto</span>
+        </button>
+        <button
+          type="button"
+          :aria-label="`Marcar ${props.title.title} como no me interesa`"
+          class="tooltip-container p-2 rounded-full bg-black/50 hover:bg-red-600/80 backdrop-blur-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-black/50"
+          @click.stop.prevent="$emit('mark-not-interested', props.title)"
+          @mousedown.stop.prevent
+        >
+          <svg
+            class="w-4 h-4 text-white"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M6 18L18 6M6 6l12 12"
+            />
+          </svg>
+          <span class="tooltip">No me interesa</span>
+        </button>
+      </div>
 
       <!-- Hover Overlay (same as MediaCarousel) -->
       <div
@@ -117,32 +160,12 @@
         No disponible en ninguna plataforma
       </div>
     </div>
-  </div>
+  </article>
 </template>
 
 <script setup lang="ts">
 import RatingBadge from './RatingBadge.vue';
-
-interface Provider {
-  provider_id: number;
-  provider_name: string;
-  logo_path: string | null;
-}
-
-interface Recommendation {
-  id: string;
-  tmdb_id: number;
-  title: string;
-  type: 'movie' | 'tv';
-  poster_path: string | null;
-  overview: string | null;
-  vote_average: number | null;
-  genres: number[] | null;
-  release_date: string | null;
-  first_air_date: string | null;
-  explanation: string;
-  providers?: Provider[];
-}
+import type { Recommendation } from '@/types/Recommendation';
 
 interface Props {
   title: Recommendation;
@@ -151,7 +174,8 @@ interface Props {
 const props = defineProps<Props>();
 
 defineEmits<{
-  'save-for-later': [title: Recommendation];
+  'mark-seen': [title: Recommendation];
+  'mark-not-interested': [title: Recommendation];
 }>();
 
 const mediaType = computed(() =>
@@ -166,3 +190,80 @@ const providersWithLogos = computed(() => {
     .slice(0, 6);
 });
 </script>
+
+<style scoped>
+/* Tooltip styles */
+.tooltip-container {
+  position: relative;
+  z-index: 20;
+}
+
+/* Ensure tooltips can escape overflow containers */
+.tooltip-container:hover,
+.tooltip-container:focus {
+  z-index: 10000;
+}
+
+.tooltip {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  background-color: rgba(0, 0, 0, 0.95);
+  color: white;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition:
+    opacity 0.2s ease-in-out,
+    transform 0.2s ease-in-out;
+  z-index: 9999;
+  margin-top: 0;
+}
+
+.tooltip::after {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 4px solid transparent;
+  border-bottom-color: rgba(0, 0, 0, 0.95);
+}
+
+.tooltip-container:hover .tooltip,
+.tooltip-container:focus .tooltip {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Ensure tooltip is visible on focus for keyboard navigation */
+.tooltip-container:focus-visible .tooltip {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Ensure article allows tooltip overflow while maintaining rounded corners */
+article {
+  overflow: visible;
+}
+
+/* Poster link doesn't need overflow-hidden anymore - handled by inner div */
+article > a {
+  border-radius: 0.5rem 0.5rem 0 0;
+}
+
+/* Ensure content area also has proper overflow and rounded corners */
+article > div:last-child {
+  overflow: hidden;
+  border-radius: 0 0 0.5rem 0.5rem;
+}
+
+/* Ensure buttons container can show tooltips outside overflow */
+article > a > div[role='group'] {
+  overflow: visible;
+}
+</style>

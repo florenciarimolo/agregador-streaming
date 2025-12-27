@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useUserStore } from '../stores/user';
-import { Recommendations } from '@/types/Recommendation';
+import { Recommendations, Recommendation } from '@/types/Recommendation';
 import { nextTick } from 'vue';
 
 // Type for Supabase user that may have either 'id' or 'sub' as identifier
@@ -165,6 +165,49 @@ watch(
   { immediate: true }
 );
 
+// Handle marking a title as seen or not interested
+const handleTitleStatus = async (
+  title: Recommendation,
+  status: 'seen' | 'not_interested'
+) => {
+  try {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session?.access_token) {
+      return;
+    }
+
+    // Update status in backend
+    await $fetch('/api/user-title-status', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: {
+        tmdb_id: title.tmdb_id,
+        status,
+      },
+    });
+
+    // Optimistically remove from UI
+    recommendations.value = {
+      recommended: recommendations.value.recommended.filter(
+        (r) => r.tmdb_id !== title.tmdb_id
+      ),
+      easyToWatch: recommendations.value.easyToWatch.filter(
+        (r) => r.tmdb_id !== title.tmdb_id
+      ),
+      basedOnLikes: recommendations.value.basedOnLikes.filter(
+        (r) => r.tmdb_id !== title.tmdb_id
+      ),
+    };
+  } catch (error) {
+    console.error('Error updating title status:', error);
+  }
+};
+
 const scrollToHowItWorks = () => {
   if (typeof window !== 'undefined') {
     const element = document.getElementById('como-funciona');
@@ -237,7 +280,6 @@ const handleGetStarted = async () => {
     <!-- Personalized Recommendations -->
     <section v-if="user" class="py-12 md:py-16 px-4">
       <div class="container mx-auto max-w-7xl">
-
         <!-- Loading State -->
         <div v-if="loadingRecommendations" class="text-center py-12">
           <div
@@ -301,6 +343,8 @@ const handleGetStarted = async () => {
             title="Recomendado para ti"
             description="Elegidas pensando en ti y en lo que sueles disfrutar."
             :recommendations="recommendations.recommended"
+            @mark-seen="handleTitleStatus($event, 'seen')"
+            @mark-not-interested="handleTitleStatus($event, 'not_interested')"
           />
 
           <RecommendationSection
@@ -312,6 +356,8 @@ const handleGetStarted = async () => {
             title="Fácil de ver / Baja atención"
             description="Para esos momentos en los que quieres ver algo sin complicarte."
             :recommendations="recommendations.easyToWatch"
+            @mark-seen="handleTitleStatus($event, 'seen')"
+            @mark-not-interested="handleTitleStatus($event, 'not_interested')"
           />
 
           <RecommendationSection
@@ -323,6 +369,8 @@ const handleGetStarted = async () => {
             title="Basado en lo que te gusta"
             description="Porque ya nos has dicho qué te funciona."
             :recommendations="recommendations.basedOnLikes"
+            @mark-seen="handleTitleStatus($event, 'seen')"
+            @mark-not-interested="handleTitleStatus($event, 'not_interested')"
           />
         </div>
       </div>
@@ -401,9 +449,11 @@ const handleGetStarted = async () => {
         <p
           class="text-xl md:text-3xl text-gray-700 dark:text-gray-200 leading-relaxed font-semibold"
         >
-          No es otra lista más. 
+          No es otra lista más.
         </p>
-        <p class="text-xl md:text-3xl text-primary leading-relaxed font-semibold">
+        <p
+          class="text-xl md:text-3xl text-primary leading-relaxed font-semibold"
+        >
           Es una decisión hecha por ti, pero sin pensar.
         </p>
       </div>
