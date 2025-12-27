@@ -69,6 +69,7 @@
           (searchResults.length > 0 || (searchQuery.length >= 4 && !isLoading))
         "
         class="absolute z-[60] w-full mt-2 dark:bg-gray-900/95 bg-white/95 backdrop-blur-sm dark:border-gray-600 border-gray-300 rounded-lg shadow-xl max-h-96 overflow-y-auto"
+        @mousedown.prevent
       >
         <!-- Results -->
         <div v-if="searchResults.length > 0" class="py-2">
@@ -76,6 +77,7 @@
             v-for="result in searchResults"
             :key="`${result.media_type}-${result.id}`"
             class="flex items-center px-4 py-3 cursor-pointer dark:hover:bg-gray-800/50 hover:bg-gray-100/50 transition-colors duration-150"
+            @mousedown.prevent="navigateToDetail(result)"
             @click="navigateToDetail(result)"
           >
             <!-- Thumbnail -->
@@ -176,7 +178,10 @@
 
 <script setup lang="ts">
 import { ref, onUnmounted } from 'vue';
+import { useRouter } from 'vue-router';
 import type { TMDBSearchResult } from '@/types/TMDBSearch';
+
+const router = useRouter();
 
 // Props
 interface Props {
@@ -206,14 +211,14 @@ const getYear = (result: TMDBSearchResult): string => {
 };
 
 // Navigate to detail page
-const navigateToDetail = async (result: TMDBSearchResult) => {
+const navigateToDetail = (result: TMDBSearchResult) => {
   showResults.value = false;
   searchQuery.value = '';
 
   if (result.media_type === 'movie') {
-    await navigateTo(`/pelicula/${result.id}`);
+    router.push(`/pelicula/${result.id}`);
   } else if (result.media_type === 'tv') {
-    await navigateTo(`/serie/${result.id}`);
+    router.push(`/serie/${result.id}`);
   }
 };
 

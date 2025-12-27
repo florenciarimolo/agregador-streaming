@@ -19,11 +19,12 @@
         </nuxt-link>
 
         <!-- Desktop Menu -->
-        <div class="flex items-center gap-4 w-[70%]">
+        <div class="flex items-center gap-4 w-[70%] justify-end">
           <!-- Search Bar -->
-          <div class="flex-1">
+          <!-- <div class="flex-1">
             <SearchBar />
           </div>
+          -->
           <!-- Theme Switcher -->
           <ThemeSwitcher />
           <!-- User Avatar (if logged in) -->
@@ -165,18 +166,18 @@
         </div>
       </div>
 
-      <!-- Mobile Menu Dropdown -->
+      <!-- Mobile Menu Dropdown
       <div
         v-show="isMobileMenuOpen"
         class="absolute left-0 w-full shadow-lg top-full dark:bg-gray-800 bg-gray-100 backdrop-blur-xs mt-1 rounded-lg"
       >
         <div class="px-4 py-3 space-y-3">
-          <!-- Mobile Search Bar -->
-          <div class="mb-2">
-            <SearchBar />
-          </div>
+          Mobile Search Bar
+        <div class="mb-2">
+          <SearchBar />
         </div>
       </div>
+      -->
     </nav>
   </header>
 
