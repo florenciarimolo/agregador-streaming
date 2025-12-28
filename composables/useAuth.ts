@@ -94,11 +94,16 @@ export const useAuth = () => {
    * Reset password (forgot password)
    */
   const resetPassword = async (email: string) => {
-    console.log(config.public.baseUrl);
-    console.log(`${config.public.baseUrl}/auth/reset-password`);
+    // Ensure baseUrl doesn't have trailing slash
+    const baseUrl = config.public.baseUrl.replace(/\/$/, '');
+    const redirectUrl = `${baseUrl}/auth/reset-password`;
+
+    console.log('[Reset Password] Base URL:', baseUrl);
+    console.log('[Reset Password] Redirect URL:', redirectUrl);
+
     try {
       const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${config.public.baseUrl}/auth/reset-password`,
+        redirectTo: redirectUrl,
       });
 
       if (error) {
@@ -106,6 +111,10 @@ export const useAuth = () => {
         throw error;
       }
 
+      console.log(
+        '[Reset Password] Email sent successfully with redirectTo:',
+        redirectUrl
+      );
       return { data, error: null };
     } catch (error: unknown) {
       console.error('[Server] Reset password error:', error);
