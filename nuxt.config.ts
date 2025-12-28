@@ -32,16 +32,12 @@ if (needsPolyfill) {
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
-  compatibilityDate: '2025-12-23',
-  debug: true,
   devtools: {
     enabled: true,
-    componentInspector: true,
-    timeline: {
-      enabled: true,
-    },
   },
-  modules: ['@pinia/nuxt', '@nuxtjs/supabase'],
+
+  modules: ['@pinia/nuxt', '@nuxtjs/supabase', '@nuxtjs/tailwindcss'],
+
   supabase: {
     redirectOptions: {
       login: '/', // Redirect to home instead of /login
@@ -49,23 +45,25 @@ export default defineNuxtConfig({
       exclude: ['/'], // Homepage is public
     },
   },
+
   vite: {
     plugins: [localStoragePolyfillPlugin()],
   },
+
   css: ['./assets/css/main.css'],
-  postcss: {
-    plugins: {
-      '@tailwindcss/postcss': {},
-    },
-  },
+
   runtimeConfig: {
     tmdbApiKey: process.env.NUXT_TMDB_API_KEY || '',
     public: {
       tmdbBaseUrl: process.env.NUXT_TMDB_BASE_URL || '',
       supabaseUrl: process.env.NUXT_PUBLIC_SUPABASE_URL || '',
       supabaseAnonKey: process.env.NUXT_PUBLIC_SUPABASE_ANON_KEY || '',
+      baseUrl: process.env.NUXT_PUBLIC_BASE_URL || 'http://localhost:3000',
     },
   },
+
+  compatibilityDate: '2024-04-03',
+  // Los aliases se manejan automáticamente por Nuxt
   app: {
     head: {
       title: 'UpNext',
@@ -98,5 +96,4 @@ export default defineNuxtConfig({
       ],
     },
   },
-  // Los aliases se manejan automáticamente por Nuxt
 });

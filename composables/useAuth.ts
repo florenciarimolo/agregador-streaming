@@ -8,6 +8,7 @@ export const useAuth = () => {
   const supabase = useSupabaseClient();
   const user = useSupabaseUser();
   const router = useRouter();
+  const config = useRuntimeConfig();
 
   /**
    * Sign up with email and password
@@ -19,7 +20,7 @@ export const useAuth = () => {
       const validation = validatePassword(password);
       if (!validation.isValid) {
         const error = new Error(validation.errors.join('. '));
-        (error as any).name = 'PasswordValidationError';
+        error.name = 'PasswordValidationError';
         throw error;
       }
 
@@ -27,16 +28,19 @@ export const useAuth = () => {
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          emailRedirectTo: `${config.public.baseUrl}/auth/callback`,
         },
       });
 
       if (error) throw error;
 
       return { data, error: null };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Sign up error:', error);
-      return { data: null, error };
+      return {
+        data: null,
+        error: error instanceof Error ? error : new Error('Unknown error'),
+      };
     }
   };
 
@@ -53,9 +57,12 @@ export const useAuth = () => {
       if (error) throw error;
 
       return { data, error: null };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Sign in error:', error);
-      return { data: null, error };
+      return {
+        data: null,
+        error: error instanceof Error ? error : new Error('Unknown error'),
+      };
     }
   };
 
@@ -67,16 +74,45 @@ export const useAuth = () => {
       const { data, error } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          emailRedirectTo: `${config.public.baseUrl}/auth/callback`,
         },
       });
 
       if (error) throw error;
 
       return { data, error: null };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Magic link error:', error);
-      return { data: null, error };
+      return {
+        data: null,
+        error: error instanceof Error ? error : new Error('Unknown error'),
+      };
+    }
+  };
+
+  /**
+   * Reset password (forgot password)
+   */
+  const resetPassword = async (email: string) => {
+    console.log(config.public.baseUrl);
+    console.log(`${config.public.baseUrl}/auth/reset-password`);
+    try {
+      const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${config.public.baseUrl}/auth/reset-password`,
+      });
+
+      if (error) {
+        console.error('[Server] Reset password error:', error);
+        throw error;
+      }
+
+      return { data, error: null };
+    } catch (error: unknown) {
+      console.error('[Server] Reset password error:', error);
+      return {
+        data: null,
+        error: error instanceof Error ? error : new Error('Error desconocido'),
+      };
     }
   };
 
@@ -91,9 +127,11 @@ export const useAuth = () => {
       // Redirect to homepage after sign out
       await router.push('/');
       return { error: null };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Sign out error:', error);
-      return { error };
+      return {
+        error: error instanceof Error ? error : new Error('Unknown error'),
+      };
     }
   };
 
@@ -112,7 +150,7 @@ export const useAuth = () => {
 
       if (error) throw error;
       return data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Get profile error:', error);
       return null;
     }
@@ -123,6 +161,7 @@ export const useAuth = () => {
     signUp,
     signIn,
     signInWithMagicLink,
+    resetPassword,
     signOut,
     getUserProfile,
   };

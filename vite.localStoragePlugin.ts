@@ -84,6 +84,7 @@ export function localStoragePolyfillPlugin(): Plugin {
           };
         }
       }
+
       return null;
     },
     // Also ensure polyfill exists when resolving modules

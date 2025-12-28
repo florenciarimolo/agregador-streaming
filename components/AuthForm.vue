@@ -24,19 +24,20 @@ const emit = defineEmits<{
 }>();
 
 // Auth composables
-const { signIn, signUp, signInWithMagicLink } = useAuth();
+const { signIn, signUp, signInWithMagicLink, resetPassword } = useAuth();
 const userStore = useUserStore();
 
 // Form state
 const email = ref('');
 const password = ref('');
-const authMethod = ref<'password' | 'magic'>('password');
+const authMethod = ref<'password' | 'magic' | 'forgot'>('password');
 const isSignUp = ref(false);
 const loading = ref(false);
 const error = ref('');
 const magicLinkSent = ref(false);
 const signUpSuccess = ref(false);
 const showPassword = ref(false);
+const forgotPasswordSent = ref(false);
 
 // Password validation
 const passwordValidation = computed(() => {
@@ -137,18 +138,79 @@ const toggleSignUp = () => {
   isSignUp.value = !isSignUp.value;
   signUpSuccess.value = false;
   error.value = '';
+  forgotPasswordSent.value = false;
   // Reset to password method when switching to sign up
   if (!wasSignUp && isSignUp.value) {
     authMethod.value = 'password';
   }
 };
+
+const handleForgotPassword = async () => {
+  loading.value = true;
+  error.value = '';
+  forgotPasswordSent.value = false;
+
+  try {
+    const result = await resetPassword(email.value);
+
+    if (result.error) {
+      // Translate common error messages to Spanish
+      const errorMessage = result.error.message || '';
+      const errorCode = (result.error as { code?: string }).code || '';
+
+      // Check for specific error code and message
+      if (
+        errorCode === 'unexpected_failure' &&
+        errorMessage.includes('Error sending recovery email')
+      ) {
+        error.value =
+          'Error al enviar el correo de recuperación. Por favor, intenta de nuevo más tarde.';
+      } else if (errorMessage.includes('email')) {
+        error.value =
+          'Por favor, verifica que el correo electrónico sea válido.';
+      } else if (
+        errorMessage.includes('rate limit') ||
+        errorMessage.includes('too many')
+      ) {
+        error.value =
+          'Demasiados intentos. Por favor, espera unos minutos antes de intentar de nuevo.';
+      } else if (
+        errorMessage.includes('not found') ||
+        errorMessage.includes('no user')
+      ) {
+        error.value = 'No encontramos una cuenta con este correo electrónico.';
+      } else {
+        error.value =
+          'Error al enviar el enlace de recuperación. Por favor, intenta de nuevo.';
+      }
+      return;
+    }
+
+    forgotPasswordSent.value = true;
+  } catch (err: unknown) {
+    console.error('[Client] Forgot password error:', err);
+    error.value =
+      'Ocurrió un error al procesar tu solicitud. Por favor, intenta de nuevo.';
+  } finally {
+    loading.value = false;
+  }
+};
+
+const showForgotPassword = () => {
+  authMethod.value = 'forgot';
+  error.value = '';
+  forgotPasswordSent.value = false;
+};
+
+const backToLogin = () => {
+  authMethod.value = 'password';
+  error.value = '';
+  forgotPasswordSent.value = false;
+};
 </script>
 
 <template>
-  <section
-    id="auth-form"
-    class="py-12 md:py-16 px-4"
-  >
+  <section id="auth-form" class="py-12 md:py-16 px-4">
     <div class="container mx-auto max-w-md">
       <div
         class="dark:bg-gray-800/70 bg-gray-100/90 backdrop-blur-xs rounded-xl p-6 md:p-8 border border-primary/20 shadow-lg"
@@ -169,7 +231,10 @@ const toggleSignUp = () => {
         </div>
 
         <!-- Tabs (only show magic link option when logging in, not signing up) -->
-        <div v-if="!isSignUp" class="flex gap-2 mb-6">
+        <div
+          v-if="!isSignUp && authMethod !== 'forgot'"
+          class="flex gap-2 mb-6"
+        >
           <button
             :class="[
               'flex-1 py-2 px-4 rounded-lg font-medium transition-colors text-sm',
@@ -199,11 +264,13 @@ const toggleSignUp = () => {
 
         <!-- Success message -->
         <AlertMessage
-          v-if="signUpSuccess || magicLinkSent"
+          v-if="signUpSuccess || magicLinkSent || forgotPasswordSent"
           :message="
             signUpSuccess
               ? '¡Revisa tu email para confirmar tu cuenta!'
-              : '¡Revisa tu email para el enlace mágico!'
+              : forgotPasswordSent
+                ? '¡Revisa tu correo! Te hemos enviado un enlace para restablecer tu contraseña.'
+                : '¡Revisa tu email para el enlace mágico!'
           "
           type="success"
         />
@@ -406,6 +473,54 @@ const toggleSignUp = () => {
           </button>
         </form>
 
+        <!-- Forgot password form -->
+        <form
+          v-else-if="authMethod === 'forgot'"
+          @submit.prevent="handleForgotPassword"
+        >
+          <div class="mb-4">
+            <label
+              for="forgot-email"
+              class="block text-sm font-medium dark:text-gray-300 text-gray-700 mb-2"
+            >
+              Correo electrónico
+            </label>
+            <input
+              id="forgot-email"
+              v-model="email"
+              type="email"
+              required
+              class="w-full px-4 py-2 dark:bg-gray-700 bg-white dark:text-white text-gray-900 border dark:border-gray-600 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+              placeholder="tu@email.com"
+            />
+          </div>
+
+          <button
+            type="submit"
+            :disabled="loading || forgotPasswordSent"
+            class="w-full py-2 px-4 bg-gradient-to-r from-primary via-accent to-secondary hover:from-secondary hover:via-pink-500 hover:to-primary text-white rounded-lg font-medium transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {{
+              forgotPasswordSent
+                ? '¡Enviado!'
+                : loading
+                  ? 'Enviando...'
+                  : 'Enviar enlace de recuperación'
+            }}
+          </button>
+
+          <!-- Back to login -->
+          <div class="mt-4 text-center">
+            <a
+              href="#"
+              class="text-sm text-primary hover:text-secondary transition-colors underline hover:no-underline inline-block"
+              @click.prevent="backToLogin"
+            >
+              Volver al inicio de sesión
+            </a>
+          </div>
+        </form>
+
         <!-- Magic link form -->
         <form v-else @submit.prevent="handleMagicLink">
           <div class="mb-4">
@@ -442,18 +557,32 @@ const toggleSignUp = () => {
 
         <!-- Toggle sign up/sign in -->
         <div class="mt-4 text-center">
-          <button
+          <a
             v-if="authMethod === 'password'"
-            type="button"
-            class="text-sm text-primary hover:text-secondary transition-colors"
-            @click="toggleSignUp"
+            href="#"
+            class="text-sm text-primary hover:text-secondary transition-colors underline hover:no-underline inline-block"
+            @click.prevent="toggleSignUp"
           >
             {{
               isSignUp
                 ? '¿Ya tienes cuenta? Inicia sesión'
                 : '¿No tienes cuenta? Regístrate'
             }}
-          </button>
+          </a>
+        </div>
+
+        <!-- Forgot password link (only show when signing in, not signing up) -->
+        <div
+          v-if="authMethod === 'password' && !isSignUp"
+          class="mt-3 text-center"
+        >
+          <a
+            href="#"
+            class="text-sm text-primary hover:text-secondary transition-colors underline hover:no-underline inline-block"
+            @click.prevent="showForgotPassword"
+          >
+            ¿Has olvidado tu contraseña?
+          </a>
         </div>
       </div>
     </div>

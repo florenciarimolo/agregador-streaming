@@ -1,4 +1,7 @@
-@import 'tailwindcss';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 /* Estilos personalizados de tu aplicación */
 
 /* Outfit Font Family - Body Text */
@@ -75,15 +78,7 @@
   font-feature-settings: normal;
 }
 
-@theme {
-  --color-primary: #6366f1;
-  --color-secondary: #f97316;
-  --color-accent: #8b5cf6;
-  --color-pink: #ec4899;
-  --color-background: #011627;
-}
-
-@variant dark (.dark &);
+/* Theme colors are defined in tailwind.config.js */
 
 :root {
   font-family:

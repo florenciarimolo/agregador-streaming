@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useUserStore } from '../stores/user';
 import { Recommendations, Recommendation } from '@/types/Recommendation';
-import { nextTick } from 'vue';
+import { nextTick, onMounted } from 'vue';
 
 // Type for Supabase user that may have either 'id' or 'sub' as identifier
 type SupabaseUserWithSub = {
@@ -41,6 +41,9 @@ useSeoMeta({
 const user = useSupabaseUser();
 const userStore = useUserStore();
 const supabase = useSupabaseClient();
+
+// Route
+const route = useRoute();
 
 // State
 const initialProfileLoaded = ref(false);
@@ -257,6 +260,19 @@ const handleGetStarted = async () => {
     }
   }
 };
+
+// Check if auth query param is present to show auth form
+onMounted(() => {
+  if (route.query.auth === 'login' && !user.value) {
+    showAuthForm.value = true;
+    nextTick(() => {
+      const element = document.getElementById('auth-form');
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+  }
+});
 </script>
 
 <template>

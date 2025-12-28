@@ -25,6 +25,8 @@ dist-ssr
 
 .vite
 .env
+.env.local
+.env.*.local
 
 # Nuxt
 .nuxt
