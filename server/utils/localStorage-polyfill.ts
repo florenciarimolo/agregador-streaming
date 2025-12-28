@@ -1,6 +1,6 @@
 // Polyfill localStorage for SSR to prevent devtools errors
 // This runs before any modules are imported
-// Node.js 25+ has a broken localStorage, so we need to check for getItem too
+// We check for getItem to ensure localStorage is fully functional
 
 const needsPolyfill =
   typeof globalThis.localStorage === 'undefined' ||

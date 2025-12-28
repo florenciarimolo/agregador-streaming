@@ -10,7 +10,7 @@ import '../utils/localStorage-polyfill';
 // @ts-ignore - defineNitroPlugin is auto-imported by Nuxt
 export default defineNitroPlugin(() => {
   // This plugin runs early to ensure localStorage is polyfilled
-  // Node.js 25+ has a broken localStorage, so we need to check for getItem too
+  // We check for getItem to ensure localStorage is fully functional
   const needsPolyfill =
     typeof globalThis.localStorage === 'undefined' ||
     typeof globalThis.localStorage.getItem !== 'function';

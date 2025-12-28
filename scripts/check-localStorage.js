@@ -9,9 +9,7 @@ const needsPolyfill =
   typeof globalThis.localStorage.getItem !== 'function';
 
 if (needsPolyfill) {
-  console.log(
-    '⚠️  Applying polyfill (Node.js 25+ broken localStorage detected)...\n'
-  );
+  console.log('⚠️  Applying polyfill (localStorage needs polyfill)...\n');
   const storage = {};
   globalThis.localStorage = {
     getItem: (key) => storage[key] || null,

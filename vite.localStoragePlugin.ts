@@ -17,7 +17,7 @@ if (typeof globalThis.localStorage === 'undefined' || typeof globalThis.localSto
 `;
 
 function setupLocalStoragePolyfill() {
-  // Check if localStorage is undefined OR if it exists but doesn't have getItem (Node.js 25+ issue)
+  // Check if localStorage is undefined OR if it exists but doesn't have getItem
   const needsPolyfill =
     typeof globalThis.localStorage === 'undefined' ||
     typeof globalThis.localStorage.getItem !== 'function';
