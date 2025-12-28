@@ -81,18 +81,21 @@
               v-if="seasonWithProviders?.providers?.flatrate?.length"
               :media-provider-prop-list="seasonWithProviders.providers.flatrate"
               watch-type-prop="Ver en:"
+              :media-type="MediaTypeEnum.tv"
             />
 
             <ProviderList
               v-if="seasonWithProviders?.providers?.buy?.length"
               :media-provider-prop-list="seasonWithProviders.providers.buy"
               watch-type-prop="Compra:"
+              :media-type="MediaTypeEnum.tv"
             />
 
             <ProviderList
               v-if="seasonWithProviders?.providers?.rent?.length"
               :media-provider-prop-list="seasonWithProviders.providers.rent"
               watch-type-prop="Alquiler:"
+              :media-type="MediaTypeEnum.tv"
             />
           </article>
         </article>
@@ -179,6 +182,7 @@ import { formatDateToSpanish } from '@/utils/formatDate';
 import { WatchProviderTypes } from '@/types/WatchProvider';
 import ProviderList from '@/components/ProviderList.vue';
 import RatingBadge from '@/components/RatingBadge.vue';
+import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 
 const route = useRoute();
 

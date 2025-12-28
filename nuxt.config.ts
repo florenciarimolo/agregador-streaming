@@ -34,6 +34,10 @@ export default defineNuxtConfig({
     enabled: true,
   },
 
+  typescript: {
+    typeCheck: true, // Enable type checking during dev
+  },
+
   modules: ['@pinia/nuxt', '@nuxtjs/supabase', '@nuxtjs/tailwindcss'],
 
   supabase: {

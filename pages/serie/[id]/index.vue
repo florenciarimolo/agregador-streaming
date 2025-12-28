@@ -92,7 +92,7 @@ const {
   data: tvShowDetails,
   pending: tvShowPending,
   error: tvShowError,
-} = await useFetch(`/api/tmdb/tvshows/${tvShowId}`);
+} = await useFetch<TVShow>(`/api/tmdb/tvshows/${tvShowId}`);
 
 const {
   data: tvProviders,
@@ -105,9 +105,12 @@ const isLoading = computed(
 );
 const hasError = computed(() => tvShowError.value || tvProvidersError.value);
 
-const tvShow = computed<TVShow>(
-  () => (tvShowDetails.value as TVShow) || ({} as TVShow)
-);
+const tvShow = computed<TVShow>(() => {
+  if (!tvShowDetails.value) {
+    return {} as TVShow;
+  }
+  return tvShowDetails.value as TVShow;
+});
 const tvShowProviders = computed(
   () => (tvProviders.value as WatchProviderTypes) || ({} as WatchProviderTypes)
 );

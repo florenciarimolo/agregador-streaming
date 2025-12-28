@@ -12,7 +12,8 @@
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "NODE_OPTIONS='--no-warnings' nuxt prepare",
-    "lint": "eslint . --ext .ts,.vue"
+    "lint": "eslint . --ext .ts,.vue",
+    "typecheck": "nuxt typecheck"
   },
   "dependencies": {
     "@nuxtjs/supabase": "^1.6.2",
@@ -32,6 +33,7 @@
     "eslint-plugin-vue": "^9.20.1",
     "prettier": "^3.2.5",
     "tailwindcss": "^3.4.1",
-    "typescript": "~5.3.3"
+    "typescript": "~5.3.3",
+    "vue-tsc": "^3.2.1"
   }
 }

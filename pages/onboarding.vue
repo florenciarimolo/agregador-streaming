@@ -371,7 +371,6 @@ const saveSelections = async () => {
     }
 
     // Mark onboarding as complete in profile
-    const supabase = useSupabaseClient();
     const { error: updateError } = await supabase
       .from('profiles')
       .update({ onboarding_completed: true })
