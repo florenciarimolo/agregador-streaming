@@ -119,13 +119,15 @@ const handleUserStateChange = async () => {
   const userId = getUserId(user.value);
 
   if (!user.value || !userId) {
-    // No user: reset state
-    userStore.reset();
-    recommendations.value = {
-      recommended: [],
-      easyToWatch: [],
-      basedOnLikes: [],
-    };
+    // No user: reset state (only if auth is initialized to avoid clearing during hydration)
+    if (userStore.authInitialized) {
+      userStore.reset();
+      recommendations.value = {
+        recommended: [],
+        easyToWatch: [],
+        basedOnLikes: [],
+      };
+    }
     initialProfileLoaded.value = true;
     return;
   }
@@ -138,32 +140,73 @@ const handleUserStateChange = async () => {
   initialProfileLoaded.value = true;
 };
 
+// Track if we're already fetching to prevent concurrent calls
+const isFetchingProfile = ref(false);
+const lastFetchedUserId = ref<string | null>(null);
+
 // Single reactive watcher as the single source of truth
+// CRITICAL: Only watch after auth is initialized to avoid race conditions on refresh
 watch(
   () => ({
-    user: user.value,
-    onboarding: userStore.hasCompletedOnboarding,
+    authInitialized: userStore.authInitialized,
+    userId: user.value?.id || (user.value as { sub?: string })?.sub || null,
   }),
-  async ({ user, onboarding }) => {
+  async ({ authInitialized, userId }) => {
+    // CRITICAL: Don't execute watcher until auth is initialized
+    // This prevents clearing recommendations during page refresh before auth hydrates
+    if (!authInitialized) {
+      return;
+    }
+
+    // Skip if we're already fetching or if it's the same user
+    if (isFetchingProfile.value) {
+      return;
+    }
+
     // Handle user state changes first
     await handleUserStateChange();
 
-    // If no user or onboarding not complete, don't fetch recommendations
-    if (!user || !onboarding) {
+    // If no user, clear recommendations
+    if (!userId) {
       recommendations.value = {
         recommended: [],
         easyToWatch: [],
         basedOnLikes: [],
       };
+      lastFetchedUserId.value = null;
       return;
     }
 
-    // Ensure profile is loaded
-    await userStore.ensureProfile();
+    // Skip if we already fetched for this user
+    if (
+      lastFetchedUserId.value === userId &&
+      recommendations.value.recommended.length > 0
+    ) {
+      return;
+    }
 
-    // Fetch recommendations
-    const fetched = await fetchRecommendations();
-    recommendations.value = fetched;
+    isFetchingProfile.value = true;
+    try {
+      // Ensure profile is loaded
+      await userStore.ensureProfile();
+
+      // Check onboarding status AFTER profile is loaded
+      if (!userStore.hasCompletedOnboarding) {
+        recommendations.value = {
+          recommended: [],
+          easyToWatch: [],
+          basedOnLikes: [],
+        };
+        return;
+      }
+
+      // Fetch recommendations
+      const fetched = await fetchRecommendations();
+      recommendations.value = fetched;
+      lastFetchedUserId.value = userId;
+    } finally {
+      isFetchingProfile.value = false;
+    }
   },
   { immediate: true }
 );

@@ -14,6 +14,7 @@ interface UserState {
   profile: Profile | null;
   loading: boolean;
   likesCount: number | null;
+  authInitialized: boolean; // Track if auth has been initialized
 }
 
 export const useUserStore = defineStore('user', {
@@ -22,6 +23,7 @@ export const useUserStore = defineStore('user', {
     profile: null,
     loading: false,
     likesCount: null,
+    authInitialized: false, // Start as false, set to true after plugin initializes
   }),
 
   getters: {
@@ -86,7 +88,6 @@ export const useUserStore = defineStore('user', {
             }
 
             this.profile = newProfile;
-            console.log('Store: Profile created and set:', !!this.profile);
           } else {
             console.error(
               'Error fetching profile from Supabase:',
@@ -96,7 +97,6 @@ export const useUserStore = defineStore('user', {
           }
         } else {
           this.profile = profileData;
-          console.log('Store: Profile fetched and set:', !!this.profile);
         }
 
         // Check if user has likes (completed onboarding)
@@ -119,9 +119,6 @@ export const useUserStore = defineStore('user', {
       } finally {
         // Ensure loading is set to false after fetch completes
         this.loading = false;
-        console.log('Store: Setting loading to false');
-        console.log('Store: loading is now:', this.loading);
-        console.log('Store: profile is now:', !!this.profile);
       }
     },
 
@@ -137,6 +134,11 @@ export const useUserStore = defineStore('user', {
       this.profile = null;
       this.loading = false;
       this.likesCount = null;
+      // Don't reset authInitialized on reset - it should stay true once initialized
+    },
+
+    setAuthInitialized(initialized: boolean) {
+      this.authInitialized = initialized;
     },
   },
 });

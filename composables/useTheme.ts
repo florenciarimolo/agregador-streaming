@@ -1,28 +1,19 @@
+// Use Nuxt's useState for SSR-safe state management
 export const useTheme = () => {
-  const theme = ref<'light' | 'dark'>('dark');
-  let systemThemeListener: ((e: MediaQueryListEvent) => void) | null = null;
+  // Use useState for SSR-safe singleton state
+  const theme = useState<'light' | 'dark'>('theme', () => 'dark');
+  const themeInitialized = useState<boolean>('theme-initialized', () => false);
 
   const setTheme = (newTheme: 'light' | 'dark', isManualChange = false) => {
     theme.value = newTheme;
-    if (import.meta.client) {
+    if (import.meta.client && typeof document !== 'undefined') {
       document.documentElement.classList.remove('light', 'dark');
       document.documentElement.classList.add(newTheme);
-      
+
       if (isManualChange) {
         // User manually changed theme, save preference
         localStorage.setItem('theme', newTheme);
         localStorage.setItem('theme-manual', 'true');
-        
-        // Stop listening to system theme changes
-        if (systemThemeListener) {
-          const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-          if (mediaQuery.removeEventListener) {
-            mediaQuery.removeEventListener('change', systemThemeListener);
-          } else {
-            mediaQuery.removeListener(systemThemeListener);
-          }
-          systemThemeListener = null;
-        }
       }
     }
   };
@@ -31,18 +22,25 @@ export const useTheme = () => {
     setTheme(theme.value === 'dark' ? 'light' : 'dark', true);
   };
 
-  if (import.meta.client) {
+  // Initialize theme only once (on client side)
+  if (
+    import.meta.client &&
+    typeof document !== 'undefined' &&
+    !themeInitialized.value
+  ) {
+    themeInitialized.value = true;
+
     // Check if user has manually changed theme before
     const hasManualTheme = localStorage.getItem('theme-manual') === 'true';
     const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
-    
+
     // Get current theme from DOM (set by plugin) or use saved/system preference
-    const currentTheme = document.documentElement.classList.contains('dark') 
-      ? 'dark' 
+    const currentTheme = document.documentElement.classList.contains('dark')
+      ? 'dark'
       : document.documentElement.classList.contains('light')
-      ? 'light'
-      : 'dark';
-    
+        ? 'light'
+        : null;
+
     // Sync theme state with DOM
     if (currentTheme) {
       theme.value = currentTheme;
@@ -57,20 +55,23 @@ export const useTheme = () => {
       const initialTheme = systemPrefersDark ? 'dark' : 'light';
       setTheme(initialTheme, false);
     }
-    
+
     // Listen for system theme changes if user hasn't manually changed
     if (!hasManualTheme) {
       const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-      systemThemeListener = (e: MediaQueryListEvent) => {
-        setTheme(e.matches ? 'dark' : 'light', false);
+      const listener = (e: MediaQueryListEvent) => {
+        // Only update if user hasn't manually changed since initialization
+        if (localStorage.getItem('theme-manual') !== 'true') {
+          setTheme(e.matches ? 'dark' : 'light', false);
+        }
       };
-      
+
       // Modern browsers
       if (mediaQuery.addEventListener) {
-        mediaQuery.addEventListener('change', systemThemeListener);
+        mediaQuery.addEventListener('change', listener);
       } else {
         // Fallback for older browsers
-        mediaQuery.addListener(systemThemeListener);
+        mediaQuery.addListener(listener);
       }
     }
   }

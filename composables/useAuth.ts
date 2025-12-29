@@ -98,9 +98,6 @@ export const useAuth = () => {
     const baseUrl = config.public.baseUrl.replace(/\/$/, '');
     const redirectUrl = `${baseUrl}/auth/reset-password`;
 
-    console.log('[Reset Password] Base URL:', baseUrl);
-    console.log('[Reset Password] Redirect URL:', redirectUrl);
-
     try {
       const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: redirectUrl,
@@ -111,10 +108,6 @@ export const useAuth = () => {
         throw error;
       }
 
-      console.log(
-        '[Reset Password] Email sent successfully with redirectTo:',
-        redirectUrl
-      );
       return { data, error: null };
     } catch (error: unknown) {
       console.error('[Server] Reset password error:', error);

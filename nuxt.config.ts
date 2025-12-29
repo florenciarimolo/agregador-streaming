@@ -30,12 +30,13 @@ if (needsPolyfill) {
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
+  // Disable devtools in development for faster load times
   devtools: {
-    enabled: true,
+    enabled: false,
   },
 
   typescript: {
-    typeCheck: true, // Enable type checking during dev
+    typeCheck: false, // Disable during dev for faster startup (use npm run typecheck instead)
   },
 
   modules: ['@pinia/nuxt', '@nuxtjs/supabase', '@nuxtjs/tailwindcss'],
@@ -50,6 +51,18 @@ export default defineNuxtConfig({
 
   vite: {
     plugins: [localStoragePolyfillPlugin()],
+    // Optimize development build
+    optimizeDeps: {
+      include: ['vue', 'vue-router', 'pinia', '@supabase/supabase-js'],
+    },
+    // Faster development builds
+    build: {
+      sourcemap: false,
+    },
+    // Enable esbuild for faster transpilation
+    esbuild: {
+      target: 'esnext',
+    },
   },
 
   css: ['./assets/css/main.css'],
@@ -64,8 +77,14 @@ export default defineNuxtConfig({
     },
   },
 
+  // Add compatibility date to avoid warnings
   compatibilityDate: '2024-04-03',
-  // Los aliases se manejan automáticamente por Nuxt
+
+  // Experimental optimizations for faster dev
+  experimental: {
+    payloadExtraction: false, // Disable payload extraction in dev
+  },
+
   app: {
     head: {
       title: 'UpNext',
@@ -95,7 +114,21 @@ export default defineNuxtConfig({
       link: [
         { rel: 'icon', type: 'image/png', href: '/favicon.png' },
         { rel: 'apple-touch-icon', href: '/favicon.png' },
-        // Fonts are loaded via @font-face in CSS, no need to preload
+        // Preload critical fonts for faster initial render
+        {
+          rel: 'preload',
+          href: '/fonts/Outfit-Regular.ttf',
+          as: 'font',
+          type: 'font/ttf',
+          crossorigin: 'anonymous',
+        },
+        {
+          rel: 'preload',
+          href: '/fonts/SpaceGrotesk-Bold.ttf',
+          as: 'font',
+          type: 'font/ttf',
+          crossorigin: 'anonymous',
+        },
       ],
     },
   },

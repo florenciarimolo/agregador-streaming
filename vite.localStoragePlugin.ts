@@ -47,37 +47,21 @@ export function localStoragePolyfillPlugin(): Plugin {
   // Set up polyfill immediately when plugin is loaded
   setupLocalStoragePolyfill();
 
-  // Debug logging (remove in production)
-  if (process.env.NODE_ENV === 'development') {
-    console.log('🔧 localStorage polyfill plugin initialized');
-  }
-
   return {
     name: 'localStorage-polyfill',
     enforce: 'pre', // Run before other plugins
     buildStart() {
       setupLocalStoragePolyfill();
-      if (process.env.NODE_ENV === 'development') {
-        console.log('🔧 localStorage polyfill: buildStart');
-      }
     },
     configureServer() {
       setupLocalStoragePolyfill();
-      if (process.env.NODE_ENV === 'development') {
-        console.log('🔧 localStorage polyfill: configureServer');
-      }
     },
     // Critical: Inject polyfill code into SSR modules that use localStorage
     transform(code, id, options) {
       if (options?.ssr) {
-        setupLocalStoragePolyfill();
-
         // Inject polyfill at the top of modules that might use localStorage
         // Specifically target devtools-kit modules
         if (id.includes('@vue/devtools-kit') || id.includes('devtools')) {
-          if (process.env.NODE_ENV === 'development') {
-            console.log('🔧 Injecting localStorage polyfill into:', id);
-          }
           return {
             code: POLYFILL_CODE + '\n' + code,
             map: null,

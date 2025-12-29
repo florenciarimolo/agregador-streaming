@@ -65,7 +65,8 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 
-// @ts-expect-error - useTheme is auto-imported by Nuxt
+// Nuxt auto-imports: useTheme
+// Types are generated in .nuxt/types/imports.d.ts
 const { theme, toggleTheme } = useTheme();
 const mounted = ref(false);
 

@@ -210,7 +210,7 @@ const backToLogin = () => {
 </script>
 
 <template>
-  <section id="auth-form" class="py-12 md:py-16 px-4">
+  <section id="auth-form" class="py-12 md:py-16 md:px-4">
     <div class="container mx-auto max-w-md">
       <div
         class="dark:bg-gray-800/70 bg-gray-100/90 backdrop-blur-xs rounded-xl p-6 md:p-8 border border-primary/20 shadow-lg"

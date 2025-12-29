@@ -17,10 +17,19 @@ export default defineNuxtRouteMiddleware(async (to) => {
     return navigateTo('/');
   }
 
-  // If user is authenticated, fetch profile
+  // If user is authenticated, ensure user is set in store
+  // Profile is already fetched by the supabase.client.ts plugin, so we just ensure it's loaded
   if (user.value) {
-    userStore.setUser(user.value);
-    await userStore.fetchProfile();
+    // Only set user if different (avoid unnecessary updates)
+    const userId = user.value.id || (user.value as { sub?: string })?.sub;
+    const currentUserId =
+      userStore.user?.id || (userStore.user as { sub?: string })?.sub;
+
+    if (!userStore.user || currentUserId !== userId) {
+      userStore.setUser(user.value);
+      // Only fetch profile if not already loaded (plugin may have already done it)
+      await userStore.ensureProfile();
+    }
 
     // Check if user has completed onboarding
     const hasCompletedOnboarding = userStore.hasCompletedOnboarding;
