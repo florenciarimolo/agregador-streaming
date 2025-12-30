@@ -395,16 +395,24 @@ export default defineEventHandler(async (event) => {
         }
       );
 
-      // Filter by top genres
+      // Filter by top genres and quality criteria
       const genreFilteredMovies = trendingMoviesResponse.results.filter(
         (result) => {
-          return result.genre_ids.some((genreId) =>
+          const hasTopGenre = result.genre_ids.some((genreId) =>
             topGenres.includes(genreId)
           );
+          const meetsQualityCriteria =
+            result.vote_average >= 7.0 && result.vote_count >= 1000;
+          return hasTopGenre && meetsQualityCriteria;
         }
       );
 
-      for (const result of genreFilteredMovies.slice(0, 10)) {
+      // Sort by popularity descending AFTER filtering
+      const sortedMovies = genreFilteredMovies.sort(
+        (a, b) => b.popularity - a.popularity
+      );
+
+      for (const result of sortedMovies.slice(0, 10)) {
         const rec = await transformToRecommendation(result, 'movie');
         if (rec) {
           rec.explanation = 'Tendencia esta semana';
@@ -430,12 +438,22 @@ export default defineEventHandler(async (event) => {
         }
       );
 
-      // Filter by top genres
+      // Filter by top genres and quality criteria
       const genreFilteredTV = trendingTVResponse.results.filter((result) => {
-        return result.genre_ids.some((genreId) => topGenres.includes(genreId));
+        const hasTopGenre = result.genre_ids.some((genreId) =>
+          topGenres.includes(genreId)
+        );
+        const meetsQualityCriteria =
+          result.vote_average >= 7.2 && result.vote_count >= 1500;
+        return hasTopGenre && meetsQualityCriteria;
       });
 
-      for (const result of genreFilteredTV.slice(0, 10)) {
+      // Sort by popularity descending AFTER filtering
+      const sortedTV = genreFilteredTV.sort(
+        (a, b) => b.popularity - a.popularity
+      );
+
+      for (const result of sortedTV.slice(0, 10)) {
         const rec = await transformToRecommendation(result, 'tv');
         if (rec) {
           rec.explanation = 'Tendencia esta semana';

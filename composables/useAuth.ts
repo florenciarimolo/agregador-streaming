@@ -25,8 +25,13 @@ export const useAuth = () => {
       }
 
       // Ensure baseUrl doesn't have trailing slash
+      // Uses NUXT_PUBLIC_BASE_URL environment variable
       const baseUrl = config.public.baseUrl.replace(/\/$/, '');
       const redirectUrl = `${baseUrl}/auth/callback`;
+
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[useAuth] SignUp redirectTo:', redirectUrl);
+      }
 
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -76,8 +81,13 @@ export const useAuth = () => {
   const signInWithMagicLink = async (email: string) => {
     try {
       // Ensure baseUrl doesn't have trailing slash
+      // Uses NUXT_PUBLIC_BASE_URL environment variable
       const baseUrl = config.public.baseUrl.replace(/\/$/, '');
       const redirectUrl = `${baseUrl}/auth/callback`;
+
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[useAuth] MagicLink redirectTo:', redirectUrl);
+      }
 
       const { data, error } = await supabase.auth.signInWithOtp({
         email,
@@ -103,8 +113,13 @@ export const useAuth = () => {
    */
   const resetPassword = async (email: string) => {
     // Ensure baseUrl doesn't have trailing slash
+    // Uses NUXT_PUBLIC_BASE_URL environment variable
     const baseUrl = config.public.baseUrl.replace(/\/$/, '');
     const redirectUrl = `${baseUrl}/auth/reset-password`;
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[useAuth] ResetPassword redirectTo:', redirectUrl);
+    }
 
     try {
       const { data, error } = await supabase.auth.resetPasswordForEmail(email, {

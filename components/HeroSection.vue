@@ -42,7 +42,7 @@ const scrollToHowItWorks = () => {
 
     <!-- Content -->
     <div
-      class="container mx-auto max-w-5xl text-center relative z-10 overflow-visible md:pb-16"
+      class="container mx-auto max-w-5xl text-center relative z-10 overflow-visible"
     >
       <h1
         class="text-4xl md:text-7xl font-bold mb-6 font-heading bg-gradient-to-b from-primary-800 via-primary-800 to-primary-900 dark:from-white dark:via-white dark:to-gray-400 bg-clip-text text-transparent drop-shadow-2xl"

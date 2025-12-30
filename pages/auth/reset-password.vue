@@ -417,7 +417,16 @@ onMounted(async () => {
   const accessToken = route.query.access_token as string;
   const refreshToken = route.query.refresh_token as string;
 
+  // If no code or tokens, check if user already has a session
   if (!code && !accessToken) {
+    // Check if user already has an active session
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (sessionData?.session) {
+      // User already has a session, they can reset password
+      codeValidated.value = true;
+      return;
+    }
+    // No session and no code/tokens, show error
     error.value = 'Enlace de recuperación inválido o expirado.';
     codeValidated.value = true;
     return;
@@ -432,7 +441,9 @@ onMounted(async () => {
       });
 
       if (sessionError) {
-        console.error('[Server] Session error:', sessionError);
+        if (process.env.NODE_ENV === 'development') {
+          console.error('[Server] Session error:', sessionError);
+        }
         error.value =
           'El enlace de recuperación ha expirado o no es válido. Por favor, solicita uno nuevo.';
         codeValidated.value = true;
@@ -451,7 +462,18 @@ onMounted(async () => {
         await supabase.auth.exchangeCodeForSession(code);
 
       if (codeError) {
-        console.error('[Server] Code validation error:', codeError);
+        // If code is already used or expired, check if user has a session
+        // This allows them to still reset password if they have an active session
+        const { data: sessionData } = await supabase.auth.getSession();
+        if (sessionData?.session) {
+          // User has a session, allow password reset
+          codeValidated.value = true;
+          return;
+        }
+
+        if (process.env.NODE_ENV === 'development') {
+          console.error('[Server] Code validation error:', codeError);
+        }
         error.value =
           'El enlace de recuperación ha expirado o no es válido. Por favor, solicita uno nuevo.';
         codeValidated.value = true;
@@ -466,7 +488,17 @@ onMounted(async () => {
       }
     }
   } catch (err: unknown) {
-    console.error('[Server] Code validation error:', err);
+    // On error, check if user has a session anyway
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (sessionData?.session) {
+      // User has a session, allow password reset
+      codeValidated.value = true;
+      return;
+    }
+
+    if (process.env.NODE_ENV === 'development') {
+      console.error('[Server] Code validation error:', err);
+    }
     error.value =
       'Error al validar el enlace de recuperación. Por favor, intenta de nuevo.';
     codeValidated.value = true;
