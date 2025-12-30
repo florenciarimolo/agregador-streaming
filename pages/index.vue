@@ -56,6 +56,7 @@ const route = useRoute();
 const initialProfileLoaded = ref(false);
 const showAuthForm = ref(false);
 const loadingRecommendations = ref(false);
+const hasAttemptedLoad = ref(false); // Track if we've attempted to load recommendations at least once
 const recommendations = ref<Recommendations>({
   recommended: [],
   easyToWatch: [],
@@ -138,6 +139,7 @@ const handleUserStateChange = async () => {
         easyToWatch: [],
         basedOnLikes: [],
       };
+      hasAttemptedLoad.value = false; // Reset flag when clearing state
     }
     initialProfileLoaded.value = true;
     return;
@@ -202,6 +204,7 @@ watch(
         basedOnLikes: [],
       };
       lastFetchedUserId.value = null;
+      hasAttemptedLoad.value = false; // Reset flag when clearing recommendations
       return;
     }
 
@@ -214,6 +217,7 @@ watch(
     }
 
     isFetchingProfile.value = true;
+    loadingRecommendations.value = true;
     try {
       // Ensure profile is loaded
       await userStore.ensureProfile();
@@ -225,6 +229,7 @@ watch(
           easyToWatch: [],
           basedOnLikes: [],
         };
+        hasAttemptedLoad.value = true; // Mark as attempted even if no onboarding
         return;
       }
 
@@ -232,10 +237,13 @@ watch(
       const fetched = await fetchRecommendations();
       recommendations.value = fetched;
       lastFetchedUserId.value = effectiveUserId;
+      hasAttemptedLoad.value = true; // Mark as attempted after successful fetch
     } catch (error) {
       console.error('[index.vue] Error fetching recommendations:', error);
+      hasAttemptedLoad.value = true; // Mark as attempted even on error
     } finally {
       isFetchingProfile.value = false;
+      loadingRecommendations.value = false;
     }
   },
   { immediate: true }
@@ -358,12 +366,16 @@ onMounted(() => {
 <template>
   <div class="w-full">
     <!-- Hero Section -->
+    <!-- Only show HeroSection when auth is initialized and there's no user, or user hasn't completed onboarding -->
     <HeroSection
       v-if="
-        !effectiveUser ||
-        (initialProfileLoaded && !userStore.hasCompletedOnboarding)
+        userStore.authInitialized &&
+        (!effectiveUser ||
+          (initialProfileLoaded && !userStore.hasCompletedOnboarding))
       "
-      :button-text="!user ? 'Descubrir qué ver' : 'Ver recomendaciones'"
+      :button-text="
+        !effectiveUser ? 'Descubrir qué ver' : 'Ver recomendaciones'
+      "
       :show-auth-form="showAuthForm"
       :is-authenticated="!!effectiveUser"
       :initial-profile-loaded="initialProfileLoaded"
@@ -389,8 +401,10 @@ onMounted(() => {
           </div>
 
           <!-- Empty State -->
+          <!-- Only show "no recommendations" message if we've attempted to load and there are none -->
           <div
             v-else-if="
+              hasAttemptedLoad &&
               recommendations.recommended.length === 0 &&
               recommendations.easyToWatch.length === 0 &&
               recommendations.basedOnLikes.length === 0
@@ -476,10 +490,12 @@ onMounted(() => {
     </ClientOnly>
 
     <!-- How It Works Section -->
+    <!-- Only show when auth is initialized and there's no user, or user hasn't completed onboarding -->
     <section
       v-if="
-        !effectiveUser ||
-        (initialProfileLoaded && !userStore.hasCompletedOnboarding)
+        userStore.authInitialized &&
+        (!effectiveUser ||
+          (initialProfileLoaded && !userStore.hasCompletedOnboarding))
       "
       id="como-funciona"
       class="py-16 md:py-24 px-4 dark:bg-gray-900/50 bg-gray-50/50"
@@ -544,7 +560,11 @@ onMounted(() => {
     </section>
 
     <!-- Value Proposition Section -->
-    <section v-if="!effectiveUser" class="py-16 md:py-24 px-4">
+    <!-- Only show when auth is initialized and there's no user -->
+    <section
+      v-if="userStore.authInitialized && !effectiveUser"
+      class="py-16 md:py-24 px-4"
+    >
       <div class="container mx-auto max-w-3xl text-center">
         <p
           class="text-xl md:text-3xl text-gray-700 dark:text-gray-200 leading-relaxed font-semibold"
