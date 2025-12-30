@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen w-full relative overflow-hidden">
+  <div class="min-h-screen w-full relative overflow-hidden py-8 md:py-0">
     <!-- Simple Background -->
 
     <!-- Navbar -->

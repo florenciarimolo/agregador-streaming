@@ -89,8 +89,8 @@
 
   <!-- Mobile Navbar -->
   <header
-    class="fixed top-4 left-0 z-50 w-full transition-transform duration-300 md:hidden"
-    :style="{ transform: `translateY(${isNavbarVisible ? '0' : '-100%'})` }"
+    class="fixed top-4 left-0 z-50 w-full transition-transform duration-300 md:hidden px-4"
+    :style="{ transform: `translateY(${isNavbarVisible ? '0' : '-10px'})` }"
   >
     <nav
       class="dark:bg-gray-800/70 bg-gray-100/90 backdrop-blur-xs rounded-lg border border-primary/20"

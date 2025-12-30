@@ -1,8 +1,8 @@
 <template>
   <div
-    class="min-h-screen flex items-center justify-center dark:bg-[#011627] bg-white"
+    class="min-h-screen flex items-center justify-center dark:bg-[#011627] bg-white px-4"
   >
-    <div class="text-center">
+    <div class="text-center max-w-md w-full">
       <div
         v-if="loading"
         class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"
@@ -10,9 +10,15 @@
       <p v-if="loading" class="text-gray-600 dark:text-gray-400">
         Completando inicio de sesión...
       </p>
-      <p v-if="error" class="mt-4 text-sm text-red-600 dark:text-red-400">
-        {{ error }}
-      </p>
+      <AlertMessage v-if="error" :message="error" type="error" />
+      <div v-if="error" class="mt-4">
+        <nuxt-link
+          to="/"
+          class="inline-block px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+        >
+          Volver al inicio
+        </nuxt-link>
+      </div>
     </div>
   </div>
 </template>
@@ -35,15 +41,89 @@ const user = useSupabaseUser();
 const error = ref<string | null>(null);
 const loading = ref(true);
 
+// Helper function to parse hash params
+const parseHashParams = (): Record<string, string> => {
+  const params: Record<string, string> = {};
+  if (typeof window !== 'undefined' && window.location.hash) {
+    const hash = window.location.hash.substring(1); // Remove #
+    try {
+      const hashParams = new URLSearchParams(hash);
+      hashParams.forEach((value, key) => {
+        params[key] = decodeURIComponent(value);
+      });
+    } catch (e) {
+      console.error('[Callback] Error parsing hash:', e);
+    }
+  }
+  return params;
+};
+
 onMounted(async () => {
   try {
-    // Get code from query parameters (magic link or OAuth)
-    const code = route.query.code as string;
-    const accessToken = route.query.access_token as string;
-    const refreshToken = route.query.refresh_token as string;
-    const errorMessage = route.query.error_message as string;
+    // Get hash params (Supabase sometimes puts params in hash)
+    const hashParams = parseHashParams();
 
-    // Check for error message first
+    // Merge query params and hash params (query params take precedence)
+    const allParams = { ...hashParams, ...route.query };
+
+    // Debug logging
+    if (hashParams.error || route.query.error) {
+      console.log('[Callback] Detected error params:', {
+        hashParams,
+        queryParams: route.query,
+        allParams,
+      });
+    }
+
+    // Get code from query parameters (magic link or OAuth)
+    const code = allParams.code as string;
+    const accessToken = allParams.access_token as string;
+    const refreshToken = allParams.refresh_token as string;
+    const errorMessage = allParams.error_message as string;
+
+    // Get Supabase error parameters (check both hash and query)
+    const supabaseError = allParams.error as string;
+    const errorCode = allParams.error_code as string;
+    const errorDescription = allParams.error_description as string;
+
+    // Check for Supabase error parameters first (error, error_code, error_description)
+    if (supabaseError || errorCode || errorDescription) {
+      let errorText = '';
+
+      // Use error_description if available (most user-friendly)
+      if (errorDescription) {
+        errorText = decodeURIComponent(errorDescription);
+      } else if (errorCode) {
+        // Map common error codes to user-friendly messages
+        const errorMessages: Record<string, string> = {
+          otp_expired:
+            'El enlace de inicio de sesión ha expirado. Por favor, solicita uno nuevo.',
+          access_denied:
+            'Acceso denegado. El enlace no es válido o ha expirado.',
+          invalid_request: 'Solicitud inválida. Por favor, intenta de nuevo.',
+          expired_token:
+            'El token ha expirado. Por favor, solicita un nuevo enlace.',
+        };
+        errorText = errorMessages[errorCode] || `Error: ${errorCode}`;
+      } else if (supabaseError) {
+        errorText =
+          supabaseError === 'access_denied'
+            ? 'Acceso denegado. El enlace no es válido o ha expirado.'
+            : `Error: ${supabaseError}`;
+      } else {
+        errorText =
+          'Ocurrió un error al procesar el enlace. Por favor, intenta de nuevo.';
+      }
+
+      error.value = errorText;
+      loading.value = false;
+      setTimeout(() => {
+        router.replace('/');
+      }, 5000); // Give user more time to read the error
+      return;
+    }
+
+    // Check for error message (legacy format)
     if (errorMessage) {
       error.value = decodeURIComponent(errorMessage);
       loading.value = false;

@@ -388,7 +388,7 @@ onMounted(() => {
 
     <!-- Personalized Recommendations -->
     <ClientOnly>
-      <section v-if="effectiveUser" class="py-12 md:py-16 px-4">
+      <section v-if="effectiveUser" class="py-12 md:py-16 md:px-4">
         <div class="container mx-auto max-w-7xl">
           <!-- Loading State -->
           <div v-if="loadingRecommendations" class="text-center py-12">
