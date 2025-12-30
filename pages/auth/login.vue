@@ -2,9 +2,10 @@
 // Redirect to home page with auth query param to show AuthForm
 definePageMeta({
   layout: false,
-  middleware: 'guest',
+  middleware: ['guest', 'login-redirect'],
 });
-
-// Redirect to homepage with query param to trigger AuthForm display
-await navigateTo('/?auth=login');
 </script>
+
+<template>
+  <div></div>
+</template>

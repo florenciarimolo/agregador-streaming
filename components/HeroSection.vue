@@ -36,8 +36,11 @@ const scrollToHowItWorks = () => {
 </script>
 
 <template>
-  <section class="py-12 md:py-20 lg:py-28 px-4">
-    <div class="container mx-auto max-w-4xl text-center">
+  <section class="relative py-12 md:py-20 lg:py-28 px-4 overflow-hidden">
+
+    
+    <!-- Content -->
+    <div class="container mx-auto max-w-4xl text-center relative z-10">
       <h1
         class="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 dark:text-white text-gray-900 font-heading"
       >
@@ -67,10 +70,11 @@ const scrollToHowItWorks = () => {
     </div>
 
     <!-- AuthForm inside HeroSection, only if user is not logged in -->
-    <AuthForm
-      v-if="!isAuthenticated && showAuthForm"
-      @success="emit('authSuccess')"
-      @signup="emit('signupSuccess')"
-    />
+    <div v-if="!isAuthenticated && showAuthForm" class="relative z-10">
+      <AuthForm
+        @success="emit('authSuccess')"
+        @signup="emit('signupSuccess')"
+      />
+    </div>
   </section>
 </template>

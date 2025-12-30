@@ -498,7 +498,7 @@ onMounted(() => {
           (initialProfileLoaded && !userStore.hasCompletedOnboarding))
       "
       id="como-funciona"
-      class="py-16 md:py-24 px-4 dark:bg-gray-900/50 bg-gray-50/50"
+      class="py-16 md:py-24 px-4 dark:bg-gray-900/90 bg-gray-50/90"
     >
       <div class="container mx-auto max-w-6xl">
         <h2

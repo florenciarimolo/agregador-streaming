@@ -34,5 +34,12 @@ dist-ssr
 .nitro
 .cache
 
+# Generated files by Nuxt/TypeScript
+*.vue.js
+types/**/*.js
+server/api/**/*.js
+server/middleware/**/*.js
+middleware/**/*.js
+
 # Vercel
 .vercel

@@ -361,7 +361,6 @@ button[role='switch'] {
 }
 
 #__nuxt {
-  width: 1400px;
   margin: 0 auto;
   padding-inline: 20px;
   background-color: inherit;

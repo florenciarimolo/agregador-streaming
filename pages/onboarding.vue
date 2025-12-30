@@ -1,3 +1,198 @@
+<script setup lang="ts">
+definePageMeta({
+  middleware: 'auth',
+});
+
+interface TitleResult {
+  id: number;
+  title?: string;
+  name?: string;
+  poster_path: string | null;
+  backdrop_path: string | null;
+  overview: string;
+  release_date?: string;
+  first_air_date?: string;
+  media_type: 'movie' | 'tv';
+  genre_ids?: number[];
+  vote_average?: number;
+}
+
+const supabase = useSupabaseClient();
+const userStore = useUserStore();
+const router = useRouter();
+const user = useSupabaseUser();
+
+const searchQuery = ref('');
+const searchResults = ref<TitleResult[]>([]);
+const selectedTitles = ref<TitleResult[]>([]);
+const loading = ref(false);
+const saving = ref(false);
+const error = ref<string | null>(null);
+const success = ref<string | null>(null);
+let searchTimeout: ReturnType<typeof setTimeout> | null = null;
+
+const handleSearch = () => {
+  if (searchTimeout) {
+    clearTimeout(searchTimeout);
+  }
+
+  if (searchQuery.value.length < 4) {
+    searchResults.value = [];
+    return;
+  }
+
+  loading.value = true;
+  searchTimeout = setTimeout(async () => {
+    try {
+      const response = await $fetch<{ data: { results: TitleResult[] } }>(
+        `/api/tmdb/search/multi`,
+        {
+          query: { query: searchQuery.value },
+        }
+      );
+
+      // Filter to only movies and TV shows, limit to 20
+      searchResults.value = response.data.results
+        .filter((r) => r.media_type === 'movie' || r.media_type === 'tv')
+        .slice(0, 20);
+    } catch (error) {
+      console.error('Search error:', error);
+      searchResults.value = [];
+    } finally {
+      loading.value = false;
+    }
+  }, 300);
+};
+
+const isSelected = (id: number) => {
+  return selectedTitles.value.some((t) => t.id === id);
+};
+
+const toggleTitle = (title: TitleResult) => {
+  if (isSelected(title.id)) {
+    removeTitle(title.id);
+    error.value = null; // Clear any previous errors
+  } else {
+    if (selectedTitles.value.length >= 10) {
+      error.value = 'Solo puedes seleccionar hasta 10 títulos';
+      setTimeout(() => {
+        error.value = null;
+      }, 5000);
+      return;
+    }
+    selectedTitles.value.push(title);
+    error.value = null; // Clear any previous errors
+  }
+};
+
+const removeTitle = (id: number) => {
+  selectedTitles.value = selectedTitles.value.filter((t) => t.id !== id);
+};
+
+const saveSelections = async () => {
+  if (selectedTitles.value.length === 0) return;
+
+  saving.value = true;
+  error.value = null; // Clear any previous errors
+
+  try {
+    // Get user from store (already initialized by middleware) or from useSupabaseUser
+    const currentUser = userStore.user || user.value;
+
+    if (!currentUser || !currentUser.id) {
+      // If user is not in store, try to get it from Supabase
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session?.user) {
+        error.value = 'Debes estar autenticado para guardar tus selecciones.';
+        saving.value = false;
+        return;
+      }
+      // Set user in store
+      userStore.setUser(session.user);
+      await userStore.fetchProfile();
+    }
+
+    const userId = (userStore.user || user.value)!.id;
+
+    // First, ensure all titles exist in the database
+    for (const title of selectedTitles.value) {
+      // Check if title exists
+      const { data: existingTitle } = await supabase
+        .from('titles')
+        .select('id')
+        .eq('tmdb_id', title.id)
+        .eq('type', title.media_type)
+        .single();
+
+      let titleId: string;
+
+      if (existingTitle) {
+        titleId = existingTitle.id;
+      } else {
+        // Insert new title
+        const { data: newTitle, error: insertError } = await supabase
+          .from('titles')
+          .insert({
+            tmdb_id: title.id,
+            title: title.title || title.name || 'Unknown',
+            type: title.media_type,
+            poster_path: title.poster_path,
+            backdrop_path: title.backdrop_path,
+            overview: title.overview,
+            release_date: title.release_date || null,
+            first_air_date: title.first_air_date || null,
+            genres: title.genre_ids || [],
+            vote_average: title.vote_average || null,
+          })
+          .select('id')
+          .single();
+
+        if (insertError) throw insertError;
+        titleId = newTitle.id;
+      }
+
+      // Insert user like (will fail silently if duplicate due to UNIQUE constraint)
+      const { error: likeError } = await supabase.from('user_likes').insert({
+        user_id: userId,
+        title_id: titleId,
+      });
+
+      if (likeError && likeError.code !== '23505') {
+        // 23505 is unique_violation, which is expected for duplicates
+        throw likeError;
+      }
+    }
+
+    // Mark onboarding as complete in profile
+    const { error: updateError } = await supabase
+      .from('profiles')
+      .update({ onboarding_completed: true })
+      .eq('id', userId);
+
+    if (updateError) {
+      console.error('Error updating onboarding status:', updateError);
+    }
+
+    // Ensure profile is fully loaded before redirecting
+    // This will update likesCount and onboarding_completed
+    await userStore.fetchProfile();
+
+    // Redirect to home
+    await router.push('/');
+  } catch (err: unknown) {
+    console.error('Error saving selections:', err);
+    const errorMessage =
+      err instanceof Error
+        ? err.message
+        : 'Error al guardar las selecciones. Por favor, inténtalo de nuevo.';
+    error.value = errorMessage;
+  } finally {
+    saving.value = false;
+  }
+};
+</script>
 <template>
   <div class="min-h-screen py-8 px-4">
     <div class="max-w-4xl mx-auto">
@@ -202,199 +397,3 @@
     </div>
   </div>
 </template>
-
-<script setup lang="ts">
-definePageMeta({
-  middleware: 'auth',
-});
-
-interface TitleResult {
-  id: number;
-  title?: string;
-  name?: string;
-  poster_path: string | null;
-  backdrop_path: string | null;
-  overview: string;
-  release_date?: string;
-  first_air_date?: string;
-  media_type: 'movie' | 'tv';
-  genre_ids?: number[];
-  vote_average?: number;
-}
-
-const supabase = useSupabaseClient();
-const userStore = useUserStore();
-const router = useRouter();
-const user = useSupabaseUser();
-
-const searchQuery = ref('');
-const searchResults = ref<TitleResult[]>([]);
-const selectedTitles = ref<TitleResult[]>([]);
-const loading = ref(false);
-const saving = ref(false);
-const error = ref<string | null>(null);
-const success = ref<string | null>(null);
-let searchTimeout: ReturnType<typeof setTimeout> | null = null;
-
-const handleSearch = () => {
-  if (searchTimeout) {
-    clearTimeout(searchTimeout);
-  }
-
-  if (searchQuery.value.length < 4) {
-    searchResults.value = [];
-    return;
-  }
-
-  loading.value = true;
-  searchTimeout = setTimeout(async () => {
-    try {
-      const response = await $fetch<{ data: { results: TitleResult[] } }>(
-        `/api/tmdb/search/multi`,
-        {
-          query: { query: searchQuery.value },
-        }
-      );
-
-      // Filter to only movies and TV shows, limit to 20
-      searchResults.value = response.data.results
-        .filter((r) => r.media_type === 'movie' || r.media_type === 'tv')
-        .slice(0, 20);
-    } catch (error) {
-      console.error('Search error:', error);
-      searchResults.value = [];
-    } finally {
-      loading.value = false;
-    }
-  }, 300);
-};
-
-const isSelected = (id: number) => {
-  return selectedTitles.value.some((t) => t.id === id);
-};
-
-const toggleTitle = (title: TitleResult) => {
-  if (isSelected(title.id)) {
-    removeTitle(title.id);
-    error.value = null; // Clear any previous errors
-  } else {
-    if (selectedTitles.value.length >= 10) {
-      error.value = 'Solo puedes seleccionar hasta 10 títulos';
-      setTimeout(() => {
-        error.value = null;
-      }, 5000);
-      return;
-    }
-    selectedTitles.value.push(title);
-    error.value = null; // Clear any previous errors
-  }
-};
-
-const removeTitle = (id: number) => {
-  selectedTitles.value = selectedTitles.value.filter((t) => t.id !== id);
-};
-
-const saveSelections = async () => {
-  if (selectedTitles.value.length === 0) return;
-
-  saving.value = true;
-  error.value = null; // Clear any previous errors
-
-  try {
-    // Get user from store (already initialized by middleware) or from useSupabaseUser
-    const currentUser = userStore.user || user.value;
-
-    if (!currentUser || !currentUser.id) {
-      // If user is not in store, try to get it from Supabase
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (!session?.user) {
-        error.value = 'Debes estar autenticado para guardar tus selecciones.';
-        saving.value = false;
-        return;
-      }
-      // Set user in store
-      userStore.setUser(session.user);
-      await userStore.fetchProfile();
-    }
-
-    const userId = (userStore.user || user.value)!.id;
-
-    // First, ensure all titles exist in the database
-    for (const title of selectedTitles.value) {
-      // Check if title exists
-      const { data: existingTitle } = await supabase
-        .from('titles')
-        .select('id')
-        .eq('tmdb_id', title.id)
-        .eq('type', title.media_type)
-        .single();
-
-      let titleId: string;
-
-      if (existingTitle) {
-        titleId = existingTitle.id;
-      } else {
-        // Insert new title
-        const { data: newTitle, error: insertError } = await supabase
-          .from('titles')
-          .insert({
-            tmdb_id: title.id,
-            title: title.title || title.name || 'Unknown',
-            type: title.media_type,
-            poster_path: title.poster_path,
-            backdrop_path: title.backdrop_path,
-            overview: title.overview,
-            release_date: title.release_date || null,
-            first_air_date: title.first_air_date || null,
-            genres: title.genre_ids || [],
-            vote_average: title.vote_average || null,
-          })
-          .select('id')
-          .single();
-
-        if (insertError) throw insertError;
-        titleId = newTitle.id;
-      }
-
-      // Insert user like (will fail silently if duplicate due to UNIQUE constraint)
-      const { error: likeError } = await supabase.from('user_likes').insert({
-        user_id: userId,
-        title_id: titleId,
-      });
-
-      if (likeError && likeError.code !== '23505') {
-        // 23505 is unique_violation, which is expected for duplicates
-        throw likeError;
-      }
-    }
-
-    // Mark onboarding as complete in profile
-    const { error: updateError } = await supabase
-      .from('profiles')
-      .update({ onboarding_completed: true })
-      .eq('id', userId);
-
-    if (updateError) {
-      console.error('Error updating onboarding status:', updateError);
-    }
-
-    // Ensure profile is fully loaded before redirecting
-    // This will update likesCount and onboarding_completed
-    await userStore.fetchProfile();
-
-    // Redirect to home
-    await router.push('/');
-  } catch (err: unknown) {
-    console.error('Error saving selections:', err);
-    const errorMessage =
-      err instanceof Error
-        ? err.message
-        : 'Error al guardar las selecciones. Por favor, inténtalo de nuevo.';
-    error.value = errorMessage;
-  } finally {
-    saving.value = false;
-  }
-};
-</script>
