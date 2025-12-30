@@ -50,7 +50,7 @@
       >
         <div class="min-w-0 w-full">
           <h3
-            class="text-sm sm:text-base font-semibold dark:text-white text-gray-900 mb-1 break-words line-clamp-2"
+            class="text-sm sm:text-base font-semibold dark:text-gray-300 text-gray-800 mb-1 break-words line-clamp-2"
           >
             {{ mediaObject.title ? mediaObject.title : mediaObject.name }}
           </h3>
@@ -125,14 +125,14 @@
               class="absolute bottom-0 left-0 flex flex-col items-center justify-center w-full h-full px-4 transition-all duration-300 opacity-0 rounded-xl group-hover:opacity-100 group-hover:shadow-primary/40 group-hover:shadow-xl backdrop-blur-md w-inherit dark:bg-black/80 bg-white/80 border border-primary/20"
             >
               <RatingBadge :rating="mediaObject.vote_average" />
-              <p class="mt-4 dark:text-white text-gray-900 font-semibold"
+              <p class="mt-4 dark:text-gray-300 text-gray-800 font-semibold"
                 >Ver detalles</p
               >
             </div>
           </div>
         </nuxt-link>
         <p
-          class="mt-2 text-base font-semibold text-center dark:text-white text-gray-900"
+          class="mt-2 text-base font-semibold text-center dark:text-gray-300 text-gray-800"
         >
           {{ mediaObject.title ? mediaObject.title : mediaObject.name }}
         </p>

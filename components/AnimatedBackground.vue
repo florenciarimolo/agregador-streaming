@@ -71,8 +71,8 @@
       </g>
     </svg>
 
-    <!-- Data cards (abstract shapes suggesting data processing) -->
-    <div class="data-cards">
+    <!-- Data cards (abstract shapes suggesting data processing) - Hidden in light theme -->
+    <div class="data-cards hidden dark:block">
       <div
         v-for="i in 6"
         :key="`card-${i}`"
@@ -286,6 +286,10 @@ const getCardStyle = (index: number) => {
   will-change: transform, opacity;
 }
 
+.dark .particle {
+  background: rgba(255, 255, 255, 0.8);
+}
+
 @keyframes particleFloat {
   0%,
   100% {
@@ -307,6 +311,10 @@ const getCardStyle = (index: number) => {
   height: 100vh;
   z-index: 2;
   opacity: 0.4;
+}
+
+.dark .neural-network {
+  opacity: 0.6;
 }
 
 .connection-line {
@@ -332,6 +340,10 @@ const getCardStyle = (index: number) => {
   fill: rgba(33, 24, 110, 0.4);
   opacity: 0;
   animation: nodePulse 3s ease-in-out infinite;
+}
+
+.dark .neural-node {
+  fill: rgba(33, 24, 110, 0.6);
 }
 
 @keyframes nodePulse {
@@ -493,19 +505,19 @@ const getCardStyle = (index: number) => {
 <!-- Global styles for theme selectors (need to access document root) -->
 <style>
 .dark .animated-background {
-  opacity: 0.5;
+  opacity: 0.8;
 }
 
 .light .animated-background {
   opacity: 0.9;
 }
 
-/* Dark mode orbs - All primary color */
+/* Dark mode orbs - All primary color - Enhanced visibility */
 .dark .orb-1 {
   background: radial-gradient(
     circle,
-    rgba(33, 24, 110, 0.4) 0%,
-    rgba(33, 24, 110, 0.2) 40%,
+    rgba(33, 24, 110, 0.6) 0%,
+    rgba(33, 24, 110, 0.35) 40%,
     transparent 70%
   );
 }
@@ -513,8 +525,8 @@ const getCardStyle = (index: number) => {
 .dark .orb-2 {
   background: radial-gradient(
     circle,
-    rgba(33, 24, 110, 0.35) 0%,
-    rgba(33, 24, 110, 0.18) 40%,
+    rgba(33, 24, 110, 0.55) 0%,
+    rgba(33, 24, 110, 0.3) 40%,
     transparent 70%
   );
 }
@@ -522,8 +534,8 @@ const getCardStyle = (index: number) => {
 .dark .orb-3 {
   background: radial-gradient(
     circle,
-    rgba(33, 24, 110, 0.3) 0%,
-    rgba(33, 24, 110, 0.15) 40%,
+    rgba(33, 24, 110, 0.5) 0%,
+    rgba(33, 24, 110, 0.25) 40%,
     transparent 70%
   );
 }
@@ -531,8 +543,8 @@ const getCardStyle = (index: number) => {
 .dark .orb-4 {
   background: radial-gradient(
     circle,
-    rgba(33, 24, 110, 0.3) 0%,
-    rgba(33, 24, 110, 0.15) 40%,
+    rgba(33, 24, 110, 0.5) 0%,
+    rgba(33, 24, 110, 0.25) 40%,
     transparent 70%
   );
 }
@@ -573,18 +585,18 @@ const getCardStyle = (index: number) => {
   );
 }
 
-/* Dark mode grid pattern - Lighter primary color */
+/* Dark mode grid pattern - Lighter primary color - Enhanced visibility */
 .dark .grid-pattern {
   background-image:
-    linear-gradient(rgba(33, 24, 110, 0.12) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(33, 24, 110, 0.12) 1px, transparent 1px);
-  opacity: 0.8;
+    linear-gradient(rgba(33, 24, 110, 0.2) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(33, 24, 110, 0.2) 1px, transparent 1px);
+  opacity: 1;
 }
 
 .light .grid-pattern {
   background-image:
-    linear-gradient(rgba(33, 24, 110, 0.08) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(33, 24, 110, 0.08) 1px, transparent 1px);
-  opacity: 0.7;
+    linear-gradient(rgba(33, 24, 110, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(33, 24, 110, 0.05) 1px, transparent 1px);
+  opacity: 0.5;
 }
 </style>

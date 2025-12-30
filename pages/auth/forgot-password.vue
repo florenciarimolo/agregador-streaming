@@ -14,10 +14,10 @@
           alt="UpNext"
           class="h-12 w-12 mx-auto mb-4 object-contain hidden dark:block"
         />
-        <h1 class="text-3xl font-bold dark:text-white text-gray-900 mb-2">
+        <h1 class="text-3xl font-bold dark:text-gray-300 text-gray-800 mb-2">
           Recuperar contraseña
         </h1>
-        <p class="text-gray-600 dark:text-gray-400">
+        <p class="text-gray-800 dark:text-gray-300">
           Te enviaremos un enlace para restablecer tu contraseña
         </p>
       </div>
@@ -47,7 +47,7 @@
           <div class="mb-4">
             <label
               for="reset-email"
-              class="block text-sm font-medium dark:text-gray-300 text-gray-700 mb-2"
+              class="block text-sm font-medium dark:text-gray-300 text-gray-800 mb-2"
             >
               Email
             </label>
@@ -56,7 +56,7 @@
               v-model="email"
               type="email"
               required
-              class="w-full px-4 py-3 dark:bg-gray-900/50 bg-white dark:text-white text-gray-900 border dark:border-gray-700/50 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all"
+              class="w-full px-4 py-3 dark:bg-gray-900/50 bg-white dark:text-gray-300 text-gray-800 border dark:border-gray-700/50 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all"
               placeholder="you@example.com"
             />
           </div>
@@ -64,7 +64,7 @@
           <button
             type="submit"
             :disabled="loading"
-            class="w-full py-3 px-6 dark:bg-gray-900/90 bg-gray-800/90 hover:dark:bg-gray-800 hover:bg-gray-700 text-white rounded-lg font-medium transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg border border-gray-700/50 dark:border-gray-600/50"
+            class="w-full py-3 px-6 dark:bg-gray-900/90 bg-gray-800/90 hover:dark:bg-gray-800/80 hover:bg-gray-900/90 text-white rounded-lg font-medium transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg border border-gray-700/50 dark:border-gray-600/50"
           >
             {{ loading ? 'Enviando...' : 'Enviar enlace de recuperación' }}
           </button>

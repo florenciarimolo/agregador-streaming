@@ -2,11 +2,11 @@
   <div class="container mx-auto max-w-7xl px-4 py-12">
     <div class="mb-8">
       <h1
-        class="text-3xl md:text-4xl font-bold dark:text-white text-gray-900 mb-2 font-heading"
+        class="text-3xl md:text-4xl font-bold dark:text-gray-300 text-gray-800 mb-2 font-heading"
       >
         Historial
       </h1>
-      <p class="text-gray-600 dark:text-gray-300">
+      <p class="text-gray-800 dark:text-gray-300">
         Revisa las películas y series que has marcado como vistas o que no te
         interesan.
       </p>
@@ -38,10 +38,12 @@
           class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 max-w-md mx-4"
           @click.stop
         >
-          <h3 class="text-lg font-semibold dark:text-white text-gray-900 mb-2">
+          <h3
+            class="text-lg font-semibold dark:text-gray-300 text-gray-800 mb-2"
+          >
             Confirmar eliminación
           </h3>
-          <p class="text-gray-600 dark:text-gray-300 mb-4">
+          <p class="text-gray-800 dark:text-gray-300 mb-4">
             ¿Estás seguro de que quieres eliminar "{{ titleToRemove.title }}" de
             tu historial?
           </p>
@@ -70,7 +72,7 @@
       <div
         class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"
       ></div>
-      <p class="text-gray-600 dark:text-gray-400">Cargando historial...</p>
+      <p class="text-gray-800 dark:text-gray-300">Cargando historial...</p>
     </div>
 
     <!-- Content -->
@@ -79,11 +81,11 @@
       <section>
         <div class="mb-6">
           <h2
-            class="text-2xl font-bold dark:text-white text-gray-900 mb-2 font-heading"
+            class="text-2xl font-bold dark:text-gray-300 text-gray-800 mb-2 font-heading"
           >
             Vistas
           </h2>
-          <p class="text-gray-600 dark:text-gray-400 text-sm">
+          <p class="text-gray-800 dark:text-gray-300 text-sm">
             Películas y series que has marcado como vistas
           </p>
         </div>
@@ -150,17 +152,16 @@
                 @mousedown.stop.prevent
               >
                 <svg
-                  class="w-4 h-4 text-white"
+                  class="w-4 h-4"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
-                  aria-hidden="true"
                 >
                   <path
                     stroke-linecap="round"
                     stroke-linejoin="round"
                     stroke-width="2"
-                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                    d="M6 18L18 6M6 6l12 12"
                   />
                 </svg>
                 <span class="tooltip">Eliminar de vistas</span>
@@ -170,7 +171,7 @@
             <!-- Content -->
             <div class="p-4">
               <h3
-                class="text-sm font-semibold dark:text-white text-gray-900 truncate mb-1"
+                class="text-sm font-semibold dark:text-gray-300 text-gray-800 truncate mb-1"
               >
                 {{ title.title }}
               </h3>
@@ -186,11 +187,11 @@
       <section>
         <div class="mb-6">
           <h2
-            class="text-2xl font-bold dark:text-white text-gray-900 mb-2 font-heading"
+            class="text-2xl font-bold dark:text-gray-300 text-gray-800 mb-2 font-heading"
           >
             No me interesan
           </h2>
-          <p class="text-gray-600 dark:text-gray-400 text-sm">
+          <p class="text-gray-800 dark:text-gray-300 text-sm">
             Películas y series que has marcado como no te interesan
           </p>
         </div>
@@ -257,17 +258,16 @@
                 @mousedown.stop.prevent
               >
                 <svg
-                  class="w-4 h-4 text-white"
+                  class="w-4 h-4"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
-                  aria-hidden="true"
                 >
                   <path
                     stroke-linecap="round"
                     stroke-linejoin="round"
                     stroke-width="2"
-                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                    d="M6 18L18 6M6 6l12 12"
                   />
                 </svg>
                 <span class="tooltip">Eliminar de no me interesan</span>
@@ -277,7 +277,7 @@
             <!-- Content -->
             <div class="p-4">
               <h3
-                class="text-sm font-semibold dark:text-white text-gray-900 truncate mb-1"
+                class="text-sm font-semibold dark:text-gray-300 text-gray-800 truncate mb-1"
               >
                 {{ title.title }}
               </h3>

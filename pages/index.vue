@@ -395,7 +395,7 @@ onMounted(() => {
             <div
               class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"
             ></div>
-            <p class="text-gray-600 dark:text-gray-400">
+            <p class="text-gray-800 dark:text-gray-300">
               Cargando recomendaciones...
             </p>
           </div>
@@ -426,18 +426,18 @@ onMounted(() => {
                 />
               </svg>
               <h3
-                class="text-xl font-semibold dark:text-white text-gray-900 mb-2 font-heading"
+                class="text-xl font-semibold dark:text-gray-300 text-gray-800 mb-2 font-heading"
               >
                 Aún no hay recomendaciones
               </h3>
-              <p class="text-gray-600 dark:text-gray-400 mb-6">
+              <p class="text-gray-800 dark:text-gray-300 mb-6">
                 Para recibir recomendaciones personalizadas, primero necesitas
                 agregar películas y series que te gusten. Esto nos ayuda a
                 conocerte mejor y sugerirte contenido que realmente disfrutarás.
               </p>
               <nuxt-link
                 to="/onboarding"
-                class="inline-block px-6 py-3 dark:bg-gray-900/90 bg-gray-800/90 hover:dark:bg-gray-800 hover:bg-gray-700 text-white rounded-lg font-medium transition-all duration-300 shadow-lg border border-gray-700/50 dark:border-gray-600/50"
+                class="inline-block px-6 py-3 dark:bg-gray-900/90 bg-gray-800/90 hover:dark:bg-gray-800/80 hover:bg-gray-900/90 text-white rounded-lg font-medium transition-all duration-300 shadow-lg border border-gray-700/50 dark:border-gray-600/50"
               >
                 Agregar favoritos
               </nuxt-link>
@@ -498,59 +498,65 @@ onMounted(() => {
           (initialProfileLoaded && !userStore.hasCompletedOnboarding))
       "
       id="como-funciona"
-      class="py-16 md:py-24 px-4 dark:bg-gray-800/60 bg-gray-100/80 rounded-sm"
+      class="pb-16 md:pt-16 md:px-4"
     >
       <div class="container mx-auto max-w-6xl">
         <h2
-          class="text-3xl md:text-4xl font-bold text-center mb-12 dark:text-white text-gray-900 font-heading"
+          class="text-3xl md:text-4xl font-bold text-center mb-16 dark:text-gray-300 text-gray-800 font-heading"
         >
           Cómo funciona
         </h2>
         <div class="grid md:grid-cols-3 gap-8">
-          <div class="text-center">
+          <div
+            class="bg-white/60 dark:bg-gray-900/40 backdrop-blur-xl border border-gray-300/50 dark:border-white/10 rounded-3xl p-6 md:p-8 relative overflow-hidden group hover:border-primary/50 dark:hover:border-purple-500/30 transition-colors flex flex-col text-center"
+          >
             <div
               class="w-16 h-16 bg-gradient-to-r from-primary to-accent rounded-full flex items-center justify-center mx-auto mb-4"
             >
               <span class="text-2xl font-bold text-white">1</span>
             </div>
             <h3
-              class="text-xl font-semibold mb-2 dark:text-white text-gray-900 font-heading"
+              class="text-xl font-semibold mb-2 dark:text-gray-300 text-gray-800 font-heading"
             >
               Dinos qué te gusta
             </h3>
-            <p class="text-gray-600 dark:text-gray-300">
+            <p class="text-gray-800 dark:text-gray-300">
               Selecciona hasta 10 películas y series que disfrutas. Esto nos
               ayuda a conocerte mejor.
             </p>
           </div>
-          <div class="text-center">
+          <div
+            class="bg-white/60 dark:bg-gray-900/40 backdrop-blur-xl border border-gray-300/50 dark:border-white/10 rounded-3xl p-6 md:p-8 relative overflow-hidden group hover:border-primary/50 dark:hover:border-purple-500/30 transition-colors flex flex-col text-center"
+          >
             <div
               class="w-16 h-16 bg-gradient-to-r from-accent to-secondary rounded-full flex items-center justify-center mx-auto mb-4"
             >
               <span class="text-2xl font-bold text-white">2</span>
             </div>
             <h3
-              class="text-xl font-semibold mb-2 dark:text-white text-gray-900 font-heading"
+              class="text-xl font-semibold mb-2 dark:text-gray-300 text-gray-800 font-heading"
             >
               Cuéntanos tu momento
             </h3>
-            <p class="text-gray-600 dark:text-gray-300">
+            <p class="text-gray-800 dark:text-gray-300">
               Indica cómo te sientes, tu nivel de energía y el tiempo que tienes
               disponible.
             </p>
           </div>
-          <div class="text-center">
+          <div
+            class="bg-white/60 dark:bg-gray-900/40 backdrop-blur-xl border border-gray-300/50 dark:border-white/10 rounded-3xl p-6 md:p-8 relative overflow-hidden group hover:border-primary/50 dark:hover:border-purple-500/30 transition-colors flex flex-col text-center"
+          >
             <div
               class="w-16 h-16 bg-gradient-to-r from-secondary to-pink rounded-full flex items-center justify-center mx-auto mb-4"
             >
               <span class="text-2xl font-bold text-white">3</span>
             </div>
             <h3
-              class="text-xl font-semibold mb-2 dark:text-white text-gray-900 font-heading"
+              class="text-xl font-semibold mb-2 dark:text-gray-300 text-gray-800 font-heading"
             >
               Te decimos qué ver ahora
             </h3>
-            <p class="text-gray-600 dark:text-gray-300">
+            <p class="text-gray-800 dark:text-gray-300">
               Recibe recomendaciones personalizadas basadas en tus gustos y tu
               momento actual.
             </p>
@@ -563,15 +569,17 @@ onMounted(() => {
     <!-- Only show when auth is initialized and there's no user -->
     <section
       v-if="userStore.authInitialized && !effectiveUser"
-      class="py-16 md:py-24 px-4"
+      class="pb-16 md:pt-16 md:px-4"
     >
       <div class="container mx-auto max-w-4xl text-center">
         <p
-          class="text-xl md:text-3xl dark:text-gray-200 leading-relaxed font-semibold mb-6"
+          class="text-2xl md:text-3xl text-gray-800 dark:text-gray-300 leading-relaxed font-semibold mb-6"
         >
           No es otra lista más.
         </p>
-        <p class="text-xl md:text-5xl leading-relaxed font-semibold">
+        <p
+          class="text-3xl md:text-5xl text-gray-800 dark:text-gray-300 leading-relaxed font-semibold"
+        >
           Es una
           <span
             class="bg-gradient-to-r from-primary-700 via-primary-800 to-primary-900 dark:from-primary-400 dark:via-primary-500 dark:to-primary-600 bg-clip-text text-transparent"

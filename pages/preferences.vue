@@ -2,11 +2,11 @@
   <div class="container mx-auto max-w-7xl px-4 py-12">
     <div class="mb-8">
       <h1
-        class="text-3xl md:text-4xl font-bold dark:text-white text-gray-900 mb-2 font-heading"
+        class="text-3xl md:text-4xl font-bold dark:text-gray-300 text-gray-800 mb-2 font-heading"
       >
         Editar preferencias
       </h1>
-      <p class="text-gray-600 dark:text-gray-300">
+      <p class="text-gray-800 dark:text-gray-300">
         Gestiona tus películas y series favoritas. Puedes tener hasta 10
         títulos.
       </p>
@@ -38,10 +38,12 @@
           class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 max-w-md mx-4"
           @click.stop
         >
-          <h3 class="text-lg font-semibold dark:text-white text-gray-900 mb-2">
+          <h3
+            class="text-lg font-semibold dark:text-gray-300 text-gray-800 mb-2"
+          >
             Confirmar eliminación
           </h3>
-          <p class="text-gray-600 dark:text-gray-300 mb-4">
+          <p class="text-gray-800 dark:text-gray-300 mb-4">
             ¿Estás seguro de que quieres eliminar "{{ titleToDelete.title }}" de
             tus preferencias?
           </p>
@@ -68,7 +70,7 @@
     <!-- Add New Title Section -->
     <div class="mb-8">
       <h2
-        class="text-xl font-semibold dark:text-white text-gray-900 mb-4 font-heading"
+        class="text-xl font-semibold dark:text-gray-300 text-gray-800 mb-4 font-heading"
       >
         Agregar título
       </h2>
@@ -91,13 +93,13 @@
       <div
         class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"
       ></div>
-      <p class="text-gray-600 dark:text-gray-400">Cargando preferencias...</p>
+      <p class="text-gray-800 dark:text-gray-300">Cargando preferencias...</p>
     </div>
 
     <!-- Liked Titles Grid -->
     <div v-else-if="likedTitles.length > 0" class="mb-8">
       <h2
-        class="text-xl font-semibold dark:text-white text-gray-900 mb-4 font-heading"
+        class="text-xl font-semibold dark:text-gray-300 text-gray-800 mb-4 font-heading"
       >
         Tus títulos ({{ likedTitles.length }}/10)
       </h2>
@@ -135,7 +137,7 @@
             <!-- Remove Button -->
             <button
               type="button"
-              class="absolute top-2 right-2 w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity shadow-lg"
+              class="absolute top-2 right-2 w-8 h-8 bg-black/50 hover:bg-red-600/80 text-white rounded-full flex items-center justify-center opacity-100 md:opacity-0 md:group-hover:opacity-100 backdrop-blur-sm transition-all duration-300 shadow-lg"
               :aria-label="`Eliminar ${title.title}`"
               :disabled="isRemoving"
               @click="handleRemoveTitle(title)"
@@ -159,7 +161,7 @@
           <!-- Title -->
           <div class="p-2 bg-white dark:bg-gray-800">
             <p
-              class="text-sm font-medium dark:text-white text-gray-900 truncate"
+              class="text-sm font-medium dark:text-gray-300 text-gray-800 truncate"
               :title="title.title"
             >
               {{ title.title }}
@@ -190,7 +192,7 @@
           d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
         />
       </svg>
-      <p class="text-gray-600 dark:text-gray-400">
+      <p class="text-gray-800 dark:text-gray-300">
         Aún no has agregado ningún título. Usa el buscador arriba para agregar
         tus favoritos.
       </p>

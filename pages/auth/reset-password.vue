@@ -14,10 +14,10 @@
           alt="UpNext"
           class="h-12 w-12 mx-auto mb-4 object-contain hidden dark:block"
         />
-        <h1 class="text-3xl font-bold dark:text-white text-gray-900 mb-2">
+        <h1 class="text-3xl font-bold dark:text-gray-300 text-gray-800 mb-2">
           Restablecer contraseña
         </h1>
-        <p class="text-gray-600 dark:text-gray-400">
+        <p class="text-gray-800 dark:text-gray-300">
           Ingresa tu nueva contraseña
         </p>
       </div>
@@ -27,11 +27,11 @@
       >
         <div class="text-center mb-6">
           <h2
-            class="text-2xl font-bold dark:text-white text-gray-900 mb-2 font-heading"
+            class="text-2xl font-bold dark:text-gray-300 text-gray-800 mb-2 font-heading"
           >
             Nueva contraseña
           </h2>
-          <p class="text-sm text-gray-600 dark:text-gray-400">
+          <p class="text-sm text-gray-800 dark:text-gray-300">
             Crea una contraseña segura para tu cuenta
           </p>
         </div>
@@ -73,7 +73,7 @@
                 autocomplete="new-password"
                 required
                 :class="[
-                  'w-full px-4 py-3 pr-10 dark:bg-gray-900/50 bg-white dark:text-white text-gray-900 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all',
+                  'w-full px-4 py-3 pr-10 dark:bg-gray-900/50 bg-white dark:text-gray-300 text-gray-800 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all',
                   passwordValidation &&
                   !passwordValidation.isValid &&
                   newPassword.length > 0
@@ -230,7 +230,7 @@
                 autocomplete="new-password"
                 required
                 :class="[
-                  'w-full px-4 py-3 pr-10 dark:bg-gray-900/50 bg-white dark:text-white text-gray-900 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all',
+                  'w-full px-4 py-3 pr-10 dark:bg-gray-900/50 bg-white dark:text-gray-300 text-gray-800 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all',
                   confirmPassword.length > 0 && newPassword !== confirmPassword
                     ? 'border-red-500 dark:border-red-500'
                     : 'dark:border-gray-700/50 border-gray-300',
@@ -307,7 +307,7 @@
           <button
             type="submit"
             :disabled="loading || !passwordsMatch || !isPasswordValid"
-            class="w-full py-3 px-6 dark:bg-gray-900/90 bg-gray-800/90 hover:dark:bg-gray-800 hover:bg-gray-700 text-white rounded-lg font-medium transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg border border-gray-700/50 dark:border-gray-600/50"
+            class="w-full py-3 px-6 dark:bg-gray-900/90 bg-gray-800/90 hover:dark:bg-gray-800/80 hover:bg-gray-900/90 text-white rounded-lg font-medium transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg border border-gray-700/50 dark:border-gray-600/50"
           >
             {{ loading ? 'Actualizando...' : 'Actualizar contraseña' }}
           </button>
@@ -321,7 +321,7 @@
           <div
             class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"
           ></div>
-          <p class="text-sm text-gray-600 dark:text-gray-400">
+          <p class="text-sm text-gray-800 dark:text-gray-300">
             Validando enlace de recuperación...
           </p>
         </div>

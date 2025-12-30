@@ -2,13 +2,13 @@
   <section v-if="recommendations.length > 0" class="mb-12">
     <div class="mb-6">
       <h2
-        class="text-2xl font-bold dark:text-white text-gray-900 mb-2 font-heading"
+        class="text-2xl font-bold dark:text-gray-300 text-gray-800 mb-2 font-heading"
       >
         {{ title }}
       </h2>
       <p
         v-if="description"
-        class="text-gray-600 dark:text-gray-400 text-sm md:text-base"
+        class="text-gray-800 dark:text-gray-300 text-sm md:text-base"
       >
         {{ description }}
       </p>

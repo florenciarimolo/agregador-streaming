@@ -16,17 +16,19 @@ const isDark = computed(() => theme.value === 'dark');
     role="switch"
     :aria-checked="isDark"
     :aria-label="isDark ? 'Dark mode enabled' : 'Light mode enabled'"
-    class="relative flex items-center w-14 h-7 p-0.5 bg-gray-200 dark:bg-gray-700 rounded-full transition-colors duration-300 hover:bg-gray-300 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
+    class="relative flex items-center w-16 h-7 p-0.5 bg-gray-200 dark:bg-gray-700 rounded-full transition-colors duration-300 hover:bg-gray-300 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer overflow-hidden"
     @click="toggleTheme"
   >
     <!-- Sliding indicator -->
     <span
-      class="absolute w-6 h-6 bg-white dark:bg-gray-800 rounded-full shadow-md transition-transform duration-300 ease-in-out"
-      :class="isDark ? 'translate-x-[26px]' : 'translate-x-0'"
+      class="absolute w-6 h-6 bg-white dark:bg-gray-800 rounded-full shadow-md transition-transform duration-300 ease-in-out left-0.5"
+      :class="isDark ? 'translate-x-[38px]' : 'translate-x-0'"
     />
 
     <!-- Sun -->
-    <span class="relative z-10 flex items-center justify-center w-6 h-6">
+    <span
+      class="absolute left-0.5 z-10 flex items-center justify-center w-6 h-6"
+    >
       <svg
         class="w-4 h-4 transition-colors duration-300"
         :class="isDark ? 'text-gray-400' : 'text-amber-500'"
@@ -42,7 +44,9 @@ const isDark = computed(() => theme.value === 'dark');
     </span>
 
     <!-- Moon -->
-    <span class="relative z-10 flex items-center justify-center w-6 h-6">
+    <span
+      class="absolute right-0.5 z-10 flex items-center justify-center w-6 h-6"
+    >
       <svg
         class="w-4 h-4 transition-colors duration-300"
         :class="isDark ? 'text-blue-400' : 'text-gray-400'"

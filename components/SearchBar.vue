@@ -6,7 +6,7 @@
         v-model="searchQuery"
         type="text"
         placeholder="Buscar películas y series..."
-        class="w-full px-4 py-2 pl-10 pr-4 text-sm dark:text-white text-gray-900 dark:bg-gray-800/50 bg-white/80 dark:border-gray-600 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-transparent focus:border-transparent backdrop-blur-xs transition-all"
+        class="w-full px-4 py-2 pl-10 pr-4 text-sm dark:text-gray-300 text-gray-800 dark:bg-gray-800/50 bg-white/80 dark:border-gray-600 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-transparent focus:border-transparent backdrop-blur-xs transition-all"
         @input="handleSearch"
         @focus="showResults = true"
         @blur="handleBlur"
@@ -110,7 +110,7 @@
               <div class="flex items-start justify-between">
                 <div class="flex-1 min-w-0">
                   <h3
-                    class="text-sm font-medium dark:text-white text-gray-900 truncate"
+                    class="text-sm font-medium dark:text-gray-300 text-gray-800 truncate"
                   >
                     {{ getTitle(result) }}
                   </h3>

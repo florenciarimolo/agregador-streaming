@@ -1,7 +1,7 @@
 <template>
   <!-- Loading state -->
   <div v-if="isLoading" class="flex items-center justify-center min-h-screen">
-    <div class="text-xl dark:text-white text-gray-900">Cargando...</div>
+    <div class="text-xl dark:text-gray-300 text-gray-800">Cargando...</div>
   </div>
 
   <!-- Error state -->

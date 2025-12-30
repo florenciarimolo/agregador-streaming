@@ -1,7 +1,7 @@
 <template>
   <!-- Loading state -->
   <div v-if="isLoading" class="flex items-center justify-center min-h-screen">
-    <div class="text-xl dark:text-white text-gray-900"
+    <div class="text-xl dark:text-gray-300 text-gray-800"
       >Cargando temporada...</div
     >
   </div>
@@ -18,7 +18,7 @@
   <div v-else>
     <!-- Header de temporada -->
     <section
-      class="relative flex flex-row items-center justify-between p-8 my-8 dark:text-white text-gray-900 dark:bg-gray-800 bg-gray-100 border gap-7 rounded-xl border-primary/30 shadow-lg shadow-primary/20"
+      class="relative flex flex-row items-center justify-between p-8 my-8 dark:text-gray-300 text-gray-800 dark:bg-gray-800 bg-gray-100 border gap-7 rounded-xl border-primary/30 shadow-lg shadow-primary/20"
       :style="sectionStyle"
     >
       <div
@@ -47,7 +47,7 @@
         <!-- Back link aligned with rating badge on mobile -->
         <nuxt-link
           :to="`/serie/${seriesId}`"
-          class="absolute top-4 left-2 md:relative md:top-0 md:left-0 text-xl dark:text-white text-gray-900 transition-all duration-300 dark:hover:text-gray-300 hover:text-gray-600 no-underline md:underline"
+          class="absolute top-4 left-2 md:relative md:top-0 md:left-0 text-xl dark:text-gray-300 text-gray-800 transition-all duration-300 dark:hover:text-gray-200 hover:text-gray-600 no-underline md:underline"
         >
           ← Volver a la serie
         </nuxt-link>
@@ -57,7 +57,7 @@
         }}</h1>
         <p
           :class="[
-            'dark:text-gray-300 text-gray-700',
+            'dark:text-gray-300 text-gray-800',
             { italic: !seasonWithProviders?.overview },
           ]"
           >{{
@@ -107,7 +107,7 @@
 
     <!-- Episodios -->
     <section>
-      <h2 class="mb-8 text-2xl font-semibold dark:text-white text-gray-900"
+      <h2 class="mb-8 text-2xl font-semibold dark:text-gray-300 text-gray-800"
         >Episodios</h2
       >
 
@@ -134,7 +134,7 @@
               <span class="text-4xl">📺</span>
             </div>
             <div
-              class="absolute px-2 py-1 text-sm dark:text-white text-gray-900 rounded top-2 left-2 dark:bg-black/70 bg-white/70"
+              class="absolute px-2 py-1 text-sm dark:text-gray-300 text-gray-800 rounded top-2 left-2 dark:bg-black/70 bg-white/70"
             >
               Episodio {{ index + 1 }}
             </div>
@@ -142,10 +142,10 @@
           </div>
           <div class="p-4">
             <h4
-              class="mb-2 font-semibold dark:text-white text-gray-900 line-clamp-1"
+              class="mb-2 font-semibold dark:text-gray-300 text-gray-800 line-clamp-1"
               >{{ episode.name }}</h4
             >
-            <p class="mb-2 text-sm dark:text-gray-400 text-gray-600">{{
+            <p class="mb-2 text-sm dark:text-gray-300 text-gray-800">{{
               formatDateToSpanish(episode.air_date)
             }}</p>
             <p

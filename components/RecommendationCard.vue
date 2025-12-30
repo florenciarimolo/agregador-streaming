@@ -114,7 +114,7 @@
           v-if="props.title.vote_average"
           :rating="props.title.vote_average"
         />
-        <p class="mt-4 dark:text-white text-gray-900 font-semibold">
+        <p class="mt-4 dark:text-gray-300 text-gray-800 font-semibold">
           Ver detalles
         </p>
       </div>
@@ -123,7 +123,7 @@
     <!-- Content -->
     <div class="p-4">
       <h3
-        class="text-sm font-semibold dark:text-white text-gray-900 truncate mb-1"
+        class="text-sm font-semibold dark:text-gray-300 text-gray-800 truncate mb-1"
       >
         {{ props.title.title }}
       </h3>
@@ -134,7 +134,7 @@
       <!-- Overview (instead of explanation) -->
       <p
         v-if="props.title.overview"
-        class="text-xs dark:text-gray-300 text-gray-600 mb-3 line-clamp-3"
+        class="text-xs dark:text-gray-300 text-gray-800 mb-3 line-clamp-3"
       >
         {{ props.title.overview }}
       </p>

@@ -208,10 +208,10 @@ const saveSelections = async () => {
     <div class="max-w-4xl mx-auto">
       <!-- Header -->
       <div class="text-center mb-8">
-        <h1 class="text-3xl font-bold dark:text-white text-gray-900 mb-2">
+        <h1 class="text-3xl font-bold dark:text-gray-300 text-gray-800 mb-2">
           ¿Qué te gusta ver?
         </h1>
-        <p class="text-gray-600 dark:text-gray-400">
+        <p class="text-gray-800 dark:text-gray-300">
           Selecciona hasta 10 películas o series que disfrutes. Esto nos ayuda a
           recomendarte contenido que te encantará.
         </p>
@@ -235,7 +235,7 @@ const saveSelections = async () => {
             v-model="searchQuery"
             type="text"
             placeholder="Buscar películas o series..."
-            class="w-full px-4 py-3 pl-12 dark:bg-gray-800/70 bg-gray-100/90 dark:text-white text-gray-900 border border-primary/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary backdrop-blur-xs"
+            class="w-full px-4 py-3 pl-12 dark:bg-gray-800/70 bg-gray-100/90 dark:text-gray-300 text-gray-800 border border-primary/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary backdrop-blur-xs"
             @input="handleSearch"
           />
           <svg
@@ -256,7 +256,7 @@ const saveSelections = async () => {
 
       <!-- Selected Titles -->
       <div v-if="selectedTitles.length > 0" class="mb-6">
-        <h2 class="text-lg font-semibold dark:text-white text-gray-900 mb-3">
+        <h2 class="text-lg font-semibold dark:text-gray-300 text-gray-800 mb-3">
           Tus selecciones
         </h2>
         <div class="flex flex-wrap gap-3">
@@ -304,7 +304,7 @@ const saveSelections = async () => {
               </button>
             </div>
             <p
-              class="mt-1 text-xs text-center dark:text-gray-300 text-gray-700 max-w-[96px] truncate"
+              class="mt-1 text-xs text-center dark:text-gray-300 text-gray-800 max-w-[96px] truncate"
             >
               {{ title.title || title.name }}
             </p>
@@ -314,7 +314,7 @@ const saveSelections = async () => {
 
       <!-- Search Results -->
       <div v-if="searchResults.length > 0" class="mb-6">
-        <h2 class="text-lg font-semibold dark:text-white text-gray-900 mb-3">
+        <h2 class="text-lg font-semibold dark:text-gray-300 text-gray-800 mb-3">
           Resultados de búsqueda
         </h2>
         <div
@@ -366,7 +366,7 @@ const saveSelections = async () => {
               </div>
             </div>
             <p
-              class="mt-2 text-sm text-center dark:text-gray-300 text-gray-700 line-clamp-2"
+              class="mt-2 text-sm text-center dark:text-gray-300 text-gray-800 line-clamp-2"
             >
               {{ result.title || result.name }}
             </p>
@@ -398,7 +398,7 @@ const saveSelections = async () => {
       <div class="mt-8 text-center">
         <button
           :disabled="selectedTitles.length === 0 || saving"
-          class="px-6 py-3 dark:bg-gray-900/90 bg-gray-800/90 hover:dark:bg-gray-800 hover:bg-gray-700 text-white rounded-lg font-medium transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg border border-gray-700/50 dark:border-gray-600/50"
+          class="px-6 py-3 dark:bg-gray-900/90 bg-gray-800/90 hover:dark:bg-gray-800/80 hover:bg-gray-900/90 text-white rounded-lg font-medium transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg border border-gray-700/50 dark:border-gray-600/50"
           @click="saveSelections"
         >
           {{ saving ? 'Guardando...' : 'Continuar' }}

@@ -210,18 +210,18 @@ const backToLogin = () => {
 </script>
 
 <template>
-  <section id="auth-form" class="py-12 md:py-16 md:px-4">
+  <section id="auth-form" class="py-16 md:pb-0 md:px-4">
     <div class="container mx-auto max-w-md">
       <div
-        class="dark:bg-gray-800/60 bg-white/90 backdrop-blur-sm rounded-xl p-6 md:p-8 border border-gray-700/30 dark:border-gray-600/30 shadow-lg"
+        class="bg-white/60 dark:bg-gray-900/40 backdrop-blur-xl rounded-xl p-6 md:p-8 border border-gray-300/50 dark:border-white/10 shadow-lg"
       >
         <div class="text-center mb-6">
           <h2
-            class="text-2xl font-bold dark:text-white text-gray-900 mb-2 font-heading"
+            class="text-2xl font-bold dark:text-gray-300 text-gray-800 mb-2 font-heading"
           >
             {{ isSignUp ? 'Crear cuenta' : 'Iniciar sesión' }}
           </h2>
-          <p class="text-sm text-gray-600 dark:text-gray-400">
+          <p class="text-sm text-gray-800 dark:text-gray-300">
             {{
               isSignUp
                 ? 'Comienza a recibir recomendaciones personalizadas'
@@ -237,9 +237,9 @@ const backToLogin = () => {
         >
           <button
             :class="[
-              'flex-1 py-2.5 px-4 rounded-lg font-medium transition-all text-sm',
+              'flex-1 py-2.5 px-4 rounded-full font-medium transition-all text-sm',
               authMethod === 'password'
-                ? 'dark:bg-gray-900/90 bg-gray-800/90 text-white border border-gray-700/50 dark:border-gray-600/50'
+                ? 'bg-primary-800  text-white border border-gray-700/50 dark:border-gray-600/50'
                 : 'dark:bg-gray-800/50 bg-gray-100/50 dark:text-gray-300 text-gray-700 border border-gray-700/30 dark:border-gray-600/30',
             ]"
             @click="authMethod = 'password'"
@@ -248,9 +248,9 @@ const backToLogin = () => {
           </button>
           <button
             :class="[
-              'flex-1 py-2.5 px-4 rounded-lg font-medium transition-all text-sm',
+              'flex-1 py-2.5 px-4 rounded-full font-medium transition-all text-sm',
               authMethod === 'magic'
-                ? 'dark:bg-gray-900/90 bg-gray-800/90 text-white border border-gray-700/50 dark:border-gray-600/50'
+                ? 'bg-primary-800 text-white border border-gray-700/50 dark:border-gray-600/50'
                 : 'dark:bg-gray-800/50 bg-gray-100/50 dark:text-gray-300 text-gray-700 border border-gray-700/30 dark:border-gray-600/30',
             ]"
             @click="authMethod = 'magic'"
@@ -283,7 +283,7 @@ const backToLogin = () => {
           <div class="mb-4">
             <label
               for="email"
-              class="block text-sm font-medium dark:text-gray-300 text-gray-700 mb-2"
+              class="block text-sm font-medium dark:text-gray-300 text-gray-800 mb-2"
             >
               Email
             </label>
@@ -292,7 +292,13 @@ const backToLogin = () => {
               v-model="email"
               type="email"
               required
-              class="w-full px-4 py-3 dark:bg-gray-900/50 bg-white dark:text-white text-gray-900 border dark:border-gray-700/50 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all"
+              class="w-full px-4 py-3 bg-transparent dark:bg-transparent dark:text-gray-300 text-gray-800 border dark:border-gray-700/50 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all"
+              style="
+                background-color: transparent !important;
+                -webkit-appearance: none;
+                -moz-appearance: none;
+                appearance: none;
+              "
               placeholder="tu@email.com"
             />
           </div>
@@ -300,7 +306,7 @@ const backToLogin = () => {
           <div class="mb-4">
             <label
               for="password"
-              class="block text-sm font-medium dark:text-gray-300 text-gray-700 mb-2"
+              class="block text-sm font-medium dark:text-gray-300 text-gray-800 mb-2"
             >
               Contraseña
             </label>
@@ -311,8 +317,15 @@ const backToLogin = () => {
                 :type="showPassword ? 'text' : 'password'"
                 :autocomplete="isSignUp ? 'new-password' : 'current-password'"
                 :required="isSignUp"
+                style="
+                  background-color: transparent !important;
+                  -webkit-background-color: transparent !important;
+                  -moz-background-color: transparent !important;
+                  -o-background-color: transparent !important;
+                  -ms-background-color: transparent !important;
+                "
                 :class="[
-                  'w-full px-4 py-3 pr-10 dark:bg-gray-900/50 bg-white dark:text-white text-gray-900 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all',
+                  'w-full px-4 py-3 pr-10 bg-transparent dark:bg-transparent dark:text-gray-300 text-gray-800 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all',
                   isSignUp &&
                   passwordValidation &&
                   !passwordValidation.isValid &&
@@ -461,7 +474,7 @@ const backToLogin = () => {
           <button
             type="submit"
             :disabled="loading"
-            class="w-full py-3 px-6 dark:bg-gray-900/90 bg-gray-800/90 hover:dark:bg-gray-800 hover:bg-gray-700 text-white rounded-lg font-medium transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg border border-gray-700/50 dark:border-gray-600/50"
+            class="w-full py-3 px-6 bg-primary-800 dark:bg-primary hover:bg-primary-900 dark:hover:bg-primary-600 text-white rounded-lg font-medium text-base transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg backdrop-blur-sm border border-primary-600/50"
           >
             {{
               loading
@@ -481,7 +494,7 @@ const backToLogin = () => {
           <div class="mb-4">
             <label
               for="forgot-email"
-              class="block text-sm font-medium dark:text-gray-300 text-gray-700 mb-2"
+              class="block text-sm font-medium dark:text-gray-300 text-gray-800 mb-2"
             >
               Correo electrónico
             </label>
@@ -490,7 +503,13 @@ const backToLogin = () => {
               v-model="email"
               type="email"
               required
-              class="w-full px-4 py-3 dark:bg-gray-900/50 bg-white dark:text-white text-gray-900 border dark:border-gray-700/50 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all"
+              class="w-full px-4 py-3 bg-transparent dark:bg-transparent dark:text-gray-300 text-gray-800 border dark:border-gray-700/50 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all"
+              style="
+                background-color: transparent !important;
+                -webkit-appearance: none;
+                -moz-appearance: none;
+                appearance: none;
+              "
               placeholder="tu@email.com"
             />
           </div>
@@ -498,7 +517,7 @@ const backToLogin = () => {
           <button
             type="submit"
             :disabled="loading || forgotPasswordSent"
-            class="w-full py-3 px-6 dark:bg-gray-900/90 bg-gray-800/90 hover:dark:bg-gray-800 hover:bg-gray-700 text-white rounded-lg font-medium transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg border border-gray-700/50 dark:border-gray-600/50"
+            class="w-full py-3 px-6 bg-primary-800 dark:bg-primary hover:bg-primary-900 dark:hover:bg-primary-600 text-white rounded-lg font-medium text-base transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg backdrop-blur-sm border border-primary-600/50"
           >
             {{
               forgotPasswordSent
@@ -513,7 +532,7 @@ const backToLogin = () => {
           <div class="mt-4 text-center">
             <a
               href="#"
-              class="text-sm text-primary hover:text-secondary transition-colors underline hover:no-underline inline-block"
+              class="text-sm text-gray-800 dark:text-gray-300 hover:text-primary dark:hover:text-primary-400 transition-colors no-underline inline-block"
               @click.prevent="backToLogin"
             >
               Volver al inicio de sesión
@@ -526,7 +545,7 @@ const backToLogin = () => {
           <div class="mb-4">
             <label
               for="magic-email"
-              class="block text-sm font-medium dark:text-gray-300 text-gray-700 mb-2"
+              class="block text-sm font-medium dark:text-gray-300 text-gray-800 mb-2"
             >
               Email
             </label>
@@ -535,7 +554,13 @@ const backToLogin = () => {
               v-model="email"
               type="email"
               required
-              class="w-full px-4 py-3 dark:bg-gray-900/50 bg-white dark:text-white text-gray-900 border dark:border-gray-700/50 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all"
+              class="w-full px-4 py-3 bg-transparent dark:bg-transparent dark:text-gray-300 text-gray-800 border dark:border-gray-700/50 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all"
+              style="
+                background-color: transparent !important;
+                -webkit-appearance: none;
+                -moz-appearance: none;
+                appearance: none;
+              "
               placeholder="tu@email.com"
             />
           </div>
@@ -543,7 +568,7 @@ const backToLogin = () => {
           <button
             type="submit"
             :disabled="loading || magicLinkSent"
-            class="w-full py-3 px-6 dark:bg-gray-900/90 bg-gray-800/90 hover:dark:bg-gray-800 hover:bg-gray-700 text-white rounded-lg font-medium transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg border border-gray-700/50 dark:border-gray-600/50"
+            class="w-full py-3 px-6 bg-primary-800 dark:bg-primary hover:bg-primary-900 dark:hover:bg-primary-600 text-white rounded-lg font-medium text-base transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg backdrop-blur-sm border border-primary-600/50"
           >
             {{
               magicLinkSent
@@ -560,7 +585,7 @@ const backToLogin = () => {
           <a
             v-if="authMethod === 'password'"
             href="#"
-            class="text-sm text-primary hover:text-secondary transition-colors underline hover:no-underline inline-block"
+            class="text-sm text-gray-800 dark:text-gray-300 hover:text-primary dark:hover:text-primary-400 transition-colors no-underline inline-block"
             @click.prevent="toggleSignUp"
           >
             {{
@@ -578,7 +603,7 @@ const backToLogin = () => {
         >
           <a
             href="#"
-            class="text-sm text-primary hover:text-secondary transition-colors underline hover:no-underline inline-block"
+            class="text-sm text-gray-800 dark:text-gray-300 hover:text-primary dark:hover:text-primary-400 transition-colors no-underline inline-block"
             @click.prevent="showForgotPassword"
           >
             ¿Has olvidado tu contraseña?

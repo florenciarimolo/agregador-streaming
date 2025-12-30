@@ -1,6 +1,6 @@
 <template>
   <section
-    class="relative flex flex-col items-center justify-between gap-20 pb-8 dark:text-white text-gray-900 w-full min-w-full flex-shrink-0 min-h-[400px] md:flex-row md:items-stretch md:p-8 dark:md:bg-gray-800 md:bg-gray-100 md:border md:gap-7 rounded-xl md:border-primary/30 md:shadow-lg md:shadow-primary/20 py-8"
+    class="relative flex flex-col items-center justify-between gap-20 pb-8 dark:text-gray-300 text-gray-800 w-full min-w-full flex-shrink-0 min-h-[400px] md:flex-row md:items-stretch md:p-8 dark:md:bg-gray-800 md:bg-gray-100 md:border md:gap-7 rounded-xl md:border-primary/30 md:shadow-lg md:shadow-primary/20 py-8"
     :style="sectionStyle"
   >
     <div
@@ -46,22 +46,22 @@
           </svg>
           Volver
         </nuxt-link>
-        <h1 class="text-2xl font-bold dark:text-white text-gray-900">{{
+        <h1 class="text-2xl font-bold dark:text-gray-300 text-gray-800">{{
           mediaWithProviders.title || (mediaWithProviders as any).name
         }}</h1>
       </div>
       <p
         :class="[
-          'dark:text-gray-200 text-gray-700',
+          'dark:text-gray-300 text-gray-800',
           { italic: !mediaWithProviders.overview },
         ]"
         >{{ mediaWithProviders.overview || 'Sin descripción disponible' }}</p
       >
-      <p class="mt-2 dark:text-gray-200 text-gray-700"
+      <p class="mt-2 dark:text-gray-300 text-gray-800"
         >Fecha de lanzamiento:
         {{ formatDateToSpanish(mediaWithProviders.release_date || '') }}</p
       >
-      <p class="dark:text-gray-200 text-gray-700"
+      <p class="dark:text-gray-300 text-gray-800"
         >Géneros:
         {{
           mediaWithProviders?.genres
@@ -71,7 +71,7 @@
       >
       <!-- Displaying watch providers with their logos-->
       <section class="flex flex-col gap-6">
-        <h2 class="font-semibold text-md dark:text-white text-gray-900"
+        <h2 class="font-semibold text-md dark:text-gray-300 text-gray-800"
           >Plataformas</h2
         >
         <section v-if="hasAvailableProviders" class="flex flex-col gap-8">

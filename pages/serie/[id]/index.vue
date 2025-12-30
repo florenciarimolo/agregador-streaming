@@ -1,7 +1,7 @@
 <template>
   <!-- Loading state -->
   <div v-if="isLoading" class="flex items-center justify-center min-h-screen">
-    <div class="text-xl dark:text-white text-gray-900">Cargando...</div>
+    <div class="text-xl dark:text-gray-300 text-gray-800">Cargando...</div>
   </div>
 
   <!-- Error state -->
@@ -46,7 +46,7 @@
               class="absolute bottom-0 left-0 flex flex-col items-center justify-center w-full h-full px-4 transition-all duration-300 rounded opacity-0 group-hover:opacity-100 backdrop-blur-md w-inherit dark:bg-black/80 bg-white/80"
             >
               <RatingBadge :rating="season.vote_average" />
-              <p class="mt-4 dark:text-white text-gray-900 font-semibold"
+              <p class="mt-4 dark:text-gray-300 text-gray-800 font-semibold"
                 >Ver episodios</p
               >
             </div>
@@ -57,13 +57,13 @@
           class="flex flex-col justify-around py-5 px-6 dark:bg-gray-800 bg-gray-100 min-h-[120px]"
         >
           <p
-            class="text-lg font-semibold uppercase dark:text-white text-gray-900"
+            class="text-lg font-semibold uppercase dark:text-gray-300 text-gray-800"
             >{{ season.name }}</p
           >
-          <p class="dark:text-gray-200 text-gray-700"
+          <p class="dark:text-gray-300 text-gray-800"
             >Fecha de lanzamiento: {{ formatDateToSpanish(season.air_date) }}</p
           >
-          <p class="dark:text-gray-200 text-gray-700">
+          <p class="dark:text-gray-300 text-gray-800">
             {{ season.episode_count || 0 }} episodios
           </p>
         </div>

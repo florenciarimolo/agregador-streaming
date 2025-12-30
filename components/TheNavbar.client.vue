@@ -2,7 +2,7 @@
   <!-- Floating Navbar (Desktop/Tablet) -->
   <header class="sticky top-4 z-50 w-full container mx-auto hidden md:block">
     <nav
-      class="shadow-md dark:bg-gray-800/60 bg-gray-100/80 backdrop-blur-sm rounded-2xl border border-primary/20"
+      class="shadow-md dark:bg-gray-900/40 bg-gray-100/80 backdrop-blur-xl rounded-2xl border border-gray-300/50 dark:border-white/10"
     >
       <div class="flex items-center justify-between px-8 py-4">
         <!-- Logo -->
@@ -53,20 +53,20 @@
               >
                 <div class="p-4">
                   <p
-                    class="text-sm font-medium dark:text-white text-gray-900 truncate mb-3"
+                    class="text-sm font-medium dark:text-gray-300 text-gray-800 truncate mb-3"
                   >
                     {{ currentUser.email }}
                   </p>
                   <nuxt-link
                     to="/preferences"
-                    class="block w-full px-4 py-2 text-sm dark:text-white text-gray-900 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-left mb-2"
+                    class="block w-full px-4 py-2 text-sm dark:text-gray-300 text-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-left mb-2"
                     @click="showUserMenu = false"
                   >
                     Editar preferencias
                   </nuxt-link>
                   <nuxt-link
                     to="/history"
-                    class="block w-full px-4 py-2 text-sm dark:text-white text-gray-900 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-left mb-2"
+                    class="block w-full px-4 py-2 text-sm dark:text-gray-300 text-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-left mb-2"
                     @click="showUserMenu = false"
                   >
                     Historial
@@ -93,7 +93,7 @@
     :style="{ transform: `translateY(${isNavbarVisible ? '0' : '-10px'})` }"
   >
     <nav
-      class="dark:bg-gray-800/70 bg-gray-100/90 backdrop-blur-xs rounded-lg border border-primary/20"
+      class="dark:bg-gray-900/40 bg-gray-100/90 backdrop-blur-xl rounded-lg border border-gray-300/50 dark:border-white/10"
     >
       <div class="flex items-center justify-between px-6 py-3">
         <!-- Logo -->
@@ -141,20 +141,20 @@
               >
                 <div class="p-4">
                   <p
-                    class="text-sm font-medium dark:text-white text-gray-900 truncate mb-3"
+                    class="text-sm font-medium dark:text-gray-300 text-gray-800 truncate mb-3"
                   >
                     {{ currentUser.email }}
                   </p>
                   <nuxt-link
                     to="/preferences"
-                    class="block w-full px-4 py-2 text-sm dark:text-white text-gray-900 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-left mb-2"
+                    class="block w-full px-4 py-2 text-sm dark:text-gray-300 text-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-left mb-2"
                     @click="showUserMenu = false"
                   >
                     Editar preferencias
                   </nuxt-link>
                   <nuxt-link
                     to="/history"
-                    class="block w-full px-4 py-2 text-sm dark:text-white text-gray-900 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-left mb-2"
+                    class="block w-full px-4 py-2 text-sm dark:text-gray-300 text-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-left mb-2"
                     @click="showUserMenu = false"
                   >
                     Historial
