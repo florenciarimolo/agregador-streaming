@@ -28,14 +28,14 @@
           <ThemeSwitcher />
 
           <!-- User Avatar (if logged in) -->
-          <div v-if="user" class="relative">
+          <div v-if="currentUser" class="relative">
             <button
               type="button"
               class="w-10 h-10 rounded-full bg-gradient-to-br from-primary via-accent to-secondary flex items-center justify-center text-white font-semibold text-sm hover:ring-2 hover:ring-primary/50 transition-all cursor-pointer shadow-md"
-              :aria-label="`Menú de usuario para ${user.email}`"
+              :aria-label="`Menú de usuario para ${currentUser.email || 'usuario'}`"
               @click="toggleUserMenu"
             >
-              {{ getUserInitials(user.email) }}
+              {{ getUserInitials(currentUser.email) }}
             </button>
             <!-- User Menu Dropdown -->
             <Transition
@@ -55,7 +55,7 @@
                   <p
                     class="text-sm font-medium dark:text-white text-gray-900 truncate mb-3"
                   >
-                    {{ user.email }}
+                    {{ currentUser.email }}
                   </p>
                   <nuxt-link
                     to="/preferences"
@@ -116,14 +116,14 @@
           <ThemeSwitcher />
 
           <!-- User Avatar (if logged in) -->
-          <div v-if="user" class="relative">
+          <div v-if="currentUser" class="relative">
             <button
               type="button"
               class="w-8 h-8 rounded-full bg-gradient-to-br from-primary via-accent to-secondary flex items-center justify-center text-white font-semibold text-xs hover:ring-2 hover:ring-primary/50 transition-all cursor-pointer shadow-md"
-              :aria-label="`Menú de usuario para ${user.email}`"
+              :aria-label="`Menú de usuario para ${currentUser.email || 'usuario'}`"
               @click="toggleUserMenu"
             >
-              {{ getUserInitials(user.email) }}
+              {{ getUserInitials(currentUser.email) }}
             </button>
             <!-- User Menu Dropdown (Mobile) -->
             <Transition
@@ -143,7 +143,7 @@
                   <p
                     class="text-sm font-medium dark:text-white text-gray-900 truncate mb-3"
                   >
-                    {{ user.email }}
+                    {{ currentUser.email }}
                   </p>
                   <nuxt-link
                     to="/preferences"
@@ -208,16 +208,25 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
 
 // User state
 const user = useSupabaseUser();
+const userStore = useUserStore();
 const { signOut } = useAuth();
 const router = useRouter();
 const showUserMenu = ref(false);
 
+// Use computed to ensure user is available after hydration
+// During hydration, useSupabaseUser() might be null initially, so we also check the store
+const currentUser = computed(() => {
+  // During hydration, useSupabaseUser() might not be ready yet
+  // So we check both the composable and the store
+  return user.value || userStore.user;
+});
+
 // Get user initials from email
-const getUserInitials = (email: string | undefined): string => {
+const getUserInitials = (email: string | undefined | null): string => {
   if (!email) return 'U';
   const parts = email.split('@')[0].split(/[._-]/);
   if (parts.length >= 2) {
