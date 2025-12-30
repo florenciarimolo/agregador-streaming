@@ -2,12 +2,12 @@
   <!-- Rating badge, with different color according the value -->
   <div
     :class="{
-      'bg-green-500': rating >= 7,
-      'bg-yellow-500': rating >= 5 && rating < 7,
-      'bg-gray-500': rating === 0 || !rating,
-      'bg-red-500': rating && rating < 5,
+      'bg-green-500 border-green-600': rating >= 7,
+      'bg-yellow-500 border-yellow-600': rating >= 5 && rating < 7,
+      'bg-gray-500 border-gray-600': rating === 0 || !rating,
+      'bg-red-500 border-red-600': rating && rating < 5,
     }"
-    class="absolute p-2 text-sm font-semibold rounded shadow-xl shadow-black/20 top-2 right-2"
+    class="absolute p-2 text-sm font-semibold rounded shadow-xl shadow-black/20 top-2 right-2 border"
   >
     <span class="font-bold text-white whitespace-nowrap">
       ⭐

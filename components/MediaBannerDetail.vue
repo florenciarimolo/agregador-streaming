@@ -1,19 +1,19 @@
 <template>
   <section
-    class="relative flex flex-col items-center justify-between gap-20 pb-8 dark:text-gray-300 text-gray-800 w-full min-w-full flex-shrink-0 min-h-[400px] md:flex-row md:items-stretch md:p-8 dark:md:bg-gray-800 md:bg-gray-100 md:border md:gap-7 rounded-xl md:border-primary/30 md:shadow-lg md:shadow-primary/20 py-8"
-    :style="sectionStyle"
+    class="relative flex flex-col items-center justify-between gap-20 pb-8 dark:text-gray-300 text-gray-800 w-full min-w-full flex-shrink-0 min-h-[400px] md:flex-row md:items-stretch md:p-8 md:bg-gray-100/80 dark:md:bg-gray-900/40 md:backdrop-blur-xl md:border md:gap-7 rounded-xl md:border-gray-300/50 md:dark:border-white/10 md:shadow-lg md:shadow-primary/20 py-8"
   >
     <div
-      class="absolute inset-0 z-0 hidden overflow-hidden md:block rounded-xl dark:bg-gradient-to-b dark:from-black/80 dark:to-black/90 bg-white/80"
+      class="absolute inset-0 z-0 hidden md:block rounded-xl"
+      :style="sectionStyle"
+    ></div>
+    <div
+      class="absolute z-0 hidden md:block rounded-xl bg-gray-100/80 dark:bg-gray-900/70"
+      style="top: 1px; right: 1px; bottom: 1px; left: 1px"
     ></div>
     <div
       class="relative overflow-hidden rounded-lg shadow-lg shadow-primary/30 w-full max-w-80 md:w-80 flex-shrink-0"
     >
       <RatingBadge :rating="mediaWithProviders.vote_average" />
-      <MediaStatusBagde
-        v-if="mediaType === MediaTypeEnum.tv"
-        :in-production="inProduction"
-      />
       <img
         :src="
           `https://image.tmdb.org/t/p/w780` + mediaWithProviders.poster_path
@@ -23,8 +23,14 @@
       />
     </div>
     <div
-      class="z-10 flex flex-col content-start justify-between flex-1 gap-6 rounded-lg md:p-6 md:ml-8 w-full min-w-[300px] flex-shrink-0 min-h-[300px]"
+      class="z-10 relative flex flex-col content-start justify-between flex-1 gap-6 rounded-lg md:p-6 md:ml-8 w-full min-w-[300px] flex-shrink-0 min-h-[300px]"
     >
+      <!-- MediaStatusBagde positioned to the right in desktop -->
+      <MediaStatusBagde
+        v-if="mediaType === MediaTypeEnum.tv"
+        :in-production="inProduction"
+        class="absolute top-6 right-6 hidden md:block"
+      />
       <div class="text-left">
         <nuxt-link
           to="/"
@@ -59,7 +65,7 @@
       >
       <p class="mt-2 dark:text-gray-300 text-gray-800"
         >Fecha de lanzamiento:
-        {{ formatDateToSpanish(mediaWithProviders.release_date || '') }}</p
+        {{ formatDateToSpanish((mediaWithProviders.release_date || (mediaWithProviders as any).first_air_date) || '') }}</p
       >
       <p class="dark:text-gray-300 text-gray-800"
         >Géneros:

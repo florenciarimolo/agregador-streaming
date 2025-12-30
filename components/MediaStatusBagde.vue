@@ -1,10 +1,12 @@
 <template>
-  <!-- Status badge, positioned on the left side of the poster -->
+  <!-- Status badge -->
   <div
     :class="badgeStyle"
-    class="absolute p-1 md:p-2 text-xs font-semibold rounded shadow-xl shadow-black/50 top-2 left-2 md:top-4 md:left-4 z-10"
+    class="inline-flex items-center w-fit px-6 py-3 text-xs font-semibold rounded-full shadow-sm shadow-black/50 z-10 border"
   >
-    <span class="font-bold text-white text-xs md:text-lg uppercase">
+    <span
+      class="font-medium text-white text-xs md:text-sm uppercase whitespace-nowrap"
+    >
       {{ inProduction ? 'En producción' : 'Finalizada' }}
     </span>
   </div>
@@ -21,8 +23,8 @@ const props = defineProps({
 });
 
 const badgeStyle = computed(() => ({
-  'bg-green-500': props.inProduction,
-  'bg-yellow-500': !props.inProduction,
+  'bg-green-500 border-green-600': props.inProduction,
+  'bg-yellow-500 border-yellow-600': !props.inProduction,
 }));
 </script>
 
