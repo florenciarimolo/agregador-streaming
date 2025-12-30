@@ -4,43 +4,6 @@
 
 /* Estilos personalizados de tu aplicación */
 
-/* Outfit Font Family - Body Text */
-@font-face {
-  font-family: 'Outfit';
-  src: url('/fonts/Outfit-Regular.ttf') format('truetype');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-  font-feature-settings: normal;
-}
-
-@font-face {
-  font-family: 'Outfit';
-  src: url('/fonts/Outfit-Medium.ttf') format('truetype');
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-  font-feature-settings: normal;
-}
-
-@font-face {
-  font-family: 'Outfit';
-  src: url('/fonts/Outfit-SemiBold.ttf') format('truetype');
-  font-weight: 600;
-  font-style: normal;
-  font-display: swap;
-  font-feature-settings: normal;
-}
-
-@font-face {
-  font-family: 'Outfit';
-  src: url('/fonts/Outfit-Bold.ttf') format('truetype');
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-  font-feature-settings: normal;
-}
-
 /* Inter Font Family - Text and Headings */
 @font-face {
   font-family: 'Inter';
@@ -96,10 +59,6 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  --primary-color: #21186e;
-  --secondary-color: #f97316;
-  --accent-color: #8b5cf6;
-  --pink-color: #ec4899;
 }
 
 /* Dark theme (default) */
@@ -185,7 +144,7 @@ button:not([role='switch']):not([aria-label='Toggle menu']):not(
     [class*='rounded-lg']
   ):not([class*='rounded-xl']):not([class*='rounded-md']) {
   border-radius: 4px;
-  border: 1px solid var(--color-primary);
+  border: 1px solid #21186e;
   padding: 0.6em 1.2em;
   font-size: 1em;
   font-weight: 500;
@@ -222,7 +181,7 @@ button:not([role='switch']):not([aria-label='Toggle menu']):not(
   ):not([class*='rounded-lg']):not([class*='rounded-xl']):not(
     [class*='rounded-md']
   ):hover {
-  border-color: var(--color-secondary);
+  border-color: #f97316;
   background: linear-gradient(
     135deg,
     #21186e 0%,
@@ -260,104 +219,6 @@ button[role='switch'] {
   font-family: inherit !important;
   cursor: pointer !important;
   transition: all 0.3s linear !important;
-}
-
-.card {
-  padding: 2em;
-}
-
-/* Brand gradient utility classes - Based on new primary #21186E */
-.bg-gradient-brand {
-  background: linear-gradient(
-    135deg,
-    #21186e 0%,
-    #4a3ba8 30%,
-    #8b5cf6 60%,
-    #f97316 100%
-  );
-}
-
-.bg-gradient-brand-hover {
-  background: linear-gradient(
-    135deg,
-    #f97316 0%,
-    #8b5cf6 40%,
-    #4a3ba8 70%,
-    #21186e 100%
-  );
-}
-
-.text-gradient-brand {
-  background: linear-gradient(
-    135deg,
-    #21186e 0%,
-    #4a3ba8 30%,
-    #8b5cf6 60%,
-    #f97316 100%
-  );
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-/* Radial gradient utility */
-.bg-gradient-radial {
-  background: radial-gradient(circle, var(--tw-gradient-stops));
-}
-
-/* Gradient background overlays - Based on new primary #21186E */
-.gradient-bg-light {
-  background: linear-gradient(
-    135deg,
-    rgba(33, 24, 110, 0.3) 0%,
-    rgba(74, 59, 168, 0.25) 20%,
-    rgba(139, 92, 246, 0.22) 40%,
-    rgba(249, 115, 22, 0.3) 60%,
-    rgba(33, 24, 110, 0.25) 80%,
-    rgba(74, 59, 168, 0.2) 100%
-  );
-  opacity: 1;
-}
-
-.gradient-bg-dark {
-  background: linear-gradient(
-    135deg,
-    rgba(33, 24, 110, 0.4) 0%,
-    rgba(74, 59, 168, 0.35) 20%,
-    rgba(139, 92, 246, 0.32) 40%,
-    rgba(249, 115, 22, 0.4) 60%,
-    rgba(33, 24, 110, 0.35) 80%,
-    rgba(74, 59, 168, 0.3) 100%
-  );
-  opacity: 1;
-}
-
-.gradient-radial {
-  background:
-    radial-gradient(
-      circle at 20% 30%,
-      rgba(33, 24, 110, 0.08) 0%,
-      transparent 60%
-    ),
-    radial-gradient(
-      circle at 80% 70%,
-      rgba(249, 115, 22, 0.08) 0%,
-      transparent 60%
-    );
-}
-
-.dark .gradient-radial {
-  background:
-    radial-gradient(
-      circle at 20% 30%,
-      rgba(33, 24, 110, 0.15) 0%,
-      transparent 60%
-    ),
-    radial-gradient(
-      circle at 80% 70%,
-      rgba(249, 115, 22, 0.15) 0%,
-      transparent 60%
-    );
 }
 
 #__nuxt {

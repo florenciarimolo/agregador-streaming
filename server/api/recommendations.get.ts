@@ -395,17 +395,41 @@ export default defineEventHandler(async (event) => {
         }
       );
 
+      if (process.env.NODE_ENV === 'development') {
+        devLog('[Recommendations] Trending movies before filter:', {
+          total: trendingMoviesResponse.results.length,
+          sample: trendingMoviesResponse.results.slice(0, 5).map((r) => ({
+            title: r.title,
+            vote_average: r.vote_average,
+            vote_count: r.vote_count,
+            genres: r.genre_ids,
+          })),
+        });
+      }
+
       // Filter by top genres and quality criteria
       const genreFilteredMovies = trendingMoviesResponse.results.filter(
         (result) => {
           const hasTopGenre = result.genre_ids.some((genreId) =>
             topGenres.includes(genreId)
           );
+          // Use same quality criteria as TV shows for consistency
           const meetsQualityCriteria =
-            result.vote_average >= 7.0 && result.vote_count >= 1000;
+            result.vote_average >= 7.2 && result.vote_count >= 1000;
           return hasTopGenre && meetsQualityCriteria;
         }
       );
+
+      if (process.env.NODE_ENV === 'development') {
+        devLog('[Recommendations] Trending movies after filter:', {
+          total: genreFilteredMovies.length,
+          filtered: genreFilteredMovies.map((r) => ({
+            title: r.title,
+            vote_average: r.vote_average,
+            vote_count: r.vote_count,
+          })),
+        });
+      }
 
       // Sort by popularity descending AFTER filtering
       const sortedMovies = genreFilteredMovies.sort(
@@ -413,11 +437,26 @@ export default defineEventHandler(async (event) => {
       );
 
       for (const result of sortedMovies.slice(0, 10)) {
-        const rec = await transformToRecommendation(result, 'movie');
-        if (rec) {
-          rec.explanation = 'Tendencia esta semana';
-          basedOnLikes.push(rec);
+        // Double-check quality criteria before adding
+        if (result.vote_average >= 7.2 && result.vote_count >= 1000) {
+          const rec = await transformToRecommendation(result, 'movie');
+          if (rec && rec.vote_average !== null && rec.vote_average >= 7.2) {
+            rec.explanation = 'Tendencia esta semana';
+            basedOnLikes.push(rec);
+          }
         }
+      }
+
+      if (process.env.NODE_ENV === 'development') {
+        devLog('[Recommendations] BasedOnLikes movies added:', {
+          count: basedOnLikes.filter((r) => r.type === 'movie').length,
+          items: basedOnLikes
+            .filter((r) => r.type === 'movie')
+            .map((r) => ({
+              title: r.title,
+              vote_average: r.vote_average,
+            })),
+        });
       }
     } catch (error) {
       if (process.env.NODE_ENV === 'development') {
@@ -438,6 +477,18 @@ export default defineEventHandler(async (event) => {
         }
       );
 
+      if (process.env.NODE_ENV === 'development') {
+        devLog('[Recommendations] Trending TV before filter:', {
+          total: trendingTVResponse.results.length,
+          sample: trendingTVResponse.results.slice(0, 5).map((r) => ({
+            name: r.name,
+            vote_average: r.vote_average,
+            vote_count: r.vote_count,
+            genres: r.genre_ids,
+          })),
+        });
+      }
+
       // Filter by top genres and quality criteria
       const genreFilteredTV = trendingTVResponse.results.filter((result) => {
         const hasTopGenre = result.genre_ids.some((genreId) =>
@@ -448,17 +499,43 @@ export default defineEventHandler(async (event) => {
         return hasTopGenre && meetsQualityCriteria;
       });
 
+      if (process.env.NODE_ENV === 'development') {
+        devLog('[Recommendations] Trending TV after filter:', {
+          total: genreFilteredTV.length,
+          filtered: genreFilteredTV.map((r) => ({
+            name: r.name,
+            vote_average: r.vote_average,
+            vote_count: r.vote_count,
+          })),
+        });
+      }
+
       // Sort by popularity descending AFTER filtering
       const sortedTV = genreFilteredTV.sort(
         (a, b) => b.popularity - a.popularity
       );
 
       for (const result of sortedTV.slice(0, 10)) {
-        const rec = await transformToRecommendation(result, 'tv');
-        if (rec) {
-          rec.explanation = 'Tendencia esta semana';
-          basedOnLikes.push(rec);
+        // Double-check quality criteria before adding
+        if (result.vote_average >= 7.2 && result.vote_count >= 1500) {
+          const rec = await transformToRecommendation(result, 'tv');
+          if (rec && rec.vote_average !== null && rec.vote_average >= 7.2) {
+            rec.explanation = 'Tendencia esta semana';
+            basedOnLikes.push(rec);
+          }
         }
+      }
+
+      if (process.env.NODE_ENV === 'development') {
+        devLog('[Recommendations] BasedOnLikes TV added:', {
+          count: basedOnLikes.filter((r) => r.type === 'tv').length,
+          items: basedOnLikes
+            .filter((r) => r.type === 'tv')
+            .map((r) => ({
+              title: r.title,
+              vote_average: r.vote_average,
+            })),
+        });
       }
     } catch (error) {
       if (process.env.NODE_ENV === 'development') {
@@ -474,6 +551,17 @@ export default defineEventHandler(async (event) => {
       }
     });
     const finalBasedOnLikes = Array.from(basedOnLikesMap.values()).slice(0, 10);
+
+    if (process.env.NODE_ENV === 'development') {
+      devLog('[Recommendations] Final basedOnLikes array:', {
+        total: finalBasedOnLikes.length,
+        items: finalBasedOnLikes.map((r) => ({
+          title: r.title,
+          type: r.type,
+          vote_average: r.vote_average,
+        })),
+      });
+    }
 
     // 3. EASY TO WATCH: Focus on comedy/animation genres with high quality
     const easyToWatch: Recommendation[] = [];

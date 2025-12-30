@@ -1,14 +1,14 @@
 <template>
   <section
-    class="relative flex flex-col items-center justify-between gap-20 pb-8 dark:text-gray-300 text-gray-800 w-full min-w-full flex-shrink-0 min-h-[400px] md:flex-row md:items-stretch md:p-8 md:bg-gray-100/80 dark:md:bg-gray-900/40 md:backdrop-blur-xl md:border md:gap-7 rounded-xl md:border-gray-300/50 md:dark:border-white/10 md:shadow-lg md:shadow-primary/20 py-8"
+    class="relative flex flex-col items-center justify-between gap-16 dark:text-gray-300 text-gray-800 w-full min-w-full flex-shrink-0 min-h-[400px] md:flex-row md:items-stretch md:p-16 md:bg-gray-100/80 dark:md:bg-gray-900/40 md:backdrop-blur-xl md:border md:gap-7 rounded-3xl md:border-gray-300/50 md:dark:border-primary-800 md:shadow-lg md:shadow-primary/20 py-8"
   >
     <div
-      class="absolute inset-0 z-0 hidden md:block rounded-xl"
+      class="absolute inset-0 z-0 hidden md:block rounded-3xl"
       :style="sectionStyle"
     ></div>
     <div
-      class="absolute z-0 hidden md:block rounded-xl bg-gray-100/80 dark:bg-gray-900/70"
-      style="top: 1px; right: 1px; bottom: 1px; left: 1px"
+      class="absolute z-0 hidden md:block rounded-3xl bg-gray-100/90 dark:bg-gray-900/90"
+      style="top: 0px; right: 0px; bottom: 0px; left: 0px"
     ></div>
     <div
       class="relative overflow-hidden rounded-lg shadow-lg shadow-primary/30 w-full max-w-80 md:w-80 flex-shrink-0"
@@ -23,39 +23,31 @@
       />
     </div>
     <div
-      class="z-10 relative flex flex-col content-start justify-between flex-1 gap-6 rounded-lg md:p-6 md:ml-8 w-full min-w-[300px] flex-shrink-0 min-h-[300px]"
+      class="z-10 relative flex flex-col flex-1 gap-6 rounded-lg md:p-6 md:ml-8 w-full min-w-[300px] flex-shrink-0 min-h-[300px]"
     >
-      <!-- MediaStatusBagde positioned to the right in desktop -->
-      <MediaStatusBagde
-        v-if="mediaType === MediaTypeEnum.tv"
-        :in-production="inProduction"
-        class="absolute top-6 right-6 hidden md:block"
-      />
-      <div class="text-left">
+      <div class="text-left relative flex-row">
         <nuxt-link
           to="/"
           class="inline-flex items-center gap-2 mb-4 text-sm font-medium dark:text-gray-300 text-gray-700 hover:dark:text-white hover:text-gray-900 transition-colors"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke-width="2"
-            stroke="currentColor"
-            class="w-4 h-4"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"
-            />
-          </svg>
+          <IconArrowLeft icon-class="w-4 h-4" />
           Volver
         </nuxt-link>
-        <h1 class="text-2xl font-bold dark:text-gray-300 text-gray-800">{{
-          mediaWithProviders.title || (mediaWithProviders as any).name
-        }}</h1>
+        <div class="flex flex-row items-center justify-between gap-2">
+          <div>
+            <h1 class="text-2xl font-bold dark:text-gray-300 text-gray-800">{{
+              mediaWithProviders.title || (mediaWithProviders as any).name
+            }}</h1>
+          </div>
+          <!-- MediaStatusBagde positioned to the right in desktop -->
+          <MediaStatusBagde
+            v-if="mediaType === MediaTypeEnum.tv || inTheaters"
+            :in-production="inProduction"
+            :in-theaters="inTheaters"
+          />
+        </div>
       </div>
+
       <p
         :class="[
           'dark:text-gray-300 text-gray-800',
@@ -63,29 +55,28 @@
         ]"
         >{{ mediaWithProviders.overview || 'Sin descripción disponible' }}</p
       >
-      <p class="mt-2 dark:text-gray-300 text-gray-800"
-        >Fecha de lanzamiento:
-        {{
+      <div
+        class="mt-2 flex items-center gap-2 dark:text-gray-300 text-gray-800"
+      >
+        <IconCalendar icon-class="w-5 h-5" />
+        <span>{{
           formatDateToSpanish(
             mediaWithProviders.release_date ||
               (mediaWithProviders as any).first_air_date ||
               ''
           )
-        }}</p
-      >
-      <p class="dark:text-gray-300 text-gray-800"
-        >Géneros:
-        {{
+        }}</span>
+      </div>
+      <div class="flex items-center gap-2 dark:text-gray-300 text-gray-800">
+        <IconTag icon-class="w-5 h-5" />
+        <span>{{
           mediaWithProviders?.genres
             ?.map((genre: Genre) => genre.name)
             .join(', ') || 'No disponible'
-        }}</p
-      >
+        }}</span>
+      </div>
       <!-- Displaying watch providers with their logos-->
       <section class="flex flex-col gap-6">
-        <h2 class="font-semibold text-md dark:text-gray-300 text-gray-800"
-          >Plataformas</h2
-        >
         <section v-if="hasAvailableProviders" class="flex flex-col gap-8">
           <ProviderList
             :media-provider-prop-list="
@@ -153,6 +144,9 @@ import ProviderList from './ProviderList.vue';
 import type { Movie } from '@/types/Movie';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 import MediaStatusBagde from './MediaStatusBagde.vue';
+import IconArrowLeft from './icons/IconArrowLeft.vue';
+import IconCalendar from './icons/IconCalendar.vue';
+import IconTag from './icons/IconTag.vue';
 
 const props = defineProps({
   media: {
@@ -166,6 +160,11 @@ const props = defineProps({
   inProduction: {
     type: Boolean,
     required: false,
+  },
+  inTheaters: {
+    type: Boolean,
+    required: false,
+    default: false,
   },
 });
 

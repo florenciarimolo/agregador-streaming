@@ -108,7 +108,7 @@
 
       <!-- Hover Overlay (same as MediaCarousel) -->
       <div
-        class="absolute bottom-0 left-0 flex flex-col items-center justify-center w-full h-full px-4 transition-all duration-300 opacity-0 rounded-xl group-hover:opacity-100 group-hover:shadow-primary/40 group-hover:shadow-xl backdrop-blur-md dark:bg-black/80 bg-white/80 border border-primary/20"
+        class="absolute bottom-0 left-0 flex flex-col items-center justify-center w-full h-full px-4 transition-all duration-300 opacity-0 group-hover:opacity-100 backdrop-blur-md dark:bg-black/80 bg-white/80"
       >
         <RatingBadge
           v-if="props.title.vote_average"
@@ -251,9 +251,24 @@ article {
   overflow: visible;
 }
 
-/* Poster link doesn't need overflow-hidden anymore - handled by inner div */
+/* Poster link - no overflow-hidden here to allow tooltips to escape */
 article > a {
   border-radius: 0.5rem 0.5rem 0 0;
+  position: relative;
+  overflow: visible;
+}
+
+/* Image container needs overflow-hidden to contain scaled image */
+article > a > div:first-of-type {
+  overflow: hidden;
+  border-radius: 0.5rem 0.5rem 0 0;
+}
+
+/* Buttons container needs to escape overflow for tooltips */
+article > a > div[role='group'] {
+  overflow: visible;
+  position: absolute;
+  z-index: 30;
 }
 
 /* Ensure content area also has proper overflow and rounded corners */

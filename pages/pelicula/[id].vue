@@ -18,6 +18,7 @@
     :media="movieWithProviders as unknown as Media"
     :media-type="MediaTypeEnum.movie"
     :in-production="false"
+    :in-theaters="isInTheaters"
   />
 </template>
 
@@ -31,6 +32,7 @@ import MediaBannerDetail from '@/components/MediaBannerDetail.vue';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 import type { Media } from '@/types/Media';
 import type { AlternativeTitlesResponse } from '@/types/AlternativeTitle';
+import { isMovieInTheaters } from '@/utils/movieStatus';
 
 const route = useRoute();
 const movieId = route.params.id as string;
@@ -78,6 +80,11 @@ const movieWithProviders = computed<Movie>(() => {
     providers: providers.value,
     alternative_titles: alternativeTitles.value,
   };
+});
+
+// Check if movie is in theaters
+const isInTheaters = computed(() => {
+  return isMovieInTheaters(movie.value?.release_date);
 });
 
 const isMobile = ref(false);

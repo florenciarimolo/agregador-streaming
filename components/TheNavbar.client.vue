@@ -2,7 +2,7 @@
   <!-- Floating Navbar (Desktop/Tablet) -->
   <header class="sticky top-4 z-50 w-full container mx-auto hidden md:block">
     <nav
-      class="shadow-md dark:bg-gray-900/40 bg-gray-100/80 backdrop-blur-xl rounded-2xl border border-gray-300/50 dark:border-white/10"
+      class="shadow-md dark:bg-gray-900/40 bg-gray-100/80 backdrop-blur-xl rounded-3xl border border-gray-300/50 dark:border-white/10"
     >
       <div class="flex items-center justify-between px-8 py-4">
         <!-- Logo -->

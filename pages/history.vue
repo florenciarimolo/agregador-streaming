@@ -103,7 +103,7 @@
           <div
             v-for="title in seenTitles"
             :key="`seen-${title.tmdb_id}`"
-            class="group relative dark:bg-gray-800/50 bg-white rounded-lg border border-primary/20 hover:border-primary/40 transition-all duration-300 hover:shadow-lg hover:shadow-primary/10"
+            class="group relative dark:bg-gray-900/40 bg-gray-100/80 backdrop-blur-xl rounded-lg border border-gray-300/50 dark:border-white/10 hover:border-gray-400/50 dark:hover:border-white/20 transition-all duration-300 hover:shadow-lg hover:shadow-gray-900/20"
           >
             <!-- Poster -->
             <nuxt-link
@@ -209,7 +209,7 @@
           <div
             v-for="title in notInterestedTitles"
             :key="`not-interested-${title.tmdb_id}`"
-            class="group relative dark:bg-gray-800/50 bg-white rounded-lg border border-primary/20 hover:border-primary/40 transition-all duration-300 hover:shadow-lg hover:shadow-primary/10"
+            class="group relative dark:bg-gray-900/40 bg-gray-100/80 backdrop-blur-xl rounded-lg border border-gray-300/50 dark:border-white/10 hover:border-gray-400/50 dark:hover:border-white/20 transition-all duration-300 hover:shadow-lg hover:shadow-gray-900/20"
           >
             <!-- Poster -->
             <nuxt-link

@@ -22,7 +22,7 @@ const isDark = computed(() => theme.value === 'dark');
     <!-- Sliding indicator -->
     <span
       class="absolute w-6 h-6 bg-white dark:bg-gray-800 rounded-full shadow-md transition-transform duration-300 ease-in-out left-0.5"
-      :class="isDark ? 'translate-x-[38px]' : 'translate-x-0'"
+      :class="isDark ? 'translate-x-[36px]' : 'translate-x-0'"
     />
 
     <!-- Sun -->

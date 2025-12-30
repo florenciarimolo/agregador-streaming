@@ -3,9 +3,10 @@
     v-if="mediaProviderPropList.length > 0"
     class="flex flex-row flex-wrap items-center justify-start gap-4"
   >
-    <p class="font-semibold dark:text-gray-300 text-gray-800">
-      {{ watchTypeProp }}</p
-    >
+    <div class="flex items-center gap-2 dark:text-gray-300 text-gray-800">
+      <IconPlay icon-class="w-5 h-5" />
+      <span>{{ watchTypeProp }}</span>
+    </div>
     <a
       v-for="provider in mediaProviderPropList"
       :key="provider.provider_id"
@@ -122,7 +123,7 @@ onMounted(async () => {
         if (url) {
           providerUrls.value[providerName] = url;
         }
-      } catch (error) {
+      } catch {
         // Fallback handled in _getProviderUrl
       }
     }

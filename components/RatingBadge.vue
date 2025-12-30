@@ -2,25 +2,29 @@
   <!-- Rating badge, with different color according the value -->
   <div
     :class="{
-      'bg-green-500 border-green-600': rating >= 7,
-      'bg-yellow-500 border-yellow-600': rating >= 5 && rating < 7,
-      'bg-gray-500 border-gray-600': rating === 0 || !rating,
-      'bg-red-500 border-red-600': rating && rating < 5,
+      'bg-green-600/80 dark:bg-green-700/70 border-green-500/30 text-green-300':
+        rating >= 7,
+      'bg-yellow-600/80 dark:bg-yellow-500/70 border-yellow-500/30 text-yellow-300':
+        rating >= 5 && rating < 7,
+      'bg-gray-600/80 dark:bg-gray-500/70 border-gray-500/30 text-gray-300':
+        rating === 0 || !rating,
+      'bg-red-600/80 dark:bg-red-500/70 border-red-500/30 text-red-300':
+        rating && rating < 5,
     }"
-    class="absolute p-2 text-sm font-semibold rounded shadow-xl shadow-black/20 top-2 right-2 border"
+    class="absolute px-4 py-1.5 text-xs md:text-sm font-medium rounded-full shadow-sm shadow-black/50 top-2 right-3 border whitespace-nowrap flex items-center gap-1"
   >
-    <span class="font-bold text-white whitespace-nowrap">
-      ⭐
-      {{
-        rating?.toFixed(1) === '0.0' || rating === 0 || !rating
-          ? 'N/A'
-          : rating?.toFixed(1)
-      }}
-    </span>
+    <IconStar icon-class="w-3 h-3" />
+    {{
+      rating?.toFixed(1) === '0.0' || rating === 0 || !rating
+        ? 'N/A'
+        : rating?.toFixed(1)
+    }}
   </div>
 </template>
 
 <script setup lang="ts">
+import IconStar from './icons/IconStar.vue';
+
 defineProps({
   rating: {
     type: Number,

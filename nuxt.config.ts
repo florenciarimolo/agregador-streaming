@@ -47,6 +47,15 @@ export default defineNuxtConfig({
       callback: '/auth/callback',
       exclude: ['/'], // Homepage is public
     },
+    clientOptions: {
+      auth: {
+        autoRefreshToken: true, // Keep enabled for automatic token refresh
+        persistSession: true,
+        detectSessionInUrl: true,
+        // Suppress refresh token errors - they're expected when tokens are invalid/expired
+        flowType: 'pkce',
+      },
+    },
   },
 
   vite: {
@@ -109,21 +118,6 @@ export default defineNuxtConfig({
       link: [
         { rel: 'icon', type: 'image/png', href: '/favicon.png' },
         { rel: 'apple-touch-icon', href: '/favicon.png' },
-        // Preload critical fonts for faster initial render
-        {
-          rel: 'preload',
-          href: '/fonts/Outfit-Regular.ttf',
-          as: 'font',
-          type: 'font/ttf',
-          crossorigin: 'anonymous',
-        },
-        {
-          rel: 'preload',
-          href: '/fonts/SpaceGrotesk-Bold.ttf',
-          as: 'font',
-          type: 'font/ttf',
-          crossorigin: 'anonymous',
-        },
       ],
     },
   },

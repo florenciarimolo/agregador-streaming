@@ -18,43 +18,45 @@
   <div v-else>
     <!-- Header de temporada -->
     <section
-      class="relative flex flex-row items-center justify-between p-8 my-8 dark:text-gray-300 text-gray-800 dark:bg-gray-800 bg-gray-100 border gap-7 rounded-xl border-primary/30 shadow-lg shadow-primary/20"
-      :style="sectionStyle"
+      class="relative flex flex-col items-center justify-between gap-16 pb-8 dark:text-gray-300 text-gray-800 w-full min-w-full flex-shrink-0 min-h-[400px] md:flex-row md:items-stretch md:p-16 md:bg-gray-100/80 dark:md:bg-gray-900/40 md:backdrop-blur-xl md:border md:gap-7 rounded-3xl md:border-gray-300/50 md:dark:border-primary-800 md:shadow-lg md:shadow-primary/20 py-16"
     >
       <div
-        class="absolute inset-0 z-0 overflow-hidden rounded-xl bg-gradient-to-b from-black/70 to-black/90"
+        class="absolute inset-0 z-0 hidden md:block rounded-3xl"
+        :style="sectionStyle"
       ></div>
-
-      <article
-        class="relative overflow-hidden shadow-xl shadow-primary/20 rounded-xl max-w-80 hidden md:block"
+      <div
+        class="absolute z-0 hidden md:block rounded-3xl bg-gray-100/90 dark:bg-gray-900/90"
+        style="top: 0px; right: 0px; bottom: 0px; left: 0px"
+      ></div>
+      <div
+        class="relative overflow-hidden rounded-lg shadow-lg shadow-primary/30 w-full max-w-80 md:w-80 flex-shrink-0 aspect-[2/3]"
       >
         <RatingBadge :rating="seasonWithProviders?.vote_average || 0" />
         <img
           v-if="seasonWithProviders?.poster_path"
           :src="`https://image.tmdb.org/t/p/w780${seasonWithProviders.poster_path}`"
           :alt="seasonWithProviders.name"
-          class="object-cover rounded w-80"
+          class="object-cover w-full h-full"
         />
-      </article>
-
-      <article
-        class="z-10 flex flex-col content-start justify-between flex-1 gap-6 p-6 md:ml-8 rounded-lg relative"
+      </div>
+      <div
+        class="z-10 relative flex flex-col flex-1 gap-6 rounded-lg md:p-6 md:ml-8 w-full min-w-[300px] flex-shrink-0 min-h-[300px]"
       >
-        <!-- Rating badge for mobile (top right) -->
-        <div class="absolute top-2 right-2 md:hidden z-20">
-          <RatingBadge :rating="seasonWithProviders?.vote_average || 0" />
+        <div class="text-left relative flex-row">
+          <nuxt-link
+            :to="`/serie/${seriesId}`"
+            class="inline-flex items-center gap-2 mb-4 text-sm font-medium dark:text-gray-300 text-gray-700 hover:dark:text-white hover:text-gray-900 transition-colors"
+          >
+            <IconArrowLeft icon-class="w-4 h-4" />
+            Volver
+          </nuxt-link>
+          <div>
+            <h1 class="text-2xl font-bold dark:text-gray-300 text-gray-800">{{
+              seasonWithProviders?.name
+            }}</h1>
+          </div>
         </div>
-        <!-- Back link aligned with rating badge on mobile -->
-        <nuxt-link
-          :to="`/serie/${seriesId}`"
-          class="absolute top-4 left-2 md:relative md:top-0 md:left-0 text-xl dark:text-gray-300 text-gray-800 transition-all duration-300 dark:hover:text-gray-200 hover:text-gray-600 no-underline md:underline"
-        >
-          ← Volver a la serie
-        </nuxt-link>
 
-        <h1 class="text-3xl font-bold mt-10 md:mt-0">{{
-          seasonWithProviders?.name
-        }}</h1>
         <p
           :class="[
             'dark:text-gray-300 text-gray-800',
@@ -64,19 +66,22 @@
             seasonWithProviders?.overview || 'Sin descripción disponible'
           }}</p
         >
-
-        <div class="flex items-center gap-6 text-sm">
-          <p
-            >Fecha de lanzamiento:
-            {{ formatDateToSpanish(seasonWithProviders?.air_date || '') }}</p
-          >
-          <p>{{ seasonWithProviders?.episodes?.length }} episodios</p>
+        <div
+          class="mt-2 flex items-center gap-2 dark:text-gray-300 text-gray-800"
+        >
+          <IconCalendar icon-class="w-5 h-5" />
+          <span>{{
+            formatDateToSpanish(seasonWithProviders?.air_date || '')
+          }}</span>
+        </div>
+        <div class="flex items-center gap-2 dark:text-gray-300 text-gray-800">
+          <IconEpisodes icon-class="w-5 h-5" />
+          <span>{{ seasonWithProviders?.episodes?.length }} episodios</span>
         </div>
 
         <!-- Displaying watch providers -->
-        <article v-if="hasAvailableProviders" class="flex flex-col gap-6">
-          <h2 class="font-semibold text-md">Plataformas</h2>
-          <article class="flex flex-col gap-8">
+        <section class="flex flex-col gap-6">
+          <section v-if="hasAvailableProviders" class="flex flex-col gap-8">
             <ProviderList
               v-if="seasonWithProviders?.providers?.flatrate?.length"
               :media-provider-prop-list="seasonWithProviders.providers.flatrate"
@@ -97,17 +102,17 @@
               watch-type-prop="Alquiler:"
               :media-type="MediaTypeEnum.tv"
             />
-          </article>
-        </article>
-        <article v-else class="dark:text-gray-400 text-gray-600">
-          <p class="italic">No disponible en ninguna plataforma</p>
-        </article>
-      </article>
+          </section>
+          <section v-else class="dark:text-gray-400 text-gray-600">
+            <p class="italic">No disponible en ninguna plataforma</p>
+          </section>
+        </section>
+      </div>
     </section>
 
     <!-- Episodios -->
     <section>
-      <h2 class="mb-8 text-2xl font-semibold dark:text-gray-300 text-gray-800"
+      <h2 class="py-16 text-2xl font-semibold dark:text-gray-300 text-gray-800"
         >Episodios</h2
       >
 
@@ -118,7 +123,7 @@
         <article
           v-for="(episode, index) in seasonWithProviders.episodes"
           :key="episode.id"
-          class="overflow-hidden transition-shadow duration-300 dark:bg-gray-800 bg-gray-100 rounded-md shadow-lg hover:shadow-xl"
+          class="overflow-hidden bg-white/60 dark:bg-gray-900/40 backdrop-blur-xl border border-gray-300/50 dark:border-white/10 rounded-3xl group hover:border-primary/50 dark:hover:border-purple-500/30 transition-colors shadow-lg"
         >
           <div class="relative bg-gray-700 aspect-video">
             <img
@@ -134,7 +139,7 @@
               <span class="text-4xl">📺</span>
             </div>
             <div
-              class="absolute px-2 py-1 text-sm dark:text-gray-300 text-gray-800 rounded top-2 left-2 dark:bg-black/70 bg-white/70"
+              class="absolute px-2 py-1 text-sm dark:text-gray-300 text-gray-800 rounded-lg top-2 left-4 dark:bg-gray-800/70 bg-white/70"
             >
               Episodio {{ index + 1 }}
             </div>
@@ -175,7 +180,7 @@
 <script setup lang="ts">
 import { useRoute } from 'vue-router';
 import { useFetch } from 'nuxt/app';
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 
 import { Season } from '@/types/TVShow';
 import { formatDateToSpanish } from '@/utils/formatDate';
@@ -183,6 +188,9 @@ import { WatchProviderTypes } from '@/types/WatchProvider';
 import ProviderList from '@/components/ProviderList.vue';
 import RatingBadge from '@/components/RatingBadge.vue';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
+import IconArrowLeft from '@/components/icons/IconArrowLeft.vue';
+import IconCalendar from '@/components/icons/IconCalendar.vue';
+import IconEpisodes from '@/components/icons/IconEpisodes.vue';
 
 const route = useRoute();
 
@@ -247,34 +255,39 @@ const hasAvailableProviders = computed(() => {
   );
 });
 
-const backgroundImage = ref<string>('');
+const isMobile = ref(false);
 
-function setBackgroundImage() {
-  if (seasonData.value?.poster_path) {
-    backgroundImage.value = `https://image.tmdb.org/t/p/original${seasonData.value.poster_path}`;
-  } else {
-    backgroundImage.value = '';
-  }
-}
+// Detect mobile screen size
+const checkMobile = () => {
+  isMobile.value = window.innerWidth < 768;
+};
 
-const sectionStyle = computed(() => ({
-  backgroundImage: `url(${backgroundImage.value})`,
-  backgroundSize: 'cover',
-  backgroundPosition: 'center',
-}));
+// Handle resize
+const handleResize = () => {
+  checkMobile();
+};
 
 onMounted(() => {
-  setBackgroundImage();
+  checkMobile();
+  window.addEventListener('resize', handleResize);
 });
 
-watch(
-  () => route.params.temporadaId,
-  async (newId) => {
-    if (newId && newId !== seasonId) {
-      setBackgroundImage();
-    }
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize);
+});
+
+const backgroundImage = computed(() => {
+  if (seasonData.value?.poster_path) {
+    return `https://image.tmdb.org/t/p/w780${seasonData.value.poster_path}`;
   }
-);
+  return '';
+});
+
+const sectionStyle = computed(() => ({
+  backgroundImage: isMobile.value ? '' : `url(${backgroundImage.value})`,
+  backgroundSize: isMobile.value ? 'contain' : 'cover',
+  backgroundPosition: isMobile.value ? 'center' : 'center',
+}));
 </script>
 
 <style scoped>

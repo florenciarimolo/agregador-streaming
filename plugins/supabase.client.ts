@@ -12,22 +12,54 @@ export default defineNuxtPlugin(async () => {
   const userStore = useUserStore();
   let authInitialized = false;
 
+  // Helper to check if error is a refresh token error (expected and can be ignored)
+  const isRefreshTokenError = (error: unknown): boolean => {
+    if (!error || typeof error !== 'object') return false;
+    const errorMessage =
+      (error as { message?: string }).message ||
+      (error as { error_description?: string }).error_description ||
+      '';
+    return (
+      errorMessage.includes('Refresh Token') ||
+      errorMessage.includes('refresh_token') ||
+      errorMessage.includes('Invalid Refresh Token')
+    );
+  };
+
   // Listen to auth state changes
   supabase.auth.onAuthStateChange(
     async (_event: string, session: Session | null) => {
-      if (session?.user) {
-        userStore.setUser(session.user);
-        // Mark auth as initialized when we get a session
-        if (!authInitialized) {
-          userStore.setAuthInitialized(true);
-          authInitialized = true;
+      try {
+        if (session?.user) {
+          userStore.setUser(session.user);
+          // Mark auth as initialized when we get a session
+          if (!authInitialized) {
+            userStore.setAuthInitialized(true);
+            authInitialized = true;
+          }
+          // Fetch profile in background (don't block)
+          userStore.fetchProfile().catch((error) => {
+            // Only log non-refresh-token errors
+            if (!isRefreshTokenError(error)) {
+              if (process.env.NODE_ENV === 'development') {
+                console.error(
+                  '[supabase.client.ts] Error fetching profile:',
+                  error
+                );
+              }
+            }
+          });
+        } else {
+          userStore.reset();
         }
-        // Fetch profile in background (don't block)
-        userStore.fetchProfile().catch((error) => {
-          console.error('[supabase.client.ts] Error fetching profile:', error);
-        });
-      } else {
-        userStore.reset();
+      } catch (error) {
+        // Silently handle refresh token errors - they're expected when tokens are invalid
+        if (
+          !isRefreshTokenError(error) &&
+          process.env.NODE_ENV === 'development'
+        ) {
+          console.error('[supabase.client.ts] Auth state change error:', error);
+        }
       }
     }
   );
@@ -50,11 +82,24 @@ export default defineNuxtPlugin(async () => {
     // Fetch profile in background if we have a user
     if (session?.user) {
       userStore.fetchProfile().catch((error) => {
-        console.error('[supabase.client.ts] Error fetching profile:', error);
+        // Only log non-refresh-token errors
+        if (!isRefreshTokenError(error)) {
+          if (process.env.NODE_ENV === 'development') {
+            console.error(
+              '[supabase.client.ts] Error fetching profile:',
+              error
+            );
+          }
+        }
       });
     }
   } catch (error) {
-    console.error('[supabase.client.ts] Error getting session:', error);
+    // Silently handle refresh token errors - they're expected when tokens are invalid/expired
+    if (!isRefreshTokenError(error)) {
+      if (process.env.NODE_ENV === 'development') {
+        console.error('[supabase.client.ts] Error getting session:', error);
+      }
+    }
     // Mark as initialized even if there's an error, so components can proceed
     if (!authInitialized) {
       userStore.setAuthInitialized(true);

@@ -20,14 +20,14 @@
     :in-production="tvShowWithProviders.in_production"
   />
   <section>
-    <h2 class="col-span-4 text-2xl font-semibold my-11">Temporadas</h2>
+    <h2 class="col-span-4 text-2xl font-semibold py-16">Temporadas</h2>
     <div
       class="relative grid grid-cols-1 gap-y-8 sm:gap-8 justify-items-center lg:justify-items-stretch md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
     >
       <article
         v-for="season in tvShowWithProviders.seasons"
         :key="season.id"
-        class="rounded-xl relative flex flex-col text-sm overflow-hidden shadow-primary/20 shadow-sm w-[300px] cursor-pointer hover:shadow-xl group hover:scale-105 transition-all duration-300"
+        class="rounded-3xl relative flex flex-col text-sm overflow-hidden bg-white/60 dark:bg-gray-900/40 backdrop-blur-xl border border-gray-300/50 dark:border-white/10 w-[300px] cursor-pointer group hover:border-primary/50 dark:hover:border-purple-500/30 transition-colors shadow-lg"
       >
         <nuxt-link
           :to="`/serie/${tvShowId}/temporada/${season.season_number}`"
@@ -53,19 +53,19 @@
           </div>
         </nuxt-link>
 
-        <div
-          class="flex flex-col justify-around py-5 px-6 dark:bg-gray-800 bg-gray-100 min-h-[120px]"
-        >
+        <div class="flex flex-col justify-around py-5 px-6 min-h-[120px]">
           <p
             class="text-lg font-semibold uppercase dark:text-gray-300 text-gray-800"
             >{{ season.name }}</p
           >
-          <p class="dark:text-gray-300 text-gray-800"
-            >Fecha de lanzamiento: {{ formatDateToSpanish(season.air_date) }}</p
-          >
-          <p class="dark:text-gray-300 text-gray-800">
-            {{ season.episode_count || 0 }} episodios
-          </p>
+          <div class="flex items-center gap-2 dark:text-gray-300 text-gray-800">
+            <IconCalendar icon-class="w-4 h-4" />
+            <span>{{ formatDateToSpanish(season.air_date) }}</span>
+          </div>
+          <div class="flex items-center gap-2 dark:text-gray-300 text-gray-800">
+            <IconEpisodes icon-class="w-4 h-4" />
+            <span>{{ season.episode_count || 0 }} episodios</span>
+          </div>
         </div>
       </article>
     </div>
@@ -83,6 +83,8 @@ import { WatchProviderTypes } from '@/types/WatchProvider';
 import MediaBannerDetail from '@/components/MediaBannerDetail.vue';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 import type { Media } from '@/types/Media';
+import IconCalendar from '@/components/icons/IconCalendar.vue';
+import IconEpisodes from '@/components/icons/IconEpisodes.vue';
 
 const route = useRoute();
 

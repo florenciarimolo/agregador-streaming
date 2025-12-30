@@ -367,24 +367,32 @@ onMounted(() => {
   <div class="w-full">
     <!-- Hero Section -->
     <!-- Only show HeroSection when auth is initialized and there's no user, or user hasn't completed onboarding -->
-    <HeroSection
-      v-if="
-        userStore.authInitialized &&
-        (!effectiveUser ||
-          (initialProfileLoaded && !userStore.hasCompletedOnboarding))
-      "
-      :button-text="
-        !effectiveUser ? 'Descubrir qué ver' : 'Ver recomendaciones'
-      "
-      :show-auth-form="showAuthForm"
-      :is-authenticated="!!effectiveUser"
-      :initial-profile-loaded="initialProfileLoaded"
-      :has-completed-onboarding="userStore.hasCompletedOnboarding"
-      @get-started="handleGetStarted"
-      @scroll-to-how-it-works="scrollToHowItWorks"
-      @auth-success="handleAuthSuccess"
-      @signup-success="handleSignupSuccess"
-    />
+    <ClientOnly>
+      <HeroSection
+        v-if="
+          userStore.authInitialized &&
+          (!effectiveUser ||
+            (initialProfileLoaded && !userStore.hasCompletedOnboarding))
+        "
+        :button-text="
+          !effectiveUser ? 'Descubrir qué ver' : 'Ver recomendaciones'
+        "
+        :show-auth-form="showAuthForm"
+        :is-authenticated="!!effectiveUser"
+        :initial-profile-loaded="initialProfileLoaded"
+        :has-completed-onboarding="userStore.hasCompletedOnboarding"
+        @get-started="handleGetStarted"
+        @scroll-to-how-it-works="scrollToHowItWorks"
+        @auth-success="handleAuthSuccess"
+        @signup-success="handleSignupSuccess"
+      />
+      <template #fallback>
+        <!-- Placeholder during SSR to maintain layout -->
+        <section
+          class="relative py-16 x-4 overflow-hidden min-h-[400px]"
+        ></section>
+      </template>
+    </ClientOnly>
 
     <!-- Personalized Recommendations -->
     <ClientOnly>

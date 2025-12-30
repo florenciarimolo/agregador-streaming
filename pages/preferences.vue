@@ -109,27 +109,44 @@
         <div
           v-for="title in likedTitles"
           :key="title.id"
-          class="relative group rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-shadow"
+          class="group relative dark:bg-gray-900/40 bg-gray-100/80 backdrop-blur-xl rounded-lg border border-gray-300/50 dark:border-white/10 hover:border-gray-400/50 dark:hover:border-white/20 transition-all duration-300 hover:shadow-lg hover:shadow-gray-900/20"
         >
           <!-- Poster -->
-          <div
-            class="aspect-[2/3] relative overflow-hidden bg-gray-200 dark:bg-gray-700"
+          <nuxt-link
+            :to="`/${title.type === 'movie' ? 'pelicula' : 'serie'}/${title.tmdb_id}`"
+            :aria-label="`Ver detalles de ${title.title}`"
+            class="block aspect-[2/3] relative bg-gray-800 rounded-t-lg focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
           >
-            <img
+            <div
               v-if="title.poster_path"
-              :src="`https://image.tmdb.org/t/p/w500${title.poster_path}`"
-              :alt="title.title"
-              class="w-full h-full object-cover"
-            />
+              class="w-full h-full overflow-hidden rounded-t-lg"
+            >
+              <img
+                :src="`https://image.tmdb.org/t/p/w500${title.poster_path}`"
+                :alt="`Poster de ${title.title}`"
+                class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                loading="lazy"
+                decoding="async"
+              />
+            </div>
             <div
               v-else
-              class="w-full h-full flex items-center justify-center text-gray-400"
+              class="w-full h-full flex items-center justify-center text-gray-400 overflow-hidden rounded-t-lg"
+              role="img"
+              :aria-label="`Sin poster disponible para ${title.title}`"
             >
-              <svg class="w-12 h-12" fill="currentColor" viewBox="0 0 20 20">
+              <svg
+                class="w-12 h-12"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
                 <path
-                  fill-rule="evenodd"
-                  d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"
-                  clip-rule="evenodd"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
                 />
               </svg>
             </div>
@@ -137,10 +154,12 @@
             <!-- Remove Button -->
             <button
               type="button"
-              class="absolute top-2 right-2 w-8 h-8 bg-black/50 hover:bg-red-600/80 text-white rounded-full flex items-center justify-center opacity-100 md:opacity-0 md:group-hover:opacity-100 backdrop-blur-sm transition-all duration-300 shadow-lg"
+              class="tooltip-container absolute top-2 right-2 z-20 p-2 rounded-full bg-black/50 hover:bg-red-600/80 backdrop-blur-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-black/50 pointer-events-auto"
               :aria-label="`Eliminar ${title.title}`"
+              title="Eliminar de preferencias"
               :disabled="isRemoving"
-              @click="handleRemoveTitle(title)"
+              @click.stop.prevent="handleRemoveTitle(title)"
+              @mousedown.stop.prevent
             >
               <svg
                 class="w-4 h-4"
@@ -155,18 +174,18 @@
                   d="M6 18L18 6M6 6l12 12"
                 />
               </svg>
+              <span class="tooltip">Eliminar de preferencias</span>
             </button>
-          </div>
+          </nuxt-link>
 
           <!-- Title -->
-          <div class="p-2 bg-white dark:bg-gray-800">
-            <p
-              class="text-sm font-medium dark:text-gray-300 text-gray-800 truncate"
-              :title="title.title"
+          <div class="p-4">
+            <h3
+              class="text-sm font-semibold dark:text-gray-300 text-gray-800 truncate mb-1"
             >
               {{ title.title }}
-            </p>
-            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            </h3>
+            <p class="text-xs dark:text-gray-300 text-gray-500 mb-2">
               {{ title.type === 'movie' ? 'Película' : 'Serie' }}
             </p>
           </div>
@@ -467,3 +486,69 @@ useHead({
   title: 'Editar preferencias - UpNext',
 });
 </script>
+
+<style scoped>
+/* Ensure tooltips can escape overflow containers */
+.tooltip-container:hover,
+.tooltip-container:focus {
+  z-index: 10000;
+}
+
+.tooltip {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  background-color: rgba(0, 0, 0, 0.95);
+  color: white;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition:
+    opacity 0.2s ease-in-out,
+    transform 0.2s ease-in-out;
+  z-index: 9999;
+  margin-top: 0;
+}
+
+.tooltip::after {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 4px solid transparent;
+  border-bottom-color: rgba(0, 0, 0, 0.95);
+}
+
+.tooltip-container:hover .tooltip,
+.tooltip-container:focus .tooltip {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Ensure tooltip is visible on focus for keyboard navigation */
+.tooltip-container:focus-visible .tooltip {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Ensure article allows tooltip overflow while maintaining rounded corners */
+div[class*='group relative'] {
+  overflow: visible;
+}
+
+/* Poster link doesn't need overflow-hidden anymore - handled by inner div */
+div[class*='group relative'] > a {
+  border-radius: 0.5rem 0.5rem 0 0;
+}
+
+/* Ensure content area also has proper overflow and rounded corners */
+div[class*='group relative'] > div:last-child {
+  overflow: hidden;
+  border-radius: 0 0 0.5rem 0.5rem;
+}
+</style>
