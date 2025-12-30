@@ -1,6 +1,6 @@
 <template>
   <article
-    class="group relative dark:bg-gray-800/50 bg-white rounded-lg border border-primary/20 hover:border-primary/40 transition-all duration-300 hover:shadow-lg hover:shadow-primary/10"
+    class="group relative dark:bg-gray-800/60 bg-white/90 backdrop-blur-sm rounded-lg border border-gray-700/30 dark:border-gray-600/30 hover:border-gray-600/50 dark:hover:border-gray-500/50 transition-all duration-300 hover:shadow-lg hover:shadow-gray-900/20"
     :aria-label="`Recomendación: ${props.title.title}`"
   >
     <!-- Poster -->

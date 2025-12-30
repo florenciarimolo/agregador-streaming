@@ -135,7 +135,7 @@
             <!-- Remove Button -->
             <button
               type="button"
-              class="absolute top-2 right-2 w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+              class="absolute top-2 right-2 w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity shadow-lg"
               :aria-label="`Eliminar ${title.title}`"
               :disabled="isRemoving"
               @click="handleRemoveTitle(title)"

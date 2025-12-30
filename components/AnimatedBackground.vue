@@ -1,6 +1,6 @@
 <template>
   <div
-    class="animated-background absolute inset-0 overflow-hidden pointer-events-none"
+    class="animated-background fixed inset-0 w-screen h-screen overflow-hidden pointer-events-none"
   >
     <!-- Animated gradient orbs -->
     <div class="orb orb-1"></div>
@@ -8,17 +8,177 @@
     <div class="orb orb-3"></div>
     <div class="orb orb-4"></div>
 
+    <!-- AI-inspired particles (stars/dots) -->
+    <div class="particles">
+      <div
+        v-for="i in 50"
+        :key="`particle-${i}`"
+        class="particle"
+        :style="getParticleStyle(i)"
+      ></div>
+    </div>
+
+    <!-- Neural network connections -->
+    <svg
+      class="neural-network"
+      viewBox="0 0 1000 1000"
+      preserveAspectRatio="xMidYMid slice"
+    >
+      <defs>
+        <linearGradient
+          id="connectionGradient"
+          x1="0%"
+          y1="0%"
+          x2="100%"
+          y2="100%"
+        >
+          <stop
+            offset="0%"
+            :style="`stop-color: rgba(33, 24, 110, 0.3); stop-opacity: 1`"
+          />
+          <stop
+            offset="50%"
+            :style="`stop-color: rgba(139, 92, 246, 0.2); stop-opacity: 1`"
+          />
+          <stop
+            offset="100%"
+            :style="`stop-color: rgba(33, 24, 110, 0.1); stop-opacity: 0`"
+          />
+        </linearGradient>
+      </defs>
+      <g class="connections">
+        <line
+          v-for="(connection, idx) in neuralConnections"
+          :key="`connection-${idx}`"
+          :x1="connection.x1"
+          :y1="connection.y1"
+          :x2="connection.x2"
+          :y2="connection.y2"
+          class="connection-line"
+          :style="`animation-delay: ${connection.delay}s`"
+        />
+      </g>
+      <g class="nodes">
+        <circle
+          v-for="(node, idx) in neuralNodes"
+          :key="`node-${idx}`"
+          :cx="node.x"
+          :cy="node.y"
+          :r="node.r"
+          class="neural-node"
+          :style="`animation-delay: ${node.delay}s`"
+        />
+      </g>
+    </svg>
+
+    <!-- Data cards (abstract shapes suggesting data processing) -->
+    <div class="data-cards">
+      <div
+        v-for="i in 6"
+        :key="`card-${i}`"
+        class="data-card"
+        :style="getCardStyle(i)"
+      >
+        <svg class="card-icon" viewBox="0 0 24 24" fill="none">
+          <path
+            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+      </div>
+    </div>
+
     <!-- Subtle grid pattern -->
     <div class="grid-pattern"></div>
   </div>
 </template>
 
 <script setup lang="ts">
-// No props needed - uses theme colors automatically
+// Generate neural network nodes (once on component creation)
+const generateNeuralNodes = () => {
+  const nodes = [];
+  for (let i = 0; i < 12; i++) {
+    nodes.push({
+      x: Math.random() * 1000,
+      y: Math.random() * 1000,
+      r: 3 + Math.random() * 2,
+      delay: Math.random() * 3,
+    });
+  }
+  return nodes;
+};
+
+const neuralNodes = generateNeuralNodes();
+
+// Generate neural network connections (once on component creation)
+const generateNeuralConnections = () => {
+  const connections = [];
+  for (let i = 0; i < neuralNodes.length; i++) {
+    for (let j = i + 1; j < Math.min(i + 3, neuralNodes.length); j++) {
+      if (Math.random() > 0.6) {
+        connections.push({
+          x1: neuralNodes[i].x,
+          y1: neuralNodes[i].y,
+          x2: neuralNodes[j].x,
+          y2: neuralNodes[j].y,
+          delay: Math.random() * 2,
+        });
+      }
+    }
+  }
+  return connections;
+};
+
+const neuralConnections = generateNeuralConnections();
+
+// Generate particle styles (use index as seed for consistent positioning)
+const getParticleStyle = (index: number) => {
+  // Use index as seed for pseudo-random but consistent positioning
+  const seed = index * 0.618; // Golden ratio for better distribution
+  const size = 1 + (Math.sin(seed) * 0.5 + 0.5) * 2;
+  const left = (Math.sin(seed * 2) * 0.5 + 0.5) * 100;
+  const top = (Math.cos(seed * 3) * 0.5 + 0.5) * 100;
+  const delay = (Math.sin(seed * 5) * 0.5 + 0.5) * 5;
+  const duration = 8 + (Math.cos(seed * 7) * 0.5 + 0.5) * 12;
+  return {
+    width: `${size}px`,
+    height: `${size}px`,
+    left: `${left}%`,
+    top: `${top}%`,
+    animationDelay: `${delay}s`,
+    animationDuration: `${duration}s`,
+  };
+};
+
+// Generate card styles (use index as seed for consistent positioning)
+const getCardStyle = (index: number) => {
+  // Use index as seed for pseudo-random but consistent positioning
+  const seed = index * 0.618; // Golden ratio for better distribution
+  const left = 10 + (Math.sin(seed * 2) * 0.5 + 0.5) * 80;
+  const top = 10 + (Math.cos(seed * 3) * 0.5 + 0.5) * 80;
+  const rotation = -15 + (Math.sin(seed * 5) * 0.5 + 0.5) * 30;
+  const delay = (Math.cos(seed * 7) * 0.5 + 0.5) * 4;
+  const duration = 15 + (Math.sin(seed * 11) * 0.5 + 0.5) * 10;
+  return {
+    left: `${left}%`,
+    top: `${top}%`,
+    transform: `rotate(${rotation}deg)`,
+    animationDelay: `${delay}s`,
+    animationDuration: `${duration}s`,
+  };
+};
 </script>
 
 <style scoped>
 .animated-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
   z-index: 0;
   opacity: 0.8;
 }
@@ -37,8 +197,8 @@
   height: 400px;
   background: radial-gradient(
     circle,
-    rgba(99, 102, 241, 0.25) 0%,
-    rgba(99, 102, 241, 0.12) 40%,
+    rgba(33, 24, 110, 0.25) 0%,
+    rgba(33, 24, 110, 0.12) 40%,
     transparent 70%
   );
   top: -10%;
@@ -51,8 +211,8 @@
   height: 350px;
   background: radial-gradient(
     circle,
-    rgba(99, 102, 241, 0.22) 0%,
-    rgba(99, 102, 241, 0.1) 40%,
+    rgba(33, 24, 110, 0.22) 0%,
+    rgba(33, 24, 110, 0.1) 40%,
     transparent 70%
   );
   top: 50%;
@@ -66,8 +226,8 @@
   height: 300px;
   background: radial-gradient(
     circle,
-    rgba(99, 102, 241, 0.2) 0%,
-    rgba(99, 102, 241, 0.1) 40%,
+    rgba(33, 24, 110, 0.2) 0%,
+    rgba(33, 24, 110, 0.1) 40%,
     transparent 70%
   );
   bottom: -10%;
@@ -81,8 +241,8 @@
   height: 320px;
   background: radial-gradient(
     circle,
-    rgba(99, 102, 241, 0.2) 0%,
-    rgba(99, 102, 241, 0.1) 40%,
+    rgba(33, 24, 110, 0.2) 0%,
+    rgba(33, 24, 110, 0.1) 40%,
     transparent 70%
   );
   top: 20%;
@@ -108,16 +268,145 @@
   }
 }
 
+/* AI Particles (stars/dots) */
+.particles {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 1;
+}
+
+.particle {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 50%;
+  animation: particleFloat ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+@keyframes particleFloat {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.3;
+  }
+  50% {
+    transform: translate(20px, -30px) scale(1.2);
+    opacity: 0.8;
+  }
+}
+
+/* Neural Network SVG */
+.neural-network {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 2;
+  opacity: 0.4;
+}
+
+.connection-line {
+  stroke: url(#connectionGradient);
+  stroke-width: 1;
+  opacity: 0;
+  animation: connectionPulse 4s ease-in-out infinite;
+}
+
+@keyframes connectionPulse {
+  0%,
+  100% {
+    opacity: 0;
+    stroke-width: 0.5;
+  }
+  50% {
+    opacity: 0.6;
+    stroke-width: 1.5;
+  }
+}
+
+.neural-node {
+  fill: rgba(33, 24, 110, 0.4);
+  opacity: 0;
+  animation: nodePulse 3s ease-in-out infinite;
+}
+
+@keyframes nodePulse {
+  0%,
+  100% {
+    opacity: 0.3;
+    r: 3;
+  }
+  50% {
+    opacity: 0.8;
+    r: 5;
+  }
+}
+
+/* Data Cards (abstract shapes) */
+.data-cards {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 1;
+}
+
+.data-card {
+  position: absolute;
+  width: 80px;
+  height: 100px;
+  background: rgba(33, 24, 110, 0.08);
+  border: 1px solid rgba(33, 24, 110, 0.15);
+  border-radius: 8px;
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: cardFloat ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+.card-icon {
+  width: 24px;
+  height: 24px;
+  color: rgba(33, 24, 110, 0.3);
+}
+
+@keyframes cardFloat {
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+    opacity: 0.4;
+  }
+  33% {
+    transform: translate(10px, -15px) rotate(2deg);
+    opacity: 0.6;
+  }
+  66% {
+    transform: translate(-10px, 15px) rotate(-2deg);
+    opacity: 0.5;
+  }
+}
+
 /* Subtle grid pattern */
 .grid-pattern {
   position: absolute;
-  inset: 0;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
   background-image:
-    linear-gradient(rgba(99, 102, 241, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(99, 102, 241, 0.05) 1px, transparent 1px);
+    linear-gradient(rgba(33, 24, 110, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(33, 24, 110, 0.05) 1px, transparent 1px);
   background-size: 50px 50px;
   opacity: 0.6;
   animation: gridMove 20s linear infinite;
+  z-index: 0;
 }
 
 @keyframes gridMove {
@@ -154,6 +443,21 @@
   .grid-pattern {
     background-size: 30px 30px;
   }
+
+  .data-card {
+    width: 60px;
+    height: 75px;
+  }
+
+  .card-icon {
+    width: 18px;
+    height: 18px;
+  }
+
+  .particle {
+    width: 1px !important;
+    height: 1px !important;
+  }
 }
 
 /* Reduce motion for accessibility */
@@ -163,6 +467,24 @@
   }
 
   .grid-pattern {
+    animation: none;
+  }
+
+  .particle {
+    animation: none;
+  }
+
+  .connection-line {
+    animation: none;
+    opacity: 0.3;
+  }
+
+  .neural-node {
+    animation: none;
+    opacity: 0.4;
+  }
+
+  .data-card {
     animation: none;
   }
 }
@@ -182,8 +504,8 @@
 .dark .orb-1 {
   background: radial-gradient(
     circle,
-    rgba(99, 102, 241, 0.4) 0%,
-    rgba(99, 102, 241, 0.2) 40%,
+    rgba(33, 24, 110, 0.4) 0%,
+    rgba(33, 24, 110, 0.2) 40%,
     transparent 70%
   );
 }
@@ -191,8 +513,8 @@
 .dark .orb-2 {
   background: radial-gradient(
     circle,
-    rgba(99, 102, 241, 0.35) 0%,
-    rgba(99, 102, 241, 0.18) 40%,
+    rgba(33, 24, 110, 0.35) 0%,
+    rgba(33, 24, 110, 0.18) 40%,
     transparent 70%
   );
 }
@@ -200,8 +522,8 @@
 .dark .orb-3 {
   background: radial-gradient(
     circle,
-    rgba(99, 102, 241, 0.3) 0%,
-    rgba(99, 102, 241, 0.15) 40%,
+    rgba(33, 24, 110, 0.3) 0%,
+    rgba(33, 24, 110, 0.15) 40%,
     transparent 70%
   );
 }
@@ -209,8 +531,8 @@
 .dark .orb-4 {
   background: radial-gradient(
     circle,
-    rgba(99, 102, 241, 0.3) 0%,
-    rgba(99, 102, 241, 0.15) 40%,
+    rgba(33, 24, 110, 0.3) 0%,
+    rgba(33, 24, 110, 0.15) 40%,
     transparent 70%
   );
 }
@@ -218,8 +540,8 @@
 .light .orb-1 {
   background: radial-gradient(
     circle,
-    rgba(99, 102, 241, 0.2) 0%,
-    rgba(99, 102, 241, 0.1) 40%,
+    rgba(33, 24, 110, 0.2) 0%,
+    rgba(33, 24, 110, 0.1) 40%,
     transparent 70%
   );
 }
@@ -227,8 +549,8 @@
 .light .orb-2 {
   background: radial-gradient(
     circle,
-    rgba(99, 102, 241, 0.18) 0%,
-    rgba(99, 102, 241, 0.09) 40%,
+    rgba(33, 24, 110, 0.18) 0%,
+    rgba(33, 24, 110, 0.09) 40%,
     transparent 70%
   );
 }
@@ -236,8 +558,8 @@
 .light .orb-3 {
   background: radial-gradient(
     circle,
-    rgba(99, 102, 241, 0.15) 0%,
-    rgba(99, 102, 241, 0.08) 40%,
+    rgba(33, 24, 110, 0.15) 0%,
+    rgba(33, 24, 110, 0.08) 40%,
     transparent 70%
   );
 }
@@ -245,8 +567,8 @@
 .light .orb-4 {
   background: radial-gradient(
     circle,
-    rgba(99, 102, 241, 0.16) 0%,
-    rgba(99, 102, 241, 0.08) 40%,
+    rgba(33, 24, 110, 0.16) 0%,
+    rgba(33, 24, 110, 0.08) 40%,
     transparent 70%
   );
 }
@@ -254,15 +576,15 @@
 /* Dark mode grid pattern - Lighter primary color */
 .dark .grid-pattern {
   background-image:
-    linear-gradient(rgba(99, 102, 241, 0.12) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(99, 102, 241, 0.12) 1px, transparent 1px);
+    linear-gradient(rgba(33, 24, 110, 0.12) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(33, 24, 110, 0.12) 1px, transparent 1px);
   opacity: 0.8;
 }
 
 .light .grid-pattern {
   background-image:
-    linear-gradient(rgba(99, 102, 241, 0.08) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(99, 102, 241, 0.08) 1px, transparent 1px);
+    linear-gradient(rgba(33, 24, 110, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(33, 24, 110, 0.08) 1px, transparent 1px);
   opacity: 0.7;
 }
 </style>

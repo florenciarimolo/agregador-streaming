@@ -437,7 +437,7 @@ onMounted(() => {
               </p>
               <nuxt-link
                 to="/onboarding"
-                class="inline-block px-6 py-3 bg-gradient-to-r from-primary via-accent to-secondary hover:from-secondary hover:via-pink-500 hover:to-primary text-white rounded-lg font-medium transition-all duration-300 shadow-lg shadow-primary/30 hover:shadow-xl"
+                class="inline-block px-6 py-3 dark:bg-gray-900/90 bg-gray-800/90 hover:dark:bg-gray-800 hover:bg-gray-700 text-white rounded-lg font-medium transition-all duration-300 shadow-lg border border-gray-700/50 dark:border-gray-600/50"
               >
                 Agregar favoritos
               </nuxt-link>
@@ -498,7 +498,7 @@ onMounted(() => {
           (initialProfileLoaded && !userStore.hasCompletedOnboarding))
       "
       id="como-funciona"
-      class="py-16 md:py-24 px-4 dark:bg-gray-900/90 bg-gray-50/90"
+      class="py-16 md:py-24 px-4 dark:bg-gray-800/60 bg-gray-100/80 rounded-sm"
     >
       <div class="container mx-auto max-w-6xl">
         <h2
@@ -565,16 +565,33 @@ onMounted(() => {
       v-if="userStore.authInitialized && !effectiveUser"
       class="py-16 md:py-24 px-4"
     >
-      <div class="container mx-auto max-w-3xl text-center">
+      <div class="container mx-auto max-w-4xl text-center">
         <p
-          class="text-xl md:text-3xl text-gray-700 dark:text-gray-200 leading-relaxed font-semibold"
+          class="text-xl md:text-3xl dark:text-gray-200 leading-relaxed font-semibold mb-6"
         >
           No es otra lista más.
         </p>
-        <p
-          class="text-xl md:text-3xl text-primary leading-relaxed font-semibold"
-        >
-          Es una decisión hecha por ti, pero sin pensar.
+        <p class="text-xl md:text-5xl leading-relaxed font-semibold">
+          Es una
+          <span
+            class="bg-gradient-to-r from-primary-700 via-primary-800 to-primary-900 dark:from-primary-400 dark:via-primary-500 dark:to-primary-600 bg-clip-text text-transparent"
+            style="
+              background-clip: text;
+              -webkit-background-clip: text;
+              -webkit-text-fill-color: transparent;
+            "
+            >decisión</span
+          >
+          hecha por ti, pero
+          <span
+            class="bg-gradient-to-r from-primary-700 via-primary-800 to-primary-900 dark:from-primary-400 dark:via-primary-500 dark:to-primary-600 bg-clip-text text-transparent"
+            style="
+              background-clip: text;
+              -webkit-background-clip: text;
+              -webkit-text-fill-color: transparent;
+            "
+            >sin pensar</span
+          >.
         </p>
       </div>
     </section>

@@ -398,7 +398,7 @@ const saveSelections = async () => {
       <div class="mt-8 text-center">
         <button
           :disabled="selectedTitles.length === 0 || saving"
-          class="px-8 py-3 bg-gradient-to-r from-primary via-accent to-secondary hover:from-secondary hover:via-pink-500 hover:to-primary text-white rounded-lg font-medium transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+          class="px-6 py-3 dark:bg-gray-900/90 bg-gray-800/90 hover:dark:bg-gray-800 hover:bg-gray-700 text-white rounded-lg font-medium transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg border border-gray-700/50 dark:border-gray-600/50"
           @click="saveSelections"
         >
           {{ saving ? 'Guardando...' : 'Continuar' }}

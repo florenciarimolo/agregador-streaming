@@ -14,7 +14,7 @@
       <div v-if="error" class="mt-4">
         <nuxt-link
           to="/"
-          class="inline-block px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+          class="inline-block px-6 py-3 dark:bg-gray-900/90 bg-gray-800/90 hover:dark:bg-gray-800 hover:bg-gray-700 text-white rounded-lg font-medium transition-all duration-300 shadow-lg border border-gray-700/50 dark:border-gray-600/50"
         >
           Volver al inicio
         </nuxt-link>

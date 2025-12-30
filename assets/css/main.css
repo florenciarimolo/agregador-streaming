@@ -41,10 +41,10 @@
   font-feature-settings: normal;
 }
 
-/* Space Grotesk Font Family - Headings */
+/* Inter Font Family - Text and Headings */
 @font-face {
-  font-family: 'Space Grotesk';
-  src: url('/fonts/SpaceGrotesk-Regular.ttf') format('truetype');
+  font-family: 'Inter';
+  src: url('/fonts/Inter-Regular.woff2') format('woff2');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
@@ -52,8 +52,8 @@
 }
 
 @font-face {
-  font-family: 'Space Grotesk';
-  src: url('/fonts/SpaceGrotesk-Medium.ttf') format('truetype');
+  font-family: 'Inter';
+  src: url('/fonts/Inter-Medium.woff2') format('woff2');
   font-weight: 500;
   font-style: normal;
   font-display: swap;
@@ -61,8 +61,8 @@
 }
 
 @font-face {
-  font-family: 'Space Grotesk';
-  src: url('/fonts/SpaceGrotesk-SemiBold.ttf') format('truetype');
+  font-family: 'Inter';
+  src: url('/fonts/Inter-SemiBold.woff2') format('woff2');
   font-weight: 600;
   font-style: normal;
   font-display: swap;
@@ -70,8 +70,8 @@
 }
 
 @font-face {
-  font-family: 'Space Grotesk';
-  src: url('/fonts/SpaceGrotesk-Bold.ttf') format('truetype');
+  font-family: 'Inter';
+  src: url('/fonts/Inter-Bold.woff2') format('woff2');
   font-weight: 700;
   font-style: normal;
   font-display: swap;
@@ -82,7 +82,7 @@
 
 :root {
   font-family:
-    'Outfit',
+    'Inter',
     system-ui,
     -apple-system,
     BlinkMacSystemFont,
@@ -96,7 +96,7 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  --primary-color: #6366f1;
+  --primary-color: #21186e;
   --secondary-color: #f97316;
   --accent-color: #8b5cf6;
   --pink-color: #ec4899;
@@ -163,14 +163,13 @@ h4,
 h5,
 h6 {
   font-family:
-    'Space Grotesk',
+    'Inter',
     system-ui,
     -apple-system,
     BlinkMacSystemFont,
     'Segoe UI',
     Roboto,
     sans-serif;
-  text-transform: uppercase;
   font-weight: 600;
 }
 
@@ -226,9 +225,10 @@ button:not([role='switch']):not([aria-label='Toggle menu']):not(
   border-color: var(--color-secondary);
   background: linear-gradient(
     135deg,
-    var(--color-primary) 0%,
-    var(--color-accent) 50%,
-    var(--color-secondary) 100%
+    #21186e 0%,
+    #4a3ba8 30%,
+    #8b5cf6 60%,
+    #f97316 100%
   );
   color: white;
 }
@@ -266,13 +266,13 @@ button[role='switch'] {
   padding: 2em;
 }
 
-/* Brand gradient utility classes */
+/* Brand gradient utility classes - Based on new primary #21186E */
 .bg-gradient-brand {
   background: linear-gradient(
     135deg,
-    #6366f1 0%,
-    #8b5cf6 50%,
-    #ec4899 75%,
+    #21186e 0%,
+    #4a3ba8 30%,
+    #8b5cf6 60%,
     #f97316 100%
   );
 }
@@ -281,18 +281,18 @@ button[role='switch'] {
   background: linear-gradient(
     135deg,
     #f97316 0%,
-    #ec4899 50%,
-    #8b5cf6 75%,
-    #6366f1 100%
+    #8b5cf6 40%,
+    #4a3ba8 70%,
+    #21186e 100%
   );
 }
 
 .text-gradient-brand {
   background: linear-gradient(
     135deg,
-    #6366f1 0%,
-    #8b5cf6 50%,
-    #ec4899 75%,
+    #21186e 0%,
+    #4a3ba8 30%,
+    #8b5cf6 60%,
     #f97316 100%
   );
   -webkit-background-clip: text;
@@ -305,16 +305,16 @@ button[role='switch'] {
   background: radial-gradient(circle, var(--tw-gradient-stops));
 }
 
-/* Gradient background overlays */
+/* Gradient background overlays - Based on new primary #21186E */
 .gradient-bg-light {
   background: linear-gradient(
     135deg,
-    rgba(99, 102, 241, 0.3) 0%,
-    rgba(139, 92, 246, 0.25) 20%,
-    rgba(236, 72, 153, 0.22) 40%,
+    rgba(33, 24, 110, 0.3) 0%,
+    rgba(74, 59, 168, 0.25) 20%,
+    rgba(139, 92, 246, 0.22) 40%,
     rgba(249, 115, 22, 0.3) 60%,
-    rgba(99, 102, 241, 0.25) 80%,
-    rgba(139, 92, 246, 0.2) 100%
+    rgba(33, 24, 110, 0.25) 80%,
+    rgba(74, 59, 168, 0.2) 100%
   );
   opacity: 1;
 }
@@ -322,12 +322,12 @@ button[role='switch'] {
 .gradient-bg-dark {
   background: linear-gradient(
     135deg,
-    rgba(99, 102, 241, 0.4) 0%,
-    rgba(139, 92, 246, 0.35) 20%,
-    rgba(236, 72, 153, 0.32) 40%,
+    rgba(33, 24, 110, 0.4) 0%,
+    rgba(74, 59, 168, 0.35) 20%,
+    rgba(139, 92, 246, 0.32) 40%,
     rgba(249, 115, 22, 0.4) 60%,
-    rgba(99, 102, 241, 0.35) 80%,
-    rgba(139, 92, 246, 0.3) 100%
+    rgba(33, 24, 110, 0.35) 80%,
+    rgba(74, 59, 168, 0.3) 100%
   );
   opacity: 1;
 }
@@ -336,7 +336,7 @@ button[role='switch'] {
   background:
     radial-gradient(
       circle at 20% 30%,
-      rgba(99, 102, 241, 0.08) 0%,
+      rgba(33, 24, 110, 0.08) 0%,
       transparent 60%
     ),
     radial-gradient(
@@ -350,7 +350,7 @@ button[role='switch'] {
   background:
     radial-gradient(
       circle at 20% 30%,
-      rgba(99, 102, 241, 0.15) 0%,
+      rgba(33, 24, 110, 0.15) 0%,
       transparent 60%
     ),
     radial-gradient(

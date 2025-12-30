@@ -4,7 +4,7 @@
     <nav
       class="shadow-md dark:bg-gray-800/60 bg-gray-100/80 backdrop-blur-sm rounded-2xl border border-primary/20"
     >
-      <div class="flex items-center justify-between px-6 py-4">
+      <div class="flex items-center justify-between px-8 py-4">
         <!-- Logo -->
         <nuxt-link
           to="/"
@@ -95,7 +95,7 @@
     <nav
       class="dark:bg-gray-800/70 bg-gray-100/90 backdrop-blur-xs rounded-lg border border-primary/20"
     >
-      <div class="flex items-center justify-between px-4 py-3">
+      <div class="flex items-center justify-between px-6 py-3">
         <!-- Logo -->
         <nuxt-link to="/" class="flex items-center">
           <img

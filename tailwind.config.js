@@ -12,7 +12,7 @@ export default {
     extend: {
       fontFamily: {
         sans: [
-          'Outfit',
+          'Inter',
           'system-ui',
           '-apple-system',
           'BlinkMacSystemFont',
@@ -21,7 +21,7 @@ export default {
           'sans-serif',
         ],
         heading: [
-          'Space Grotesk',
+          'Inter',
           'system-ui',
           '-apple-system',
           'BlinkMacSystemFont',
@@ -32,7 +32,7 @@ export default {
       },
       colors: {
         primary: {
-          DEFAULT: '#6366f1',
+          DEFAULT: '#21186E',
           50: '#eef2ff',
           100: '#e0e7ff',
           200: '#c7d2fe',

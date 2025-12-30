@@ -1,6 +1,4 @@
 <template>
-      <AnimatedBackground />
-
   <div class="min-h-screen md:w-[1400px] relative overflow-hidden py-8 md:py-0">
     <!-- Simple Background -->
 
