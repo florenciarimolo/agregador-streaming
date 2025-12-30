@@ -24,11 +24,15 @@ export const useAuth = () => {
         throw error;
       }
 
+      // Ensure baseUrl doesn't have trailing slash
+      const baseUrl = config.public.baseUrl.replace(/\/$/, '');
+      const redirectUrl = `${baseUrl}/auth/callback`;
+
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: `${config.public.baseUrl}/auth/callback`,
+          emailRedirectTo: redirectUrl,
         },
       });
 
@@ -71,10 +75,14 @@ export const useAuth = () => {
    */
   const signInWithMagicLink = async (email: string) => {
     try {
+      // Ensure baseUrl doesn't have trailing slash
+      const baseUrl = config.public.baseUrl.replace(/\/$/, '');
+      const redirectUrl = `${baseUrl}/auth/callback`;
+
       const { data, error } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          emailRedirectTo: `${config.public.baseUrl}/auth/callback`,
+          emailRedirectTo: redirectUrl,
         },
       });
 

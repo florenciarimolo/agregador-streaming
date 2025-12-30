@@ -171,11 +171,27 @@ onMounted(async () => {
 
     // If we have a code, exchange it for a session
     if (code) {
+      // First try to exchange the code
       const { data, error: codeError } =
         await supabase.auth.exchangeCodeForSession(code);
 
       if (codeError) {
-        console.error('[Callback] Code exchange error:', codeError);
+        // If exchange fails, wait a bit and check if session was established anyway
+        // Sometimes Supabase processes it asynchronously
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+
+        const { data: sessionData } = await supabase.auth.getSession();
+
+        if (sessionData?.session) {
+          // Session was established, proceed with auth
+          await handleSuccessfulAuth();
+          return;
+        }
+
+        // Only show error if we're sure there's no session
+        if (process.env.NODE_ENV === 'development') {
+          console.error('[Callback] Code exchange error:', codeError);
+        }
         error.value =
           'El enlace de inicio de sesión ha expirado o no es válido. Por favor, solicita uno nuevo.';
         loading.value = false;
@@ -189,26 +205,44 @@ onMounted(async () => {
         await handleSuccessfulAuth();
         return;
       }
+
+      // If exchange succeeded but no session, wait and check again
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (sessionData?.session) {
+        await handleSuccessfulAuth();
+        return;
+      }
     }
 
     // If no code or tokens, try to get existing session
-    const { data: sessionData, error: sessionError } =
-      await supabase.auth.getSession();
+    // Only check for session if we don't have a code (code was already handled above)
+    if (!code) {
+      const { data: sessionData, error: sessionError } =
+        await supabase.auth.getSession();
 
-    if (sessionError) {
-      console.error('[Callback] Get session error:', sessionError);
-      error.value = 'Error al obtener la sesión. Por favor, intenta de nuevo.';
-      loading.value = false;
-      setTimeout(() => {
-        router.replace('/');
-      }, 3000);
-      return;
+      if (sessionError) {
+        if (process.env.NODE_ENV === 'development') {
+          console.error('[Callback] Get session error:', sessionError);
+        }
+        error.value =
+          'Error al obtener la sesión. Por favor, intenta de nuevo.';
+        loading.value = false;
+        setTimeout(() => {
+          router.replace('/');
+        }, 3000);
+        return;
+      }
+
+      if (sessionData.session) {
+        await handleSuccessfulAuth();
+        return;
+      }
     }
 
-    if (sessionData.session) {
-      await handleSuccessfulAuth();
-    } else {
-      // No session found, redirect to login
+    // Only show error if we've exhausted all options and no code was present
+    // If we had a code, we already handled the error case above
+    if (!code) {
       error.value = 'No se pudo establecer la sesión. Redirigiendo...';
       loading.value = false;
       setTimeout(() => {
