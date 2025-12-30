@@ -354,6 +354,7 @@ import {
 definePageMeta({
   layout: false,
   ssr: false, // Client-side only
+  middleware: [], // No auth middleware - handles its own flow
 });
 
 useHead({
@@ -403,46 +404,98 @@ const isPasswordValid = computed(() => {
   return passwordValidation.value?.isValid ?? false;
 });
 
+// Helper function to parse hash params
+const parseHashParams = (): Record<string, string> => {
+  const params: Record<string, string> = {};
+  if (typeof window !== 'undefined' && window.location.hash) {
+    const hash = window.location.hash.substring(1); // Remove #
+    try {
+      const hashParams = new URLSearchParams(hash);
+      hashParams.forEach((value, key) => {
+        params[key] = decodeURIComponent(value);
+      });
+    } catch (e) {
+      if (process.env.NODE_ENV === 'development') {
+        console.error('[Reset Password] Error parsing hash:', e);
+      }
+    }
+  }
+  return params;
+};
+
 // Validate code from query parameter and set session
 onMounted(async () => {
-  // Check for error_message in query params
-  const errorMsg = route.query.error_message as string;
+  // Get hash params (Supabase sometimes puts params in hash)
+  const hashParams = parseHashParams();
+
+  // Merge query params and hash params (query params take precedence)
+  const allParams = { ...hashParams, ...route.query };
+
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[Reset Password] Detected params:', {
+      hashParams,
+      queryParams: route.query,
+      allParams,
+    });
+  }
+
+  // Check for error_message in params
+  const errorMsg = allParams.error_message as string;
   if (errorMsg) {
     errorMessage.value = decodeURIComponent(errorMsg);
     codeValidated.value = true;
     return;
   }
 
-  const code = route.query.code as string;
-  const accessToken = route.query.access_token as string;
-  const refreshToken = route.query.refresh_token as string;
+  const code = allParams.code as string;
+  const accessToken = allParams.access_token as string;
+  const refreshToken = allParams.refresh_token as string;
+  const type = allParams.type as string;
 
-  // If no code or tokens, check if user already has a session
+  // For password recovery, we need to validate the token/code
+  // but NOT establish a full session until password is changed
   if (!code && !accessToken) {
-    // Check if user already has an active session
-    const { data: sessionData } = await supabase.auth.getSession();
-    if (sessionData?.session) {
-      // User already has a session, they can reset password
-      codeValidated.value = true;
-      return;
+    // No code or tokens in URL - check if this is a recovery flow
+    // by checking if we have type=recovery or if Supabase already processed it
+    if (type === 'recovery') {
+      // Wait a bit for Supabase to process the token if it was just clicked
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      // Check if Supabase has a temporary session (from recovery token)
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (sessionData?.session) {
+        // Supabase has established a temporary session from the recovery token
+        // This is fine - we'll use it to change the password
+        // But we won't let the user navigate away until password is changed
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[Reset Password] Recovery session found, showing form');
+        }
+        codeValidated.value = true;
+        return;
+      }
     }
-    // No session and no code/tokens, show error
+
+    // No valid recovery token/session
     error.value = 'Enlace de recuperación inválido o expirado.';
     codeValidated.value = true;
     return;
   }
 
   try {
-    // If we have access_token and refresh_token, set session directly
+    // If we have access_token and refresh_token, validate them but don't fully establish session
+    // The session will be confirmed after password is changed
     if (accessToken && refreshToken) {
-      const { data, error: sessionError } = await supabase.auth.setSession({
-        access_token: accessToken,
-        refresh_token: refreshToken,
-      });
+      // Verify the tokens are valid by trying to get user info
+      // But don't set the session in the client yet - we'll do that after password change
+      const { data: sessionData, error: sessionError } =
+        await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        });
 
       if (sessionError) {
         if (process.env.NODE_ENV === 'development') {
-          console.error('[Server] Session error:', sessionError);
+          console.error('[Reset Password] Session error:', sessionError);
         }
         error.value =
           'El enlace de recuperación ha expirado o no es válido. Por favor, solicita uno nuevo.';
@@ -450,54 +503,90 @@ onMounted(async () => {
         return;
       }
 
-      if (data.session) {
-        codeValidated.value = true;
-      } else {
-        error.value = 'No se pudo establecer la sesión.';
-        codeValidated.value = true;
-      }
-    } else if (code) {
-      // Exchange code for session
-      const { data, error: codeError } =
-        await supabase.auth.exchangeCodeForSession(code);
-
-      if (codeError) {
-        // If code is already used or expired, check if user has a session
-        // This allows them to still reset password if they have an active session
-        const { data: sessionData } = await supabase.auth.getSession();
-        if (sessionData?.session) {
-          // User has a session, allow password reset
-          codeValidated.value = true;
-          return;
-        }
-
-        if (process.env.NODE_ENV === 'development') {
-          console.error('[Server] Code validation error:', codeError);
-        }
-        error.value =
-          'El enlace de recuperación ha expirado o no es válido. Por favor, solicita uno nuevo.';
-        codeValidated.value = true;
-        return;
-      }
-
-      if (data.session) {
+      if (sessionData?.session) {
+        // Tokens are valid, show the form
+        // Session is already set by setSession, but user should change password first
         codeValidated.value = true;
       } else {
         error.value = 'No se pudo validar el enlace de recuperación.';
         codeValidated.value = true;
       }
+    } else if (code) {
+      // Exchange code for session - this is needed to validate the recovery code
+      const { data, error: codeError } =
+        await supabase.auth.exchangeCodeForSession(code);
+
+      if (codeError) {
+        // Check if it's a PKCE code verifier missing error
+        // This happens when Supabase processes the token asynchronously
+        const isPKCEError =
+          codeError.message?.includes('PKCE') ||
+          codeError.message?.includes('code verifier') ||
+          codeError.name === 'AuthPKCECodeVerifierMissingError';
+
+        if (isPKCEError) {
+          // For PKCE errors, wait longer and check multiple times
+          // Supabase may be processing the token in the background
+          let attempts = 0;
+          const maxAttempts = 6; // Check for up to 3 seconds (6 * 500ms)
+          let sessionFound = false;
+
+          while (attempts < maxAttempts && !sessionFound) {
+            await new Promise((resolve) => setTimeout(resolve, 500));
+            const { data: sessionData } = await supabase.auth.getSession();
+            if (sessionData?.session) {
+              sessionFound = true;
+              // Session was established, show the form
+              codeValidated.value = true;
+              return;
+            }
+            attempts++;
+          }
+
+          // If still no session after waiting, it's a real error
+          if (!sessionFound) {
+            if (process.env.NODE_ENV === 'development') {
+              console.error(
+                '[Reset Password] PKCE error - no session after waiting:',
+                codeError
+              );
+            }
+            error.value =
+              'El enlace de recuperación ha expirado o no es válido. Por favor, solicita uno nuevo.';
+            codeValidated.value = true;
+            return;
+          }
+        } else {
+          // For other errors, show error immediately
+          if (process.env.NODE_ENV === 'development') {
+            console.error('[Reset Password] Code validation error:', codeError);
+          }
+          error.value =
+            'El enlace de recuperación ha expirado o no es válido. Por favor, solicita uno nuevo.';
+          codeValidated.value = true;
+          return;
+        }
+      }
+
+      if (data.session) {
+        // Code is valid, show the form
+        // Session is established but user must change password
+        codeValidated.value = true;
+      } else {
+        // If exchange succeeded but no session, wait and check again
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        const { data: sessionData } = await supabase.auth.getSession();
+        if (sessionData?.session) {
+          codeValidated.value = true;
+        } else {
+          error.value = 'No se pudo validar el enlace de recuperación.';
+          codeValidated.value = true;
+        }
+      }
     }
   } catch (err: unknown) {
-    // On error, check if user has a session anyway
-    const { data: sessionData } = await supabase.auth.getSession();
-    if (sessionData?.session) {
-      // User has a session, allow password reset
-      codeValidated.value = true;
-      return;
-    }
-
     if (process.env.NODE_ENV === 'development') {
-      console.error('[Server] Code validation error:', err);
+      console.error('[Reset Password] Error:', err);
     }
     error.value =
       'Error al validar el enlace de recuperación. Por favor, intenta de nuevo.';

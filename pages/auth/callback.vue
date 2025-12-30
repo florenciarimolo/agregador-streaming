@@ -176,29 +176,71 @@ onMounted(async () => {
         await supabase.auth.exchangeCodeForSession(code);
 
       if (codeError) {
-        // If exchange fails, wait a bit and check if session was established anyway
-        // Sometimes Supabase processes it asynchronously
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        // Check if it's a PKCE code verifier missing error
+        // This happens when Supabase processes the token asynchronously
+        const isPKCEError =
+          codeError.message?.includes('PKCE') ||
+          codeError.message?.includes('code verifier') ||
+          codeError.name === 'AuthPKCECodeVerifierMissingError';
 
-        const { data: sessionData } = await supabase.auth.getSession();
+        if (isPKCEError) {
+          // For PKCE errors, wait longer and check multiple times
+          // Supabase may be processing the token in the background
+          let attempts = 0;
+          const maxAttempts = 6; // Check for up to 3 seconds (6 * 500ms)
+          let sessionFound = false;
 
-        if (sessionData?.session) {
-          // Session was established, proceed with auth
-          await handleSuccessfulAuth();
+          while (attempts < maxAttempts && !sessionFound) {
+            await new Promise((resolve) => setTimeout(resolve, 500));
+            const { data: sessionData } = await supabase.auth.getSession();
+            if (sessionData?.session) {
+              sessionFound = true;
+              // Session was established, proceed with auth
+              await handleSuccessfulAuth();
+              return;
+            }
+            attempts++;
+          }
+
+          // If still no session after waiting, it's a real error
+          if (!sessionFound) {
+            if (process.env.NODE_ENV === 'development') {
+              console.error(
+                '[Callback] PKCE error - no session after waiting:',
+                codeError
+              );
+            }
+            error.value =
+              'El enlace de inicio de sesión ha expirado o no es válido. Por favor, solicita uno nuevo.';
+            loading.value = false;
+            setTimeout(() => {
+              router.replace('/');
+            }, 3000);
+            return;
+          }
+        } else {
+          // For other errors, wait a bit and check once
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+          const { data: sessionData } = await supabase.auth.getSession();
+
+          if (sessionData?.session) {
+            // Session was established, proceed with auth
+            await handleSuccessfulAuth();
+            return;
+          }
+
+          // Only show error if we're sure there's no session
+          if (process.env.NODE_ENV === 'development') {
+            console.error('[Callback] Code exchange error:', codeError);
+          }
+          error.value =
+            'El enlace de inicio de sesión ha expirado o no es válido. Por favor, solicita uno nuevo.';
+          loading.value = false;
+          setTimeout(() => {
+            router.replace('/');
+          }, 3000);
           return;
         }
-
-        // Only show error if we're sure there's no session
-        if (process.env.NODE_ENV === 'development') {
-          console.error('[Callback] Code exchange error:', codeError);
-        }
-        error.value =
-          'El enlace de inicio de sesión ha expirado o no es válido. Por favor, solicita uno nuevo.';
-        loading.value = false;
-        setTimeout(() => {
-          router.replace('/');
-        }, 3000);
-        return;
       }
 
       if (data.session) {

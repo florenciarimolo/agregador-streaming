@@ -8,13 +8,21 @@ export default defineNuxtRouteMiddleware(async (to) => {
 
   // If user is not authenticated and trying to access protected route
   // Homepage (/) is public, so exclude it
+  // Also exclude reset-password page (handles its own auth flow)
   if (
     !user.value &&
     to.path !== '/' &&
     to.path !== '/auth/login' &&
-    to.path !== '/auth/callback'
+    to.path !== '/auth/callback' &&
+    to.path !== '/auth/reset-password'
   ) {
     return navigateTo('/');
+  }
+
+  // If user is on reset-password page, don't redirect them away
+  // They need to complete the password reset flow first
+  if (to.path === '/auth/reset-password') {
+    return; // Allow access to reset-password page regardless of auth state
   }
 
   // If user is authenticated, ensure user is set in store

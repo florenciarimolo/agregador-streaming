@@ -31,14 +31,67 @@ export default defineNuxtPlugin({
 
     // Check immediately and also on nextTick to catch both cases
     const checkAndRedirect = () => {
-      // Only handle redirects on the homepage
-      if (route.path !== '/') return false;
-
       // Get hash params
       const hashParams = parseHashParams();
 
       // Merge query params and hash params (query params take precedence)
       const allParams = { ...hashParams, ...route.query };
+
+      // Handle password recovery redirects (both from homepage and direct access)
+      if (
+        allParams.type === 'recovery' ||
+        route.path === '/auth/reset-password'
+      ) {
+        // If we're already on reset-password page, don't redirect
+        if (route.path === '/auth/reset-password') {
+          return false;
+        }
+
+        const code = allParams.code as string;
+        const errorMessage = allParams.error_message as string;
+
+        // Build redirect URL with all relevant query params
+        const redirectPath = '/auth/reset-password';
+        const queryParams: Record<string, string> = {};
+
+        if (code) {
+          queryParams.code = code;
+        }
+
+        if (errorMessage) {
+          queryParams.error_message = errorMessage;
+        }
+
+        // Preserve access_token and refresh_token if present
+        if (allParams.access_token) {
+          queryParams.access_token = allParams.access_token as string;
+        }
+
+        if (allParams.refresh_token) {
+          queryParams.refresh_token = allParams.refresh_token as string;
+        }
+
+        // Preserve type if present
+        if (allParams.type) {
+          queryParams.type = allParams.type as string;
+        }
+
+        if (process.env.NODE_ENV === 'development') {
+          console.log(
+            '[Auth Redirect Plugin] Redirecting to reset-password with params:',
+            queryParams
+          );
+        }
+
+        // Use window.location to avoid hydration issues
+        const queryString = new URLSearchParams(queryParams).toString();
+        const redirectUrl = `${redirectPath}${queryString ? `?${queryString}` : ''}`;
+        window.location.replace(redirectUrl);
+        return true;
+      }
+
+      // Only handle other redirects on the homepage
+      if (route.path !== '/') return false;
 
       // Debug logging (only in development)
       if (
@@ -84,39 +137,6 @@ export default defineNuxtPlugin({
         const redirectUrl = `${redirectPath}${queryString ? `?${queryString}` : ''}`;
         window.location.replace(redirectUrl);
         return true; // Indicate redirect happened
-      }
-
-      // Handle password recovery redirects
-      if (route.query.type === 'recovery') {
-        const code = route.query.code as string;
-        const errorMessage = route.query.error_message as string;
-
-        // Build redirect URL with all relevant query params
-        const redirectPath = '/auth/reset-password';
-        const queryParams: Record<string, string> = {};
-
-        if (code) {
-          queryParams.code = code;
-        }
-
-        if (errorMessage) {
-          queryParams.error_message = errorMessage;
-        }
-
-        // Preserve access_token and refresh_token if present
-        if (route.query.access_token) {
-          queryParams.access_token = route.query.access_token as string;
-        }
-
-        if (route.query.refresh_token) {
-          queryParams.refresh_token = route.query.refresh_token as string;
-        }
-
-        // Use window.location to avoid hydration issues
-        const queryString = new URLSearchParams(queryParams).toString();
-        const redirectUrl = `${redirectPath}${queryString ? `?${queryString}` : ''}`;
-        window.location.replace(redirectUrl);
-        return true;
       }
 
       // Handle magic link redirects (code without type=recovery)
