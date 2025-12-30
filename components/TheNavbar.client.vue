@@ -1,8 +1,6 @@
 <template>
   <!-- Floating Navbar (Desktop/Tablet) -->
-  <header
-    class="sticky top-4 left-1/2 transform -translate-x-1/2 z-50 w-full container hidden md:block"
-  >
+  <header class="sticky top-4 z-50 w-full container mx-auto hidden md:block">
     <nav
       class="shadow-md dark:bg-gray-800/60 bg-gray-100/80 backdrop-blur-sm rounded-2xl border border-primary/20"
     >
@@ -12,13 +10,11 @@
           to="/"
           class="flex items-center transition-opacity hover:opacity-80"
         >
-          <!-- Light mode -->
           <img
             src="/logo-light.png"
             alt="UpNext"
             class="h-8 w-auto object-contain dark:hidden"
           />
-          <!-- Dark mode -->
           <img
             src="/logo-dark.png"
             alt="UpNext"
@@ -28,13 +24,9 @@
 
         <!-- Desktop Menu -->
         <div class="flex items-center gap-4 w-[70%] justify-end">
-          <!-- Search Bar -->
-          <!-- <div class="flex-1">
-            <SearchBar />
-          </div>
-          -->
           <!-- Theme Switcher -->
           <ThemeSwitcher />
+
           <!-- User Avatar (if logged in) -->
           <div v-if="user" class="relative">
             <button
@@ -106,13 +98,11 @@
       <div class="flex items-center justify-between px-4 py-3">
         <!-- Logo -->
         <nuxt-link to="/" class="flex items-center">
-          <!-- Light mode -->
           <img
             src="/logo-light.png"
             alt="UpNext"
             class="h-6 w-auto object-contain dark:hidden"
           />
-          <!-- Dark mode -->
           <img
             src="/logo-dark.png"
             alt="UpNext"
@@ -120,9 +110,11 @@
           />
         </nuxt-link>
 
+        <!-- Mobile Menu -->
         <div class="flex items-center gap-2">
           <!-- Theme Switcher -->
           <ThemeSwitcher />
+
           <!-- User Avatar (if logged in) -->
           <div v-if="user" class="relative">
             <button
@@ -285,17 +277,13 @@ const handleScroll = () => {
   // Show/hide navbar ONLY on mobile
   if (isMobile.value) {
     if (scrollTop < 10) {
-      // At the top - always show
       isNavbarVisible.value = true;
     } else if (scrollTop > lastScrollY.value && scrollTop > 100) {
-      // Scrolling down & past 100px - hide navbar (mobile only)
       isNavbarVisible.value = false;
     } else if (scrollTop < lastScrollY.value) {
-      // Scrolling up - show navbar (mobile only)
       isNavbarVisible.value = true;
     }
   } else {
-    // Desktop - always show navbar
     isNavbarVisible.value = true;
   }
 
@@ -316,9 +304,7 @@ onMounted(() => {
   checkMobile();
   window.addEventListener('scroll', handleScroll);
   window.addEventListener('resize', handleResize);
-  if (user.value) {
-    document.addEventListener('click', handleClickOutside);
-  }
+  document.addEventListener('click', handleClickOutside);
 });
 
 onUnmounted(() => {
@@ -329,7 +315,6 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-/* Custom styles for better backdrop blur support */
 .backdrop-blur-md {
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -340,13 +325,6 @@ onUnmounted(() => {
   -webkit-backdrop-filter: blur(4px);
 }
 
-/* Ensure proper z-index layering */
-header {
-  position: relative;
-  z-index: 50;
-}
-
-/* Smooth transitions for mobile menu */
 .mobile-menu-enter-active,
 .mobile-menu-leave-active {
   transition: all 0.3s ease;

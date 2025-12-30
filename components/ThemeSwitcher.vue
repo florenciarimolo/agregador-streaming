@@ -1,22 +1,13 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+const { theme, toggleTheme, syncTheme } = useTheme();
 
-const isDark = ref(false);
-
+// Sync theme on mount
 onMounted(() => {
-  // Leer el tema actual del DOM
-  isDark.value = document.documentElement.classList.contains('dark');
+  syncTheme();
 });
 
-const handleToggle = () => {
-  isDark.value = !isDark.value;
-  const newTheme = isDark.value ? 'dark' : 'light';
-
-  document.documentElement.classList.remove('light', 'dark');
-  document.documentElement.classList.add(newTheme);
-  localStorage.setItem('theme', newTheme);
-  localStorage.setItem('theme-manual', 'true');
-};
+// Computed para determinar si está en modo oscuro
+const isDark = computed(() => theme.value === 'dark');
 </script>
 
 <template>
@@ -25,13 +16,13 @@ const handleToggle = () => {
     role="switch"
     :aria-checked="isDark"
     :aria-label="isDark ? 'Dark mode enabled' : 'Light mode enabled'"
-    class="relative flex items-center w-14 h-7 p-0.5 bg-gray-200 dark:bg-gray-700 rounded-full transition-colors duration-300 hover:bg-gray-300 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-primary"
-    @click="handleToggle"
+    class="relative flex items-center w-14 h-7 p-0.5 bg-gray-200 dark:bg-gray-700 rounded-full transition-colors duration-300 hover:bg-gray-300 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
+    @click="toggleTheme"
   >
     <!-- Sliding indicator -->
     <span
       class="absolute w-6 h-6 bg-white dark:bg-gray-800 rounded-full shadow-md transition-transform duration-300 ease-in-out"
-      :style="{ transform: isDark ? 'translateX(26px)' : 'translateX(0)' }"
+      :class="isDark ? 'translate-x-[26px]' : 'translate-x-0'"
     />
 
     <!-- Sun -->
