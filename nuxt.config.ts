@@ -80,11 +80,6 @@ export default defineNuxtConfig({
   // Add compatibility date to avoid warnings
   compatibilityDate: '2024-04-03',
 
-  // Experimental optimizations for faster dev
-  experimental: {
-    payloadExtraction: false,
-  },
-
   app: {
     head: {
       title: 'UpNext',

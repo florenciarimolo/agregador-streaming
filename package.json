@@ -13,7 +13,7 @@
     "preview": "nuxt preview",
     "postinstall": "NODE_OPTIONS='--no-warnings' nuxt prepare",
     "lint": "eslint . --ext .ts,.vue",
-    "typecheck": "nuxt typecheck"
+    "typecheck": "nuxt prepare && vue-tsc -b"
   },
   "dependencies": {
     "@nuxtjs/supabase": "^1.6.2",
@@ -21,7 +21,7 @@
     "@pinia/nuxt": "^0.5.1",
     "@supabase/supabase-js": "^2.39.0",
     "axios": "^1.6.5",
-    "nuxt": "3.13.0",
+    "nuxt": "^4.0.0",
     "pinia": "^2.2.0",
     "typescript-eslint": "^8.50.1"
   },
