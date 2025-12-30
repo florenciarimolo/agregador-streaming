@@ -82,7 +82,7 @@ export default defineNuxtConfig({
 
   // Experimental optimizations for faster dev
   experimental: {
-    payloadExtraction: false, // Disable payload extraction in dev
+    payloadExtraction: false,
   },
 
   app: {

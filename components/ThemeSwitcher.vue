@@ -1,27 +1,46 @@
+<script setup lang="ts">
+import { ref, onMounted } from 'vue';
+
+const isDark = ref(false);
+
+onMounted(() => {
+  // Leer el tema actual del DOM
+  isDark.value = document.documentElement.classList.contains('dark');
+});
+
+const handleToggle = () => {
+  isDark.value = !isDark.value;
+  const newTheme = isDark.value ? 'dark' : 'light';
+
+  document.documentElement.classList.remove('light', 'dark');
+  document.documentElement.classList.add(newTheme);
+  localStorage.setItem('theme', newTheme);
+  localStorage.setItem('theme-manual', 'true');
+};
+</script>
+
 <template>
   <button
-    v-if="mounted"
     type="button"
     role="switch"
-    :aria-checked="theme === 'dark'"
-    :aria-label="theme === 'dark' ? 'Dark mode enabled' : 'Light mode enabled'"
-    class="relative w-16 md:w-16 md:h-7 h-6 bg-gray-200 dark:bg-gray-700 rounded-full p-1 transition-colors duration-300 hover:bg-gray-300 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:focus:ring-offset-gray-900"
-    @click="toggleTheme"
+    :aria-checked="isDark"
+    :aria-label="isDark ? 'Dark mode enabled' : 'Light mode enabled'"
+    class="relative flex items-center w-14 h-7 p-0.5 bg-gray-200 dark:bg-gray-700 rounded-full transition-colors duration-300 hover:bg-gray-300 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-primary"
+    @click="handleToggle"
   >
-    <div
-      class="flex justify-between items-center gap-x-3 h-full px-1 overflow-hidden"
-    >
-      <!-- Sun icon (light theme) -->
+    <!-- Sliding indicator -->
+    <span
+      class="absolute w-6 h-6 bg-white dark:bg-gray-800 rounded-full shadow-md transition-transform duration-300 ease-in-out"
+      :style="{ transform: isDark ? 'translateX(26px)' : 'translateX(0)' }"
+    />
+
+    <!-- Sun -->
+    <span class="relative z-10 flex items-center justify-center w-6 h-6">
       <svg
-        class="z-10 transition-all duration-300 w-4 h-4 md:w-5 md:h-5 flex-shrink-0"
-        :class="
-          theme === 'dark'
-            ? 'text-gray-400'
-            : 'text-yellow-400 bg-gray-400 dark:bg-gray-800 rounded-full p-1'
-        "
+        class="w-4 h-4 transition-colors duration-300"
+        :class="isDark ? 'text-gray-400' : 'text-amber-500'"
         fill="currentColor"
         viewBox="0 0 20 20"
-        preserveAspectRatio="xMidYMid meet"
       >
         <path
           fill-rule="evenodd"
@@ -29,48 +48,20 @@
           clip-rule="evenodd"
         />
       </svg>
-      <!-- Moon icon (dark theme) -->
+    </span>
+
+    <!-- Moon -->
+    <span class="relative z-10 flex items-center justify-center w-6 h-6">
       <svg
-        class="z-10 transition-all duration-300 w-4 h-4 md:w-5 md:h-5 flex-shrink-0"
-        :class="
-          theme === 'dark'
-            ? 'text-blue-400 bg-gray-400 dark:bg-gray-800 rounded-full p-1'
-            : 'text-gray-400'
-        "
+        class="w-4 h-4 transition-colors duration-300"
+        :class="isDark ? 'text-blue-400' : 'text-gray-400'"
         fill="currentColor"
         viewBox="0 0 20 20"
-        preserveAspectRatio="xMidYMid meet"
       >
         <path
           d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"
         />
       </svg>
-    </div>
-  </button>
-  <!-- Loading state (before mounted) -->
-  <button
-    v-else
-    type="button"
-    role="switch"
-    aria-label="Toggle theme"
-    disabled
-    class="relative w-16 h-7 bg-gray-200 dark:bg-gray-700 rounded-full p-1 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:focus:ring-offset-gray-900"
-  >
-    <div
-      class="absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow-md"
-    />
+    </span>
   </button>
 </template>
-
-<script setup lang="ts">
-import { ref, onMounted } from 'vue';
-
-// Nuxt auto-imports: useTheme
-// Types are generated in .nuxt/types/imports.d.ts
-const { theme, toggleTheme } = useTheme();
-const mounted = ref(false);
-
-onMounted(() => {
-  mounted.value = true;
-});
-</script>

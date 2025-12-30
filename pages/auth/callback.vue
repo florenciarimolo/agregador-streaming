@@ -135,13 +135,13 @@ onMounted(async () => {
 
 const handleSuccessfulAuth = async () => {
   try {
-    // Wait for user to be available from Supabase
-    // The onAuthStateChange in the plugin will handle updating the store
-    // But we need to wait a bit for it to propagate
+    // Wait for user to be available from Supabase - optimized polling
     let attempts = 0;
-    const maxAttempts = 20; // Increase attempts for slower connections
+    const maxAttempts = 10; // Reduced attempts
+    const pollInterval = 100; // Faster polling
+
     while (!user.value && attempts < maxAttempts) {
-      await new Promise((resolve) => setTimeout(resolve, 150));
+      await new Promise((resolve) => setTimeout(resolve, pollInterval));
       attempts++;
     }
 
@@ -153,16 +153,14 @@ const handleSuccessfulAuth = async () => {
       // Fetch profile and wait for it to complete
       await userStore.fetchProfile();
 
-      // Wait a bit more to ensure state is fully updated and reactive
+      // Single nextTick is enough for Vue reactivity
       await nextTick();
-      await new Promise((resolve) => setTimeout(resolve, 300));
 
       // Check if user has completed onboarding
       if (!userStore.hasCompletedOnboarding) {
         await router.replace('/onboarding');
       } else {
         // Use replace to avoid adding to history and ensure clean navigation
-        // Clear query params to avoid re-processing
         await router.replace({ path: '/', query: {} });
       }
     } else {

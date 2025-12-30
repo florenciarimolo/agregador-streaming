@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import type { User } from '@supabase/supabase-js';
+// useSupabaseClient is auto-imported by Nuxt - no manual import needed
 
 interface Profile {
   id: string;
@@ -62,12 +63,19 @@ export const useUserStore = defineStore('user', {
       try {
         const supabase = useSupabaseClient();
 
-        // Fetch profile
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', userId)
-          .single();
+        // Fetch profile and likes count in PARALLEL for faster loading
+        const [profileResult, likesResult] = await Promise.all([
+          supabase.from('profiles').select('*').eq('id', userId).single(),
+          supabase
+            .from('user_likes')
+            .select('*', { count: 'exact', head: true })
+            .eq('user_id', userId),
+        ]);
+
+        const { data: profileData, error: profileError } = profileResult;
+        const { count, error: likesError } = likesResult;
+
+        // Handle profile
         if (profileError) {
           // If profile doesn't exist, try to create it
           if (profileError.code === 'PGRST116') {
@@ -99,12 +107,7 @@ export const useUserStore = defineStore('user', {
           this.profile = profileData;
         }
 
-        // Check if user has likes (completed onboarding)
-        const { count, error: likesError } = await supabase
-          .from('user_likes')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', userId);
-
+        // Handle likes count
         if (likesError) {
           console.error('Error fetching likes count:', likesError);
           this.likesCount = 0;
