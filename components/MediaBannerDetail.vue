@@ -65,7 +65,13 @@
       >
       <p class="mt-2 dark:text-gray-300 text-gray-800"
         >Fecha de lanzamiento:
-        {{ formatDateToSpanish((mediaWithProviders.release_date || (mediaWithProviders as any).first_air_date) || '') }}</p
+        {{
+          formatDateToSpanish(
+            mediaWithProviders.release_date ||
+              (mediaWithProviders as any).first_air_date ||
+              ''
+          )
+        }}</p
       >
       <p class="dark:text-gray-300 text-gray-800"
         >Géneros:
