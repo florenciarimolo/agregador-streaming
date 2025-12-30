@@ -90,6 +90,15 @@ definePageMeta({
   middleware: 'guest', // Only allow unauthenticated users
 });
 
+useHead({
+  title: 'Recuperar contraseña - UpNext',
+});
+
+useSeoMeta({
+  title: 'Recuperar contraseña - UpNext',
+  description: 'Recupera tu contraseña de UpNext',
+});
+
 const { resetPassword } = useAuth();
 
 const email = ref('');

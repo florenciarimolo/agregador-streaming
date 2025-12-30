@@ -40,8 +40,11 @@ export default defineNuxtPlugin({
       // Merge query params and hash params (query params take precedence)
       const allParams = { ...hashParams, ...route.query };
 
-      // Debug logging
-      if (hashParams.error || route.query.error) {
+      // Debug logging (only in development)
+      if (
+        process.env.NODE_ENV === 'development' &&
+        (hashParams.error || route.query.error)
+      ) {
         console.log('[Auth Redirect Plugin] Detected error params:', {
           hashParams,
           queryParams: route.query,
@@ -69,10 +72,12 @@ export default defineNuxtPlugin({
           queryParams.error_description = allParams.error_description as string;
         }
 
-        console.log(
-          '[Auth Redirect Plugin] Redirecting to callback with error params:',
-          queryParams
-        );
+        if (process.env.NODE_ENV === 'development') {
+          console.log(
+            '[Auth Redirect Plugin] Redirecting to callback with error params:',
+            queryParams
+          );
+        }
 
         // Use window.location to avoid hydration issues
         const queryString = new URLSearchParams(queryParams).toString();

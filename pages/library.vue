@@ -1,4 +1,12 @@
-<script lang="ts">
+<script setup lang="ts">
+useHead({
+  title: 'Biblioteca - UpNext',
+});
+
+useSeoMeta({
+  title: 'Biblioteca - UpNext',
+  description: 'Tu biblioteca personal de películas y series en UpNext',
+});
 </script>
 
 <template>

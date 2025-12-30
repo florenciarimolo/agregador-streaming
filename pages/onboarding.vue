@@ -3,6 +3,16 @@ definePageMeta({
   middleware: 'auth',
 });
 
+useHead({
+  title: 'Onboarding - UpNext',
+});
+
+useSeoMeta({
+  title: 'Onboarding - UpNext',
+  description:
+    'Selecciona tus películas y series favoritas para recibir recomendaciones personalizadas',
+});
+
 interface TitleResult {
   id: number;
   title?: string;

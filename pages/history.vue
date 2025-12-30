@@ -301,6 +301,16 @@ import AlertMessage from '@/components/AlertMessage.vue';
 const supabase = useSupabaseClient();
 const isLoading = ref(true);
 
+useHead({
+  title: 'Historial - UpNext',
+});
+
+useSeoMeta({
+  title: 'Historial - UpNext',
+  description:
+    'Revisa las películas y series que has marcado como vistas o que no te interesan',
+});
+
 type HistoryTitle = {
   tmdb_id: number;
   title: string;

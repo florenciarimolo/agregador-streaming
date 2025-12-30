@@ -356,6 +356,15 @@ definePageMeta({
   ssr: false, // Client-side only
 });
 
+useHead({
+  title: 'Restablecer contraseña - UpNext',
+});
+
+useSeoMeta({
+  title: 'Restablecer contraseña - UpNext',
+  description: 'Restablece tu contraseña de UpNext',
+});
+
 const supabase = useSupabaseClient();
 const router = useRouter();
 const route = useRoute();

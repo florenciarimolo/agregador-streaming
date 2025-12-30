@@ -44,7 +44,10 @@ export default defineEventHandler(async (event) => {
           }
         }
       } catch (err) {
-        console.error('Error decoding token:', err);
+        // Error decoding token - only log in development
+        if (process.env.NODE_ENV === 'development') {
+          console.error('Error decoding token:', err);
+        }
       }
     }
   }
@@ -100,7 +103,9 @@ export default defineEventHandler(async (event) => {
     );
 
     if (error) {
-      console.error('Error updating user title status:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error updating user title status:', error);
+      }
       throw createError({
         statusCode: 500,
         message: 'Error al actualizar el estado del título',

@@ -32,6 +32,15 @@ definePageMeta({
   ssr: false, // Client-side only to handle query params
 });
 
+useHead({
+  title: 'Autenticación - UpNext',
+});
+
+useSeoMeta({
+  title: 'Autenticación - UpNext',
+  description: 'Completando inicio de sesión',
+});
+
 const supabase = useSupabaseClient();
 const router = useRouter();
 const route = useRoute();
@@ -66,8 +75,11 @@ onMounted(async () => {
     // Merge query params and hash params (query params take precedence)
     const allParams = { ...hashParams, ...route.query };
 
-    // Debug logging
-    if (hashParams.error || route.query.error) {
+    // Debug logging (only in development)
+    if (
+      process.env.NODE_ENV === 'development' &&
+      (hashParams.error || route.query.error)
+    ) {
       console.log('[Callback] Detected error params:', {
         hashParams,
         queryParams: route.query,

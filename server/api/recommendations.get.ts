@@ -1,6 +1,7 @@
 import { serverSupabaseUser } from '#supabase/server';
 import { createClient } from '@supabase/supabase-js';
 import { getTMDBConfig } from '../utils/config';
+import { devLog, devError, devWarn, safeError } from '../utils/logger';
 import {
   Recommendations,
   Recommendation,
@@ -75,6 +76,7 @@ export default defineEventHandler(async (event) => {
 
     if (userId) {
       user = { id: userId, sub: userId };
+      devLog('[Recommendations] User from cookies');
     }
   } else {
     // If no user from cookies, try to get from Authorization header
@@ -97,24 +99,36 @@ export default defineEventHandler(async (event) => {
 
           if (userId) {
             user = { id: userId, sub: userId };
+            devLog('[Recommendations] User from Authorization header');
           }
         }
       } catch (err) {
-        console.error('Error decoding token:', err);
+        safeError('[Recommendations] Error decoding token', err);
       }
+    } else {
+      devWarn(
+        '[Recommendations] No user from cookies and no Authorization header'
+      );
     }
   }
 
   if (!user || !userId) {
+    devError('[Recommendations] Unauthorized - no user found');
     throw createError({
       statusCode: 401,
       message: 'Unauthorized',
     });
   }
 
-  // Create Supabase client
+  // Create Supabase client - Use SERVICE_ROLE_KEY in production to bypass RLS
   const supabaseKey =
     process.env.SUPABASE_SERVICE_ROLE_KEY || config.public.supabaseAnonKey;
+
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    devWarn(
+      '[Recommendations] WARNING: Using anon key instead of service role key. RLS policies may block queries.'
+    );
+  }
 
   const supabase = createClient(config.public.supabaseUrl, supabaseKey, {
     auth: {
@@ -132,11 +146,19 @@ export default defineEventHandler(async (event) => {
       .eq('user_id', userId);
 
     if (likesError) {
-      console.error('Error fetching user_likes:', likesError);
+      safeError('[Recommendations] Error fetching user_likes', likesError, {
+        userId,
+        supabaseUrl: config.public.supabaseUrl,
+      });
       throw likesError;
     }
 
+    devLog('[Recommendations] User likes count:', userLikes?.length || 0);
+
     if (!userLikes || userLikes.length === 0) {
+      devLog(
+        '[Recommendations] No user likes found, returning empty recommendations'
+      );
       return {
         recommended: [],
         easyToWatch: [],
@@ -152,7 +174,7 @@ export default defineEventHandler(async (event) => {
       .in('status', ['seen', 'not_interested']);
 
     if (statusError) {
-      console.error('Error fetching user_title_status:', statusError);
+      safeError('Error fetching user_title_status', statusError);
       // Don't throw - continue without filtering if there's an error
     }
 
@@ -266,7 +288,9 @@ export default defineEventHandler(async (event) => {
           ].slice(0, 5);
         }
       } catch (error) {
-        console.error(`Error fetching providers for ${result.id}:`, error);
+        if (process.env.NODE_ENV === 'development') {
+          console.error(`Error fetching providers for ${result.id}:`, error);
+        }
       }
 
       return {
@@ -337,10 +361,12 @@ export default defineEventHandler(async (event) => {
           }
         }
       } catch (error) {
-        console.error(
-          `Error fetching recommendations for ${likedTitle.tmdb_id}:`,
-          error
-        );
+        if (process.env.NODE_ENV === 'development') {
+          console.error(
+            `Error fetching recommendations for ${likedTitle.tmdb_id}:`,
+            error
+          );
+        }
       }
     }
 
@@ -386,7 +412,9 @@ export default defineEventHandler(async (event) => {
         }
       }
     } catch (error) {
-      console.error('Error fetching trending movies:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error fetching trending movies:', error);
+      }
     }
 
     // Fetch trending TV shows
@@ -415,7 +443,9 @@ export default defineEventHandler(async (event) => {
         }
       }
     } catch (error) {
-      console.error('Error fetching trending TV shows:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error fetching trending TV shows:', error);
+      }
     }
 
     // Deduplicate and limit basedOnLikes (trending)
@@ -470,7 +500,9 @@ export default defineEventHandler(async (event) => {
         }
       }
     } catch (error) {
-      console.error('Error fetching easy to watch movies:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error fetching easy to watch movies:', error);
+      }
     }
 
     // Fetch easy to watch TV shows
@@ -504,7 +536,9 @@ export default defineEventHandler(async (event) => {
         }
       }
     } catch (error) {
-      console.error('Error fetching easy to watch TV shows:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error fetching easy to watch TV shows:', error);
+      }
     }
 
     // Deduplicate and limit easyToWatch
@@ -524,7 +558,7 @@ export default defineEventHandler(async (event) => {
 
     return recommendationsResponse;
   } catch (error: unknown) {
-    console.error('Error fetching recommendations:', error);
+    safeError('Error fetching recommendations', error);
     const errorMessage =
       error instanceof Error
         ? error.message

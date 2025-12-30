@@ -218,6 +218,27 @@ const seasonWithProviders = computed(() => {
   };
 });
 
+const pageTitle = computed(() => {
+  if (seasonWithProviders.value?.name) {
+    return `${seasonWithProviders.value.name} - UpNext`;
+  }
+  return 'Temporada - UpNext';
+});
+
+useHead({
+  title: pageTitle,
+});
+
+useSeoMeta({
+  title: pageTitle,
+  description: computed(() => {
+    if (seasonWithProviders.value?.overview) {
+      return seasonWithProviders.value.overview;
+    }
+    return `Temporada ${seasonId} de la serie`;
+  }),
+});
+
 const hasAvailableProviders = computed(() => {
   return (
     seasonWithProviders.value.providers?.flatrate?.length ||

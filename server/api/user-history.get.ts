@@ -1,6 +1,7 @@
 import { serverSupabaseUser } from '#supabase/server';
 import { createClient } from '@supabase/supabase-js';
 import { getTMDBConfig } from '../utils/config';
+import { devLog, devError, devWarn, safeError } from '../utils/logger';
 
 /**
  * Get user title status history (seen and not_interested)
@@ -20,6 +21,7 @@ export default defineEventHandler(async (event) => {
 
     if (userId) {
       user = { id: userId, sub: userId };
+      devLog('[User History] User from cookies');
     }
   } else {
     // Try Authorization header
@@ -42,24 +44,36 @@ export default defineEventHandler(async (event) => {
 
           if (userId) {
             user = { id: userId, sub: userId };
+            devLog('[User History] User from Authorization header');
           }
         }
       } catch (err) {
-        console.error('Error decoding token:', err);
+        safeError('[User History] Error decoding token', err);
       }
+    } else {
+      devWarn(
+        '[User History] No user from cookies and no Authorization header'
+      );
     }
   }
 
   if (!user || !userId) {
+    devError('[User History] Unauthorized - no user found');
     throw createError({
       statusCode: 401,
       message: 'Unauthorized',
     });
   }
 
-  // Create Supabase client
+  // Create Supabase client - Use SERVICE_ROLE_KEY in production to bypass RLS
   const supabaseKey =
     process.env.SUPABASE_SERVICE_ROLE_KEY || config.public.supabaseAnonKey;
+
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    devWarn(
+      '[User History] WARNING: Using anon key instead of service role key. RLS policies may block queries.'
+    );
+  }
 
   const supabase = createClient(config.public.supabaseUrl, supabaseKey, {
     auth: {
@@ -78,14 +92,24 @@ export default defineEventHandler(async (event) => {
       .order('created_at', { ascending: false });
 
     if (statusError) {
-      console.error('Error fetching user title statuses:', statusError);
+      safeError(
+        '[User History] Error fetching user title statuses',
+        statusError,
+        {
+          userId,
+          supabaseUrl: config.public.supabaseUrl,
+        }
+      );
       throw createError({
         statusCode: 500,
         message: 'Error al obtener el historial',
       });
     }
 
+    devLog('[User History] Statuses count:', statuses?.length || 0);
+
     if (!statuses || statuses.length === 0) {
+      devLog('[User History] No statuses found for user');
       return {
         seen: [],
         not_interested: [],
@@ -96,21 +120,45 @@ export default defineEventHandler(async (event) => {
     const tmdbConfig = getTMDBConfig();
 
     // Fetch TMDB details for each title
-    const seenPromises: Promise<any>[] = [];
-    const notInterestedPromises: Promise<any>[] = [];
+    type TMDBTitle = {
+      id: number;
+      title?: string;
+      name?: string;
+      poster_path: string | null;
+      [key: string]: unknown;
+    };
+
+    const seenPromises: Promise<
+      | (TMDBTitle & {
+          type: string;
+          tmdb_id: number;
+          status: string;
+          created_at: string;
+        })
+      | null
+    >[] = [];
+    const notInterestedPromises: Promise<
+      | (TMDBTitle & {
+          type: string;
+          tmdb_id: number;
+          status: string;
+          created_at: string;
+        })
+      | null
+    >[] = [];
 
     for (const status of statuses) {
       // Determine if it's a movie or TV show by trying both
       // We'll fetch both and see which one returns data
       const fetchPromise = Promise.allSettled([
-        $fetch(`${tmdbConfig.baseUrl}/movie/${status.tmdb_id}`, {
+        $fetch<TMDBTitle>(`${tmdbConfig.baseUrl}/movie/${status.tmdb_id}`, {
           query: {
             api_key: tmdbConfig.apiKey,
             language: tmdbConfig.language,
             include_adult: tmdbConfig.includeAdult,
           },
         }),
-        $fetch(`${tmdbConfig.baseUrl}/tv/${status.tmdb_id}`, {
+        $fetch<TMDBTitle>(`${tmdbConfig.baseUrl}/tv/${status.tmdb_id}`, {
           query: {
             api_key: tmdbConfig.apiKey,
             language: tmdbConfig.language,
@@ -122,7 +170,7 @@ export default defineEventHandler(async (event) => {
         const movieResult = results[0];
         const tvResult = results[1];
 
-        if (movieResult.status === 'fulfilled' && movieResult.value.id) {
+        if (movieResult.status === 'fulfilled' && movieResult.value?.id) {
           return {
             ...movieResult.value,
             type: 'movie',
@@ -130,7 +178,7 @@ export default defineEventHandler(async (event) => {
             status: status.status,
             created_at: status.created_at,
           };
-        } else if (tvResult.status === 'fulfilled' && tvResult.value.id) {
+        } else if (tvResult.status === 'fulfilled' && tvResult.value?.id) {
           return {
             ...tvResult.value,
             type: 'tv',

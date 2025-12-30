@@ -1,4 +1,12 @@
-<script lang="ts">
+<script setup lang="ts">
+useHead({
+  title: 'Búsqueda - UpNext',
+});
+
+useSeoMeta({
+  title: 'Búsqueda - UpNext',
+  description: 'Busca películas y series en UpNext',
+});
 </script>
 
 <template>
