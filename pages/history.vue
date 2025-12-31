@@ -107,7 +107,7 @@
           >
             <!-- Poster -->
             <nuxt-link
-              :to="`/${title.type === 'movie' ? 'pelicula' : 'serie'}/${title.tmdb_id}`"
+              :to="`/${title.type === MediaTypeEnum.movie ? 'pelicula' : 'serie'}/${title.tmdb_id}`"
               :aria-label="`Ver detalles de ${title.title}`"
               class="block aspect-[2/3] relative bg-gray-800 rounded-t-lg focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
             >
@@ -148,7 +148,7 @@
                 class="tooltip-container absolute top-2 right-2 z-20 p-2 rounded-full bg-black/50 hover:bg-red-600/80 backdrop-blur-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-black/50 pointer-events-auto"
                 :aria-label="`Eliminar ${title.title} de la lista de vistas`"
                 title="Eliminar de vistas"
-                @click.stop.prevent="handleRemoveTitle(title, 'seen')"
+                @click.stop.prevent="handleRemoveTitle(title, TitleStatus.SEEN)"
                 @mousedown.stop.prevent
               >
                 <svg
@@ -176,7 +176,7 @@
                 {{ title.title }}
               </h3>
               <p class="text-xs dark:text-gray-300 text-gray-500 mb-2">
-                {{ title.type === 'movie' ? 'Película' : 'Serie' }}
+                {{ title.type === MediaTypeEnum.movie ? 'Película' : 'Serie' }}
               </p>
             </div>
           </div>
@@ -213,7 +213,7 @@
           >
             <!-- Poster -->
             <nuxt-link
-              :to="`/${title.type === 'movie' ? 'pelicula' : 'serie'}/${title.tmdb_id}`"
+              :to="`/${title.type === MediaTypeEnum.movie ? 'pelicula' : 'serie'}/${title.tmdb_id}`"
               :aria-label="`Ver detalles de ${title.title}`"
               class="block aspect-[2/3] relative bg-gray-800 rounded-t-lg focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
             >
@@ -254,7 +254,9 @@
                 class="tooltip-container absolute top-2 right-2 z-20 p-2 rounded-full bg-black/50 hover:bg-red-600/80 backdrop-blur-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-black/50 pointer-events-auto"
                 :aria-label="`Eliminar ${title.title} de la lista de no me interesan`"
                 title="Eliminar de no me interesan"
-                @click.stop.prevent="handleRemoveTitle(title, 'not_interested')"
+                @click.stop.prevent="
+                  handleRemoveTitle(title, TitleStatus.NOT_INTERESTED)
+                "
                 @mousedown.stop.prevent
               >
                 <svg
@@ -282,7 +284,7 @@
                 {{ title.title }}
               </h3>
               <p class="text-xs dark:text-gray-300 text-gray-500 mb-2">
-                {{ title.type === 'movie' ? 'Película' : 'Serie' }}
+                {{ title.type === MediaTypeEnum.movie ? 'Película' : 'Serie' }}
               </p>
             </div>
           </div>
@@ -294,6 +296,8 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
+import { TitleStatus } from '@/types/TitleStatus';
+import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 import AlertMessage from '@/components/AlertMessage.vue';
 // These are auto-imported in Nuxt 3
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -314,7 +318,17 @@ useSeoMeta({
 type HistoryTitle = {
   tmdb_id: number;
   title: string;
-  type: 'movie' | 'tv';
+  type: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv;
+  poster_path: string | null;
+  status: string;
+  created_at: string;
+};
+
+type HistoryResponseItem = {
+  tmdb_id: number;
+  title?: string;
+  name?: string;
+  type: string;
   poster_path: string | null;
   status: string;
   created_at: string;
@@ -327,7 +341,7 @@ const successMessage = ref<string | null>(null);
 const titleToRemove = ref<{
   title: string;
   tmdb_id: number;
-  type: 'seen' | 'not_interested';
+  type: TitleStatus;
 } | null>(null);
 const isRemoving = ref(false);
 
@@ -350,8 +364,26 @@ const fetchHistory = async () => {
       },
     });
 
-    seenTitles.value = response.seen || [];
-    notInterestedTitles.value = response.not_interested || [];
+    seenTitles.value = (response.seen || []).map(
+      (item: HistoryResponseItem) => ({
+        tmdb_id: item.tmdb_id,
+        title: item.title || item.name || 'Sin título',
+        type: item.type as typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv,
+        poster_path: item.poster_path,
+        status: item.status,
+        created_at: item.created_at,
+      })
+    );
+    notInterestedTitles.value = (response.not_interested || []).map(
+      (item: HistoryResponseItem) => ({
+        tmdb_id: item.tmdb_id,
+        title: item.title || item.name || 'Sin título',
+        type: item.type as typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv,
+        poster_path: item.poster_path,
+        status: item.status,
+        created_at: item.created_at,
+      })
+    );
   } catch (error) {
     console.error('Error fetching history:', error);
   } finally {
@@ -379,7 +411,7 @@ const showSuccess = (message: string) => {
 // Handle remove title - show confirmation
 const handleRemoveTitle = (
   title: { title: string; tmdb_id: number },
-  type: 'seen' | 'not_interested'
+  type: TitleStatus
 ) => {
   if (isRemoving.value) return;
   titleToRemove.value = {
@@ -420,7 +452,7 @@ const confirmRemoveTitle = async () => {
     });
 
     // Optimistic UI update
-    if (title.type === 'seen') {
+    if (title.type === TitleStatus.SEEN) {
       seenTitles.value = seenTitles.value.filter(
         (t) => t.tmdb_id !== title.tmdb_id
       );

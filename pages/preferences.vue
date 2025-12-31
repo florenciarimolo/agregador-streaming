@@ -113,7 +113,7 @@
         >
           <!-- Poster -->
           <nuxt-link
-            :to="`/${title.type === 'movie' ? 'pelicula' : 'serie'}/${title.tmdb_id}`"
+            :to="`/${title.type === MediaTypeEnum.movie ? 'pelicula' : 'serie'}/${title.tmdb_id}`"
             :aria-label="`Ver detalles de ${title.title}`"
             class="block aspect-[2/3] relative bg-gray-800 rounded-t-lg focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
           >
@@ -186,7 +186,7 @@
               {{ title.title }}
             </h3>
             <p class="text-xs dark:text-gray-300 text-gray-500 mb-2">
-              {{ title.type === 'movie' ? 'Película' : 'Serie' }}
+              {{ title.type === MediaTypeEnum.movie ? 'Película' : 'Serie' }}
             </p>
           </div>
         </div>
@@ -229,6 +229,8 @@ const supabase = useSupabaseClient();
 // @ts-ignore - Auto-imported
 const user = useSupabaseUser();
 import { useUserStore } from '@/stores/user';
+import { TitleStatus } from '@/types/TitleStatus';
+import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 import SearchBar from '@/components/SearchBar.vue';
 import AlertMessage from '@/components/AlertMessage.vue';
 import type { TMDBSearchResult } from '@/types/TMDBSearch';
@@ -241,7 +243,7 @@ const likedTitles = ref<
   Array<{
     id: string;
     title: string;
-    type: 'movie' | 'tv';
+    type: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv;
     poster_path: string | null;
     tmdb_id: number;
   }>
@@ -281,33 +283,45 @@ const fetchLikedTitles = async () => {
 
   isLoading.value = true;
   try {
-    const { data, error } = await supabase
-      .from('user_likes')
-      .select('id, titles(id, title, type, poster_path, tmdb_id)')
+    // Get liked statuses with tmdb_ids (where liked=true)
+    const { data: likedStatuses, error: statusError } = await supabase
+      .from('user_title_status')
+      .select('id, tmdb_id')
       .eq('user_id', userId)
+      .eq('liked', true)
       .order('created_at', { ascending: false });
 
-    if (error) throw error;
+    if (statusError) throw statusError;
 
-    likedTitles.value =
-      data?.map(
-        (like: {
-          id: string;
-          titles: {
-            id: string;
-            title: string;
-            type: 'movie' | 'tv';
-            poster_path: string | null;
-            tmdb_id: number;
-          };
-        }) => ({
-          id: like.id,
-          title: like.titles.title,
-          type: like.titles.type,
-          poster_path: like.titles.poster_path,
-          tmdb_id: like.titles.tmdb_id,
-        })
-      ) || [];
+    if (!likedStatuses || likedStatuses.length === 0) {
+      likedTitles.value = [];
+      return;
+    }
+
+    // Get titles data for those tmdb_ids
+    const tmdbIds = likedStatuses.map((s) => s.tmdb_id);
+    const { data: titlesData, error: titlesError } = await supabase
+      .from('titles')
+      .select('id, title, type, poster_path, tmdb_id')
+      .in('tmdb_id', tmdbIds);
+
+    if (titlesError) throw titlesError;
+
+    // Map status IDs to titles
+    const titleMap = new Map(titlesData?.map((t) => [t.tmdb_id, t]) || []);
+    likedTitles.value = likedStatuses
+      .map((status) => {
+        const title = titleMap.get(status.tmdb_id);
+        if (!title) return null;
+        return {
+          id: status.id,
+          title: title.title,
+          type: title.type,
+          poster_path: title.poster_path,
+          tmdb_id: title.tmdb_id,
+        };
+      })
+      .filter((t): t is NonNullable<typeof t> => t !== null);
   } catch (error) {
     console.error('Error fetching liked titles:', error);
   } finally {
@@ -331,9 +345,10 @@ const confirmRemoveTitle = async () => {
   isRemoving.value = true;
   try {
     const { error } = await supabase
-      .from('user_likes')
+      .from('user_title_status')
       .delete()
-      .eq('id', title.id);
+      .eq('id', title.id)
+      .eq('liked', true);
 
     if (error) throw error;
 
@@ -389,58 +404,51 @@ const handleTitleSelected = async (result: TMDBSearchResult) => {
       throw titleCheckError;
     }
 
-    // If title exists, check if user already liked it
-    if (existingTitle) {
-      const { data: existingLike } = await supabase
-        .from('user_likes')
-        .select('id')
-        .eq('user_id', userId)
-        .eq('title_id', existingTitle.id)
-        .maybeSingle();
+    // Check if user already liked this title
+    const { data: existingLike } = await supabase
+      .from('user_title_status')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('tmdb_id', result.id)
+      .eq('liked', true)
+      .maybeSingle();
 
-      if (existingLike) {
-        showError('Este título ya está en tus preferencias.');
-        // Refetch to sync UI
-        await fetchLikedTitles();
-        return;
-      }
+    if (existingLike) {
+      showError('Este título ya está en tus preferencias.');
+      // Refetch to sync UI
+      await fetchLikedTitles();
+      return;
     }
 
-    let titleId: string;
-
-    if (existingTitle) {
-      titleId = existingTitle.id;
-    } else {
+    // Ensure title exists in database
+    if (!existingTitle) {
       // Insert new title
-      const { data: newTitle, error: insertError } = await supabase
-        .from('titles')
-        .insert({
-          tmdb_id: result.id,
-          title: result.title || result.name || 'Unknown',
-          type: result.media_type,
-          poster_path: result.poster_path,
-          backdrop_path: result.backdrop_path,
-          overview: result.overview,
-          release_date: result.release_date || null,
-          first_air_date: result.first_air_date || null,
-          genres: [], // Genre IDs not available in search result, will be fetched later if needed
-          vote_average: result.vote_average || null,
-        })
-        .select('id')
-        .single();
+      const { error: insertError } = await supabase.from('titles').insert({
+        tmdb_id: result.id,
+        title: result.title || result.name || 'Unknown',
+        type: result.media_type,
+        poster_path: result.poster_path,
+        backdrop_path: result.backdrop_path,
+        overview: result.overview,
+        release_date: result.release_date || null,
+        first_air_date: result.first_air_date || null,
+        genres: [], // Genre IDs not available in search result, will be fetched later if needed
+        vote_average: result.vote_average || null,
+      });
 
       if (insertError) throw insertError;
-      titleId = newTitle.id;
     }
 
-    // Insert user like
+    // Insert user like status (as seen with liked=true)
     const { data: newLike, error: likeError } = await supabase
-      .from('user_likes')
+      .from('user_title_status')
       .insert({
         user_id: userId,
-        title_id: titleId,
+        tmdb_id: result.id,
+        status: TitleStatus.SEEN,
+        liked: true,
       })
-      .select('id, titles(id, title, type, poster_path, tmdb_id)')
+      .select('id, tmdb_id')
       .single();
 
     if (likeError) {
@@ -454,14 +462,22 @@ const handleTitleSelected = async (result: TMDBSearchResult) => {
       throw likeError;
     }
 
-    // Optimistic UI update
-    likedTitles.value.unshift({
-      id: newLike.id,
-      title: newLike.titles.title,
-      type: newLike.titles.type,
-      poster_path: newLike.titles.poster_path,
-      tmdb_id: newLike.titles.tmdb_id,
-    });
+    // Optimistic UI update - fetch title data
+    const { data: titleData } = await supabase
+      .from('titles')
+      .select('title, type, poster_path, tmdb_id')
+      .eq('tmdb_id', result.id)
+      .single();
+
+    if (titleData) {
+      likedTitles.value.unshift({
+        id: newLike.id,
+        title: titleData.title,
+        type: titleData.type,
+        poster_path: titleData.poster_path,
+        tmdb_id: titleData.tmdb_id,
+      });
+    }
 
     // Update user store
     await userStore.fetchProfile();

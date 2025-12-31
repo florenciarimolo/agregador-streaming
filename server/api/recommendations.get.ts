@@ -7,20 +7,8 @@ import {
   Recommendation,
   Provider,
 } from '@/types/Recommendation';
-
-/**
- * Type for Supabase user_likes query result with joined titles
- */
-type UserLikeWithTitle = {
-  title_id: string;
-  titles: {
-    id: string;
-    genres: number[] | Array<{ id?: number }>;
-    type: 'movie' | 'tv';
-    tmdb_id: number;
-    vote_average: number | null;
-  };
-};
+import { TitleStatus } from '@/types/TitleStatus';
+import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 
 /**
  * TMDB API response types (used by recommendations, trending, etc.)
@@ -139,23 +127,31 @@ export default defineEventHandler(async (event) => {
   });
 
   try {
-    // Get user's liked titles with their genres and ratings
-    const { data: userLikes, error: likesError } = await supabase
-      .from('user_likes')
-      .select('title_id, titles!inner(id, genres, type, tmdb_id, vote_average)')
-      .eq('user_id', userId);
+    // Get user's liked tmdb_ids (where liked=true)
+    const { data: userLikedStatuses, error: likesError } = await supabase
+      .from('user_title_status')
+      .select('tmdb_id')
+      .eq('user_id', userId)
+      .eq('liked', true);
 
     if (likesError) {
-      safeError('[Recommendations] Error fetching user_likes', likesError, {
-        userId,
-        supabaseUrl: config.public.supabaseUrl,
-      });
+      safeError(
+        '[Recommendations] Error fetching user_title_status (liked)',
+        likesError,
+        {
+          userId,
+          supabaseUrl: config.public.supabaseUrl,
+        }
+      );
       throw likesError;
     }
 
-    devLog('[Recommendations] User likes count:', userLikes?.length || 0);
+    devLog(
+      '[Recommendations] User likes count:',
+      userLikedStatuses?.length || 0
+    );
 
-    if (!userLikes || userLikes.length === 0) {
+    if (!userLikedStatuses || userLikedStatuses.length === 0) {
       devLog(
         '[Recommendations] No user likes found, returning empty recommendations'
       );
@@ -166,12 +162,16 @@ export default defineEventHandler(async (event) => {
       };
     }
 
-    // Get excluded titles (seen + not_interested)
+    // Get excluded titles (seen + not_interested + watch_later)
     const { data: excludedStatuses, error: statusError } = await supabase
       .from('user_title_status')
       .select('tmdb_id')
       .eq('user_id', userId)
-      .in('status', ['seen', 'not_interested']);
+      .in('status', [
+        TitleStatus.SEEN,
+        TitleStatus.NOT_INTERESTED,
+        TitleStatus.WATCH_LATER,
+      ]);
 
     if (statusError) {
       safeError('Error fetching user_title_status', statusError);
@@ -186,42 +186,63 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    // Extract data from user likes
+    // Extract liked tmdb_ids
     const likedTmdbIds = new Set<number>();
+    userLikedStatuses.forEach((likedStatus) => {
+      likedTmdbIds.add(likedStatus.tmdb_id);
+    });
+
+    // Get titles data for liked tmdb_ids
+    const { data: likedTitlesData, error: titlesError } = await supabase
+      .from('titles')
+      .select('id, genres, type, tmdb_id, vote_average')
+      .in('tmdb_id', Array.from(likedTmdbIds));
+
+    if (titlesError) {
+      safeError(
+        '[Recommendations] Error fetching titles for liked tmdb_ids',
+        titlesError,
+        {
+          userId,
+          likedTmdbIds: Array.from(likedTmdbIds),
+        }
+      );
+      throw titlesError;
+    }
+
+    // Extract data from user liked titles
     const likedTitlesWithRating: Array<{
       tmdb_id: number;
-      type: 'movie' | 'tv';
+      type: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv;
       vote_average: number | null;
     }> = [];
     const genreFrequency = new Map<number, number>();
 
-    // Type assertion: Supabase returns titles as object (not array) with !inner join
-    (userLikes as unknown as UserLikeWithTitle[]).forEach((like) => {
-      const title = like.titles;
-      if (title?.tmdb_id) {
-        likedTmdbIds.add(title.tmdb_id);
-
-        // Store title with rating for sorting
-        likedTitlesWithRating.push({
-          tmdb_id: title.tmdb_id,
-          type: title.type,
-          vote_average: title.vote_average,
-        });
-
-        // Extract genre IDs
-        if (title.genres && Array.isArray(title.genres)) {
-          title.genres.forEach((genre: number | { id?: number }) => {
-            const genreId = typeof genre === 'number' ? genre : genre?.id;
-            if (genreId) {
-              genreFrequency.set(
-                genreId,
-                (genreFrequency.get(genreId) || 0) + 1
-              );
-            }
+    if (likedTitlesData) {
+      likedTitlesData.forEach((title) => {
+        if (title?.tmdb_id) {
+          // Store title with rating for sorting
+          likedTitlesWithRating.push({
+            tmdb_id: title.tmdb_id,
+            type: title.type,
+            vote_average: title.vote_average,
           });
+
+          // Extract genre IDs
+          if (title.genres && Array.isArray(title.genres)) {
+            title.genres.forEach((genre: number | { id?: number }) => {
+              const genreId = typeof genre === 'number' ? genre : genre?.id;
+              if (genreId) {
+                genreFrequency.set(
+                  genreId,
+                  (genreFrequency.get(genreId) || 0) + 1
+                );
+              }
+            });
+          }
         }
-      }
-    });
+      });
+    }
 
     // Get top 3 genres by frequency
     const topGenres = Array.from(genreFrequency.entries())
@@ -242,7 +263,7 @@ export default defineEventHandler(async (event) => {
     // Helper function to transform TMDB result to Recommendation
     const transformToRecommendation = async (
       result: TMDBResult,
-      type: 'movie' | 'tv'
+      type: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv
     ): Promise<Recommendation | null> => {
       // Skip if already liked
       if (likedTmdbIds.has(result.id)) {
@@ -258,7 +279,7 @@ export default defineEventHandler(async (event) => {
       let providers: Provider[] = [];
       try {
         const providerPath =
-          type === 'movie'
+          type === MediaTypeEnum.movie
             ? `/movie/${result.id}/watch/providers`
             : `/tv/${result.id}/watch/providers`;
         const providerResponse = await $fetch<{
@@ -321,7 +342,7 @@ export default defineEventHandler(async (event) => {
     for (const likedTitle of topLikedTitles) {
       try {
         const recommendationPath =
-          likedTitle.type === 'movie'
+          likedTitle.type === MediaTypeEnum.movie
             ? `/movie/${likedTitle.tmdb_id}/recommendations`
             : `/tv/${likedTitle.tmdb_id}/recommendations`;
 
@@ -339,7 +360,7 @@ export default defineEventHandler(async (event) => {
         // Filter by quality criteria
         const filteredResults = recommendationResponse.results.filter(
           (result) => {
-            if (likedTitle.type === 'movie') {
+            if (likedTitle.type === MediaTypeEnum.movie) {
               return result.vote_average >= 7.0 && result.vote_count >= 1000;
             } else {
               return result.vote_average >= 7.2 && result.vote_count >= 1500;
@@ -449,9 +470,10 @@ export default defineEventHandler(async (event) => {
 
       if (process.env.NODE_ENV === 'development') {
         devLog('[Recommendations] BasedOnLikes movies added:', {
-          count: basedOnLikes.filter((r) => r.type === 'movie').length,
+          count: basedOnLikes.filter((r) => r.type === MediaTypeEnum.movie)
+            .length,
           items: basedOnLikes
-            .filter((r) => r.type === 'movie')
+            .filter((r) => r.type === MediaTypeEnum.movie)
             .map((r) => ({
               title: r.title,
               vote_average: r.vote_average,
@@ -518,7 +540,7 @@ export default defineEventHandler(async (event) => {
       for (const result of sortedTV.slice(0, 10)) {
         // Double-check quality criteria before adding
         if (result.vote_average >= 7.2 && result.vote_count >= 1500) {
-          const rec = await transformToRecommendation(result, 'tv');
+          const rec = await transformToRecommendation(result, MediaTypeEnum.tv);
           if (rec && rec.vote_average !== null && rec.vote_average >= 7.2) {
             rec.explanation = 'Tendencia esta semana';
             basedOnLikes.push(rec);
@@ -528,9 +550,9 @@ export default defineEventHandler(async (event) => {
 
       if (process.env.NODE_ENV === 'development') {
         devLog('[Recommendations] BasedOnLikes TV added:', {
-          count: basedOnLikes.filter((r) => r.type === 'tv').length,
+          count: basedOnLikes.filter((r) => r.type === MediaTypeEnum.tv).length,
           items: basedOnLikes
-            .filter((r) => r.type === 'tv')
+            .filter((r) => r.type === MediaTypeEnum.tv)
             .map((r) => ({
               title: r.title,
               vote_average: r.vote_average,

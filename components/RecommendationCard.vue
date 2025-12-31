@@ -43,67 +43,121 @@
         </svg>
       </div>
 
-      <!-- Rating Badge (top-right) -->
+      <!-- Rating Badge (top-left) -->
       <RatingBadge
         v-if="props.title.vote_average"
         :rating="props.title.vote_average"
-        class="absolute top-2 right-2 z-10"
+        class="absolute top-2 left-2 z-10"
       />
 
-      <!-- Action Buttons (top-left) -->
-      <div
-        class="absolute top-2 left-2 z-20 flex gap-2 pointer-events-auto"
-        role="group"
-        aria-label="Acciones de recomendación"
-        @click.stop.prevent
-        @mousedown.stop.prevent
-      >
+      <!-- Actions Menu (top-right) -->
+      <div class="absolute top-2 right-2 z-20">
         <button
           type="button"
-          :aria-label="`Marcar ${props.title.title} como ya vista`"
-          class="tooltip-container p-2 rounded-full bg-black/50 hover:bg-green-600/80 backdrop-blur-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-black/50"
-          @click.stop.prevent="$emit('mark-seen', props.title)"
+          :aria-label="`Menú de acciones para ${props.title.title}`"
+          class="menu-button p-2 rounded-full bg-black/50 hover:bg-gray-700/80 backdrop-blur-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-black/50"
+          @click.stop.prevent="showMenu = !showMenu"
           @mousedown.stop.prevent
         >
-          <svg
-            class="w-4 h-4 text-white"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M5 13l4 4L19 7"
-            />
-          </svg>
-          <span class="tooltip">Ya la he visto</span>
+          <IconMoreVertical icon-class="w-4 h-4 text-white" />
         </button>
-        <button
-          type="button"
-          :aria-label="`Marcar ${props.title.title} como no me interesa`"
-          class="tooltip-container p-2 rounded-full bg-black/50 hover:bg-red-600/80 backdrop-blur-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-black/50"
-          @click.stop.prevent="$emit('mark-not-interested', props.title)"
-          @mousedown.stop.prevent
+
+        <!-- Dropdown Menu -->
+        <Transition
+          enter-active-class="transition duration-200 ease-out"
+          enter-from-class="transform scale-95 opacity-0"
+          enter-to-class="transform scale-100 opacity-100"
+          leave-active-class="transition duration-150 ease-in"
+          leave-from-class="transform scale-100 opacity-100"
+          leave-to-class="transform scale-95 opacity-0"
         >
-          <svg
-            class="w-4 h-4 text-white"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
+          <div
+            v-if="showMenu"
+            class="absolute right-0 mt-2 w-48 rounded-lg shadow-lg bg-white dark:bg-gray-800 border border-gray-300/50 dark:border-white/10 py-1 z-50"
+            @click.stop
           >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
-          <span class="tooltip">No me interesa</span>
-        </button>
+            <button
+              type="button"
+              class="w-full text-left px-4 py-2 text-sm dark:text-gray-300 text-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center gap-2"
+              @click.stop.prevent="handleAction(TitleStatus.SEEN)"
+            >
+              <svg
+                class="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+              Visto
+            </button>
+            <button
+              type="button"
+              class="w-full text-left px-4 py-2 text-sm dark:text-gray-300 text-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center gap-2"
+              @click.stop.prevent="handleAction('liked')"
+            >
+              <svg
+                class="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                />
+              </svg>
+              Me gusta
+            </button>
+            <button
+              type="button"
+              class="w-full text-left px-4 py-2 text-sm dark:text-gray-300 text-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center gap-2"
+              @click.stop.prevent="handleAction(TitleStatus.NOT_INTERESTED)"
+            >
+              <svg
+                class="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+              No me interesa
+            </button>
+            <button
+              type="button"
+              class="w-full text-left px-4 py-2 text-sm dark:text-gray-300 text-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center gap-2"
+              @click.stop.prevent="handleAction(TitleStatus.WATCH_LATER)"
+            >
+              <svg
+                class="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              Guardar para ver más tarde
+            </button>
+          </div>
+        </Transition>
       </div>
 
       <!-- Hover Overlay (same as MediaCarousel) -->
@@ -128,7 +182,7 @@
         {{ props.title.title }}
       </h3>
       <p class="text-xs dark:text-gray-300 text-gray-500 mb-2">
-        {{ props.title.type === 'movie' ? 'Película' : 'Serie' }}
+        {{ props.title.type === MediaTypeEnum.movie ? 'Película' : 'Serie' }}
       </p>
 
       <!-- Overview (instead of explanation) -->
@@ -164,7 +218,11 @@
 </template>
 
 <script setup lang="ts">
+import { ref, onMounted, onUnmounted } from 'vue';
 import RatingBadge from './RatingBadge.vue';
+import IconMoreVertical from './icons/IconMoreVertical.vue';
+import { TitleStatus } from '@/types/TitleStatus';
+import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 import type { Recommendation } from '@/types/Recommendation';
 
 interface Props {
@@ -173,13 +231,46 @@ interface Props {
 
 const props = defineProps<Props>();
 
-defineEmits<{
+const showMenu = ref(false);
+
+const emit = defineEmits<{
   'mark-seen': [title: Recommendation];
   'mark-not-interested': [title: Recommendation];
+  'mark-liked': [title: Recommendation];
+  'mark-watch-later': [title: Recommendation];
 }>();
 
+const handleAction = (action: TitleStatus | 'liked') => {
+  showMenu.value = false;
+  if (action === TitleStatus.SEEN) {
+    emit('mark-seen', props.title);
+  } else if (action === 'liked') {
+    emit('mark-liked', props.title);
+  } else if (action === TitleStatus.NOT_INTERESTED) {
+    emit('mark-not-interested', props.title);
+  } else if (action === TitleStatus.WATCH_LATER) {
+    emit('mark-watch-later', props.title);
+  }
+};
+
+// Close menu when clicking outside
+const handleClickOutside = (event: MouseEvent) => {
+  const target = event.target as HTMLElement;
+  if (!target.closest('.menu-button') && !target.closest('.absolute.right-0')) {
+    showMenu.value = false;
+  }
+};
+
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside);
+});
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside);
+});
+
 const mediaType = computed(() =>
-  props.title.type === 'movie' ? 'pelicula' : 'serie'
+  props.title.type === MediaTypeEnum.movie ? 'pelicula' : 'serie'
 );
 
 // Filter providers that have logos

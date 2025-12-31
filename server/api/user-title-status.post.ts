@@ -1,9 +1,10 @@
 import { serverSupabaseUser } from '#supabase/server';
 import { createClient } from '@supabase/supabase-js';
+import { TitleStatus } from '@/types/TitleStatus';
 
 /**
- * Update user title status (seen or not_interested)
- * Body: { tmdb_id: number, status: 'seen' | 'not_interested' }
+ * Update user title status (seen, not_interested, or watch_later)
+ * Body: { tmdb_id: number, status: TitleStatus, liked?: boolean }
  */
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig();
@@ -61,7 +62,7 @@ export default defineEventHandler(async (event) => {
 
   // Get request body
   const body = await readBody(event);
-  const { tmdb_id, status } = body;
+  const { tmdb_id, status, liked } = body;
 
   if (!tmdb_id || !status) {
     throw createError({
@@ -70,10 +71,14 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  if (status !== 'seen' && status !== 'not_interested') {
+  if (
+    status !== TitleStatus.SEEN &&
+    status !== TitleStatus.NOT_INTERESTED &&
+    status !== TitleStatus.WATCH_LATER
+  ) {
     throw createError({
       statusCode: 400,
-      message: "status must be 'seen' or 'not_interested'",
+      message: `status must be '${TitleStatus.SEEN}', '${TitleStatus.NOT_INTERESTED}', or '${TitleStatus.WATCH_LATER}'`,
     });
   }
 
@@ -91,16 +96,27 @@ export default defineEventHandler(async (event) => {
 
   try {
     // Upsert user title status (insert or update)
-    const { error } = await supabase.from('user_title_status').upsert(
-      {
-        user_id: userId,
-        tmdb_id,
-        status,
-      },
-      {
+    const upsertData: {
+      user_id: string;
+      tmdb_id: number;
+      status: string;
+      liked?: boolean;
+    } = {
+      user_id: userId,
+      tmdb_id,
+      status,
+    };
+
+    // Only include liked if provided
+    if (typeof liked === 'boolean') {
+      upsertData.liked = liked;
+    }
+
+    const { error } = await supabase
+      .from('user_title_status')
+      .upsert(upsertData, {
         onConflict: 'user_id,tmdb_id',
-      }
-    );
+      });
 
     if (error) {
       if (process.env.NODE_ENV === 'development') {

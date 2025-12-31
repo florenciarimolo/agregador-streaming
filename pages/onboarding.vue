@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { TitleStatus } from '@/types/TitleStatus';
+import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
+
 definePageMeta({
   middleware: 'auth',
 });
@@ -22,7 +25,7 @@ interface TitleResult {
   overview: string;
   release_date?: string;
   first_air_date?: string;
-  media_type: 'movie' | 'tv';
+  media_type: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv;
   genre_ids?: number[];
   vote_average?: number;
 }
@@ -63,7 +66,11 @@ const handleSearch = () => {
 
       // Filter to only movies and TV shows, limit to 20
       searchResults.value = response.data.results
-        .filter((r) => r.media_type === 'movie' || r.media_type === 'tv')
+        .filter(
+          (r) =>
+            r.media_type === MediaTypeEnum.movie ||
+            r.media_type === MediaTypeEnum.tv
+        )
         .slice(0, 20);
     } catch (error) {
       console.error('Search error:', error);
@@ -126,7 +133,7 @@ const saveSelections = async () => {
 
     const userId = (userStore.user || user.value)!.id;
 
-    // First, ensure all titles exist in the database
+    // First, ensure all titles exist in the database, then insert likes
     for (const title of selectedTitles.value) {
       // Check if title exists
       const { data: existingTitle } = await supabase
@@ -134,40 +141,35 @@ const saveSelections = async () => {
         .select('id')
         .eq('tmdb_id', title.id)
         .eq('type', title.media_type)
-        .single();
+        .maybeSingle();
 
-      let titleId: string;
-
-      if (existingTitle) {
-        titleId = existingTitle.id;
-      } else {
+      if (!existingTitle) {
         // Insert new title
-        const { data: newTitle, error: insertError } = await supabase
-          .from('titles')
-          .insert({
-            tmdb_id: title.id,
-            title: title.title || title.name || 'Unknown',
-            type: title.media_type,
-            poster_path: title.poster_path,
-            backdrop_path: title.backdrop_path,
-            overview: title.overview,
-            release_date: title.release_date || null,
-            first_air_date: title.first_air_date || null,
-            genres: title.genre_ids || [],
-            vote_average: title.vote_average || null,
-          })
-          .select('id')
-          .single();
+        const { error: insertError } = await supabase.from('titles').insert({
+          tmdb_id: title.id,
+          title: title.title || title.name || 'Unknown',
+          type: title.media_type,
+          poster_path: title.poster_path,
+          backdrop_path: title.backdrop_path,
+          overview: title.overview,
+          release_date: title.release_date || null,
+          first_air_date: title.first_air_date || null,
+          genres: title.genre_ids || [],
+          vote_average: title.vote_average || null,
+        });
 
         if (insertError) throw insertError;
-        titleId = newTitle.id;
       }
 
-      // Insert user like (will fail silently if duplicate due to UNIQUE constraint)
-      const { error: likeError } = await supabase.from('user_likes').insert({
-        user_id: userId,
-        title_id: titleId,
-      });
+      // Insert user title status as seen with liked=true (will fail silently if duplicate due to UNIQUE constraint)
+      const { error: likeError } = await supabase
+        .from('user_title_status')
+        .insert({
+          user_id: userId,
+          tmdb_id: title.id,
+          status: TitleStatus.SEEN,
+          liked: true,
+        });
 
       if (likeError && likeError.code !== '23505') {
         // 23505 is unique_violation, which is expected for duplicates
@@ -371,7 +373,9 @@ const saveSelections = async () => {
               {{ result.title || result.name }}
             </p>
             <p class="text-xs text-center text-gray-500">
-              {{ result.media_type === 'movie' ? 'Película' : 'Serie' }}
+              {{
+                result.media_type === MediaTypeEnum.movie ? 'Película' : 'Serie'
+              }}
             </p>
           </div>
         </div>

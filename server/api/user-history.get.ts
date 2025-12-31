@@ -2,6 +2,8 @@ import { serverSupabaseUser } from '#supabase/server';
 import { createClient } from '@supabase/supabase-js';
 import { getTMDBConfig } from '../utils/config';
 import { devLog, devError, devWarn, safeError } from '../utils/logger';
+import { TitleStatus } from '@/types/TitleStatus';
+import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 
 /**
  * Get user title status history (seen and not_interested)
@@ -173,7 +175,7 @@ export default defineEventHandler(async (event) => {
         if (movieResult.status === 'fulfilled' && movieResult.value?.id) {
           return {
             ...movieResult.value,
-            type: 'movie',
+            type: MediaTypeEnum.movie,
             tmdb_id: status.tmdb_id,
             status: status.status,
             created_at: status.created_at,
@@ -181,7 +183,7 @@ export default defineEventHandler(async (event) => {
         } else if (tvResult.status === 'fulfilled' && tvResult.value?.id) {
           return {
             ...tvResult.value,
-            type: 'tv',
+            type: MediaTypeEnum.tv,
             tmdb_id: status.tmdb_id,
             status: status.status,
             created_at: status.created_at,
@@ -190,7 +192,7 @@ export default defineEventHandler(async (event) => {
         return null;
       });
 
-      if (status.status === 'seen') {
+      if (status.status === TitleStatus.SEEN) {
         seenPromises.push(fetchPromise);
       } else {
         notInterestedPromises.push(fetchPromise);

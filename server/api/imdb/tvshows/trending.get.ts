@@ -1,5 +1,6 @@
 import { getTMDBConfig } from '../../../utils/config';
 import { createError, setHeader } from 'h3';
+import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 import type { MediaResponse } from '@/types/Media';
 import type { Media } from '@/types/Media';
 
@@ -191,7 +192,7 @@ export default defineCachedEventHandler(
               backdrop_path: tvShowResponse.backdrop_path,
               first_air_date: tvShowResponse.first_air_date,
               vote_average: tvShowResponse.vote_average,
-              media_type: 'tv' as const,
+              media_type: MediaTypeEnum.tv,
               original_language: tvShowResponse.original_language,
               imdb_id: imdbId,
             };

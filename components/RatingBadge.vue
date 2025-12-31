@@ -11,7 +11,7 @@
       'bg-red-600/80 dark:bg-red-500/70 border-red-500/30 text-red-300':
         rating && rating < 5,
     }"
-    class="absolute px-4 py-1.5 text-xs md:text-sm font-medium rounded-full shadow-sm shadow-black/50 top-2 right-3 border whitespace-nowrap flex items-center gap-1"
+    class="px-4 py-1.5 text-xs md:text-sm font-medium rounded-full shadow-sm shadow-black/50 border whitespace-nowrap flex items-center gap-1"
   >
     <IconStar icon-class="w-3 h-3" />
     {{

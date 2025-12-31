@@ -67,9 +67,10 @@ export const useUserStore = defineStore('user', {
         const [profileResult, likesResult] = await Promise.all([
           supabase.from('profiles').select('*').eq('id', userId).single(),
           supabase
-            .from('user_likes')
+            .from('user_title_status')
             .select('*', { count: 'exact', head: true })
-            .eq('user_id', userId),
+            .eq('user_id', userId)
+            .eq('liked', true),
         ]);
 
         const { data: profileData, error: profileError } = profileResult;

@@ -91,23 +91,29 @@ export interface Database {
           updated_at?: string;
         };
       };
-      user_likes: {
+      user_title_status: {
         Row: {
           id: string;
           user_id: string;
-          title_id: string;
+          tmdb_id: number;
+          status: 'seen' | 'not_interested' | 'watch_later';
+          liked: boolean;
           created_at: string;
         };
         Insert: {
           id?: string;
           user_id: string;
-          title_id: string;
+          tmdb_id: number;
+          status: 'seen' | 'not_interested' | 'watch_later';
+          liked?: boolean;
           created_at?: string;
         };
         Update: {
           id?: string;
           user_id?: string;
-          title_id?: string;
+          tmdb_id?: number;
+          status?: 'seen' | 'not_interested' | 'watch_later';
+          liked?: boolean;
           created_at?: string;
         };
       };

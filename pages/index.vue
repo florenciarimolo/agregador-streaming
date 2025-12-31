@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useUserStore } from '../stores/user';
 import { Recommendations, Recommendation } from '@/types/Recommendation';
+import { TitleStatus } from '@/types/TitleStatus';
 import { nextTick, onMounted, computed } from 'vue';
 
 // Type for Supabase user that may have either 'id' or 'sub' as identifier
@@ -249,10 +250,11 @@ watch(
   { immediate: true }
 );
 
-// Handle marking a title as seen or not interested
+// Handle marking a title with different statuses
 const handleTitleStatus = async (
   title: Recommendation,
-  status: 'seen' | 'not_interested'
+  status: TitleStatus,
+  liked: boolean = false
 ) => {
   try {
     const {
@@ -272,23 +274,54 @@ const handleTitleStatus = async (
       body: {
         tmdb_id: title.tmdb_id,
         status,
+        liked,
       },
     });
 
-    // Optimistically remove from UI
-    recommendations.value = {
-      recommended: recommendations.value.recommended.filter(
-        (r) => r.tmdb_id !== title.tmdb_id
-      ),
-      easyToWatch: recommendations.value.easyToWatch.filter(
-        (r) => r.tmdb_id !== title.tmdb_id
-      ),
-      basedOnLikes: recommendations.value.basedOnLikes.filter(
-        (r) => r.tmdb_id !== title.tmdb_id
-      ),
-    };
+    // Optimistically remove from UI (except watch_later which stays)
+    if (status !== TitleStatus.WATCH_LATER) {
+      recommendations.value = {
+        recommended: recommendations.value.recommended.filter(
+          (r) => r.tmdb_id !== title.tmdb_id
+        ),
+        easyToWatch: recommendations.value.easyToWatch.filter(
+          (r) => r.tmdb_id !== title.tmdb_id
+        ),
+        basedOnLikes: recommendations.value.basedOnLikes.filter(
+          (r) => r.tmdb_id !== title.tmdb_id
+        ),
+      };
+    }
   } catch (error) {
     console.error('Error updating title status:', error);
+  }
+};
+
+// Handle marking as liked (updates existing status with liked=true)
+const handleMarkLiked = async (title: Recommendation) => {
+  try {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session?.access_token) {
+      return;
+    }
+
+    // Update or insert with liked=true
+    await $fetch('/api/user-title-status', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: {
+        tmdb_id: title.tmdb_id,
+        status: TitleStatus.SEEN, // Default to seen when liked
+        liked: true,
+      },
+    });
+  } catch (error) {
+    console.error('Error marking title as liked:', error);
   }
 };
 
@@ -463,8 +496,14 @@ onMounted(() => {
               title="Recomendado para ti"
               description="Elegidas pensando en ti y en lo que sueles disfrutar."
               :recommendations="recommendations.recommended"
-              @mark-seen="handleTitleStatus($event, 'seen')"
-              @mark-not-interested="handleTitleStatus($event, 'not_interested')"
+              @mark-seen="handleTitleStatus($event, TitleStatus.SEEN)"
+              @mark-not-interested="
+                handleTitleStatus($event, TitleStatus.NOT_INTERESTED)
+              "
+              @mark-liked="handleMarkLiked($event)"
+              @mark-watch-later="
+                handleTitleStatus($event, TitleStatus.WATCH_LATER)
+              "
             />
 
             <RecommendationSection
@@ -476,8 +515,14 @@ onMounted(() => {
               title="Fácil de ver / Baja atención"
               description="Para esos momentos en los que quieres ver algo sin complicarte."
               :recommendations="recommendations.easyToWatch"
-              @mark-seen="handleTitleStatus($event, 'seen')"
-              @mark-not-interested="handleTitleStatus($event, 'not_interested')"
+              @mark-seen="handleTitleStatus($event, TitleStatus.SEEN)"
+              @mark-not-interested="
+                handleTitleStatus($event, TitleStatus.NOT_INTERESTED)
+              "
+              @mark-liked="handleMarkLiked($event)"
+              @mark-watch-later="
+                handleTitleStatus($event, TitleStatus.WATCH_LATER)
+              "
             />
 
             <RecommendationSection
@@ -489,8 +534,14 @@ onMounted(() => {
               title="Basado en lo que te gusta"
               description="Porque ya nos has dicho qué te funciona."
               :recommendations="recommendations.basedOnLikes"
-              @mark-seen="handleTitleStatus($event, 'seen')"
-              @mark-not-interested="handleTitleStatus($event, 'not_interested')"
+              @mark-seen="handleTitleStatus($event, TitleStatus.SEEN)"
+              @mark-not-interested="
+                handleTitleStatus($event, TitleStatus.NOT_INTERESTED)
+              "
+              @mark-liked="handleMarkLiked($event)"
+              @mark-watch-later="
+                handleTitleStatus($event, TitleStatus.WATCH_LATER)
+              "
             />
           </div>
         </div>

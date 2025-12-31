@@ -35,27 +35,15 @@ CREATE TABLE IF NOT EXISTS public.titles (
 CREATE INDEX IF NOT EXISTS idx_titles_tmdb_id ON public.titles(tmdb_id);
 CREATE INDEX IF NOT EXISTS idx_titles_type ON public.titles(type);
 
--- User likes table (user's selected titles)
-CREATE TABLE IF NOT EXISTS public.user_likes (
-  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-  user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
-  title_id UUID REFERENCES public.titles(id) ON DELETE CASCADE NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL,
-  UNIQUE(user_id, title_id) -- Prevent duplicate likes
-);
-
--- Index for faster queries
-CREATE INDEX IF NOT EXISTS idx_user_likes_user_id ON public.user_likes(user_id);
-CREATE INDEX IF NOT EXISTS idx_user_likes_title_id ON public.user_likes(title_id);
-
--- User title status table (tracks seen/not_interested titles)
+-- User title status table (tracks seen/not_interested/watch_later titles)
 CREATE TABLE IF NOT EXISTS public.user_title_status (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
   tmdb_id INTEGER NOT NULL,
-  status TEXT NOT NULL CHECK (status IN ('seen', 'not_interested')),
+  status TEXT NOT NULL CHECK (status IN ('seen', 'not_interested', 'watch_later')),
+  liked BOOLEAN DEFAULT FALSE NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL,
-  UNIQUE(user_id, tmdb_id) -- Prevent duplicate statuses
+  UNIQUE(user_id, tmdb_id) -- Prevent duplicate statuses for same user/title (one status per title)
 );
 
 -- Index for faster queries
@@ -67,7 +55,6 @@ CREATE INDEX IF NOT EXISTS idx_user_title_status_tmdb_id ON public.user_title_st
 -- Enable RLS on all tables
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.titles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.user_likes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_title_status ENABLE ROW LEVEL SECURITY;
 
 -- Profiles policies
@@ -105,22 +92,6 @@ CREATE POLICY "Titles are viewable by everyone"
 CREATE POLICY "Authenticated users can insert titles"
   ON public.titles FOR INSERT
   WITH CHECK (auth.role() = 'authenticated');
-
--- User likes policies
--- Users can view their own likes
-CREATE POLICY "Users can view own likes"
-  ON public.user_likes FOR SELECT
-  USING (auth.uid() = user_id);
-
--- Users can insert their own likes (max 10 enforced in application)
-CREATE POLICY "Users can insert own likes"
-  ON public.user_likes FOR INSERT
-  WITH CHECK (auth.uid() = user_id);
-
--- Users can delete their own likes
-CREATE POLICY "Users can delete own likes"
-  ON public.user_likes FOR DELETE
-  USING (auth.uid() = user_id);
 
 -- User title status policies
 -- Users can view their own title statuses
