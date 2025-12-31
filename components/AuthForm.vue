@@ -23,6 +23,8 @@ const emit = defineEmits<{
   signup: [];
 }>();
 
+const { t } = useI18n();
+
 // Auth composables
 const { signIn, signUp, signInWithMagicLink, resetPassword } = useAuth();
 const userStore = useUserStore();
@@ -60,7 +62,7 @@ const handlePasswordAuth = async () => {
   if (isSignUp.value) {
     const validationResult = validatePassword(password.value);
     if (!validationResult.isValid) {
-      error.value = 'La contraseña no cumple con los requisitos.';
+      error.value = t('auth.passwordNotValid');
       loading.value = false;
       return;
     }
@@ -106,7 +108,7 @@ const handlePasswordAuth = async () => {
       }
     }
   } catch (err: unknown) {
-    error.value = err instanceof Error ? err.message : 'Ocurrió un error';
+    error.value = err instanceof Error ? err.message : t('auth.genericError');
   } finally {
     loading.value = false;
   }
@@ -127,7 +129,7 @@ const handleMagicLink = async () => {
 
     magicLinkSent.value = true;
   } catch (err: unknown) {
-    error.value = err instanceof Error ? err.message : 'Ocurrió un error';
+    error.value = err instanceof Error ? err.message : t('auth.genericError');
   } finally {
     loading.value = false;
   }
@@ -163,25 +165,21 @@ const handleForgotPassword = async () => {
         errorCode === 'unexpected_failure' &&
         errorMessage.includes('Error sending recovery email')
       ) {
-        error.value =
-          'Error al enviar el correo de recuperación. Por favor, intenta de nuevo más tarde.';
+        error.value = t('auth.recoveryEmailError');
       } else if (errorMessage.includes('email')) {
-        error.value =
-          'Por favor, verifica que el correo electrónico sea válido.';
+        error.value = t('auth.invalidEmail');
       } else if (
         errorMessage.includes('rate limit') ||
         errorMessage.includes('too many')
       ) {
-        error.value =
-          'Demasiados intentos. Por favor, espera unos minutos antes de intentar de nuevo.';
+        error.value = t('auth.tooManyAttempts');
       } else if (
         errorMessage.includes('not found') ||
         errorMessage.includes('no user')
       ) {
-        error.value = 'No encontramos una cuenta con este correo electrónico.';
+        error.value = t('auth.accountNotFound');
       } else {
-        error.value =
-          'Error al enviar el enlace de recuperación. Por favor, intenta de nuevo.';
+        error.value = t('auth.recoveryLinkError');
       }
       return;
     }
@@ -189,8 +187,7 @@ const handleForgotPassword = async () => {
     forgotPasswordSent.value = true;
   } catch (err: unknown) {
     console.error('[Client] Forgot password error:', err);
-    error.value =
-      'Ocurrió un error al procesar tu solicitud. Por favor, intenta de nuevo.';
+    error.value = t('auth.requestError');
   } finally {
     loading.value = false;
   }
@@ -219,13 +216,13 @@ const backToLogin = () => {
           <h2
             class="text-2xl font-bold dark:text-gray-300 text-gray-800 mb-2 font-heading"
           >
-            {{ isSignUp ? 'Crear cuenta' : 'Iniciar sesión' }}
+            {{ isSignUp ? t('auth.createAccount') : t('auth.signIn') }}
           </h2>
           <p class="text-sm text-gray-800 dark:text-gray-300">
             {{
               isSignUp
-                ? 'Comienza a recibir recomendaciones personalizadas'
-                : 'Accede a tus recomendaciones'
+                ? t('auth.signUpDescription')
+                : t('auth.signInDescription')
             }}
           </p>
         </div>
@@ -244,7 +241,7 @@ const backToLogin = () => {
             ]"
             @click="authMethod = 'password'"
           >
-            Contraseña
+            {{ t('auth.passwordTab') }}
           </button>
           <button
             :class="[
@@ -255,7 +252,7 @@ const backToLogin = () => {
             ]"
             @click="authMethod = 'magic'"
           >
-            Enlace mágico
+            {{ t('auth.magicLinkTab') }}
           </button>
         </div>
 
@@ -267,10 +264,10 @@ const backToLogin = () => {
           v-if="signUpSuccess || magicLinkSent || forgotPasswordSent"
           :message="
             signUpSuccess
-              ? '¡Revisa tu email para confirmar tu cuenta!'
+              ? t('auth.checkEmailConfirm')
               : forgotPasswordSent
-                ? '¡Revisa tu correo! Te hemos enviado un enlace para restablecer tu contraseña.'
-                : '¡Revisa tu email para el enlace mágico!'
+                ? t('auth.checkEmailRecovery')
+                : t('auth.checkEmailMagicLink')
           "
           type="success"
         />
@@ -285,7 +282,7 @@ const backToLogin = () => {
               for="email"
               class="block text-sm font-medium dark:text-gray-300 text-gray-800 mb-2"
             >
-              Email
+              {{ t('auth.emailLabel') }}
             </label>
             <input
               id="email"
@@ -299,7 +296,7 @@ const backToLogin = () => {
                 -moz-appearance: none;
                 appearance: none;
               "
-              placeholder="tu@email.com"
+              :placeholder="t('auth.emailPlaceholderAuth')"
             />
           </div>
 
@@ -308,7 +305,7 @@ const backToLogin = () => {
               for="password"
               class="block text-sm font-medium dark:text-gray-300 text-gray-800 mb-2"
             >
-              Contraseña
+              {{ t('auth.passwordLabel') }}
             </label>
             <div class="relative">
               <input
@@ -339,7 +336,7 @@ const backToLogin = () => {
                 type="button"
                 data-icon-only="true"
                 :aria-label="
-                  showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'
+                  showPassword ? t('auth.hidePassword') : t('auth.showPassword')
                 "
                 class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 focus:outline-none transition-colors"
                 @click="showPassword = !showPassword"
@@ -402,23 +399,23 @@ const backToLogin = () => {
                 v-for="check in [
                   {
                     key: 'minLength',
-                    label: 'Al menos 8 caracteres',
+                    label: t('auth.passwordMinChars'),
                   },
                   {
                     key: 'hasUppercase',
-                    label: 'Una letra mayúscula',
+                    label: t('auth.passwordUppercase'),
                   },
                   {
                     key: 'hasLowercase',
-                    label: 'Una letra minúscula',
+                    label: t('auth.passwordLowercase'),
                   },
                   {
                     key: 'hasNumber',
-                    label: 'Un número',
+                    label: t('auth.passwordNumber'),
                   },
                   {
                     key: 'hasSpecialChar',
-                    label: 'Un símbolo',
+                    label: t('auth.passwordSymbol'),
                   },
                 ]"
                 :key="check.key"
@@ -478,10 +475,10 @@ const backToLogin = () => {
           >
             {{
               loading
-                ? 'Cargando...'
+                ? t('auth.loadingButton')
                 : isSignUp
-                  ? 'Crear cuenta'
-                  : 'Iniciar sesión'
+                  ? t('auth.createAccountButton')
+                  : t('auth.signInButton')
             }}
           </button>
         </form>
@@ -496,7 +493,7 @@ const backToLogin = () => {
               for="forgot-email"
               class="block text-sm font-medium dark:text-gray-300 text-gray-800 mb-2"
             >
-              Correo electrónico
+              {{ t('auth.emailField') }}
             </label>
             <input
               id="forgot-email"
@@ -521,10 +518,10 @@ const backToLogin = () => {
           >
             {{
               forgotPasswordSent
-                ? '¡Enviado!'
+                ? t('auth.emailSent')
                 : loading
-                  ? 'Enviando...'
-                  : 'Enviar enlace de recuperación'
+                  ? t('auth.sending')
+                  : t('auth.sendRecoveryLink')
             }}
           </button>
 
@@ -535,7 +532,7 @@ const backToLogin = () => {
               class="text-sm text-gray-800 dark:text-gray-300 hover:text-primary dark:hover:text-primary-400 transition-colors no-underline inline-block"
               @click.prevent="backToLogin"
             >
-              Volver al inicio de sesión
+              {{ t('auth.backToSignIn') }}
             </a>
           </div>
         </form>
@@ -547,7 +544,7 @@ const backToLogin = () => {
               for="magic-email"
               class="block text-sm font-medium dark:text-gray-300 text-gray-800 mb-2"
             >
-              Email
+              {{ t('auth.emailLabel') }}
             </label>
             <input
               id="magic-email"
@@ -561,7 +558,7 @@ const backToLogin = () => {
                 -moz-appearance: none;
                 appearance: none;
               "
-              placeholder="tu@email.com"
+              :placeholder="t('auth.emailPlaceholderAuth')"
             />
           </div>
 
@@ -572,10 +569,10 @@ const backToLogin = () => {
           >
             {{
               magicLinkSent
-                ? '¡Enviado!'
+                ? t('auth.emailSent')
                 : loading
-                  ? 'Enviando...'
-                  : 'Enviar enlace mágico'
+                  ? t('auth.sendingMagicLink')
+                  : t('auth.sendMagicLink')
             }}
           </button>
         </form>
@@ -588,11 +585,7 @@ const backToLogin = () => {
             class="text-sm text-gray-800 dark:text-gray-300 hover:text-primary dark:hover:text-primary-400 transition-colors no-underline inline-block"
             @click.prevent="toggleSignUp"
           >
-            {{
-              isSignUp
-                ? '¿Ya tienes cuenta? Inicia sesión'
-                : '¿No tienes cuenta? Regístrate'
-            }}
+            {{ isSignUp ? t('auth.alreadyHaveAccount') : t('auth.noAccount') }}
           </a>
         </div>
 
@@ -606,7 +599,7 @@ const backToLogin = () => {
             class="text-sm hidden text-gray-800 dark:text-gray-300 hover:text-primary dark:hover:text-primary-400 transition-colors no-underline"
             @click.prevent="showForgotPassword"
           >
-            ¿Has olvidado tu contraseña?
+            {{ t('auth.forgotPasswordLink') }}
           </a>
         </div>
       </div>

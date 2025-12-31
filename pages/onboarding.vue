@@ -10,14 +10,15 @@ definePageMeta({
   middleware: 'auth',
 });
 
+const { t } = useI18n();
+
 useHead({
   title: 'Onboarding - UpNext',
 });
 
 useSeoMeta({
   title: 'Onboarding - UpNext',
-  description:
-    'Selecciona tus películas y series favoritas para recibir recomendaciones personalizadas',
+  description: t('onboarding.description'),
 });
 
 interface TitleResult {
@@ -95,7 +96,7 @@ const toggleTitle = (title: TitleResult) => {
     error.value = null; // Clear any previous errors
   } else {
     if (selectedTitles.value.length >= 10) {
-      error.value = 'Solo puedes seleccionar hasta 10 títulos';
+      error.value = t('onboarding.maxTitles');
       setTimeout(() => {
         error.value = null;
       }, 5000);
@@ -126,7 +127,7 @@ const saveSelections = async () => {
         data: { session },
       } = await getSession();
       if (!session?.user) {
-        error.value = 'Debes estar autenticado para guardar tus selecciones.';
+        error.value = t('onboarding.authRequired');
         saving.value = false;
         return;
       }
@@ -219,9 +220,7 @@ const saveSelections = async () => {
   } catch (err: unknown) {
     console.error('Error saving selections:', err);
     const errorMessage =
-      err instanceof Error
-        ? err.message
-        : 'Error al guardar las selecciones. Por favor, inténtalo de nuevo.';
+      err instanceof Error ? err.message : t('onboarding.saveError');
     error.value = errorMessage;
   } finally {
     saving.value = false;
@@ -234,17 +233,16 @@ const saveSelections = async () => {
       <!-- Header -->
       <div class="text-center mb-8">
         <h1 class="text-3xl font-bold dark:text-gray-300 text-gray-800 mb-2">
-          ¿Qué te gusta ver?
+          {{ $t('onboarding.title') }}
         </h1>
         <p class="text-gray-800 dark:text-gray-300">
-          Selecciona hasta 10 películas o series que disfrutes. Esto nos ayuda a
-          recomendarte contenido que te encantará.
+          {{ $t('onboarding.description') }}
         </p>
         <div class="mt-4">
           <span
             class="inline-block px-4 py-2 bg-primary/10 dark:bg-primary-500/20 text-primary dark:text-primary-400 rounded-full text-sm font-medium"
           >
-            {{ selectedTitles.length }} / 10 seleccionados
+            {{ $t('onboarding.selected', { count: selectedTitles.length }) }}
           </span>
         </div>
       </div>
@@ -259,7 +257,7 @@ const saveSelections = async () => {
           <input
             v-model="searchQuery"
             type="text"
-            placeholder="Buscar películas o series..."
+            :placeholder="$t('onboarding.searchPlaceholder')"
             class="w-full px-4 py-3 pl-12 dark:bg-gray-800/70 bg-gray-100/90 dark:text-gray-300 text-gray-800 border border-primary/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary backdrop-blur-xs"
             @input="handleSearch"
           />
@@ -282,7 +280,7 @@ const saveSelections = async () => {
       <!-- Selected Titles -->
       <div v-if="selectedTitles.length > 0" class="mb-6">
         <h2 class="text-lg font-semibold dark:text-gray-300 text-gray-800 mb-3">
-          Tus selecciones
+          {{ $t('onboarding.yourSelections') }}
         </h2>
         <div class="flex flex-wrap gap-3">
           <div
@@ -303,11 +301,15 @@ const saveSelections = async () => {
                 v-else
                 class="w-full h-full bg-gray-700 flex items-center justify-center text-gray-400"
               >
-                Sin imagen
+                {{ $t('onboarding.noImage') }}
               </div>
               <button
                 type="button"
-                :aria-label="`Eliminar ${title.title || title.name}`"
+                :aria-label="
+                  $t('onboarding.removeTitle', {
+                    title: title.title || title.name,
+                  })
+                "
                 data-icon-only="true"
                 class="absolute top-1 right-1 w-7 h-7 !bg-red-500 hover:!bg-red-600 rounded-full flex items-center justify-center text-white shadow-lg transition-all duration-200 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-transparent z-10 !p-0 cursor-pointer"
                 @click.stop="removeTitle(title.id)"
@@ -340,7 +342,7 @@ const saveSelections = async () => {
       <!-- Search Results -->
       <div v-if="searchResults.length > 0" class="mb-6">
         <h2 class="text-lg font-semibold dark:text-gray-300 text-gray-800 mb-3">
-          Resultados de búsqueda
+          {{ $t('onboarding.searchResults') }}
         </h2>
         <div
           class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"
@@ -370,7 +372,7 @@ const saveSelections = async () => {
                   v-else
                   class="w-full h-full bg-gray-700 flex items-center justify-center text-gray-400"
                 >
-                  Sin imagen
+                  {{ $t('onboarding.noImage') }}
                 </div>
                 <div
                   v-if="isSelected(result.id)"
@@ -397,7 +399,9 @@ const saveSelections = async () => {
             </p>
             <p class="text-xs text-center text-gray-500">
               {{
-                result.media_type === MediaTypeEnum.movie ? 'Película' : 'Serie'
+                result.media_type === MediaTypeEnum.movie
+                  ? $t('media.movie')
+                  : $t('media.series')
               }}
             </p>
           </div>
@@ -410,7 +414,7 @@ const saveSelections = async () => {
         class="text-center py-12"
       >
         <p class="text-gray-500 dark:text-gray-400">
-          No se encontraron resultados. Prueba con otro término de búsqueda.
+          {{ $t('onboarding.noResults') }}
         </p>
       </div>
 
@@ -428,7 +432,7 @@ const saveSelections = async () => {
           class="px-6 py-3 bg-primary-800 dark:bg-primary hover:bg-primary-900 dark:hover:bg-primary-600 text-white rounded-lg font-medium text-base transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg backdrop-blur-sm border border-primary-600/50"
           @click="saveSelections"
         >
-          {{ saving ? 'Guardando...' : 'Continuar' }}
+          {{ saving ? $t('onboarding.saving') : $t('onboarding.continue') }}
         </button>
       </div>
 
@@ -442,7 +446,7 @@ const saveSelections = async () => {
             class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"
           ></div>
           <p class="text-lg font-medium dark:text-gray-300 text-gray-800">
-            Guardando tu selección...
+            {{ $t('onboarding.savingSelection') }}
           </p>
         </div>
       </div>

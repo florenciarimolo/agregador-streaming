@@ -15,10 +15,10 @@
           class="h-12 w-12 mx-auto mb-4 object-contain hidden dark:block"
         />
         <h1 class="text-3xl font-bold dark:text-gray-300 text-gray-800 mb-2">
-          Restablecer contraseña
+          {{ $t('auth.newPasswordTitle') }}
         </h1>
         <p class="text-gray-800 dark:text-gray-300">
-          Ingresa tu nueva contraseña
+          {{ $t('auth.newPasswordDescription') }}
         </p>
       </div>
 
@@ -29,10 +29,10 @@
           <h2
             class="text-2xl font-bold dark:text-gray-300 text-gray-800 mb-2 font-heading"
           >
-            Nueva contraseña
+            {{ $t('auth.newPasswordSubtitle') }}
           </h2>
           <p class="text-sm text-gray-800 dark:text-gray-300">
-            Crea una contraseña segura para tu cuenta
+            {{ $t('auth.newPasswordSubtitleDescription') }}
           </p>
         </div>
 
@@ -49,7 +49,7 @@
         <!-- Success message -->
         <AlertMessage
           v-if="passwordReset"
-          message="¡Contraseña actualizada correctamente! Todas las sesiones activas han sido cerradas por seguridad. Redirigiendo al inicio de sesión..."
+          :message="$t('auth.passwordUpdatedSuccess')"
           type="success"
         />
 
@@ -63,7 +63,7 @@
               for="new-password"
               class="block text-sm font-medium dark:text-gray-300 text-gray-700 mb-2"
             >
-              Nueva contraseña
+              {{ $t('auth.newPassword') }}
             </label>
             <div class="relative">
               <input
@@ -86,7 +86,9 @@
                 type="button"
                 data-icon-only="true"
                 :aria-label="
-                  showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'
+                  showPassword
+                    ? $t('auth.hidePassword')
+                    : $t('auth.showPassword')
                 "
                 class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 focus:outline-none transition-colors"
                 @click="showPassword = !showPassword"
@@ -146,23 +148,23 @@
                 v-for="check in [
                   {
                     key: 'minLength',
-                    label: 'Al menos 8 caracteres',
+                    label: $t('auth.passwordMinChars'),
                   },
                   {
                     key: 'hasUppercase',
-                    label: 'Una letra mayúscula',
+                    label: $t('auth.passwordUppercase'),
                   },
                   {
                     key: 'hasLowercase',
-                    label: 'Una letra minúscula',
+                    label: $t('auth.passwordLowercase'),
                   },
                   {
                     key: 'hasNumber',
-                    label: 'Un número',
+                    label: $t('auth.passwordNumber'),
                   },
                   {
                     key: 'hasSpecialChar',
-                    label: 'Un símbolo',
+                    label: $t('auth.passwordSymbol'),
                   },
                 ]"
                 :key="check.key"
@@ -220,7 +222,7 @@
               for="confirm-password"
               class="block text-sm font-medium dark:text-gray-300 text-gray-700 mb-2"
             >
-              Confirmar contraseña
+              {{ $t('auth.confirmPassword') }}
             </label>
             <div class="relative">
               <input
@@ -242,8 +244,8 @@
                 data-icon-only="true"
                 :aria-label="
                   showConfirmPassword
-                    ? 'Ocultar contraseña'
-                    : 'Mostrar contraseña'
+                    ? $t('auth.hidePassword')
+                    : $t('auth.showPassword')
                 "
                 class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 focus:outline-none transition-colors"
                 @click="showConfirmPassword = !showConfirmPassword"
@@ -300,7 +302,7 @@
               "
               class="mt-1.5 text-xs text-red-600 dark:text-red-400"
             >
-              Las contraseñas no coinciden
+              {{ $t('auth.passwordMismatch') }}
             </p>
           </div>
 
@@ -309,7 +311,11 @@
             :disabled="loading || !passwordsMatch || !isPasswordValid"
             class="w-full py-3 px-6 dark:bg-gray-900/90 bg-gray-800/90 hover:dark:bg-gray-800/80 hover:bg-gray-900/90 text-white rounded-lg font-medium transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg border border-gray-700/50 dark:border-gray-600/50"
           >
-            {{ loading ? 'Actualizando...' : 'Actualizar contraseña' }}
+            {{
+              loading
+                ? $t('media.updatingPassword')
+                : $t('media.updatePassword')
+            }}
           </button>
         </form>
 
@@ -322,7 +328,7 @@
             class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"
           ></div>
           <p class="text-sm text-gray-800 dark:text-gray-300">
-            Validando enlace de recuperación...
+            {{ $t('media.validatingRecovery') }}
           </p>
         </div>
 
@@ -336,7 +342,7 @@
             class="text-sm text-primary hover:text-secondary transition-colors underline hover:no-underline inline-block"
             @click.prevent="router.push('/')"
           >
-            Volver al inicio
+            {{ $t('media.backToHome') }}
           </a>
         </div>
       </div>
@@ -357,13 +363,15 @@ definePageMeta({
   middleware: [], // Recovery detection happens globally, not here
 });
 
+const { t } = useI18n();
+
 useHead({
-  title: 'Restablecer contraseña - UpNext',
+  title: t('auth.newPasswordTitle') + ' - UpNext',
 });
 
 useSeoMeta({
-  title: 'Restablecer contraseña - UpNext',
-  description: 'Restablece tu contraseña de UpNext',
+  title: t('auth.newPasswordTitle') + ' - UpNext',
+  description: t('auth.newPasswordDescription'),
 });
 
 const supabase = useSupabaseClient();
@@ -388,9 +396,7 @@ onBeforeRouteLeave((_to, _from, next) => {
   } else if (codeValidated.value && !error.value && !errorMessage.value) {
     // Code is validated and form is shown, but password not reset yet
     // Ask user to confirm before leaving
-    const confirmed = window.confirm(
-      '¿Estás seguro de que quieres salir? Tu contraseña aún no ha sido restablecida.'
-    );
+    const confirmed = window.confirm(t('media.confirmLeave'));
     if (confirmed) {
       next();
     } else {
@@ -439,14 +445,13 @@ onMounted(async () => {
       if (process.env.NODE_ENV === 'development') {
         console.error('[Reset Password] Session error:', sessionError);
       }
-      error.value = 'Error al obtener la sesión. Por favor, intenta de nuevo.';
+      error.value = t('media.sessionError');
       codeValidated.value = true;
       return;
     }
 
     if (!sessionData?.session) {
-      error.value =
-        'No hay una sesión de recuperación activa. Por favor, solicita un nuevo enlace de recuperación.';
+      error.value = t('media.noRecoverySession');
       codeValidated.value = true;
       return;
     }
@@ -477,20 +482,19 @@ onMounted(async () => {
     if (process.env.NODE_ENV === 'development') {
       console.error('[Reset Password] Error:', err);
     }
-    error.value =
-      'Error al validar la sesión de recuperación. Por favor, intenta de nuevo.';
+    error.value = t('media.recoverySessionError');
     codeValidated.value = true;
   }
 });
 
 const handleResetPassword = async () => {
   if (!passwordsMatch.value) {
-    error.value = 'Las contraseñas no coinciden';
+    error.value = t('auth.passwordMismatch');
     return;
   }
 
   if (!isPasswordValid.value) {
-    error.value = 'La contraseña no cumple con los requisitos.';
+    error.value = t('auth.passwordNotValid');
     return;
   }
 
@@ -509,14 +513,11 @@ const handleResetPassword = async () => {
       // Translate error messages to Spanish
       const errorMsg = resetError.message || '';
       if (errorMsg.includes('password')) {
-        error.value =
-          'Error al actualizar la contraseña. Por favor, verifica que cumpla con los requisitos.';
+        error.value = t('media.passwordUpdateError');
       } else if (errorMsg.includes('session') || errorMsg.includes('expired')) {
-        error.value =
-          'La sesión ha expirado. Por favor, solicita un nuevo enlace de recuperación.';
+        error.value = t('media.sessionExpired');
       } else {
-        error.value =
-          'Error al actualizar la contraseña. Por favor, intenta de nuevo.';
+        error.value = t('media.passwordUpdateGenericError');
       }
       return;
     }
@@ -547,8 +548,7 @@ const handleResetPassword = async () => {
     }, 2000);
   } catch (err: unknown) {
     console.error('[Client] Reset password error:', err);
-    error.value =
-      'Ocurrió un error al procesar tu solicitud. Por favor, intenta de nuevo.';
+    error.value = t('media.unexpectedError');
   } finally {
     loading.value = false;
   }

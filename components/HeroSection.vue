@@ -55,14 +55,13 @@ const scrollToHowItWorks = () => {
           -webkit-text-fill-color: transparent;
         "
       >
-        ¿No sabes qué ver ahora?
+        {{ $t('hero.title') }}
       </h1>
       <p
         class="text-lg md:text-xl text-gray-800 dark:text-gray-300 mb-8 max-w-3xl mx-auto leading-relaxed font-medium"
       >
-        UpNext te recomienda películas y series según tu momento, tu energía y
-        el tiempo que tienes.<br />
-        <span class="font-medium">Menos decidir, más ver.</span>
+        {{ $t('hero.description') }}<br />
+        <span class="font-medium">{{ $t('hero.tagline') }}</span>
       </p>
       <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
         <button
@@ -75,7 +74,7 @@ const scrollToHowItWorks = () => {
           class="px-6 py-3 border border-primary-800 dark:border-primary-600/50 text-gray-800 dark:text-gray-300 rounded-lg font-medium text-base hover:bg-primary-800 dark:hover:bg-primary hover:text-white transition-all duration-300 backdrop-blur-sm"
           @click="scrollToHowItWorks"
         >
-          Cómo funciona
+          {{ $t('hero.howItWorksButton') }}
         </button>
       </div>
     </div>

@@ -38,7 +38,7 @@
                 mediaObject.vote_average?.toFixed(1) === '0.0' ||
                 mediaObject.vote_average === 0 ||
                 !mediaObject.vote_average
-                  ? 'N/A'
+                  ? $t('media.notAvailableShort')
                   : mediaObject.vote_average?.toFixed(1)
               }}
             </span>
@@ -77,14 +77,14 @@
             :to="mediaObject.path"
             class="text-primary hover:text-secondary uppercase text-xs sm:text-sm font-semibold md:hidden"
           >
-            Ver detalles
+            {{ $t('media.viewDetails') }}
           </nuxt-link>
           <!-- Desktop: Button -->
           <nuxt-link :to="mediaObject.path" class="hidden md:block">
             <button
               class="w-auto px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm text-white bg-gradient-to-r from-primary via-accent to-secondary hover:from-secondary hover:via-pink-500 hover:to-primary rounded-lg transition-all duration-300 shadow-lg shadow-primary/30"
             >
-              Ver detalles
+              {{ $t('media.viewDetails') }}
             </button>
           </nuxt-link>
         </div>
@@ -124,9 +124,9 @@
             <div
               class="absolute bottom-0 left-0 flex flex-col items-center justify-center w-full h-full px-4 transition-all duration-300 opacity-0 rounded-xl group-hover:opacity-100 group-hover:shadow-primary/40 group-hover:shadow-xl backdrop-blur-md w-inherit dark:bg-black/80 bg-white/80 border border-primary/20"
             >
-              <p class="dark:text-gray-300 text-gray-800 font-semibold"
-                >Ver detalles</p
-              >
+              <p class="dark:text-gray-300 text-gray-800 font-semibold">{{
+                $t('media.viewDetails')
+              }}</p>
             </div>
           </div>
         </nuxt-link>

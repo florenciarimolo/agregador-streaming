@@ -39,7 +39,12 @@ export default defineNuxtConfig({
     typeCheck: false, // Disable during dev for faster startup (use npm run typecheck instead)
   },
 
-  modules: ['@pinia/nuxt', '@nuxtjs/supabase', '@nuxtjs/tailwindcss'],
+  modules: [
+    '@pinia/nuxt',
+    '@nuxtjs/supabase',
+    '@nuxtjs/tailwindcss',
+    '@nuxtjs/i18n',
+  ],
 
   supabase: {
     redirectOptions: {
@@ -88,6 +93,21 @@ export default defineNuxtConfig({
 
   // Add compatibility date to avoid warnings
   compatibilityDate: '2024-04-03',
+
+  i18n: {
+    langDir: 'locales',
+    locales: [
+      {
+        code: 'es',
+        iso: 'es-ES',
+        name: 'Español',
+        file: 'es.json',
+      },
+    ],
+    defaultLocale: 'es',
+    strategy: 'no_prefix',
+    vueI18n: 'i18n.config.ts',
+  },
 
   app: {
     head: {

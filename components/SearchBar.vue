@@ -5,7 +5,7 @@
       <input
         v-model="searchQuery"
         type="text"
-        placeholder="Buscar películas y series..."
+        :placeholder="$t('search.placeholder')"
         class="w-full px-4 py-2 pl-10 pr-4 text-sm dark:text-gray-300 text-gray-800 dark:bg-gray-800/50 bg-white/80 dark:border-gray-600 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-transparent focus:border-transparent backdrop-blur-xs transition-all"
         @input="handleSearch"
         @focus="showResults = true"
@@ -117,8 +117,8 @@
                   <p class="text-xs dark:text-gray-400 text-gray-600 mt-1">
                     {{
                       result.media_type === MediaTypeEnum.movie
-                        ? 'Película'
-                        : 'Serie'
+                        ? $t('media.movie')
+                        : $t('media.series')
                     }}
                     <span v-if="getYear(result)" class="ml-1">
                       ({{ getYear(result) }})
@@ -144,7 +144,7 @@
                       result.vote_average?.toFixed(1) === '0.0' ||
                       result.vote_average === 0 ||
                       !result.vote_average
-                        ? 'N/A'
+                        ? t('media.notAvailableShort')
                         : result.vote_average?.toFixed(1)
                     }}
                   </div>
@@ -172,8 +172,8 @@
               d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
             />
           </svg>
-          <p class="text-sm">No se encontraron resultados</p>
-          <p class="text-xs mt-1">Intenta con otros términos de búsqueda</p>
+          <p class="text-sm">{{ $t('search.noResults') }}</p>
+          <p class="text-xs mt-1">{{ $t('search.tryDifferent') }}</p>
         </div>
       </div>
     </Transition>
@@ -194,8 +194,10 @@ interface Props {
   emitOnSelect?: boolean; // If true, emit event instead of navigating
 }
 
+const { t } = useI18n();
+
 const props = withDefaults(defineProps<Props>(), {
-  placeholder: 'Buscar películas y series...',
+  placeholder: '', // Se usa $t('search.placeholder') directamente en el template
   emitOnSelect: false,
 });
 
@@ -213,7 +215,7 @@ let searchTimeout: ReturnType<typeof setTimeout> | null = null;
 
 // Get title helper
 const getTitle = (result: TMDBSearchResult): string => {
-  return result.title || result.name || 'Sin título';
+  return result.title || result.name || t('media.noTitle');
 };
 
 // Get year helper

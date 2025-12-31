@@ -1,16 +1,20 @@
 <script setup lang="ts">
+const { t } = useI18n();
+
 useHead({
-  title: 'Búsqueda - UpNext',
+  title: `${t('search.title')} - UpNext`,
 });
 
 useSeoMeta({
-  title: 'Búsqueda - UpNext',
-  description: 'Busca películas y series en UpNext',
+  title: `${t('search.title')} - UpNext`,
+  description: t('search.title'),
 });
 </script>
 
 <template>
-  <h1>Búsqueda</h1>
-  <router-link to="/">Volver a inicio</router-link>
-  <router-link to="/library">Ir a biblioteca</router-link>
+  <h1>{{ $t('search.title') }}</h1>
+  <nuxt-link to="/"
+    >{{ $t('common.back') }} a {{ $t('navbar.home') }}</nuxt-link
+  >
+  <nuxt-link to="/library">Ir a biblioteca</nuxt-link>
 </template>

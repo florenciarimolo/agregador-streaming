@@ -4,11 +4,10 @@
       <h1
         class="text-3xl md:text-4xl font-bold dark:text-gray-300 text-gray-800 mb-2 font-heading"
       >
-        No me interesa
+        {{ $t('notInterested.title') }}
       </h1>
       <p class="text-gray-800 dark:text-gray-300">
-        Películas y series que has marcado como no te interesan. Puedes deshacer
-        esta acción.
+        {{ $t('notInterested.description') }}
       </p>
     </div>
 
@@ -29,7 +28,7 @@
         class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"
       ></div>
       <p class="text-gray-800 dark:text-gray-300">
-        Cargando títulos no deseados...
+        {{ $t('notInterested.loading') }}
       </p>
     </div>
 
@@ -37,7 +36,7 @@
     <div v-else>
       <div v-if="notInterestedTitles.length === 0" class="text-center py-12">
         <p class="text-gray-500 dark:text-gray-400">
-          No has marcado ningún título como no te interesa todavía.
+          {{ $t('notInterested.empty') }}
         </p>
       </div>
 
@@ -53,7 +52,7 @@
           <!-- Poster -->
           <nuxt-link
             :to="`/${title.type === MediaTypeEnum.movie ? 'pelicula' : 'serie'}/${title.tmdb_id}`"
-            :aria-label="`Ver detalles de ${title.title}`"
+            :aria-label="$t('media.viewDetailsOf', { title: title.title })"
             class="block aspect-[2/3] relative bg-gray-800 rounded-t-lg focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 overflow-visible"
           >
             <div
@@ -91,8 +90,8 @@
             <button
               type="button"
               class="tooltip-container absolute top-2 right-2 z-20 p-2 rounded-full bg-black/50 hover:bg-primary/80 backdrop-blur-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-black/50 pointer-events-auto"
-              :aria-label="`Deshacer: ${title.title}`"
-              title="Deshacer"
+              :aria-label="$t('undo.undo') + ': ' + title.title"
+              :title="$t('undo.undo')"
               @click.stop.prevent="handleUndo(title)"
               @mousedown.stop.prevent
             >
@@ -109,7 +108,7 @@
                   d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"
                 />
               </svg>
-              <span class="tooltip">Deshacer</span>
+              <span class="tooltip">{{ $t('undo.undo') }}</span>
             </button>
           </nuxt-link>
 
@@ -121,7 +120,11 @@
               {{ title.title }}
             </h3>
             <p class="text-xs dark:text-gray-300 text-gray-500 mb-2">
-              {{ title.type === MediaTypeEnum.movie ? 'Película' : 'Serie' }}
+              {{
+                title.type === MediaTypeEnum.movie
+                  ? $t('media.movie')
+                  : $t('media.series')
+              }}
             </p>
           </div>
         </div>
@@ -139,14 +142,15 @@ import { useUndoToast } from '@/composables/useUndoToast';
 import AlertMessage from '@/components/AlertMessage.vue';
 import UndoToast from '@/components/UndoToast.vue';
 
+const { t } = useI18n();
+
 useHead({
-  title: 'No me interesa - UpNext',
+  title: `${t('notInterested.title')} - UpNext`,
 });
 
 useSeoMeta({
-  title: 'No me interesa - UpNext',
-  description:
-    'Revisa las películas y series que has marcado como no te interesan',
+  title: `${t('notInterested.title')} - UpNext`,
+  description: t('notInterested.description'),
 });
 
 type NotInterestedTitle = {
@@ -195,7 +199,7 @@ const fetchNotInterestedTitles = async () => {
     notInterestedTitles.value = (response.not_interested || []).map(
       (item: HistoryResponseItem) => ({
         tmdb_id: item.tmdb_id,
-        title: item.title || item.name || 'Sin título',
+        title: item.title || item.name || t('notInterested.noTitle'),
         type: item.type as typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv,
         poster_path: item.poster_path,
         created_at: item.created_at,
@@ -205,7 +209,7 @@ const fetchNotInterestedTitles = async () => {
     if (process.env.NODE_ENV === 'development') {
       console.error('Error fetching not interested titles:', error);
     }
-    showError('Error al cargar los títulos no deseados.');
+    showError(t('notInterested.errorLoading'));
   } finally {
     isLoading.value = false;
   }
@@ -237,7 +241,7 @@ const handleUndo = async (title: NotInterestedTitle) => {
     } = await getSession();
 
     if (!session?.access_token) {
-      showError('No estás autenticado. Por favor, inicia sesión.');
+      showError(t('notInterested.notAuthenticated'));
       // Restore on error
       notInterestedTitles.value.push(originalTitle);
       isUndoing.value = false;
@@ -257,9 +261,9 @@ const handleUndo = async (title: NotInterestedTitle) => {
 
     // Show undo toast
     showToast(
-      `"${title.title}" eliminado de no me interesa`,
+      t('notInterested.titleRemoved', { title: title.title }),
       {
-        label: 'Deshacer',
+        label: t('undo.undo'),
         action: async () => {
           // Re-add as not_interested
           await $fetch('/api/users/title-status', {
@@ -284,7 +288,7 @@ const handleUndo = async (title: NotInterestedTitle) => {
     if (process.env.NODE_ENV === 'development') {
       console.error('Error undoing not interested:', error);
     }
-    showError('Error al deshacer. Por favor, intenta de nuevo.');
+    showError(t('notInterested.errorUndo'));
     // Restore on error
     notInterestedTitles.value.push(originalTitle);
     await fetchNotInterestedTitles();

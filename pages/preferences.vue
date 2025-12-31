@@ -4,11 +4,10 @@
       <h1
         class="text-3xl md:text-4xl font-bold dark:text-gray-300 text-gray-800 mb-2 font-heading"
       >
-        Editar preferencias
+        {{ $t('preferences.editTitle') }}
       </h1>
       <p class="text-gray-800 dark:text-gray-300">
-        Gestiona tus películas y series favoritas. Puedes tener hasta 10
-        títulos.
+        {{ $t('preferences.editDescription') }}
       </p>
     </div>
 
@@ -41,11 +40,14 @@
           <h3
             class="text-lg font-semibold dark:text-gray-300 text-gray-800 mb-2"
           >
-            Confirmar eliminación
+            {{ $t('preferences.confirmDelete') }}
           </h3>
           <p class="text-gray-800 dark:text-gray-300 mb-4">
-            ¿Estás seguro de que quieres eliminar "{{ titleToDelete.title }}" de
-            tus preferencias?
+            {{
+              $t('preferences.confirmDeleteMessage', {
+                title: titleToDelete.title,
+              })
+            }}
           </p>
           <div class="flex gap-3 justify-end">
             <button
@@ -53,14 +55,14 @@
               class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
               @click="titleToDelete = null"
             >
-              Cancelar
+              {{ $t('common.cancel') }}
             </button>
             <button
               type="button"
               class="px-4 py-2 text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors"
               @click="confirmRemoveTitle"
             >
-              Eliminar
+              {{ $t('common.delete') }}
             </button>
           </div>
         </div>
@@ -72,7 +74,7 @@
       <h2
         class="text-xl font-semibold dark:text-gray-300 text-gray-800 mb-4 font-heading"
       >
-        Agregar título
+        {{ $t('preferences.addTitle') }}
       </h2>
       <div class="max-w-2xl">
         <SearchBar
@@ -84,7 +86,7 @@
         v-if="likedTitles.length >= 10"
         class="mt-2 text-sm text-amber-600 dark:text-amber-400"
       >
-        Has alcanzado el límite de 10 títulos. Elimina uno para agregar otro.
+        {{ $t('preferences.limitReached') }}
       </p>
     </div>
 
@@ -93,7 +95,9 @@
       <div
         class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"
       ></div>
-      <p class="text-gray-800 dark:text-gray-300">Cargando preferencias...</p>
+      <p class="text-gray-800 dark:text-gray-300">{{
+        $t('preferences.loading')
+      }}</p>
     </div>
 
     <!-- Liked Titles Grid -->
@@ -101,7 +105,7 @@
       <h2
         class="text-xl font-semibold dark:text-gray-300 text-gray-800 mb-4 font-heading"
       >
-        Tus títulos ({{ likedTitles.length }}/10)
+        {{ $t('preferences.yourTitles', { count: likedTitles.length }) }}
       </h2>
       <div
         class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4"
@@ -114,7 +118,7 @@
           <!-- Poster -->
           <nuxt-link
             :to="`/${title.type === MediaTypeEnum.movie ? 'pelicula' : 'serie'}/${title.tmdb_id}`"
-            :aria-label="`Ver detalles de ${title.title}`"
+            :aria-label="$t('media.viewDetailsOf', { title: title.title })"
             class="block aspect-[2/3] relative bg-gray-800 rounded-t-lg focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
           >
             <div
@@ -123,7 +127,7 @@
             >
               <img
                 :src="`https://image.tmdb.org/t/p/w500${title.poster_path}`"
-                :alt="`Poster de ${title.title}`"
+                :alt="$t('media.posterOf', { title: title.title })"
                 class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                 loading="lazy"
                 decoding="async"
@@ -133,7 +137,9 @@
               v-else
               class="w-full h-full flex items-center justify-center text-gray-400 overflow-hidden rounded-t-lg"
               role="img"
-              :aria-label="`Sin poster disponible para ${title.title}`"
+              :aria-label="
+                $t('media.noPosterAvailableFor', { title: title.title })
+              "
             >
               <svg
                 class="w-12 h-12"
@@ -155,8 +161,10 @@
             <button
               type="button"
               class="tooltip-container absolute top-2 right-2 z-20 p-2 rounded-full bg-black/50 hover:bg-red-600/80 backdrop-blur-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-black/50 pointer-events-auto"
-              :aria-label="`Eliminar ${title.title}`"
-              title="Eliminar de la lista"
+              :aria-label="
+                $t('preferences.removeTitle', { title: title.title })
+              "
+              :title="$t('preferences.removeFromList')"
               :disabled="isRemoving"
               @click.stop.prevent="handleRemoveTitle(title)"
               @mousedown.stop.prevent
@@ -174,7 +182,9 @@
                   d="M6 18L18 6M6 6l12 12"
                 />
               </svg>
-              <span class="tooltip">Eliminar de la lista</span>
+              <span class="tooltip">{{
+                $t('preferences.removeFromList')
+              }}</span>
             </button>
           </nuxt-link>
 
@@ -186,7 +196,11 @@
               {{ title.title }}
             </h3>
             <p class="text-xs dark:text-gray-300 text-gray-500 mb-2">
-              {{ title.type === MediaTypeEnum.movie ? 'Película' : 'Serie' }}
+              {{
+                title.type === MediaTypeEnum.movie
+                  ? $t('media.movie')
+                  : $t('media.series')
+              }}
             </p>
           </div>
         </div>
@@ -212,8 +226,7 @@
         />
       </svg>
       <p class="text-gray-800 dark:text-gray-300">
-        Aún no has agregado ningún título. Usa el buscador arriba para agregar
-        tus favoritos.
+        {{ $t('preferences.emptyState') }}
       </p>
     </div>
   </div>
@@ -227,6 +240,7 @@ const user = useSupabaseUser();
 import { useUserStore } from '@/stores/user';
 import { TitleStatus } from '@/types/TitleStatus';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
+const { t } = useI18n();
 import {
   getUserLikedTitles,
   deleteUserTitleStatus,
@@ -358,10 +372,10 @@ const confirmRemoveTitle = async () => {
 
     // Update user store
     await userStore.fetchProfile();
-    showSuccess('Título eliminado exitosamente.');
+    showSuccess(t('preferences.titleRemoved'));
   } catch (error) {
     console.error('Error removing title:', error);
-    showError('Error al eliminar el título. Por favor, intenta de nuevo.');
+    showError(t('preferences.errorRemoving'));
     // Refetch on error
     await fetchLikedTitles();
   } finally {
@@ -376,9 +390,7 @@ const handleTitleSelected = async (result: TMDBSearchResult) => {
 
   // Check limit
   if (likedTitles.value.length >= 10) {
-    showError(
-      'Has alcanzado el límite de 10 títulos. Elimina uno para agregar otro.'
-    );
+    showError(t('preferences.limitReached'));
     return;
   }
 
@@ -387,13 +399,13 @@ const handleTitleSelected = async (result: TMDBSearchResult) => {
     (t) => t.tmdb_id === result.id && t.type === result.media_type
   );
   if (alreadyLiked) {
-    showError('Este título ya está en tus preferencias.');
+    showError(t('preferences.alreadyInPreferences'));
     return;
   }
 
   try {
     if (!result.media_type) {
-      showError('Tipo de medio no válido.');
+      showError(t('preferences.invalidMediaType'));
       return;
     }
     // Check if title exists in database
@@ -409,7 +421,7 @@ const handleTitleSelected = async (result: TMDBSearchResult) => {
     const { data: existingLike } = await getUserLikedTitle(userId, result.id);
 
     if (existingLike) {
-      showError('Este título ya está en tus preferencias.');
+      showError(t('preferences.alreadyInPreferences'));
       // Refetch to sync UI
       await fetchLikedTitles();
       return;
@@ -446,7 +458,7 @@ const handleTitleSelected = async (result: TMDBSearchResult) => {
     if (likeError) {
       if (isUniqueViolationError(likeError)) {
         // Unique violation - already liked
-        showError('Este título ya está en tus preferencias.');
+        showError(t('preferences.alreadyInPreferences'));
         // Refetch to sync UI
         await fetchLikedTitles();
         return;
@@ -472,10 +484,10 @@ const handleTitleSelected = async (result: TMDBSearchResult) => {
 
     // Update user store
     await userStore.fetchProfile();
-    showSuccess('Título agregado exitosamente.');
+    showSuccess(t('preferences.titleAdded'));
   } catch (error) {
     console.error('Error adding title:', error);
-    showError('Error al agregar el título. Por favor, intenta de nuevo.');
+    showError(t('preferences.errorAdding'));
   }
 };
 
@@ -490,7 +502,7 @@ definePageMeta({
 });
 
 useHead({
-  title: 'Editar preferencias - UpNext',
+  title: t('preferences.editTitle') + ' - UpNext',
 });
 </script>
 

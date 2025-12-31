@@ -4,7 +4,7 @@ import { Recommendation } from '@/types/Recommendation';
 import { TitleStatus } from '@/types/TitleStatus';
 import { getSession } from '@/composables/database/auth';
 import { useUndoToast } from '@/composables/useUndoToast';
-import { nextTick, onMounted, computed, watch } from 'vue';
+import { nextTick, onMounted, computed, watch, watchEffect } from 'vue';
 
 // Type for Supabase user that may have either 'id' or 'sub' as identifier
 type SupabaseUserWithSub = {
@@ -25,19 +25,22 @@ definePageMeta({
   middleware: [],
 });
 
-useHead({
-  title: 'UpNext - ¿No sabes qué ver ahora?',
-});
+const { t } = useI18n();
 
-useSeoMeta({
-  title: 'UpNext - ¿No sabes qué ver ahora?',
-  description:
-    'UpNext te recomienda películas y series según tu momento, tu energía y el tiempo que tienes. Menos decidir, más ver.',
-  ogTitle: 'UpNext - ¿No sabes qué ver ahora?',
-  ogDescription:
-    'UpNext te recomienda películas y series según tu momento, tu energía y el tiempo que tienes. Menos decidir, más ver.',
-  ogType: 'website',
-  twitterCard: 'summary_large_image',
+// Use watchEffect to ensure i18n messages are loaded before setting SEO meta
+watchEffect(() => {
+  useHead({
+    title: t('seo.homeTitle'),
+  });
+
+  useSeoMeta({
+    title: t('seo.homeTitle'),
+    description: t('seo.homeDescription'),
+    ogTitle: t('seo.homeTitle'),
+    ogDescription: t('seo.homeDescription'),
+    ogType: 'website',
+    twitterCard: 'summary_large_image',
+  });
 });
 
 // Auth state
@@ -295,9 +298,9 @@ const handleTitleStatus = async (
     // Show toast with appropriate message and action based on status
     if (status === TitleStatus.NOT_INTERESTED) {
       showToast(
-        `"${title.title}" marcado como no me interesa`,
+        t('home.titleMarkedNotInterested', { title: title.title }),
         {
-          label: 'Deshacer',
+          label: t('undo.undo'),
           action: async () => {
             // Undo: delete the not_interested status
             await $fetch('/api/users/title-status', {
@@ -317,9 +320,9 @@ const handleTitleStatus = async (
       );
     } else if (status === TitleStatus.SEEN) {
       showToast(
-        `"${title.title}" marcado como visto`,
+        t('home.titleMarkedSeen', { title: title.title }),
         {
-          label: 'Ver vistos',
+          label: t('home.viewSeen'),
           action: async () => {
             await navigateTo('/seen');
           },
@@ -328,9 +331,9 @@ const handleTitleStatus = async (
       );
     } else if (status === TitleStatus.WATCHLIST) {
       showToast(
-        `"${title.title}" guardado para ver más tarde`,
+        t('home.titleSavedWatchlist', { title: title.title }),
         {
-          label: 'Ver lista',
+          label: t('home.viewList'),
           action: async () => {
             await navigateTo('/watchlist');
           },
@@ -352,10 +355,10 @@ const handleTitleStatus = async (
     // Show error toast
     const errorMessage =
       status === TitleStatus.WATCHLIST
-        ? `Error al guardar "${title.title}" para ver más tarde`
+        ? t('home.errorSavingWatchlist', { title: title.title })
         : status === TitleStatus.SEEN
-          ? `Error al marcar "${title.title}" como visto`
-          : `Error al actualizar el estado de "${title.title}"`;
+          ? t('home.errorMarkingSeen', { title: title.title })
+          : t('home.errorUpdatingStatus', { title: title.title });
     showToast(errorMessage, null, 3000);
   }
 };
@@ -395,9 +398,9 @@ const handleMarkLiked = async (title: Recommendation) => {
 
     // Show toast with link to see liked titles
     showToast(
-      `"${title.title}" agregado a tus favoritos`,
+      t('home.titleAddedFavorites', { title: title.title }),
       {
-        label: 'Ver favoritos',
+        label: t('home.viewFavorites'),
         action: async () => {
           await navigateTo('/profile');
         },
@@ -414,7 +417,11 @@ const handleMarkLiked = async (title: Recommendation) => {
       console.error('[handleMarkLiked] Error:', error);
     }
     // Show error toast
-    showToast(`Error al agregar "${title.title}" a favoritos`, null, 3000);
+    showToast(
+      t('home.errorAddingFavorites', { title: title.title }),
+      null,
+      3000
+    );
   }
 };
 
@@ -480,7 +487,7 @@ const populatePool = async () => {
     } = await getSession();
 
     if (!session?.access_token) {
-      showToast('Error: No se pudo obtener la sesión', null, 3000);
+      showToast(t('home.sessionError'), null, 3000);
       return;
     }
 
@@ -497,7 +504,7 @@ const populatePool = async () => {
     }
 
     showToast(
-      `Pool poblado: ${result.inserted} recomendaciones agregadas`,
+      t('home.poolPopulated', { inserted: result.inserted }),
       null,
       3000
     );
@@ -506,11 +513,7 @@ const populatePool = async () => {
     await fetchRecommendations();
   } catch (error) {
     console.error('[PopulatePool] Error:', error);
-    showToast(
-      'Error al generar recomendaciones. Por favor, intenta de nuevo.',
-      null,
-      3000
-    );
+    showToast(t('home.generateError'), null, 3000);
   } finally {
     populatingPool.value = false;
   }
@@ -549,7 +552,9 @@ onMounted(() => {
             (initialProfileLoaded && !userStore.hasCompletedOnboarding))
         "
         :button-text="
-          !effectiveUser ? 'Descubrir qué ver' : 'Ver recomendaciones'
+          !effectiveUser
+            ? $t('hero.discoverButton')
+            : $t('hero.recommendationsButton')
         "
         :show-auth-form="showAuthForm"
         :is-authenticated="!!effectiveUser"
@@ -582,8 +587,8 @@ onMounted(() => {
             v-if="loadingRecommendations || populatingPool"
             :message="
               populatingPool
-                ? 'Generando recomendaciones...'
-                : 'Cargando recomendaciones...'
+                ? $t('home.generatingButton')
+                : $t('home.loadingRecommendations')
             "
           />
 
@@ -617,15 +622,15 @@ onMounted(() => {
               >
                 {{
                   userStore.hasLikes
-                    ? 'Generando tus recomendaciones'
-                    : 'Aún no hay recomendaciones'
+                    ? $t('home.generatingRecommendations')
+                    : $t('home.noRecommendations')
                 }}
               </h3>
               <p class="text-gray-800 dark:text-gray-300 mb-6">
                 {{
                   userStore.hasLikes
-                    ? 'Estamos preparando recomendaciones personalizadas basadas en tus gustos. Esto puede tardar unos momentos.'
-                    : 'Para recibir recomendaciones personalizadas, primero necesitas agregar películas y series que te gusten. Esto nos ayuda a conocerte mejor y sugerirte contenido que realmente disfrutarás.'
+                    ? $t('home.generatingDescription')
+                    : $t('home.noRecommendationsDescription')
                 }}
               </p>
               <div v-if="userStore.hasLikes" class="space-y-3">
@@ -636,13 +641,12 @@ onMounted(() => {
                 >
                   {{
                     populatingPool
-                      ? 'Generando recomendaciones...'
-                      : 'Generar recomendaciones ahora'
+                      ? $t('home.generatingButton')
+                      : $t('home.generateButton')
                   }}
                 </button>
                 <p class="text-sm text-gray-600 dark:text-gray-400">
-                  Si ya esperaste un momento y no aparecen recomendaciones, haz
-                  clic en el botón para generarlas manualmente.
+                  {{ $t('home.manualGenerateHint') }}
                 </p>
               </div>
               <nuxt-link
@@ -650,7 +654,7 @@ onMounted(() => {
                 to="/onboarding"
                 class="inline-block px-6 py-3 bg-primary-800 dark:bg-primary hover:bg-primary-900 dark:hover:bg-primary-600 text-white rounded-lg font-medium text-base transition-all duration-300 shadow-lg backdrop-blur-sm border border-primary-600/50"
               >
-                Agregar favoritos
+                {{ $t('home.addFavorites') }}
               </nuxt-link>
             </div>
           </div>
@@ -660,8 +664,8 @@ onMounted(() => {
             <RecommendationSection
               v-if="recommendations && recommendations.length > 0"
               :key="`rec-${recommendations.length}`"
-              title="Recomendaciones para ti"
-              description="Personalizadas según tu estado de ánimo y nivel de atención."
+              :title="$t('home.recommendationsTitle')"
+              :description="$t('home.recommendationsDescription')"
               :recommendations="recommendations"
               @mark-seen="handleTitleStatus($event, TitleStatus.SEEN)"
               @mark-not-interested="
@@ -694,7 +698,7 @@ onMounted(() => {
         <h2
           class="text-3xl md:text-4xl font-bold text-center mb-16 dark:text-gray-300 text-gray-800 font-heading"
         >
-          Cómo funciona
+          {{ $t('home.howItWorksTitle') }}
         </h2>
         <div class="grid md:grid-cols-3 gap-8">
           <div
@@ -708,11 +712,10 @@ onMounted(() => {
             <h3
               class="text-xl font-semibold mb-2 dark:text-gray-300 text-gray-800 font-heading"
             >
-              Dinos qué te gusta
+              {{ $t('home.step1Title') }}
             </h3>
             <p class="text-gray-800 dark:text-gray-300">
-              Selecciona hasta 10 películas y series que disfrutas. Esto nos
-              ayuda a conocerte mejor.
+              {{ $t('home.step1Description') }}
             </p>
           </div>
           <div
@@ -726,11 +729,10 @@ onMounted(() => {
             <h3
               class="text-xl font-semibold mb-2 dark:text-gray-300 text-gray-800 font-heading"
             >
-              Cuéntanos tu momento
+              {{ $t('home.step2Title') }}
             </h3>
             <p class="text-gray-800 dark:text-gray-300">
-              Indica cómo te sientes, tu nivel de energía y el tiempo que tienes
-              disponible.
+              {{ $t('home.step2Description') }}
             </p>
           </div>
           <div
@@ -744,11 +746,10 @@ onMounted(() => {
             <h3
               class="text-xl font-semibold mb-2 dark:text-gray-300 text-gray-800 font-heading"
             >
-              Te decimos qué ver ahora
+              {{ $t('home.step3Title') }}
             </h3>
             <p class="text-gray-800 dark:text-gray-300">
-              Recibe recomendaciones personalizadas basadas en tus gustos y tu
-              momento actual.
+              {{ $t('home.step3Description') }}
             </p>
           </div>
         </div>
@@ -765,12 +766,12 @@ onMounted(() => {
         <p
           class="text-2xl md:text-3xl text-gray-800 dark:text-gray-300 leading-relaxed font-semibold mb-6"
         >
-          No es otra lista más.
+          {{ $t('home.tagline1') }}
         </p>
         <p
           class="text-3xl md:text-5xl text-gray-800 dark:text-gray-300 leading-relaxed font-semibold"
         >
-          Es una
+          {{ $t('home.tagline2') }}
           <span
             class="bg-gradient-to-r from-primary-700 via-primary-800 to-primary-900 dark:from-primary-400 dark:via-primary-500 dark:to-primary-600 bg-clip-text text-transparent"
             style="
@@ -778,9 +779,9 @@ onMounted(() => {
               -webkit-background-clip: text;
               -webkit-text-fill-color: transparent;
             "
-            >decisión</span
+            >{{ $t('home.tagline3') }}</span
           >
-          hecha por ti, pero
+          {{ $t('home.tagline4') }}
           <span
             class="bg-gradient-to-r from-primary-700 via-primary-800 to-primary-900 dark:from-primary-400 dark:via-primary-500 dark:to-primary-600 bg-clip-text text-transparent"
             style="
@@ -788,8 +789,8 @@ onMounted(() => {
               -webkit-background-clip: text;
               -webkit-text-fill-color: transparent;
             "
-            >sin pensar</span
-          >.
+            >{{ $t('home.tagline5') }}</span
+          >{{ $t('home.tagline6') }}
         </p>
       </div>
     </section>

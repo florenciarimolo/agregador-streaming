@@ -13,15 +13,15 @@
         >
           {{
             error.statusCode === 404
-              ? 'Página no encontrada'
-              : 'Oops! Algo salió mal'
+              ? $t('error.notFoundTitle')
+              : $t('error.title')
           }}
         </h2>
         <p class="text-lg dark:text-gray-300 text-gray-800 mb-8">
           {{
             error.statusCode === 404
-              ? 'La página que buscas no existe o ha sido movida.'
-              : 'Parece que algo salió mal. Por favor, intenta de nuevo más tarde.'
+              ? $t('error.notFoundDescription')
+              : $t('error.genericErrorDescription')
           }}
         </p>
       </div>
@@ -70,7 +70,7 @@
               d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
             />
           </svg>
-          Volver al inicio
+          {{ $t('error.goHome') }}
         </nuxt-link>
         <button
           v-if="error.statusCode !== 404"
@@ -90,35 +90,35 @@
               d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
             />
           </svg>
-          Intentar de nuevo
+          {{ $t('error.tryAgain') }}
         </button>
       </div>
 
       <!-- Helpful Links -->
       <div class="mt-12 pt-8 border-t border-gray-300/50 dark:border-white/10">
         <p class="text-sm dark:text-gray-400 text-gray-600 mb-4">
-          También puedes:
+          {{ $t('error.alsoCan') }}
         </p>
         <div class="flex flex-wrap justify-center gap-4">
           <nuxt-link
             to="/how-it-works"
             class="text-sm text-gray-800 dark:text-gray-300 hover:text-primary dark:hover:text-primary-400 transition-colors"
           >
-            Ver cómo funciona
+            {{ $t('error.viewHowItWorks') }}
           </nuxt-link>
           <span class="text-gray-400">•</span>
           <nuxt-link
             to="/faq"
             class="text-sm text-gray-800 dark:text-gray-300 hover:text-primary dark:hover:text-primary-400 transition-colors"
           >
-            Preguntas frecuentes
+            {{ $t('error.viewFaq') }}
           </nuxt-link>
           <span class="text-gray-400">•</span>
           <a
             href="mailto:hello@getupnext.io"
             class="text-sm text-gray-800 dark:text-gray-300 hover:text-primary dark:hover:text-primary-400 transition-colors"
           >
-            Contactar soporte
+            {{ $t('error.contactSupport') }}
           </a>
         </div>
       </div>
@@ -146,19 +146,25 @@ const handleError = async () => {
   await clearError({ redirect: '/' });
 };
 
+const { t } = useI18n();
+
 // Set page title based on error
 useHead({
   title:
-    props.error.statusCode === 404 ? '404 - Página no encontrada' : 'Error',
+    props.error.statusCode === 404
+      ? t('error.pageTitle404')
+      : t('error.pageTitleError'),
 });
 
 useSeoMeta({
   title:
-    props.error.statusCode === 404 ? '404 - Página no encontrada' : 'Error',
+    props.error.statusCode === 404
+      ? t('error.pageTitle404')
+      : t('error.pageTitleError'),
   description:
     props.error.statusCode === 404
-      ? 'La página que buscas no existe.'
-      : 'Ha ocurrido un error.',
+      ? t('error.pageDescription404')
+      : t('error.pageDescriptionError'),
   robots: 'noindex, nofollow',
 });
 </script>

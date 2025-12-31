@@ -20,21 +20,21 @@
             to="/how-it-works"
             class="text-gray-800 dark:text-gray-300 hover:text-primary dark:hover:text-primary-400 transition-colors text-sm no-underline"
           >
-            Cómo funciona
+            {{ $t('footer.howItWorks') }}
           </nuxt-link>
           <span class="text-gray-400">•</span>
           <nuxt-link
             to="/faq"
             class="text-gray-800 dark:text-gray-300 hover:text-primary dark:hover:text-primary-400 transition-colors text-sm no-underline"
           >
-            FAQ
+            {{ $t('footer.faq') }}
           </nuxt-link>
         </div>
         <p class="text-gray-800 dark:text-gray-300 text-sm mb-2">
-          © 2025 UpNext. Todos los derechos reservados.
+          {{ $t('footer.copyright') }}
         </p>
         <p class="text-gray-800 dark:text-gray-300 text-sm">
-          Desarrollado por
+          {{ $t('footer.developedBy') }}
           <a
             href="https://rimobyte.com"
             target="_blank"
@@ -45,7 +45,7 @@
           </a>
         </p>
         <p class="text-gray-800 dark:text-gray-300 text-sm mt-2">
-          Contacto:
+          {{ $t('footer.contact') }}
           <a
             href="mailto:hello@getupnext.io"
             class="text-gray-800 dark:text-gray-300 hover:text-primary dark:hover:text-primary-400 transition-colors no-underline"

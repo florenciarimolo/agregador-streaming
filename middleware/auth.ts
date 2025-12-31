@@ -1,6 +1,9 @@
 /**
  * Auth middleware
  * Protects routes that require authentication
+ *
+ * NOTE: Recovery detection runs FIRST (00-recovery-detection.ts)
+ * This middleware should never see recovery sessions, but we check as a safety measure
  */
 export default defineNuxtRouteMiddleware(async (to) => {
   const user = useSupabaseUser();
@@ -24,6 +27,25 @@ export default defineNuxtRouteMiddleware(async (to) => {
   // Also, don't load profile or trigger any auth-related actions
   if (to.path === '/auth/reset-password') {
     return; // Allow access to reset-password page regardless of auth state
+  }
+
+  // SAFETY CHECK: If this is a recovery session, redirect immediately
+  // (This should never happen if 00-recovery-detection.ts runs first, but safety first)
+  if (user.value && process.client) {
+    try {
+      const supabase = useSupabaseClient();
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (sessionData?.session?.user?.recovery_sent_at) {
+        if (process.env.NODE_ENV === 'development') {
+          console.warn(
+            '[Auth Middleware] Recovery session detected (should have been caught by recovery-detection middleware)'
+          );
+        }
+        return navigateTo('/auth/reset-password', { replace: true });
+      }
+    } catch (error) {
+      // Silently continue if check fails
+    }
   }
 
   // If user is authenticated, ensure user is set in store

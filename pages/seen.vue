@@ -4,10 +4,10 @@
       <h1
         class="text-3xl md:text-4xl font-bold dark:text-gray-300 text-gray-800 mb-2 font-heading"
       >
-        Visto
+        {{ $t('seen.title') }}
       </h1>
       <p class="text-gray-800 dark:text-gray-300">
-        Películas y series que has marcado como vistas.
+        {{ $t('seen.description') }}
       </p>
     </div>
 
@@ -24,14 +24,14 @@
       <div
         class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"
       ></div>
-      <p class="text-gray-800 dark:text-gray-300">Cargando títulos vistos...</p>
+      <p class="text-gray-800 dark:text-gray-300">{{ $t('seen.loading') }}</p>
     </div>
 
     <!-- Content -->
     <div v-else>
       <div v-if="seenTitles.length === 0" class="text-center py-12">
         <p class="text-gray-500 dark:text-gray-400">
-          No has marcado ningún título como visto todavía.
+          {{ $t('seen.empty') }}
         </p>
       </div>
 
@@ -47,7 +47,7 @@
           <!-- Poster -->
           <nuxt-link
             :to="`/${title.type === MediaTypeEnum.movie ? 'pelicula' : 'serie'}/${title.tmdb_id}`"
-            :aria-label="`Ver detalles de ${title.title}`"
+            :aria-label="$t('media.viewDetailsOf', { title: title.title })"
             class="block aspect-[2/3] relative bg-gray-800 rounded-t-lg focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 overflow-visible"
           >
             <div
@@ -89,8 +89,8 @@
               <button
                 type="button"
                 class="tooltip-container p-2 rounded-full bg-black/50 hover:bg-primary/80 backdrop-blur-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-black/50 pointer-events-auto"
-                :aria-label="`Marcar ${title.title} como me gusta`"
-                title="Me gusta"
+                :aria-label="$t('media.markAsSeen', { title: title.title })"
+                :title="$t('media.liked')"
                 @click.stop.prevent="handleMarkAsLiked(title)"
                 @mousedown.stop.prevent
               >
@@ -107,7 +107,7 @@
                     d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
                   />
                 </svg>
-                <span class="tooltip">Me gusta</span>
+                <span class="tooltip">{{ $t('media.liked') }}</span>
               </button>
             </div>
 
@@ -115,7 +115,7 @@
             <div
               v-if="title.liked"
               class="absolute top-2 left-2 z-10 p-2 rounded-full bg-primary/80 backdrop-blur-sm"
-              title="Me gusta"
+              :title="$t('media.liked')"
             >
               <svg
                 class="w-4 h-4 text-white"
@@ -132,8 +132,8 @@
             <button
               type="button"
               class="tooltip-container absolute top-2 right-2 z-20 p-2 rounded-full bg-black/50 hover:bg-red-600/80 backdrop-blur-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-black/50 pointer-events-auto"
-              :aria-label="`Eliminar ${title.title} de la lista de vistas`"
-              title="Eliminar de la lista"
+              :aria-label="$t('seen.removeFromList')"
+              :title="$t('seen.removeFromList')"
               @click.stop.prevent="handleRemoveTitle(title)"
               @mousedown.stop.prevent
             >
@@ -150,7 +150,7 @@
                   d="M6 18L18 6M6 6l12 12"
                 />
               </svg>
-              <span class="tooltip">Eliminar de la lista</span>
+              <span class="tooltip">{{ $t('seen.removeFromList') }}</span>
             </button>
           </nuxt-link>
 
@@ -162,7 +162,11 @@
               {{ title.title }}
             </h3>
             <p class="text-xs dark:text-gray-300 text-gray-500 mb-2">
-              {{ title.type === MediaTypeEnum.movie ? 'Película' : 'Serie' }}
+              {{
+                title.type === MediaTypeEnum.movie
+                  ? $t('media.movie')
+                  : $t('media.series')
+              }}
             </p>
           </div>
         </div>
@@ -179,13 +183,15 @@ import { getSession } from '@/composables/database/auth';
 import { getUserLikedTitles } from '@/composables/database/userTitleStatus';
 import AlertMessage from '@/components/AlertMessage.vue';
 
+const { t } = useI18n();
+
 useHead({
-  title: 'Visto - UpNext',
+  title: `${t('seen.title')} - UpNext`,
 });
 
 useSeoMeta({
-  title: 'Visto - UpNext',
-  description: 'Revisa las películas y series que has marcado como vistas',
+  title: `${t('seen.title')} - UpNext`,
+  description: t('seen.description'),
 });
 
 type SeenTitle = {
@@ -257,7 +263,7 @@ const fetchSeenTitles = async () => {
     seenTitles.value = (response.seen || []).map(
       (item: HistoryResponseItem) => ({
         tmdb_id: item.tmdb_id,
-        title: item.title || item.name || 'Sin título',
+        title: item.title || item.name || t('seen.noTitle'),
         type: item.type as typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv,
         poster_path: item.poster_path,
         liked: item.liked || false,
@@ -268,7 +274,7 @@ const fetchSeenTitles = async () => {
     if (process.env.NODE_ENV === 'development') {
       console.error('Error fetching seen titles:', error);
     }
-    showError('Error al cargar los títulos vistos.');
+    showError(t('seen.errorLoading'));
   } finally {
     isLoading.value = false;
   }
@@ -300,7 +306,7 @@ const handleRemoveTitle = async (title: SeenTitle) => {
     } = await getSession();
 
     if (!session?.access_token) {
-      showError('No estás autenticado. Por favor, inicia sesión.');
+      showError(t('seen.notAuthenticated'));
       isRemoving.value = false;
       return;
     }
@@ -321,12 +327,12 @@ const handleRemoveTitle = async (title: SeenTitle) => {
       (t) => t.tmdb_id !== title.tmdb_id
     );
 
-    showSuccess('Título eliminado exitosamente.');
+    showSuccess(t('seen.titleRemoved'));
   } catch (error) {
     if (process.env.NODE_ENV === 'development') {
       console.error('Error removing title:', error);
     }
-    showError('Error al eliminar el título. Por favor, intenta de nuevo.');
+    showError(t('seen.errorRemoving'));
     await fetchSeenTitles();
   } finally {
     isRemoving.value = false;
@@ -343,7 +349,7 @@ const handleMarkAsLiked = async (title: SeenTitle) => {
     } = await getSession();
 
     if (!session?.access_token) {
-      showError('No estás autenticado. Por favor, inicia sesión.');
+      showError(t('seen.notAuthenticated'));
       isMarkingLiked.value = false;
       return;
     }
@@ -370,12 +376,12 @@ const handleMarkAsLiked = async (title: SeenTitle) => {
       seenTitles.value[index].liked = true;
     }
 
-    showSuccess('Título marcado como me gusta.');
+    showSuccess(t('seen.markedLiked'));
   } catch (error) {
     if (process.env.NODE_ENV === 'development') {
       console.error('Error marking as liked:', error);
     }
-    showError('Error al marcar como me gusta. Por favor, intenta de nuevo.');
+    showError(t('seen.errorMarkingLiked'));
     await fetchSeenTitles();
   } finally {
     isMarkingLiked.value = false;

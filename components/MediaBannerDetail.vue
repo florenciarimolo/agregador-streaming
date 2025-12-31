@@ -36,7 +36,7 @@
           class="inline-flex items-center gap-2 mb-4 text-sm font-medium dark:text-gray-300 text-gray-700 hover:dark:text-white hover:text-gray-900 transition-colors"
         >
           <IconArrowLeft icon-class="w-4 h-4" />
-          Volver
+          {{ $t('media.back') }}
         </nuxt-link>
         <div class="flex flex-row items-center justify-between gap-2">
           <div class="flex items-center gap-3">
@@ -59,7 +59,13 @@
             <div class="relative">
               <button
                 type="button"
-                :aria-label="`Menú de acciones para ${mediaWithProviders.title || (mediaWithProviders as any).name}`"
+                :aria-label="
+                  $t('media.actionsMenuFor', {
+                    title:
+                      mediaWithProviders.title ||
+                      (mediaWithProviders as any).name,
+                  })
+                "
                 class="menu-button p-2 rounded-full bg-black/50 hover:bg-gray-700/80 backdrop-blur-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-black/50"
                 @click.stop.prevent="showMenu = !showMenu"
                 @mousedown.stop.prevent
@@ -100,7 +106,7 @@
                           d="M5 13l4 4L19 7"
                         />
                       </svg>
-                      Visto
+                      {{ $t('media.seen') }}
                     </button>
                     <button
                       type="button"
@@ -120,7 +126,7 @@
                           d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
                         />
                       </svg>
-                      Me gusta
+                      {{ $t('media.liked') }}
                     </button>
                     <button
                       type="button"
@@ -142,7 +148,7 @@
                           d="M6 18L18 6M6 6l12 12"
                         />
                       </svg>
-                      No me interesa
+                      {{ $t('media.notInterested') }}
                     </button>
                     <button
                       type="button"
@@ -162,7 +168,7 @@
                           d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
                         />
                       </svg>
-                      Ver más tarde
+                      {{ $t('media.watchLater') }}
                     </button>
                   </div>
                 </div>
@@ -177,7 +183,7 @@
           'dark:text-gray-300 text-gray-800',
           { italic: !mediaWithProviders.overview },
         ]"
-        >{{ mediaWithProviders.overview || 'Sin descripción disponible' }}</p
+        >{{ mediaWithProviders.overview || $t('media.noDescription') }}</p
       >
       <div
         class="mt-2 flex items-center gap-2 dark:text-gray-300 text-gray-800"
@@ -196,7 +202,7 @@
         <span>{{
           mediaWithProviders?.genres
             ?.map((genre: Genre) => genre.name)
-            .join(', ') || 'No disponible'
+            .join(', ') || $t('media.notAvailable')
         }}</span>
       </div>
       <!-- Displaying watch providers with their logos-->
@@ -206,7 +212,7 @@
             :media-provider-prop-list="
               mediaWithProviders.providers?.flatrate || []
             "
-            watch-type-prop="Ver en:"
+            :watch-type-prop="$t('media.watchIn')"
             :media-title="
               mediaWithProviders.title || (mediaWithProviders as any).name || ''
             "
@@ -221,7 +227,7 @@
 
           <ProviderList
             :media-provider-prop-list="mediaWithProviders.providers?.buy || []"
-            watch-type-prop="Compra:"
+            :watch-type-prop="$t('media.buyIn')"
             :media-title="
               mediaWithProviders.title || (mediaWithProviders as any).name || ''
             "
@@ -236,7 +242,7 @@
 
           <ProviderList
             :media-provider-prop-list="mediaWithProviders.providers?.rent || []"
-            watch-type-prop="Alquiler:"
+            :watch-type-prop="$t('media.rentIn')"
             :media-title="
               mediaWithProviders.title || (mediaWithProviders as any).name || ''
             "
@@ -250,7 +256,7 @@
           />
         </section>
         <section v-else class="dark:text-gray-400 text-gray-600">
-          <p class="italic">No disponible en ninguna plataforma</p>
+          <p class="italic">{{ $t('media.noPlatforms') }}</p>
         </section>
       </section>
     </div>
@@ -336,6 +342,7 @@ const handleResize = () => {
 
 const showMenu = ref(false);
 const { showToast } = useUndoToast();
+const { t } = useI18n();
 
 // Close menu when clicking outside
 const handleClickOutside = (event: MouseEvent) => {
@@ -378,18 +385,14 @@ const handleAction = async (action: TitleStatus | 'liked') => {
     } = await getSession();
 
     if (!session?.access_token) {
-      showToast(
-        'Debes estar autenticado para realizar esta acción',
-        null,
-        3000
-      );
+      showToast(t('media.authRequired'), null, 3000);
       return;
     }
 
     const mediaTitle =
       mediaWithProviders.value.title ||
       (mediaWithProviders.value as Movie & { name?: string }).name ||
-      'Este título';
+      t('media.thisTitle');
 
     if (action === 'liked') {
       // Update or insert with liked=true and status=seen
@@ -407,9 +410,9 @@ const handleAction = async (action: TitleStatus | 'liked') => {
       });
 
       showToast(
-        `"${mediaTitle}" agregado a tus favoritos`,
+        t('home.titleAddedFavorites', { title: mediaTitle }),
         {
-          label: 'Ver favoritos',
+          label: t('home.viewFavorites'),
           action: async () => {
             await navigateTo('/profile');
           },
@@ -432,9 +435,9 @@ const handleAction = async (action: TitleStatus | 'liked') => {
 
       if (action === TitleStatus.NOT_INTERESTED) {
         showToast(
-          `"${mediaTitle}" marcado como no me interesa`,
+          t('home.titleMarkedNotInterested', { title: mediaTitle }),
           {
-            label: 'Deshacer',
+            label: t('undo.undo'),
             action: async () => {
               await $fetch('/api/users/title-status', {
                 method: 'DELETE',
@@ -451,9 +454,9 @@ const handleAction = async (action: TitleStatus | 'liked') => {
         );
       } else if (action === TitleStatus.SEEN) {
         showToast(
-          `"${mediaTitle}" marcado como visto`,
+          t('home.titleMarkedSeen', { title: mediaTitle }),
           {
-            label: 'Ver vistos',
+            label: t('home.viewSeen'),
             action: async () => {
               await navigateTo('/seen');
             },
@@ -462,9 +465,9 @@ const handleAction = async (action: TitleStatus | 'liked') => {
         );
       } else if (action === TitleStatus.WATCHLIST) {
         showToast(
-          `"${mediaTitle}" guardado para ver más tarde`,
+          t('home.titleSavedWatchlist', { title: mediaTitle }),
           {
-            label: 'Ver lista',
+            label: t('home.viewList'),
             action: async () => {
               await navigateTo('/watchlist');
             },
@@ -478,8 +481,8 @@ const handleAction = async (action: TitleStatus | 'liked') => {
     const mediaTitle =
       mediaWithProviders.value.title ||
       (mediaWithProviders.value as Movie & { name?: string }).name ||
-      'Este título';
-    showToast(`Error al actualizar "${mediaTitle}"`, null, 3000);
+      t('media.thisTitle');
+    showToast(t('home.errorUpdatingStatus', { title: mediaTitle }), null, 3000);
   }
 };
 </script>

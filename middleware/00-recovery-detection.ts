@@ -1,14 +1,18 @@
 /**
  * Recovery Detection Middleware
+ * PRIORITY: ABSOLUTE - This middleware MUST run FIRST
+ *
  * Detects recovery sessions using session.user.recovery_sent_at
  * This is the ONLY reliable way to detect recovery in PKCE flow
  *
- * This middleware runs globally and checks if the current session
- * is a recovery session. If so, redirects to reset-password page.
+ * IMPORTANT: This middleware runs BEFORE all other middlewares (00- prefix ensures alphabetical priority)
  *
- * IMPORTANT: This middleware should run AFTER the callback has exchanged
- * the code for a session. The callback redirects to /, and then this
- * middleware detects recovery and redirects to /auth/reset-password.
+ * Flow:
+ * 1. Callback exchanges code → session (with recovery_sent_at if recovery)
+ * 2. Callback redirects to / (home)
+ * 3. THIS middleware runs FIRST and detects recovery_sent_at
+ * 4. Immediately redirects to /auth/reset-password
+ * 5. User NEVER sees the home page
  */
 export default defineNuxtRouteMiddleware(async (to) => {
   // Only run on client-side
@@ -29,6 +33,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
 
   try {
     // Get the current session
+    // This is critical - we need the full session object to check recovery_sent_at
     const { data: sessionData, error: sessionError } =
       await supabase.auth.getSession();
 
@@ -40,16 +45,18 @@ export default defineNuxtRouteMiddleware(async (to) => {
 
     // Check if this is a recovery session
     // recovery_sent_at exists ONLY in recovery sessions
-    // This is the official and reliable way to detect recovery
+    // This is the official and reliable way to detect recovery in Supabase PKCE
     if (session.user?.recovery_sent_at) {
       if (process.env.NODE_ENV === 'development') {
         console.log(
-          '[Recovery Detection] Detected recovery session, redirecting to reset-password'
+          '[Recovery Detection] Detected recovery session, redirecting to reset-password',
+          { recovery_sent_at: session.user.recovery_sent_at }
         );
       }
 
-      // Redirect to reset-password page
-      return navigateTo('/auth/reset-password');
+      // PRIORITY: Redirect IMMEDIATELY to reset-password
+      // This prevents any other middleware from redirecting to home/onboarding
+      return navigateTo('/auth/reset-password', { replace: true });
     }
   } catch (error) {
     // Silently fail - don't break the app if there's an error

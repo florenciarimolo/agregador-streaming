@@ -12,12 +12,12 @@
         >
           <img
             src="/logo-light.png"
-            alt="UpNext"
+            :alt="$t('common.appName')"
             class="h-8 w-auto object-contain dark:hidden"
           />
           <img
             src="/logo-dark.png"
-            alt="UpNext"
+            :alt="$t('common.appName')"
             class="h-8 w-auto object-contain hidden dark:block"
           />
         </nuxt-link>
@@ -31,14 +31,14 @@
               class="text-sm font-medium dark:text-gray-300 text-gray-800 hover:text-primary dark:hover:text-primary-400 transition-colors"
               active-class="text-primary dark:text-primary-400"
             >
-              Inicio
+              {{ $t('navbar.home') }}
             </nuxt-link>
             <nuxt-link
               to="/watchlist"
               class="text-sm font-medium dark:text-gray-300 text-gray-800 hover:text-primary dark:hover:text-primary-400 transition-colors"
               active-class="text-primary dark:text-primary-400"
             >
-              Para ver
+              {{ $t('navbar.watchlist') }}
             </nuxt-link>
           </nav>
 
@@ -50,7 +50,11 @@
             <button
               type="button"
               class="w-10 h-10 rounded-full bg-gradient-to-br from-primary via-accent to-secondary flex items-center justify-center text-white font-semibold text-sm hover:ring-2 hover:ring-primary/50 transition-all cursor-pointer shadow-md"
-              :aria-label="`Menú de usuario para ${currentUser.email || 'usuario'}`"
+              :aria-label="
+                $t('navbar.userMenuFor', {
+                  email: currentUser.email || 'usuario',
+                })
+              "
               @click="toggleUserMenu"
             >
               {{ getUserInitials(currentUser.email) }}
@@ -80,21 +84,21 @@
                     class="block w-full px-4 py-2 text-sm dark:text-gray-300 text-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-left mb-2"
                     @click="showUserMenu = false"
                   >
-                    Editar perfil
+                    {{ $t('navbar.editProfile') }}
                   </nuxt-link>
                   <nuxt-link
                     to="/seen"
                     class="block w-full px-4 py-2 text-sm dark:text-gray-300 text-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-left mb-2"
                     @click="showUserMenu = false"
                   >
-                    Visto
+                    {{ $t('navbar.seen') }}
                   </nuxt-link>
                   <nuxt-link
                     to="/not-interested"
                     class="block w-full px-4 py-2 text-sm dark:text-gray-300 text-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-left mb-2"
                     @click="showUserMenu = false"
                   >
-                    No me interesa
+                    {{ $t('navbar.notInterested') }}
                   </nuxt-link>
                   <div
                     class="border-t border-gray-300/50 dark:border-white/10 my-2"
@@ -104,7 +108,7 @@
                     class="w-full px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors text-left"
                     @click="handleLogoutClick"
                   >
-                    Cerrar sesión
+                    {{ $t('navbar.logout') }}
                   </button>
                 </div>
               </div>
@@ -128,12 +132,12 @@
         <nuxt-link to="/" class="flex items-center">
           <img
             src="/logo-light.png"
-            alt="UpNext"
+            :alt="$t('common.appName')"
             class="h-6 w-auto object-contain dark:hidden"
           />
           <img
             src="/logo-dark.png"
-            alt="UpNext"
+            :alt="$t('common.appName')"
             class="h-6 w-auto object-contain hidden dark:block"
           />
         </nuxt-link>
@@ -147,14 +151,14 @@
               class="text-xs font-medium dark:text-gray-300 text-gray-800 hover:text-primary dark:hover:text-primary-400 transition-colors"
               active-class="text-primary dark:text-primary-400"
             >
-              Inicio
+              {{ $t('navbar.home') }}
             </nuxt-link>
             <nuxt-link
               to="/watchlist"
               class="text-xs font-medium dark:text-gray-300 text-gray-800 hover:text-primary dark:hover:text-primary-400 transition-colors"
               active-class="text-primary dark:text-primary-400"
             >
-              Para ver
+              {{ $t('navbar.watchlist') }}
             </nuxt-link>
           </nav>
 
@@ -170,7 +174,11 @@
             <button
               type="button"
               class="w-8 h-8 rounded-full bg-gradient-to-br from-primary via-accent to-secondary flex items-center justify-center text-white font-semibold text-xs hover:ring-2 hover:ring-primary/50 transition-all cursor-pointer shadow-md touch-manipulation"
-              :aria-label="`Menú de usuario para ${currentUser.email || 'usuario'}`"
+              :aria-label="
+                $t('navbar.userMenuFor', {
+                  email: currentUser.email || 'usuario',
+                })
+              "
               @click="toggleUserMenu"
             >
               {{ getUserInitials(currentUser.email) }}
@@ -200,21 +208,21 @@
                     class="block w-full px-4 py-2 text-sm dark:text-gray-300 text-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-left mb-2"
                     @click="showUserMenu = false"
                   >
-                    Editar perfil
+                    {{ $t('navbar.editProfile') }}
                   </nuxt-link>
                   <nuxt-link
                     to="/seen"
                     class="block w-full px-4 py-2 text-sm dark:text-gray-300 text-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-left mb-2"
                     @click="showUserMenu = false"
                   >
-                    Visto
+                    {{ $t('navbar.seen') }}
                   </nuxt-link>
                   <nuxt-link
                     to="/not-interested"
                     class="block w-full px-4 py-2 text-sm dark:text-gray-300 text-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-left mb-2"
                     @click="showUserMenu = false"
                   >
-                    No me interesa
+                    {{ $t('navbar.notInterested') }}
                   </nuxt-link>
                   <div
                     class="border-t border-gray-300/50 dark:border-white/10 my-2"
@@ -224,7 +232,7 @@
                     class="w-full px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors text-left"
                     @click="handleLogoutClick"
                   >
-                    Cerrar sesión
+                    {{ $t('navbar.logout') }}
                   </button>
                 </div>
               </div>
@@ -247,7 +255,7 @@
     <button
       v-show="showScrollToTop && isMobile"
       class="fixed z-40 p-3 text-white transition-all duration-300 rounded-full shadow-lg bottom-6 right-6 bg-gradient-to-br from-primary via-accent to-secondary hover:from-secondary hover:via-pink-500 hover:to-primary hover:shadow-xl md:hidden"
-      aria-label="Scroll to top"
+      :aria-label="$t('navbar.scrollToTop')"
       @click="scrollToTop"
     >
       <svg
@@ -285,10 +293,10 @@
         @click.stop
       >
         <h3 class="text-lg font-semibold dark:text-gray-300 text-gray-800 mb-2">
-          Confirmar cierre de sesión
+          {{ $t('navbar.logoutConfirm') }}
         </h3>
         <p class="text-gray-800 dark:text-gray-300 mb-4">
-          ¿Estás seguro de que quieres cerrar sesión?
+          {{ $t('navbar.logoutConfirmMessage') }}
         </p>
         <div class="flex gap-3 justify-end">
           <button
@@ -296,14 +304,14 @@
             class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
             @click="cancelLogout"
           >
-            Cancelar
+            {{ $t('common.cancel') }}
           </button>
           <button
             type="button"
             class="px-4 py-2 text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors"
             @click="confirmLogout"
           >
-            Cerrar sesión
+            {{ $t('navbar.logout') }}
           </button>
         </div>
       </div>

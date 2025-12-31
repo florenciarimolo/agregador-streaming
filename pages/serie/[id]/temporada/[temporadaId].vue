@@ -1,9 +1,9 @@
 <template>
   <!-- Loading state -->
   <div v-if="isLoading" class="flex items-center justify-center min-h-screen">
-    <div class="text-xl dark:text-gray-300 text-gray-800"
-      >Cargando temporada...</div
-    >
+    <div class="text-xl dark:text-gray-300 text-gray-800">{{
+      $t('media.loadingSeason')
+    }}</div>
   </div>
 
   <!-- Error state -->
@@ -11,7 +11,7 @@
     v-else-if="hasError"
     class="flex items-center justify-center min-h-screen"
   >
-    <div class="text-xl text-red-500">Error al cargar la temporada</div>
+    <div class="text-xl text-red-500">{{ $t('media.errorLoadingSeason') }}</div>
   </div>
 
   <!-- Content -->
@@ -53,7 +53,7 @@
             class="inline-flex items-center gap-2 mb-4 text-sm font-medium dark:text-gray-300 text-gray-700 hover:dark:text-white hover:text-gray-900 transition-colors"
           >
             <IconArrowLeft icon-class="w-4 h-4" />
-            Volver
+            {{ $t('media.backToSeries') }}
           </nuxt-link>
           <div class="flex items-center gap-3">
             <h1 class="text-2xl font-bold dark:text-gray-300 text-gray-800">{{
@@ -72,7 +72,7 @@
             { italic: !seasonWithProviders?.overview },
           ]"
           >{{
-            seasonWithProviders?.overview || 'Sin descripción disponible'
+            seasonWithProviders?.overview || $t('media.noDescriptionAvailable')
           }}</p
         >
         <div
@@ -85,7 +85,11 @@
         </div>
         <div class="flex items-center gap-2 dark:text-gray-300 text-gray-800">
           <IconEpisodes icon-class="w-5 h-5" />
-          <span>{{ seasonWithProviders?.episodes?.length }} episodios</span>
+          <span>{{
+            $t('media.episodesCount', {
+              count: seasonWithProviders?.episodes?.length || 0,
+            })
+          }}</span>
         </div>
 
         <!-- Displaying watch providers -->
@@ -94,26 +98,26 @@
             <ProviderList
               v-if="seasonWithProviders?.providers?.flatrate?.length"
               :media-provider-prop-list="seasonWithProviders.providers.flatrate"
-              watch-type-prop="Ver en:"
+              :watch-type-prop="$t('media.watchIn')"
               :media-type="MediaTypeEnum.tv"
             />
 
             <ProviderList
               v-if="seasonWithProviders?.providers?.buy?.length"
               :media-provider-prop-list="seasonWithProviders.providers.buy"
-              watch-type-prop="Compra:"
+              :watch-type-prop="$t('media.buyIn')"
               :media-type="MediaTypeEnum.tv"
             />
 
             <ProviderList
               v-if="seasonWithProviders?.providers?.rent?.length"
               :media-provider-prop-list="seasonWithProviders.providers.rent"
-              watch-type-prop="Alquiler:"
+              :watch-type-prop="$t('media.rentIn')"
               :media-type="MediaTypeEnum.tv"
             />
           </section>
           <section v-else class="dark:text-gray-400 text-gray-600">
-            <p class="italic">No disponible en ninguna plataforma</p>
+            <p class="italic">{{ $t('media.noPlatforms') }}</p>
           </section>
         </section>
       </div>
@@ -121,8 +125,9 @@
 
     <!-- Episodios -->
     <section>
-      <h2 class="py-16 text-2xl font-semibold dark:text-gray-300 text-gray-800"
-        >Episodios</h2
+      <h2
+        class="py-16 text-2xl font-semibold dark:text-gray-300 text-gray-800"
+        >{{ $t('media.episodes') }}</h2
       >
 
       <div
@@ -150,7 +155,7 @@
             <div
               class="absolute px-2 py-1 text-xs dark:text-gray-300 text-gray-800 rounded-lg top-2 left-4 bg-white/60 dark:bg-gray-900/40 backdrop-blur-xl border border-gray-300/50 dark:border-white/10"
             >
-              Episodio {{ index + 1 }}
+              {{ $t('media.episodeNumber', { number: index + 1 }) }}
             </div>
           </div>
           <div class="p-4">
@@ -174,7 +179,7 @@
                 'text-sm dark:text-gray-300 text-gray-700 line-clamp-3',
                 { italic: !episode.overview },
               ]"
-              >{{ episode.overview || 'Sin descripción disponible' }}</p
+              >{{ episode.overview || $t('media.noDescriptionAvailable') }}</p
             >
           </div>
         </article>
@@ -182,7 +187,7 @@
 
       <!-- Empty state -->
       <div v-else class="py-12 text-center dark:text-gray-400 text-gray-600">
-        <div class="text-xl">No hay episodios disponibles</div>
+        <div class="text-xl">{{ $t('media.noEpisodes') }}</div>
       </div>
     </section>
   </div>
@@ -237,11 +242,13 @@ const seasonWithProviders = computed(() => {
   };
 });
 
+const { t } = useI18n();
+
 const pageTitle = computed(() => {
   if (seasonWithProviders.value?.name) {
     return `${seasonWithProviders.value.name} - UpNext`;
   }
-  return 'Temporada - UpNext';
+  return t('media.seasonTitle');
 });
 
 useHead({
@@ -254,7 +261,7 @@ useSeoMeta({
     if (seasonWithProviders.value?.overview) {
       return seasonWithProviders.value.overview;
     }
-    return `Temporada ${seasonId} de la serie`;
+    return t('media.seasonDescription', { seasonId });
   }),
 });
 

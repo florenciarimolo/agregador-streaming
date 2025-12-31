@@ -29,7 +29,7 @@
           <button
             type="button"
             class="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-            aria-label="Cerrar"
+            :aria-label="$t('common.close')"
             @click="dismissToast"
           >
             <svg

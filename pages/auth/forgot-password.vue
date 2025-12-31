@@ -5,20 +5,20 @@
         <!-- Light mode -->
         <img
           src="/logo-light.png"
-          alt="UpNext"
+          :alt="$t('common.appName')"
           class="h-12 w-12 mx-auto mb-4 object-contain dark:hidden"
         />
         <!-- Dark mode -->
         <img
           src="/logo-dark.png"
-          alt="UpNext"
+          :alt="$t('common.appName')"
           class="h-12 w-12 mx-auto mb-4 object-contain hidden dark:block"
         />
         <h1 class="text-3xl font-bold dark:text-gray-300 text-gray-800 mb-2">
-          Recuperar contraseña
+          {{ $t('auth.resetPasswordTitle') }}
         </h1>
         <p class="text-gray-800 dark:text-gray-300">
-          Te enviaremos un enlace para restablecer tu contraseña
+          {{ $t('auth.resetPasswordDescription') }}
         </p>
       </div>
 
@@ -38,8 +38,7 @@
           v-if="emailSent"
           class="mb-4 p-3 bg-green-500/10 border border-green-500/20 rounded-lg text-green-600 dark:text-green-400 text-sm"
         >
-          ¡Revisa tu correo! Te hemos enviado un enlace para restablecer tu
-          contraseña.
+          {{ $t('auth.resetPasswordSuccess') }}
         </div>
 
         <!-- Form -->
@@ -49,7 +48,7 @@
               for="reset-email"
               class="block text-sm font-medium dark:text-gray-300 text-gray-800 mb-2"
             >
-              Email
+              {{ $t('auth.email') }}
             </label>
             <input
               id="reset-email"
@@ -57,7 +56,7 @@
               type="email"
               required
               class="w-full px-4 py-3 dark:bg-gray-900/50 bg-white dark:text-gray-300 text-gray-800 border dark:border-gray-700/50 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all"
-              placeholder="you@example.com"
+              :placeholder="$t('auth.emailPlaceholder')"
             />
           </div>
 
@@ -66,7 +65,11 @@
             :disabled="loading"
             class="w-full py-3 px-6 dark:bg-gray-900/90 bg-gray-800/90 hover:dark:bg-gray-800/80 hover:bg-gray-900/90 text-white rounded-lg font-medium transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg border border-gray-700/50 dark:border-gray-600/50"
           >
-            {{ loading ? 'Enviando...' : 'Enviar enlace de recuperación' }}
+            {{
+              loading
+                ? $t('auth.resetPasswordSending')
+                : $t('auth.resetPasswordButton')
+            }}
           </button>
         </form>
 
@@ -76,7 +79,7 @@
             to="/auth/login"
             class="text-sm text-primary hover:text-secondary transition-colors"
           >
-            Volver al inicio de sesión
+            {{ $t('auth.backToLogin') }}
           </nuxt-link>
         </div>
       </div>
@@ -90,13 +93,15 @@ definePageMeta({
   middleware: 'guest', // Only allow unauthenticated users
 });
 
+const { t } = useI18n();
+
 useHead({
-  title: 'Recuperar contraseña - UpNext',
+  title: `${t('auth.resetPasswordPageTitle')}`,
 });
 
 useSeoMeta({
-  title: 'Recuperar contraseña - UpNext',
-  description: 'Recupera tu contraseña de UpNext',
+  title: t('auth.resetPasswordPageTitle'),
+  description: t('auth.resetPasswordPageDescription'),
 });
 
 const { resetPassword } = useAuth();
@@ -123,9 +128,7 @@ const handleResetPassword = async () => {
         error.value = errorObj.message;
       } else {
         // For other errors, show the error message
-        error.value =
-          errorObj.message ||
-          'Ocurrió un error al enviar el enlace de recuperación.';
+        error.value = errorObj.message || t('auth.resetPasswordError');
       }
       return;
     }
@@ -142,9 +145,7 @@ const handleResetPassword = async () => {
       error.value = (err as Error).message;
     } else {
       error.value =
-        err instanceof Error
-          ? err.message
-          : 'Ocurrió un error al enviar el enlace de recuperación.';
+        err instanceof Error ? err.message : t('auth.resetPasswordError');
     }
   } finally {
     loading.value = false;

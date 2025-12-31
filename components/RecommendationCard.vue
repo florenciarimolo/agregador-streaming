@@ -1,12 +1,12 @@
 <template>
   <article
     class="group relative dark:bg-gray-900/40 bg-gray-100/80 backdrop-blur-xl rounded-lg border border-gray-300/50 dark:border-white/10 hover:border-gray-400/50 dark:hover:border-white/20 transition-all duration-300 hover:shadow-lg hover:shadow-gray-900/20"
-    :aria-label="`Recomendación: ${props.title.title}`"
+    :aria-label="$t('media.recommendationLabel', { title: props.title.title })"
   >
     <!-- Poster -->
     <nuxt-link
       :to="`/${mediaType}/${props.title.tmdb_id}`"
-      :aria-label="`Ver detalles de ${props.title.title}`"
+      :aria-label="$t('media.viewDetailsOf', { title: props.title.title })"
       class="block aspect-[2/3] relative bg-gray-800 rounded-t-lg focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
     >
       <div
@@ -15,7 +15,7 @@
       >
         <img
           :src="`https://image.tmdb.org/t/p/w500${props.title.poster_path}`"
-          :alt="`Poster de ${props.title.title}`"
+          :alt="$t('media.posterOf', { title: props.title.title })"
           class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
           loading="lazy"
           decoding="async"
@@ -25,7 +25,9 @@
         v-else
         class="w-full h-full flex items-center justify-center text-gray-400 overflow-hidden rounded-t-lg"
         role="img"
-        :aria-label="`Sin poster disponible para ${props.title.title}`"
+        :aria-label="
+          $t('media.noPosterAvailableFor', { title: props.title.title })
+        "
       >
         <svg
           class="w-12 h-12"
@@ -55,7 +57,7 @@
         v-if="props.title.in_watchlist"
         class="absolute left-2 z-10 p-2 rounded-full bg-primary/80 backdrop-blur-sm"
         :class="props.title.vote_average ? 'top-12' : 'top-2'"
-        title="Guardado para ver más tarde"
+        :title="$t('media.savedWatchlist')"
       >
         <IconClock icon-class="w-4 h-4 text-white" />
       </div>
@@ -64,7 +66,7 @@
       <div class="absolute top-2 right-2 z-20">
         <button
           type="button"
-          :aria-label="`Menú de acciones para ${props.title.title}`"
+          :aria-label="$t('media.actionsMenuFor', { title: props.title.title })"
           class="menu-button p-2 rounded-full bg-black/50 hover:bg-gray-700/80 backdrop-blur-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-black/50"
           @click.stop.prevent="showMenu = !showMenu"
           @mousedown.stop.prevent
@@ -105,7 +107,7 @@
                     d="M5 13l4 4L19 7"
                   />
                 </svg>
-                Visto
+                {{ $t('media.seen') }}
               </button>
               <button
                 type="button"
@@ -125,7 +127,7 @@
                     d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
                   />
                 </svg>
-                Me gusta
+                {{ $t('media.liked') }}
               </button>
               <button
                 type="button"
@@ -145,7 +147,7 @@
                     d="M6 18L18 6M6 6l12 12"
                   />
                 </svg>
-                No me interesa
+                {{ $t('media.notInterested') }}
               </button>
               <button
                 type="button"
@@ -165,7 +167,7 @@
                     d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
                   />
                 </svg>
-                Ver más tarde
+                {{ $t('media.watchLater') }}
               </button>
             </div>
           </div>
@@ -177,7 +179,7 @@
         class="absolute bottom-0 left-0 flex flex-col items-center justify-center w-full h-full px-4 transition-all duration-300 opacity-0 group-hover:opacity-100 backdrop-blur-md dark:bg-black/80 bg-white/80"
       >
         <p class="dark:text-gray-300 text-gray-800 font-semibold">
-          Ver detalles
+          {{ $t('media.viewDetails') }}
         </p>
       </div>
     </nuxt-link>
@@ -190,7 +192,11 @@
         {{ props.title.title }}
       </h3>
       <p class="text-xs dark:text-gray-300 text-gray-500 mb-2">
-        {{ props.title.type === MediaTypeEnum.movie ? 'Película' : 'Serie' }}
+        {{
+          props.title.type === MediaTypeEnum.movie
+            ? $t('media.movie')
+            : $t('media.series')
+        }}
       </p>
 
       <!-- Overview (instead of explanation) -->
@@ -201,7 +207,7 @@
         {{ props.title.overview }}
       </p>
       <p v-else class="text-xs dark:text-gray-300 text-gray-600 mb-3 italic">
-        Sin descripción disponible
+        {{ $t('media.noDescriptionAvailable') }}
       </p>
 
       <!-- Providers (logos only, no names) -->
@@ -219,7 +225,7 @@
         />
       </div>
       <div v-else class="text-xs dark:text-gray-400 text-gray-500 italic">
-        No disponible en ninguna plataforma
+        {{ $t('media.noPlatforms') }}
       </div>
     </div>
   </article>
