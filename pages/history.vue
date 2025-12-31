@@ -298,11 +298,9 @@
 import { ref, onMounted } from 'vue';
 import { TitleStatus } from '@/types/TitleStatus';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
+import { getSession } from '@/composables/database/auth';
 import AlertMessage from '@/components/AlertMessage.vue';
 // These are auto-imported in Nuxt 3
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore - Auto-imported
-const supabase = useSupabaseClient();
 const isLoading = ref(true);
 
 useHead({
@@ -351,7 +349,7 @@ const fetchHistory = async () => {
 
     const {
       data: { session },
-    } = await supabase.auth.getSession();
+    } = await getSession();
 
     if (!session?.access_token) {
       isLoading.value = false;
@@ -432,7 +430,7 @@ const confirmRemoveTitle = async () => {
   try {
     const {
       data: { session },
-    } = await supabase.auth.getSession();
+    } = await getSession();
 
     if (!session?.access_token) {
       showError('No estás autenticado. Por favor, inicia sesión.');

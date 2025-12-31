@@ -1,5 +1,8 @@
 import { defineStore } from 'pinia';
 import type { User } from '@supabase/supabase-js';
+import { getProfile, insertProfile } from '@/composables/database/profiles';
+import { countUserLikedTitles } from '@/composables/database/userTitleStatus';
+import { isNotFoundError } from '@/composables/database/errorCodes';
 // useSupabaseClient is auto-imported by Nuxt - no manual import needed
 
 interface Profile {
@@ -61,16 +64,10 @@ export const useUserStore = defineStore('user', {
       }
 
       try {
-        const supabase = useSupabaseClient();
-
         // Fetch profile and likes count in PARALLEL for faster loading
         const [profileResult, likesResult] = await Promise.all([
-          supabase.from('profiles').select('*').eq('id', userId).single(),
-          supabase
-            .from('user_title_status')
-            .select('*', { count: 'exact', head: true })
-            .eq('user_id', userId)
-            .eq('liked', true),
+          getProfile(userId),
+          countUserLikedTitles(userId),
         ]);
 
         const { data: profileData, error: profileError } = profileResult;
@@ -79,17 +76,15 @@ export const useUserStore = defineStore('user', {
         // Handle profile
         if (profileError) {
           // If profile doesn't exist, try to create it
-          if (profileError.code === 'PGRST116') {
-            const { data: newProfile, error: createError } = await supabase
-              .from('profiles')
-              .insert({
+          if (isNotFoundError(profileError)) {
+            const userEmail =
+              (this.user as { email?: string }).email || this.user.email;
+            const { data: newProfile, error: createError } =
+              await insertProfile({
                 id: userId,
-                email:
-                  (this.user as { email?: string }).email || this.user.email,
+                email: userEmail ?? null,
                 onboarding_completed: false,
-              })
-              .select()
-              .single();
+              });
 
             if (createError) {
               console.error('Error creating profile:', createError);

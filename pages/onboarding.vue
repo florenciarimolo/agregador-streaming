@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { TitleStatus } from '@/types/TitleStatus';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
+import { getTitleByTmdbId, insertTitle } from '@/composables/database/titles';
+import { upsertUserTitleStatus } from '@/composables/database/userTitleStatus';
+import { getSession } from '@/composables/database/auth';
+import { isUniqueViolationError } from '@/composables/database/errorCodes';
 
 definePageMeta({
   middleware: 'auth',
@@ -120,7 +124,7 @@ const saveSelections = async () => {
       // If user is not in store, try to get it from Supabase
       const {
         data: { session },
-      } = await supabase.auth.getSession();
+      } = await getSession();
       if (!session?.user) {
         error.value = 'Debes estar autenticado para guardar tus selecciones.';
         saving.value = false;
@@ -136,25 +140,23 @@ const saveSelections = async () => {
     // First, ensure all titles exist in the database, then insert likes
     for (const title of selectedTitles.value) {
       // Check if title exists
-      const { data: existingTitle } = await supabase
-        .from('titles')
-        .select('id')
-        .eq('tmdb_id', title.id)
-        .eq('type', title.media_type)
-        .maybeSingle();
+      const { data: existingTitle } = await getTitleByTmdbId(
+        title.id,
+        title.media_type
+      );
 
       if (!existingTitle) {
         // Insert new title
-        const { error: insertError } = await supabase.from('titles').insert({
+        const { error: insertError } = await insertTitle({
           tmdb_id: title.id,
           title: title.title || title.name || 'Unknown',
           type: title.media_type,
           poster_path: title.poster_path,
-          backdrop_path: title.backdrop_path,
-          overview: title.overview,
+          backdrop_path: title.backdrop_path || null,
+          overview: title.overview || null,
           release_date: title.release_date || null,
           first_air_date: title.first_air_date || null,
-          genres: title.genre_ids || [],
+          genres: title.genre_ids || null,
           vote_average: title.vote_average || null,
         });
 
@@ -162,17 +164,15 @@ const saveSelections = async () => {
       }
 
       // Insert user title status as seen with liked=true (will fail silently if duplicate due to UNIQUE constraint)
-      const { error: likeError } = await supabase
-        .from('user_title_status')
-        .insert({
-          user_id: userId,
-          tmdb_id: title.id,
-          status: TitleStatus.SEEN,
-          liked: true,
-        });
+      const { error: likeError } = await upsertUserTitleStatus({
+        user_id: userId,
+        tmdb_id: title.id,
+        status: TitleStatus.SEEN,
+        liked: true,
+      });
 
-      if (likeError && likeError.code !== '23505') {
-        // 23505 is unique_violation, which is expected for duplicates
+      if (likeError && !isUniqueViolationError(likeError)) {
+        // Unique violation is expected for duplicates
         throw likeError;
       }
     }

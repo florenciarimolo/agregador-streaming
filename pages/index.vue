@@ -2,6 +2,7 @@
 import { useUserStore } from '../stores/user';
 import { Recommendations, Recommendation } from '@/types/Recommendation';
 import { TitleStatus } from '@/types/TitleStatus';
+import { getSession } from '@/composables/database/auth';
 import { nextTick, onMounted, computed } from 'vue';
 
 // Type for Supabase user that may have either 'id' or 'sub' as identifier
@@ -41,7 +42,6 @@ useSeoMeta({
 // Auth state
 const user = useSupabaseUser();
 const userStore = useUserStore();
-const supabase = useSupabaseClient();
 
 // Computed to get effective user (from composable or store during hydration)
 const effectiveUser = computed(() => {
@@ -79,7 +79,7 @@ const fetchRecommendations = async (): Promise<Recommendations> => {
     const {
       data: { session },
       error: sessionError,
-    } = await supabase.auth.getSession();
+    } = await getSession();
 
     if (sessionError) {
       console.error('Error getting session:', sessionError);
@@ -259,7 +259,7 @@ const handleTitleStatus = async (
   try {
     const {
       data: { session },
-    } = await supabase.auth.getSession();
+    } = await getSession();
 
     if (!session?.access_token) {
       return;
@@ -302,7 +302,7 @@ const handleMarkLiked = async (title: Recommendation) => {
   try {
     const {
       data: { session },
-    } = await supabase.auth.getSession();
+    } = await getSession();
 
     if (!session?.access_token) {
       return;

@@ -221,16 +221,27 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-// These are auto-imported in Nuxt 3
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore - Auto-imported
-const supabase = useSupabaseClient();
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore - Auto-imported
 const user = useSupabaseUser();
 import { useUserStore } from '@/stores/user';
 import { TitleStatus } from '@/types/TitleStatus';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
+import {
+  getUserLikedTitles,
+  deleteUserTitleStatus,
+  upsertUserTitleStatus,
+  getUserLikedTitle,
+} from '@/composables/database/userTitleStatus';
+import {
+  getTitleByTmdbId,
+  insertTitle,
+  getTitlesByTmdbIds,
+} from '@/composables/database/titles';
+import {
+  isNotFoundError,
+  isUniqueViolationError,
+} from '@/composables/database/errorCodes';
 import SearchBar from '@/components/SearchBar.vue';
 import AlertMessage from '@/components/AlertMessage.vue';
 import type { TMDBSearchResult } from '@/types/TMDBSearch';
@@ -284,12 +295,8 @@ const fetchLikedTitles = async () => {
   isLoading.value = true;
   try {
     // Get liked statuses with tmdb_ids (where liked=true)
-    const { data: likedStatuses, error: statusError } = await supabase
-      .from('user_title_status')
-      .select('id, tmdb_id')
-      .eq('user_id', userId)
-      .eq('liked', true)
-      .order('created_at', { ascending: false });
+    const { data: likedStatuses, error: statusError } =
+      await getUserLikedTitles(userId);
 
     if (statusError) throw statusError;
 
@@ -300,10 +307,8 @@ const fetchLikedTitles = async () => {
 
     // Get titles data for those tmdb_ids
     const tmdbIds = likedStatuses.map((s) => s.tmdb_id);
-    const { data: titlesData, error: titlesError } = await supabase
-      .from('titles')
-      .select('id, title, type, poster_path, tmdb_id')
-      .in('tmdb_id', tmdbIds);
+    const { data: titlesData, error: titlesError } =
+      await getTitlesByTmdbIds(tmdbIds);
 
     if (titlesError) throw titlesError;
 
@@ -344,11 +349,7 @@ const confirmRemoveTitle = async () => {
 
   isRemoving.value = true;
   try {
-    const { error } = await supabase
-      .from('user_title_status')
-      .delete()
-      .eq('id', title.id)
-      .eq('liked', true);
+    const { error } = await deleteUserTitleStatus(title.id);
 
     if (error) throw error;
 
@@ -391,27 +392,21 @@ const handleTitleSelected = async (result: TMDBSearchResult) => {
   }
 
   try {
+    if (!result.media_type) {
+      showError('Tipo de medio no válido.');
+      return;
+    }
     // Check if title exists in database
-    const { data: existingTitle, error: titleCheckError } = await supabase
-      .from('titles')
-      .select('id')
-      .eq('tmdb_id', result.id)
-      .eq('type', result.media_type)
-      .maybeSingle();
+    const { data: existingTitle, error: titleCheckError } =
+      await getTitleByTmdbId(result.id, result.media_type);
 
-    if (titleCheckError && titleCheckError.code !== 'PGRST116') {
-      // PGRST116 is "not found" which is fine
+    if (titleCheckError && !isNotFoundError(titleCheckError)) {
+      // "Not found" is fine, we'll create the title
       throw titleCheckError;
     }
 
     // Check if user already liked this title
-    const { data: existingLike } = await supabase
-      .from('user_title_status')
-      .select('id')
-      .eq('user_id', userId)
-      .eq('tmdb_id', result.id)
-      .eq('liked', true)
-      .maybeSingle();
+    const { data: existingLike } = await getUserLikedTitle(userId, result.id);
 
     if (existingLike) {
       showError('Este título ya está en tus preferencias.');
@@ -421,18 +416,18 @@ const handleTitleSelected = async (result: TMDBSearchResult) => {
     }
 
     // Ensure title exists in database
-    if (!existingTitle) {
+    if (!existingTitle && result.media_type) {
       // Insert new title
-      const { error: insertError } = await supabase.from('titles').insert({
+      const { error: insertError } = await insertTitle({
         tmdb_id: result.id,
         title: result.title || result.name || 'Unknown',
         type: result.media_type,
         poster_path: result.poster_path,
-        backdrop_path: result.backdrop_path,
-        overview: result.overview,
+        backdrop_path: result.backdrop_path || null,
+        overview: result.overview || null,
         release_date: result.release_date || null,
         first_air_date: result.first_air_date || null,
-        genres: [], // Genre IDs not available in search result, will be fetched later if needed
+        genres: null, // Genre IDs not available in search result, will be fetched later if needed
         vote_average: result.vote_average || null,
       });
 
@@ -440,19 +435,15 @@ const handleTitleSelected = async (result: TMDBSearchResult) => {
     }
 
     // Insert user like status (as seen with liked=true)
-    const { data: newLike, error: likeError } = await supabase
-      .from('user_title_status')
-      .insert({
-        user_id: userId,
-        tmdb_id: result.id,
-        status: TitleStatus.SEEN,
-        liked: true,
-      })
-      .select('id, tmdb_id')
-      .single();
+    const { data: newLike, error: likeError } = await upsertUserTitleStatus({
+      user_id: userId,
+      tmdb_id: result.id,
+      status: TitleStatus.SEEN,
+      liked: true,
+    });
 
     if (likeError) {
-      if (likeError.code === '23505') {
+      if (isUniqueViolationError(likeError)) {
         // Unique violation - already liked
         showError('Este título ya está en tus preferencias.');
         // Refetch to sync UI
@@ -463,11 +454,10 @@ const handleTitleSelected = async (result: TMDBSearchResult) => {
     }
 
     // Optimistic UI update - fetch title data
-    const { data: titleData } = await supabase
-      .from('titles')
-      .select('title, type, poster_path, tmdb_id')
-      .eq('tmdb_id', result.id)
-      .single();
+    const { data: titleData } = await getTitleByTmdbId(
+      result.id,
+      result.media_type!
+    );
 
     if (titleData) {
       likedTitles.value.unshift({
