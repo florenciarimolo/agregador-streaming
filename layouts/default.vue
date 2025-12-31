@@ -15,6 +15,21 @@
       <div
         class="border-t border-gray-300/50 dark:border-white/10 py-6 px-6 text-center"
       >
+        <div class="flex flex-wrap justify-center gap-4 mb-4">
+          <nuxt-link
+            to="/how-it-works"
+            class="text-gray-800 dark:text-gray-300 hover:text-primary dark:hover:text-primary-400 transition-colors text-sm no-underline"
+          >
+            How it works
+          </nuxt-link>
+          <span class="text-gray-400">•</span>
+          <nuxt-link
+            to="/faq"
+            class="text-gray-800 dark:text-gray-300 hover:text-primary dark:hover:text-primary-400 transition-colors text-sm no-underline"
+          >
+            FAQ
+          </nuxt-link>
+        </div>
         <p class="text-gray-800 dark:text-gray-300 text-sm mb-2">
           © 2025 UpNext. Todos los derechos reservados.
         </p>
