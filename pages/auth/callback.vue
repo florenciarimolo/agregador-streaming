@@ -24,9 +24,10 @@
 </template>
 
 <script setup lang="ts">
-// Nuxt auto-imports: definePageMeta, useSupabaseClient, useRouter, useRoute, useUserStore, useSupabaseUser
-// These are available globally via Nuxt's auto-import system
-// TypeScript types are generated in .nuxt/types/imports.d.ts
+// Callback page - MINIMAL RESPONSIBILITY
+// Only exchanges code for session and redirects
+// Does NOT detect recovery, login, registration, etc.
+// Recovery detection happens in middleware using session.user.recovery_sent_at
 
 definePageMeta({
   ssr: false, // Client-side only to handle query params
@@ -44,8 +45,6 @@ useSeoMeta({
 const supabase = useSupabaseClient();
 const router = useRouter();
 const route = useRoute();
-const userStore = useUserStore();
-const user = useSupabaseUser();
 
 const error = ref<string | null>(null);
 const loading = ref(true);
@@ -75,38 +74,18 @@ onMounted(async () => {
     // Merge query params and hash params (query params take precedence)
     const allParams = { ...hashParams, ...route.query };
 
-    // Debug logging (only in development)
-    if (
-      process.env.NODE_ENV === 'development' &&
-      (hashParams.error || route.query.error)
-    ) {
-      console.log('[Callback] Detected error params:', {
-        hashParams,
-        queryParams: route.query,
-        allParams,
-      });
-    }
-
-    // Get code from query parameters (magic link or OAuth)
-    const code = allParams.code as string;
-    const accessToken = allParams.access_token as string;
-    const refreshToken = allParams.refresh_token as string;
-    const errorMessage = allParams.error_message as string;
-
-    // Get Supabase error parameters (check both hash and query)
+    // Handle errors first
     const supabaseError = allParams.error as string;
     const errorCode = allParams.error_code as string;
     const errorDescription = allParams.error_description as string;
+    const errorMessage = allParams.error_message as string;
 
-    // Check for Supabase error parameters first (error, error_code, error_description)
-    if (supabaseError || errorCode || errorDescription) {
+    if (supabaseError || errorCode || errorDescription || errorMessage) {
       let errorText = '';
 
-      // Use error_description if available (most user-friendly)
       if (errorDescription) {
         errorText = decodeURIComponent(errorDescription);
       } else if (errorCode) {
-        // Map common error codes to user-friendly messages
         const errorMessages: Record<string, string> = {
           otp_expired:
             'El enlace de inicio de sesión ha expirado. Por favor, solicita uno nuevo.',
@@ -117,6 +96,8 @@ onMounted(async () => {
             'El token ha expirado. Por favor, solicita un nuevo enlace.',
         };
         errorText = errorMessages[errorCode] || `Error: ${errorCode}`;
+      } else if (errorMessage) {
+        errorText = decodeURIComponent(errorMessage);
       } else if (supabaseError) {
         errorText =
           supabaseError === 'access_denied'
@@ -131,23 +112,18 @@ onMounted(async () => {
       loading.value = false;
       setTimeout(() => {
         router.replace('/');
-      }, 5000); // Give user more time to read the error
+      }, 5000);
       return;
     }
 
-    // Check for error message (legacy format)
-    if (errorMessage) {
-      error.value = decodeURIComponent(errorMessage);
-      loading.value = false;
-      setTimeout(() => {
-        router.replace('/');
-      }, 3000);
-      return;
-    }
+    // Get code from query parameters
+    const code = allParams.code as string;
+    const accessToken = allParams.access_token as string;
+    const refreshToken = allParams.refresh_token as string;
 
     // If we have access_token and refresh_token, set session directly
     if (accessToken && refreshToken) {
-      const { data, error: sessionError } = await supabase.auth.setSession({
+      const { error: sessionError } = await supabase.auth.setSession({
         access_token: accessToken,
         refresh_token: refreshToken,
       });
@@ -163,29 +139,26 @@ onMounted(async () => {
         return;
       }
 
-      if (data.session) {
-        await handleSuccessfulAuth();
-        return;
-      }
+      // Session set successfully, redirect to home
+      // Recovery detection will happen in middleware
+      router.replace('/');
+      return;
     }
 
     // If we have a code, exchange it for a session
     if (code) {
-      // First try to exchange the code
-      const { data, error: codeError } =
+      const { error: codeError } =
         await supabase.auth.exchangeCodeForSession(code);
 
       if (codeError) {
         // Check if it's a PKCE code verifier missing error
-        // This happens when Supabase processes the token asynchronously
         const isPKCEError =
           codeError.message?.includes('PKCE') ||
           codeError.message?.includes('code verifier') ||
           codeError.name === 'AuthPKCECodeVerifierMissingError';
 
         if (isPKCEError) {
-          // For PKCE errors, wait longer and check multiple times
-          // Supabase may be processing the token in the background
+          // For PKCE errors, wait and check if session was established
           let attempts = 0;
           const maxAttempts = 6; // Check for up to 3 seconds (6 * 500ms)
           let sessionFound = false;
@@ -195,8 +168,9 @@ onMounted(async () => {
             const { data: sessionData } = await supabase.auth.getSession();
             if (sessionData?.session) {
               sessionFound = true;
-              // Session was established, proceed with auth
-              await handleSuccessfulAuth();
+              // Session was established, redirect to home
+              // Recovery detection will happen in middleware
+              router.replace('/');
               return;
             }
             attempts++;
@@ -224,8 +198,9 @@ onMounted(async () => {
           const { data: sessionData } = await supabase.auth.getSession();
 
           if (sessionData?.session) {
-            // Session was established, proceed with auth
-            await handleSuccessfulAuth();
+            // Session was established, redirect to home
+            // Recovery detection will happen in middleware
+            router.replace('/');
             return;
           }
 
@@ -241,24 +216,15 @@ onMounted(async () => {
           }, 3000);
           return;
         }
-      }
-
-      if (data.session) {
-        await handleSuccessfulAuth();
-        return;
-      }
-
-      // If exchange succeeded but no session, wait and check again
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      const { data: sessionData } = await supabase.auth.getSession();
-      if (sessionData?.session) {
-        await handleSuccessfulAuth();
+      } else {
+        // Code exchanged successfully, redirect to home
+        // Recovery detection will happen in middleware
+        router.replace('/');
         return;
       }
     }
 
     // If no code or tokens, try to get existing session
-    // Only check for session if we don't have a code (code was already handled above)
     if (!code) {
       const { data: sessionData, error: sessionError } =
         await supabase.auth.getSession();
@@ -277,20 +243,19 @@ onMounted(async () => {
       }
 
       if (sessionData.session) {
-        await handleSuccessfulAuth();
+        // Session exists, redirect to home
+        // Recovery detection will happen in middleware
+        router.replace('/');
         return;
       }
     }
 
-    // Only show error if we've exhausted all options and no code was present
-    // If we had a code, we already handled the error case above
-    if (!code) {
-      error.value = 'No se pudo establecer la sesión. Redirigiendo...';
-      loading.value = false;
-      setTimeout(() => {
-        router.replace('/');
-      }, 2000);
-    }
+    // No code, no tokens, no session
+    error.value = 'No se pudo establecer la sesión. Redirigiendo...';
+    loading.value = false;
+    setTimeout(() => {
+      router.replace('/');
+    }, 2000);
   } catch (err: unknown) {
     console.error('[Callback] Unexpected error:', err);
     error.value = 'Ocurrió un error inesperado. Por favor, intenta de nuevo.';
@@ -300,51 +265,4 @@ onMounted(async () => {
     }, 3000);
   }
 });
-
-const handleSuccessfulAuth = async () => {
-  try {
-    // Wait for user to be available from Supabase - optimized polling
-    let attempts = 0;
-    const maxAttempts = 10; // Reduced attempts
-    const pollInterval = 100; // Faster polling
-
-    while (!user.value && attempts < maxAttempts) {
-      await new Promise((resolve) => setTimeout(resolve, pollInterval));
-      attempts++;
-    }
-
-    // Ensure user is set in store
-    if (user.value) {
-      // Set user in store explicitly
-      userStore.setUser(user.value);
-
-      // Fetch profile and wait for it to complete
-      await userStore.fetchProfile();
-
-      // Single nextTick is enough for Vue reactivity
-      await nextTick();
-
-      // Check if user has completed onboarding
-      if (!userStore.hasCompletedOnboarding) {
-        await router.replace('/onboarding');
-      } else {
-        // Use replace to avoid adding to history and ensure clean navigation
-        await router.replace({ path: '/', query: {} });
-      }
-    } else {
-      error.value = 'No se pudo obtener la información del usuario.';
-      loading.value = false;
-      setTimeout(() => {
-        router.replace('/');
-      }, 2000);
-    }
-  } catch (err: unknown) {
-    console.error('[Callback] Error handling successful auth:', err);
-    error.value = 'Error al cargar el perfil. Redirigiendo...';
-    loading.value = false;
-    setTimeout(() => {
-      router.replace('/');
-    }, 2000);
-  }
-};
 </script>

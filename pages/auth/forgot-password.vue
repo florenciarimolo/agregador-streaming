@@ -114,13 +114,37 @@ const handleResetPassword = async () => {
     const result = await resetPassword(email.value);
 
     if (result.error) {
-      error.value = result.error.message;
+      // Handle rate limit error with specific message
+      if (
+        result.error.name === 'RateLimitError' ||
+        result.error.code === 'over_email_send_rate_limit'
+      ) {
+        error.value = result.error.message;
+      } else {
+        // For other errors, show the error message
+        error.value =
+          result.error.message ||
+          'Ocurrió un error al enviar el enlace de recuperación.';
+      }
       return;
     }
 
     emailSent.value = true;
   } catch (err: unknown) {
-    error.value = err instanceof Error ? err.message : 'An error occurred';
+    // Handle unexpected errors
+    if (
+      err &&
+      typeof err === 'object' &&
+      'name' in err &&
+      err.name === 'RateLimitError'
+    ) {
+      error.value = (err as Error).message;
+    } else {
+      error.value =
+        err instanceof Error
+          ? err.message
+          : 'Ocurrió un error al enviar el enlace de recuperación.';
+    }
   } finally {
     loading.value = false;
   }

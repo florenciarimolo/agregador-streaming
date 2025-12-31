@@ -49,7 +49,7 @@
         <!-- Success message -->
         <AlertMessage
           v-if="passwordReset"
-          message="¡Contraseña actualizada correctamente! Redirigiendo..."
+          message="¡Contraseña actualizada correctamente! Todas las sesiones activas han sido cerradas por seguridad. Redirigiendo al inicio de sesión..."
           type="success"
         />
 
@@ -354,7 +354,7 @@ import {
 definePageMeta({
   layout: false,
   ssr: false, // Client-side only
-  middleware: [], // No auth middleware - handles its own flow
+  middleware: [], // Recovery detection happens globally, not here
 });
 
 useHead({
@@ -368,7 +368,6 @@ useSeoMeta({
 
 const supabase = useSupabaseClient();
 const router = useRouter();
-const route = useRoute();
 
 const newPassword = ref('');
 const confirmPassword = ref('');
@@ -379,6 +378,29 @@ const passwordReset = ref(false);
 const showPassword = ref(false);
 const showConfirmPassword = ref(false);
 const codeValidated = ref(false);
+
+// Prevent navigation away from this page until password is reset
+// This ensures users complete the password reset flow even if they have a session
+onBeforeRouteLeave((_to, _from, next) => {
+  if (passwordReset.value) {
+    // Password was reset, allow navigation
+    next();
+  } else if (codeValidated.value && !error.value && !errorMessage.value) {
+    // Code is validated and form is shown, but password not reset yet
+    // Ask user to confirm before leaving
+    const confirmed = window.confirm(
+      '¿Estás seguro de que quieres salir? Tu contraseña aún no ha sido restablecida.'
+    );
+    if (confirmed) {
+      next();
+    } else {
+      next(false);
+    }
+  } else {
+    // Still validating or error state, allow navigation
+    next();
+  }
+});
 
 // Password validation
 const passwordValidation = computed(() => {
@@ -404,192 +426,59 @@ const isPasswordValid = computed(() => {
   return passwordValidation.value?.isValid ?? false;
 });
 
-// Helper function to parse hash params
-const parseHashParams = (): Record<string, string> => {
-  const params: Record<string, string> = {};
-  if (typeof window !== 'undefined' && window.location.hash) {
-    const hash = window.location.hash.substring(1); // Remove #
-    try {
-      const hashParams = new URLSearchParams(hash);
-      hashParams.forEach((value, key) => {
-        params[key] = decodeURIComponent(value);
-      });
-    } catch (e) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('[Reset Password] Error parsing hash:', e);
-      }
-    }
-  }
-  return params;
-};
-
-// Validate code from query parameter and set session
+// Validate recovery session
+// NO intercambia codes - el callback ya lo hizo
+// Solo verifica que hay una sesión de recovery usando recovery_sent_at
 onMounted(async () => {
-  // Get hash params (Supabase sometimes puts params in hash)
-  const hashParams = parseHashParams();
-
-  // Merge query params and hash params (query params take precedence)
-  const allParams = { ...hashParams, ...route.query };
-
-  if (process.env.NODE_ENV === 'development') {
-    console.log('[Reset Password] Detected params:', {
-      hashParams,
-      queryParams: route.query,
-      allParams,
-    });
-  }
-
-  // Check for error_message in params
-  const errorMsg = allParams.error_message as string;
-  if (errorMsg) {
-    errorMessage.value = decodeURIComponent(errorMsg);
-    codeValidated.value = true;
-    return;
-  }
-
-  const code = allParams.code as string;
-  const accessToken = allParams.access_token as string;
-  const refreshToken = allParams.refresh_token as string;
-  const type = allParams.type as string;
-
-  // For password recovery, we need to validate the token/code
-  // but NOT establish a full session until password is changed
-  if (!code && !accessToken) {
-    // No code or tokens in URL - check if this is a recovery flow
-    // by checking if we have type=recovery or if Supabase already processed it
-    if (type === 'recovery') {
-      // Wait a bit for Supabase to process the token if it was just clicked
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // Check if Supabase has a temporary session (from recovery token)
-      const { data: sessionData } = await supabase.auth.getSession();
-      if (sessionData?.session) {
-        // Supabase has established a temporary session from the recovery token
-        // This is fine - we'll use it to change the password
-        // But we won't let the user navigate away until password is changed
-        if (process.env.NODE_ENV === 'development') {
-          console.log('[Reset Password] Recovery session found, showing form');
-        }
-        codeValidated.value = true;
-        return;
-      }
-    }
-
-    // No valid recovery token/session
-    error.value = 'Enlace de recuperación inválido o expirado.';
-    codeValidated.value = true;
-    return;
-  }
-
   try {
-    // If we have access_token and refresh_token, validate them but don't fully establish session
-    // The session will be confirmed after password is changed
-    if (accessToken && refreshToken) {
-      // Verify the tokens are valid by trying to get user info
-      // But don't set the session in the client yet - we'll do that after password change
-      const { data: sessionData, error: sessionError } =
-        await supabase.auth.setSession({
-          access_token: accessToken,
-          refresh_token: refreshToken,
-        });
+    // Get the current session
+    const { data: sessionData, error: sessionError } =
+      await supabase.auth.getSession();
 
-      if (sessionError) {
-        if (process.env.NODE_ENV === 'development') {
-          console.error('[Reset Password] Session error:', sessionError);
-        }
-        error.value =
-          'El enlace de recuperación ha expirado o no es válido. Por favor, solicita uno nuevo.';
-        codeValidated.value = true;
-        return;
+    if (sessionError) {
+      if (process.env.NODE_ENV === 'development') {
+        console.error('[Reset Password] Session error:', sessionError);
       }
-
-      if (sessionData?.session) {
-        // Tokens are valid, show the form
-        // Session is already set by setSession, but user should change password first
-        codeValidated.value = true;
-      } else {
-        error.value = 'No se pudo validar el enlace de recuperación.';
-        codeValidated.value = true;
-      }
-    } else if (code) {
-      // Exchange code for session - this is needed to validate the recovery code
-      const { data, error: codeError } =
-        await supabase.auth.exchangeCodeForSession(code);
-
-      if (codeError) {
-        // Check if it's a PKCE code verifier missing error
-        // This happens when Supabase processes the token asynchronously
-        const isPKCEError =
-          codeError.message?.includes('PKCE') ||
-          codeError.message?.includes('code verifier') ||
-          codeError.name === 'AuthPKCECodeVerifierMissingError';
-
-        if (isPKCEError) {
-          // For PKCE errors, wait longer and check multiple times
-          // Supabase may be processing the token in the background
-          let attempts = 0;
-          const maxAttempts = 6; // Check for up to 3 seconds (6 * 500ms)
-          let sessionFound = false;
-
-          while (attempts < maxAttempts && !sessionFound) {
-            await new Promise((resolve) => setTimeout(resolve, 500));
-            const { data: sessionData } = await supabase.auth.getSession();
-            if (sessionData?.session) {
-              sessionFound = true;
-              // Session was established, show the form
-              codeValidated.value = true;
-              return;
-            }
-            attempts++;
-          }
-
-          // If still no session after waiting, it's a real error
-          if (!sessionFound) {
-            if (process.env.NODE_ENV === 'development') {
-              console.error(
-                '[Reset Password] PKCE error - no session after waiting:',
-                codeError
-              );
-            }
-            error.value =
-              'El enlace de recuperación ha expirado o no es válido. Por favor, solicita uno nuevo.';
-            codeValidated.value = true;
-            return;
-          }
-        } else {
-          // For other errors, show error immediately
-          if (process.env.NODE_ENV === 'development') {
-            console.error('[Reset Password] Code validation error:', codeError);
-          }
-          error.value =
-            'El enlace de recuperación ha expirado o no es válido. Por favor, solicita uno nuevo.';
-          codeValidated.value = true;
-          return;
-        }
-      }
-
-      if (data.session) {
-        // Code is valid, show the form
-        // Session is established but user must change password
-        codeValidated.value = true;
-      } else {
-        // If exchange succeeded but no session, wait and check again
-        await new Promise((resolve) => setTimeout(resolve, 500));
-        const { data: sessionData } = await supabase.auth.getSession();
-        if (sessionData?.session) {
-          codeValidated.value = true;
-        } else {
-          error.value = 'No se pudo validar el enlace de recuperación.';
-          codeValidated.value = true;
-        }
-      }
+      error.value = 'Error al obtener la sesión. Por favor, intenta de nuevo.';
+      codeValidated.value = true;
+      return;
     }
+
+    if (!sessionData?.session) {
+      error.value =
+        'No hay una sesión de recuperación activa. Por favor, solicita un nuevo enlace de recuperación.';
+      codeValidated.value = true;
+      return;
+    }
+
+    const session = sessionData.session;
+
+    // Verify this is a recovery session using recovery_sent_at
+    // This is the ONLY reliable way to detect recovery
+    if (!session.user?.recovery_sent_at) {
+      // Not a recovery session - redirect to home
+      if (process.env.NODE_ENV === 'development') {
+        console.log(
+          '[Reset Password] Session is not a recovery session, redirecting to home'
+        );
+      }
+      router.replace('/');
+      return;
+    }
+
+    // Valid recovery session - show the form
+    if (process.env.NODE_ENV === 'development') {
+      console.log(
+        '[Reset Password] Valid recovery session found, showing form'
+      );
+    }
+    codeValidated.value = true;
   } catch (err: unknown) {
     if (process.env.NODE_ENV === 'development') {
       console.error('[Reset Password] Error:', err);
     }
     error.value =
-      'Error al validar el enlace de recuperación. Por favor, intenta de nuevo.';
+      'Error al validar la sesión de recuperación. Por favor, intenta de nuevo.';
     codeValidated.value = true;
   }
 });
@@ -610,6 +499,7 @@ const handleResetPassword = async () => {
   errorMessage.value = '';
 
   try {
+    // Step 1: Update the password
     const { error: resetError } = await supabase.auth.updateUser({
       password: newPassword.value,
     });
@@ -631,11 +521,29 @@ const handleResetPassword = async () => {
       return;
     }
 
+    // Step 2: Sign out from all active sessions
+    // This ensures that all other devices/sessions are logged out for security
+    // After password change, we want to force re-authentication everywhere
+    // signOut() without parameters closes all sessions globally
+    const { error: signOutError } = await supabase.auth.signOut();
+
+    if (signOutError) {
+      // Log the error but don't fail the password reset
+      // The password was already changed successfully
+      console.warn(
+        '[Reset Password] Error signing out from all sessions:',
+        signOutError
+      );
+      // Continue with the flow even if signOut fails
+    }
+
     passwordReset.value = true;
 
-    // Redirect to home after 2 seconds
+    // Step 3: Redirect to login page after 2 seconds
+    // User needs to log in again with the new password
+    // Using ?auth=login to show the login form on homepage
     setTimeout(() => {
-      router.push('/');
+      router.push('/?auth=login');
     }, 2000);
   } catch (err: unknown) {
     console.error('[Client] Reset password error:', err);

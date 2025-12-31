@@ -37,58 +37,10 @@ export default defineNuxtPlugin({
       // Merge query params and hash params (query params take precedence)
       const allParams = { ...hashParams, ...route.query };
 
-      // Handle password recovery redirects (both from homepage and direct access)
-      if (
-        allParams.type === 'recovery' ||
-        route.path === '/auth/reset-password'
-      ) {
-        // If we're already on reset-password page, don't redirect
-        if (route.path === '/auth/reset-password') {
-          return false;
-        }
-
-        const code = allParams.code as string;
-        const errorMessage = allParams.error_message as string;
-
-        // Build redirect URL with all relevant query params
-        const redirectPath = '/auth/reset-password';
-        const queryParams: Record<string, string> = {};
-
-        if (code) {
-          queryParams.code = code;
-        }
-
-        if (errorMessage) {
-          queryParams.error_message = errorMessage;
-        }
-
-        // Preserve access_token and refresh_token if present
-        if (allParams.access_token) {
-          queryParams.access_token = allParams.access_token as string;
-        }
-
-        if (allParams.refresh_token) {
-          queryParams.refresh_token = allParams.refresh_token as string;
-        }
-
-        // Preserve type if present
-        if (allParams.type) {
-          queryParams.type = allParams.type as string;
-        }
-
-        if (process.env.NODE_ENV === 'development') {
-          console.log(
-            '[Auth Redirect Plugin] Redirecting to reset-password with params:',
-            queryParams
-          );
-        }
-
-        // Use window.location to avoid hydration issues
-        const queryString = new URLSearchParams(queryParams).toString();
-        const redirectUrl = `${redirectPath}${queryString ? `?${queryString}` : ''}`;
-        window.location.replace(redirectUrl);
-        return true;
-      }
+      // NOTE: We NO LONGER detect recovery here
+      // Recovery detection happens in middleware using session.user.recovery_sent_at
+      // All codes (including recovery) go to /auth/callback first
+      // The callback exchanges the code, then middleware detects recovery
 
       // Only handle other redirects on the homepage
       if (route.path !== '/') return false;
@@ -139,13 +91,14 @@ export default defineNuxtPlugin({
         return true; // Indicate redirect happened
       }
 
-      // Handle magic link redirects (code without type=recovery)
+      // Handle magic link redirects (code without type)
+      // All codes go to /auth/callback - recovery detection happens in middleware
       if (route.query.code && !route.query.type) {
         const code = route.query.code as string;
         const errorMessage = route.query.error_message as string;
 
         // If we have access_token and refresh_token, Supabase already processed it
-        // Just redirect immediately
+        // Just redirect immediately to callback
         if (route.query.access_token && route.query.refresh_token) {
           const redirectPath = '/auth/callback';
           const queryParams: Record<string, string> = {};

@@ -21,12 +21,14 @@ export default defineNuxtRouteMiddleware(async (to) => {
 
   // If user is on reset-password page, don't redirect them away
   // They need to complete the password reset flow first
+  // Also, don't load profile or trigger any auth-related actions
   if (to.path === '/auth/reset-password') {
     return; // Allow access to reset-password page regardless of auth state
   }
 
   // If user is authenticated, ensure user is set in store
   // Profile is already fetched by the supabase.client.ts plugin, so we just ensure it's loaded
+  // BUT NOT on reset-password page (handled above)
   if (user.value) {
     // Only set user if different (avoid unnecessary updates)
     const userId = user.value.id || (user.value as { sub?: string })?.sub;

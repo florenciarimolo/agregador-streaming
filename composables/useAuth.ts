@@ -128,12 +128,54 @@ export const useAuth = () => {
 
       if (error) {
         console.error('[Server] Reset password error:', error);
+
+        // Handle rate limit error specifically
+        if (
+          error.code === 'over_email_send_rate_limit' ||
+          error.message?.includes('rate_limit')
+        ) {
+          // Extract wait time from error message
+          // Message format: "For security purposes, you can only request this after X seconds."
+          const waitTimeMatch = error.message.match(/(\d+)\s*seconds?/i);
+          const waitTime = waitTimeMatch
+            ? parseInt(waitTimeMatch[1], 10)
+            : null;
+
+          const rateLimitError = new Error(
+            waitTime
+              ? `Por seguridad, debes esperar ${waitTime} segundo${waitTime !== 1 ? 's' : ''} antes de solicitar otro enlace de recuperación.`
+              : 'Has solicitado demasiados enlaces de recuperación. Por favor, espera unos momentos antes de intentar de nuevo.'
+          ) as Error & { code?: string; waitTime?: number | null };
+          rateLimitError.name = 'RateLimitError';
+          rateLimitError.code = error.code;
+          rateLimitError.waitTime = waitTime;
+
+          return {
+            data: null,
+            error: rateLimitError,
+          };
+        }
+
         throw error;
       }
 
       return { data, error: null };
     } catch (error: unknown) {
       console.error('[Server] Reset password error:', error);
+
+      // If it's already a RateLimitError, return it as is
+      if (
+        error &&
+        typeof error === 'object' &&
+        'name' in error &&
+        error.name === 'RateLimitError'
+      ) {
+        return {
+          data: null,
+          error: error as Error,
+        };
+      }
+
       return {
         data: null,
         error: error instanceof Error ? error : new Error('Error desconocido'),

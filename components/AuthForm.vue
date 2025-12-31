@@ -603,7 +603,7 @@ const backToLogin = () => {
         >
           <a
             href="#"
-            class="text-sm text-gray-800 dark:text-gray-300 hover:text-primary dark:hover:text-primary-400 transition-colors no-underline inline-block"
+            class="text-sm hidden text-gray-800 dark:text-gray-300 hover:text-primary dark:hover:text-primary-400 transition-colors no-underline"
             @click.prevent="showForgotPassword"
           >
             ¿Has olvidado tu contraseña?
