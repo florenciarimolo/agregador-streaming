@@ -124,8 +124,7 @@
             <div
               class="absolute bottom-0 left-0 flex flex-col items-center justify-center w-full h-full px-4 transition-all duration-300 opacity-0 rounded-xl group-hover:opacity-100 group-hover:shadow-primary/40 group-hover:shadow-xl backdrop-blur-md w-inherit dark:bg-black/80 bg-white/80 border border-primary/20"
             >
-              <RatingBadge :rating="mediaObject.vote_average" />
-              <p class="mt-4 dark:text-gray-300 text-gray-800 font-semibold"
+              <p class="dark:text-gray-300 text-gray-800 font-semibold"
                 >Ver detalles</p
               >
             </div>

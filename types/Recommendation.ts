@@ -16,12 +16,10 @@ export type Recommendation = {
   release_date: string | null;
   first_air_date: string | null;
   explanation: string;
+  explanation_code?: string | null; // BASED_ON_LIKE, TRENDING, DISCOVER, EASY_TO_WATCH, MOOD_MATCH
   providers?: Provider[];
   in_watchlist?: boolean; // Indicates if title is in user's watchlist
 };
 
-export type Recommendations = {
-  recommended: Recommendation[];
-  easyToWatch: Recommendation[];
-  basedOnLikes: Recommendation[];
-};
+// Single array of recommendations - no more separate lists
+export type Recommendations = Recommendation[];

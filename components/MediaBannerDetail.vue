@@ -11,15 +11,20 @@
       style="top: 0px; right: 0px; bottom: 0px; left: 0px"
     ></div>
     <div
-      class="relative overflow-hidden rounded-lg shadow-lg shadow-primary/30 w-full max-w-80 md:w-80 flex-shrink-0"
+      class="relative overflow-hidden rounded-xl w-full max-w-80 md:w-80 flex-shrink-0 aspect-[2/3]"
+      style="
+        filter: drop-shadow(0 10px 15px -3px rgb(0 0 0 / 0.1))
+          drop-shadow(0 4px 6px -4px rgb(0 0 0 / 0.1))
+          drop-shadow(0 0 20px rgb(var(--color-primary) / 0.3));
+      "
     >
-      <RatingBadge :rating="mediaWithProviders.vote_average" />
       <img
         :src="
           `https://image.tmdb.org/t/p/w780` + mediaWithProviders.poster_path
         "
         :alt="mediaWithProviders.title"
-        class="object-cover w-full md:w-80"
+        class="object-cover w-full h-full rounded-xl"
+        style="clip-path: inset(0 round 0.75rem)"
       />
     </div>
     <div
@@ -34,17 +39,136 @@
           Volver
         </nuxt-link>
         <div class="flex flex-row items-center justify-between gap-2">
-          <div>
+          <div class="flex items-center gap-3">
             <h1 class="text-2xl font-bold dark:text-gray-300 text-gray-800">{{
               mediaWithProviders.title || (mediaWithProviders as any).name
             }}</h1>
+            <RatingBadge
+              v-if="mediaWithProviders.vote_average"
+              :rating="mediaWithProviders.vote_average"
+            />
           </div>
-          <!-- MediaStatusBagde positioned to the right in desktop -->
-          <MediaStatusBagde
-            v-if="mediaType === MediaTypeEnum.tv || inTheaters"
-            :in-production="inProduction"
-            :in-theaters="inTheaters"
-          />
+          <div class="flex items-center gap-2">
+            <!-- MediaStatusBagde positioned to the right in desktop -->
+            <MediaStatusBagde
+              v-if="mediaType === MediaTypeEnum.tv || inTheaters"
+              :in-production="inProduction"
+              :in-theaters="inTheaters"
+            />
+            <!-- Actions Menu -->
+            <div class="relative">
+              <button
+                type="button"
+                :aria-label="`Menú de acciones para ${mediaWithProviders.title || (mediaWithProviders as any).name}`"
+                class="menu-button p-2 rounded-full bg-black/50 hover:bg-gray-700/80 backdrop-blur-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-black/50"
+                @click.stop.prevent="showMenu = !showMenu"
+                @mousedown.stop.prevent
+              >
+                <IconMoreVertical icon-class="w-4 h-4 text-white" />
+              </button>
+
+              <!-- Dropdown Menu -->
+              <Transition
+                enter-active-class="transition duration-200 ease-out"
+                enter-from-class="transform scale-95 opacity-0"
+                enter-to-class="transform scale-100 opacity-100"
+                leave-active-class="transition duration-150 ease-in"
+                leave-from-class="transform scale-100 opacity-100"
+                leave-to-class="transform scale-95 opacity-0"
+              >
+                <div
+                  v-if="showMenu"
+                  class="absolute right-0 mt-2 w-48 dark:bg-gray-900/40 bg-gray-100/80 backdrop-blur-xl rounded-lg border border-gray-300/50 dark:border-white/10 z-50"
+                  @click.stop
+                >
+                  <div class="p-4">
+                    <button
+                      type="button"
+                      class="w-full px-4 py-2 text-sm dark:text-gray-300 text-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-left flex items-center gap-2 mb-2"
+                      @click.stop.prevent="handleAction(TitleStatus.SEEN)"
+                    >
+                      <svg
+                        class="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M5 13l4 4L19 7"
+                        />
+                      </svg>
+                      Visto
+                    </button>
+                    <button
+                      type="button"
+                      class="w-full px-4 py-2 text-sm dark:text-gray-300 text-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-left flex items-center gap-2 mb-2"
+                      @click.stop.prevent="handleAction('liked')"
+                    >
+                      <svg
+                        class="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                        />
+                      </svg>
+                      Me gusta
+                    </button>
+                    <button
+                      type="button"
+                      class="w-full px-4 py-2 text-sm dark:text-gray-300 text-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-left flex items-center gap-2 mb-2"
+                      @click.stop.prevent="
+                        handleAction(TitleStatus.NOT_INTERESTED)
+                      "
+                    >
+                      <svg
+                        class="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M6 18L18 6M6 6l12 12"
+                        />
+                      </svg>
+                      No me interesa
+                    </button>
+                    <button
+                      type="button"
+                      class="w-full px-4 py-2 text-sm dark:text-gray-300 text-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-left flex items-center gap-2"
+                      @click.stop.prevent="handleAction(TitleStatus.WATCHLIST)"
+                    >
+                      <svg
+                        class="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                      Ver más tarde
+                    </button>
+                  </div>
+                </div>
+              </Transition>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -147,6 +271,10 @@ import MediaStatusBagde from './MediaStatusBagde.vue';
 import IconArrowLeft from './icons/IconArrowLeft.vue';
 import IconCalendar from './icons/IconCalendar.vue';
 import IconTag from './icons/IconTag.vue';
+import IconMoreVertical from './icons/IconMoreVertical.vue';
+import { TitleStatus } from '@/types/TitleStatus';
+import { getSession } from '@/composables/database/auth';
+import { useUndoToast } from '@/composables/useUndoToast';
 
 const props = defineProps({
   media: {
@@ -206,13 +334,26 @@ const handleResize = () => {
   checkMobile();
 };
 
+const showMenu = ref(false);
+const { showToast } = useUndoToast();
+
+// Close menu when clicking outside
+const handleClickOutside = (event: MouseEvent) => {
+  const target = event.target as HTMLElement;
+  if (!target.closest('.menu-button') && !target.closest('.absolute.right-0')) {
+    showMenu.value = false;
+  }
+};
+
 onMounted(() => {
   checkMobile();
   window.addEventListener('resize', handleResize);
+  document.addEventListener('click', handleClickOutside);
 });
 
 onUnmounted(() => {
   window.removeEventListener('resize', handleResize);
+  document.removeEventListener('click', handleClickOutside);
 });
 
 const backgroundImage = computed(() => {
@@ -227,4 +368,118 @@ const sectionStyle = computed(() => ({
   backgroundSize: isMobile.value ? 'contain' : 'cover',
   backgroundPosition: isMobile.value ? 'center' : 'center',
 }));
+
+const handleAction = async (action: TitleStatus | 'liked') => {
+  showMenu.value = false;
+
+  try {
+    const {
+      data: { session },
+    } = await getSession();
+
+    if (!session?.access_token) {
+      showToast(
+        'Debes estar autenticado para realizar esta acción',
+        null,
+        3000
+      );
+      return;
+    }
+
+    const mediaTitle =
+      mediaWithProviders.value.title ||
+      (mediaWithProviders.value as Movie & { name?: string }).name ||
+      'Este título';
+
+    if (action === 'liked') {
+      // Update or insert with liked=true and status=seen
+      await $fetch('/api/users/title-status', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: {
+          tmdb_id: mediaWithProviders.value.id,
+          type: props.mediaType,
+          status: TitleStatus.SEEN,
+          liked: true,
+        },
+      });
+
+      showToast(
+        `"${mediaTitle}" agregado a tus favoritos`,
+        {
+          label: 'Ver favoritos',
+          action: async () => {
+            await navigateTo('/profile');
+          },
+        },
+        5000
+      );
+    } else {
+      // Update status
+      await $fetch('/api/users/title-status', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: {
+          tmdb_id: mediaWithProviders.value.id,
+          type: props.mediaType,
+          status: action,
+        },
+      });
+
+      if (action === TitleStatus.NOT_INTERESTED) {
+        showToast(
+          `"${mediaTitle}" marcado como no me interesa`,
+          {
+            label: 'Deshacer',
+            action: async () => {
+              await $fetch('/api/users/title-status', {
+                method: 'DELETE',
+                headers: {
+                  Authorization: `Bearer ${session.access_token}`,
+                },
+                query: {
+                  tmdb_id: mediaWithProviders.value.id,
+                },
+              });
+            },
+          },
+          7000
+        );
+      } else if (action === TitleStatus.SEEN) {
+        showToast(
+          `"${mediaTitle}" marcado como visto`,
+          {
+            label: 'Ver vistos',
+            action: async () => {
+              await navigateTo('/seen');
+            },
+          },
+          5000
+        );
+      } else if (action === TitleStatus.WATCHLIST) {
+        showToast(
+          `"${mediaTitle}" guardado para ver más tarde`,
+          {
+            label: 'Ver lista',
+            action: async () => {
+              await navigateTo('/watchlist');
+            },
+          },
+          5000
+        );
+      }
+    }
+  } catch (error) {
+    console.error('Error handling action:', error);
+    const mediaTitle =
+      mediaWithProviders.value.title ||
+      (mediaWithProviders.value as Movie & { name?: string }).name ||
+      'Este título';
+    showToast(`Error al actualizar "${mediaTitle}"`, null, 3000);
+  }
+};
 </script>

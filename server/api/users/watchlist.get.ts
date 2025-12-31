@@ -1,7 +1,7 @@
 import { serverSupabaseUser } from '#supabase/server';
 import { createClient } from '@supabase/supabase-js';
-import { getTMDBConfig } from '../utils/config';
-import { devLog, devError, devWarn, safeError } from '../utils/logger';
+import { getTMDBConfig } from '../../utils/config';
+import { devLog, devError, devWarn, safeError } from '../../utils/logger';
 import { TitleStatus } from '@/types/TitleStatus';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 

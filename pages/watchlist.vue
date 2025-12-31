@@ -177,7 +177,7 @@ const fetchWatchlist = async () => {
       return;
     }
 
-    const response = await $fetch('/api/user-watchlist', {
+    const response = await $fetch('/api/users/watchlist', {
       headers: {
         Authorization: `Bearer ${session.access_token}`,
       },
@@ -234,7 +234,7 @@ const handleRemoveTitle = async (title: WatchlistTitle) => {
     }
 
     // Delete title status
-    await $fetch('/api/user-title-status', {
+    await $fetch('/api/users/title-status', {
       method: 'DELETE',
       headers: {
         Authorization: `Bearer ${session.access_token}`,

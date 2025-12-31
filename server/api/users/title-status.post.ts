@@ -1,6 +1,10 @@
 import { serverSupabaseUser } from '#supabase/server';
 import { createClient } from '@supabase/supabase-js';
 import { TitleStatus } from '@/types/TitleStatus';
+import {
+  updatePoolScore,
+  removeFromPool,
+} from '@/composables/database/recommendationPool';
 
 /**
  * Update user title status (seen, not_interested, or watchlist)
@@ -122,6 +126,14 @@ export default defineEventHandler(async (event) => {
       upsertData.liked = liked;
     }
 
+    // Get previous status to detect changes
+    const { data: previousStatus } = await supabase
+      .from('user_title_status')
+      .select('status, liked')
+      .eq('user_id', userId)
+      .eq('tmdb_id', tmdb_id)
+      .maybeSingle();
+
     const { error } = await supabase
       .from('user_title_status')
       .upsert(upsertData, {
@@ -136,6 +148,31 @@ export default defineEventHandler(async (event) => {
         statusCode: 500,
         message: 'Error al actualizar el estado del título',
       });
+    }
+
+    // Update recommendation pool score based on status changes
+    try {
+      // If status changed to 'not_interested', remove from pool
+      if (status === TitleStatus.NOT_INTERESTED) {
+        await removeFromPool(userId, tmdb_id, supabase);
+      } else if (status === TitleStatus.SEEN) {
+        // If status changed to 'seen', decrease score by 50
+        // Only if it wasn't already 'seen'
+        if (previousStatus?.status !== TitleStatus.SEEN) {
+          await updatePoolScore(userId, tmdb_id, -50, supabase);
+        }
+      }
+
+      // If liked changed to true, increase score by 30
+      // Only if it wasn't already liked
+      if (liked === true && previousStatus?.liked !== true) {
+        await updatePoolScore(userId, tmdb_id, 30, supabase);
+      }
+    } catch (poolError) {
+      // Don't fail the request if pool update fails
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error updating recommendation pool:', poolError);
+      }
     }
 
     return { success: true };

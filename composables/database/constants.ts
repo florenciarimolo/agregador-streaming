@@ -5,6 +5,7 @@ export const TABLES = {
   PROFILES: 'profiles',
   TITLES: 'titles',
   USER_TITLE_STATUS: 'user_title_status',
+  RECOMMENDATION_POOL: 'recommendation_pool',
 } as const;
 
 /**

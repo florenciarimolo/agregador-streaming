@@ -29,14 +29,19 @@
         style="top: 0px; right: 0px; bottom: 0px; left: 0px"
       ></div>
       <div
-        class="relative overflow-hidden rounded-lg shadow-lg shadow-primary/30 w-full max-w-80 md:w-80 flex-shrink-0 aspect-[2/3]"
+        class="relative overflow-hidden rounded-xl w-full max-w-80 md:w-80 flex-shrink-0 aspect-[2/3]"
+        style="
+          filter: drop-shadow(0 10px 15px -3px rgb(0 0 0 / 0.1))
+            drop-shadow(0 4px 6px -4px rgb(0 0 0 / 0.1))
+            drop-shadow(0 0 20px rgb(var(--color-primary) / 0.3));
+        "
       >
-        <RatingBadge :rating="seasonWithProviders?.vote_average || 0" />
         <img
           v-if="seasonWithProviders?.poster_path"
           :src="`https://image.tmdb.org/t/p/w780${seasonWithProviders.poster_path}`"
           :alt="seasonWithProviders.name"
-          class="object-cover w-full h-full"
+          class="object-cover w-full h-full rounded-xl"
+          style="clip-path: inset(0 round 0.75rem)"
         />
       </div>
       <div
@@ -50,10 +55,14 @@
             <IconArrowLeft icon-class="w-4 h-4" />
             Volver
           </nuxt-link>
-          <div>
+          <div class="flex items-center gap-3">
             <h1 class="text-2xl font-bold dark:text-gray-300 text-gray-800">{{
               seasonWithProviders?.name
             }}</h1>
+            <RatingBadge
+              v-if="seasonWithProviders?.vote_average"
+              :rating="seasonWithProviders.vote_average"
+            />
           </div>
         </div>
 
@@ -139,17 +148,19 @@
               <span class="text-4xl">📺</span>
             </div>
             <div
-              class="absolute px-2 py-1 text-sm dark:text-gray-300 text-gray-800 rounded-lg top-2 left-4 dark:bg-gray-800/70 bg-white/70"
+              class="absolute px-2 py-1 text-xs dark:text-gray-300 text-gray-800 rounded-lg top-2 left-4 bg-white/60 dark:bg-gray-900/40 backdrop-blur-xl border border-gray-300/50 dark:border-white/10"
             >
               Episodio {{ index + 1 }}
             </div>
-            <RatingBadge :rating="episode.vote_average" />
           </div>
           <div class="p-4">
-            <h4
-              class="mb-2 font-semibold dark:text-gray-300 text-gray-800 line-clamp-1"
-              >{{ episode.name }}</h4
-            >
+            <div class="flex items-center gap-3 mb-2">
+              <h4
+                class="font-semibold dark:text-gray-300 text-gray-800 line-clamp-1"
+                >{{ episode.name }}</h4
+              >
+              <RatingBadge :rating="episode.vote_average" />
+            </div>
             <p class="mb-2 text-sm dark:text-gray-300 text-gray-800">{{
               formatDateToSpanish(episode.air_date)
             }}</p>

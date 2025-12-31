@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { useUserStore } from '../stores/user';
-import { Recommendations, Recommendation } from '@/types/Recommendation';
+import { Recommendation } from '@/types/Recommendation';
 import { TitleStatus } from '@/types/TitleStatus';
 import { getSession } from '@/composables/database/auth';
 import { useUndoToast } from '@/composables/useUndoToast';
-import { nextTick, onMounted, computed } from 'vue';
+import { nextTick, onMounted, computed, watch } from 'vue';
 
 // Type for Supabase user that may have either 'id' or 'sub' as identifier
 type SupabaseUserWithSub = {
@@ -59,20 +59,15 @@ const initialProfileLoaded = ref(false);
 const showAuthForm = ref(false);
 const loadingRecommendations = ref(false);
 const hasAttemptedLoad = ref(false); // Track if we've attempted to load recommendations at least once
-const recommendations = ref<Recommendations>({
-  recommended: [],
-  easyToWatch: [],
-  basedOnLikes: [],
-});
+const populatingPool = ref(false);
+const recommendations = ref<Recommendation[]>([]);
+const lastFetchedMood = ref<string | null>(null);
+const lastFetchedAttention = ref<string | null>(null);
 
 // Fetch recommendations function
-const fetchRecommendations = async (): Promise<Recommendations> => {
+const fetchRecommendations = async (): Promise<Recommendation[]> => {
   if (!user.value || !userStore.hasCompletedOnboarding) {
-    return {
-      recommended: [],
-      easyToWatch: [],
-      basedOnLikes: [],
-    };
+    return [];
   }
 
   loadingRecommendations.value = true;
@@ -84,45 +79,52 @@ const fetchRecommendations = async (): Promise<Recommendations> => {
 
     if (sessionError) {
       console.error('Error getting session:', sessionError);
-      return {
-        recommended: [],
-        easyToWatch: [],
-        basedOnLikes: [],
-      };
+      return [];
     }
 
     if (!session || !session.access_token) {
-      return {
-        recommended: [],
-        easyToWatch: [],
-        basedOnLikes: [],
-      };
+      return [];
     }
 
-    const data = await $fetch<Recommendations>('/api/recommendations', {
+    // Get mood and attention from query params
+    const query = route.query;
+    const queryParams: Record<string, string> = {};
+    if (query.mood) queryParams.mood = query.mood as string;
+    if (query.attention) queryParams.attention = query.attention as string;
+
+    const data = await $fetch<Recommendation[]>('/api/recommendations', {
       headers: {
         Authorization: `Bearer ${session.access_token}`,
       },
       credentials: 'include',
+      query: queryParams,
     });
 
-    // Ensure arrays are not undefined
-    return {
-      recommended: Array.isArray(data.recommended) ? data.recommended : [],
-      easyToWatch: Array.isArray(data.easyToWatch) ? data.easyToWatch : [],
-      basedOnLikes: Array.isArray(data.basedOnLikes) ? data.basedOnLikes : [],
-    };
+    // Ensure it's an array
+    return Array.isArray(data) ? data : [];
   } catch (error) {
     console.error('Error fetching recommendations:', error);
-    return {
-      recommended: [],
-      easyToWatch: [],
-      basedOnLikes: [],
-    };
+    return [];
   } finally {
     loadingRecommendations.value = false;
   }
 };
+
+// Watch for query param changes (mood/attention) to refetch recommendations
+watch(
+  () => [route.query.mood, route.query.attention],
+  async () => {
+    // Only refetch if user is logged in and has completed onboarding
+    if (
+      user.value &&
+      userStore.hasCompletedOnboarding &&
+      hasAttemptedLoad.value
+    ) {
+      const fetched = await fetchRecommendations();
+      recommendations.value = fetched;
+    }
+  }
+);
 
 // Handle user state changes
 const handleUserStateChange = async () => {
@@ -136,11 +138,7 @@ const handleUserStateChange = async () => {
     // AND we're not in hydration phase (to avoid clearing during brief null state)
     if (userStore.authInitialized && !isHydrating.value) {
       userStore.reset();
-      recommendations.value = {
-        recommended: [],
-        easyToWatch: [],
-        basedOnLikes: [],
-      };
+      recommendations.value = [];
       hasAttemptedLoad.value = false; // Reset flag when clearing state
     }
     initialProfileLoaded.value = true;
@@ -201,20 +199,24 @@ watch(
       }
 
       // Only clear if we're sure there's no user (not hydrating or no user in store either)
-      recommendations.value = {
-        recommended: [],
-        easyToWatch: [],
-        basedOnLikes: [],
-      };
+      recommendations.value = [];
       lastFetchedUserId.value = null;
       hasAttemptedLoad.value = false; // Reset flag when clearing recommendations
       return;
     }
 
-    // Skip if we already fetched for this user
+    // Skip if we already fetched for this user AND query params haven't changed
+    // (mood/attention changes should trigger refetch)
+    const currentMood = route.query.mood;
+    const currentAttention = route.query.attention;
+    const lastMood = lastFetchedMood.value;
+    const lastAttention = lastFetchedAttention.value;
+
     if (
       lastFetchedUserId.value === effectiveUserId &&
-      recommendations.value.recommended.length > 0
+      recommendations.value.length > 0 &&
+      currentMood === lastMood &&
+      currentAttention === lastAttention
     ) {
       return;
     }
@@ -227,11 +229,7 @@ watch(
 
       // Check onboarding status AFTER profile is loaded
       if (!userStore.hasCompletedOnboarding) {
-        recommendations.value = {
-          recommended: [],
-          easyToWatch: [],
-          basedOnLikes: [],
-        };
+        recommendations.value = [];
         hasAttemptedLoad.value = true; // Mark as attempted even if no onboarding
         return;
       }
@@ -240,6 +238,8 @@ watch(
       const fetched = await fetchRecommendations();
       recommendations.value = fetched;
       lastFetchedUserId.value = effectiveUserId;
+      lastFetchedMood.value = (route.query.mood as string) || null;
+      lastFetchedAttention.value = (route.query.attention as string) || null;
       hasAttemptedLoad.value = true; // Mark as attempted after successful fetch
     } catch (error) {
       console.error('[index.vue] Error fetching recommendations:', error);
@@ -275,7 +275,7 @@ const handleTitleStatus = async (
     }
 
     // Update status in backend
-    const response = await $fetch('/api/user-title-status', {
+    const response = await $fetch('/api/users/title-status', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${session.access_token}`,
@@ -300,7 +300,7 @@ const handleTitleStatus = async (
           label: 'Deshacer',
           action: async () => {
             // Undo: delete the not_interested status
-            await $fetch('/api/user-title-status', {
+            await $fetch('/api/users/title-status', {
               method: 'DELETE',
               headers: {
                 Authorization: `Bearer ${session.access_token}`,
@@ -341,17 +341,9 @@ const handleTitleStatus = async (
 
     // Optimistically remove from UI (except watchlist which stays)
     if (status !== TitleStatus.WATCHLIST) {
-      recommendations.value = {
-        recommended: recommendations.value.recommended.filter(
-          (r) => r.tmdb_id !== title.tmdb_id
-        ),
-        easyToWatch: recommendations.value.easyToWatch.filter(
-          (r) => r.tmdb_id !== title.tmdb_id
-        ),
-        basedOnLikes: recommendations.value.basedOnLikes.filter(
-          (r) => r.tmdb_id !== title.tmdb_id
-        ),
-      };
+      recommendations.value = recommendations.value.filter(
+        (r: Recommendation) => r.tmdb_id !== title.tmdb_id
+      );
     }
   } catch (error) {
     if (process.env.NODE_ENV === 'development') {
@@ -384,7 +376,7 @@ const handleMarkLiked = async (title: Recommendation) => {
 
     // Update or insert with liked=true and status=seen
     // This automatically removes from watchlist (single active status)
-    const response = await $fetch('/api/user-title-status', {
+    const response = await $fetch('/api/users/title-status', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${session.access_token}`,
@@ -414,17 +406,9 @@ const handleMarkLiked = async (title: Recommendation) => {
     );
 
     // Optimistically remove from UI (liked titles are seen, not in recommendations)
-    recommendations.value = {
-      recommended: recommendations.value.recommended.filter(
-        (r) => r.tmdb_id !== title.tmdb_id
-      ),
-      easyToWatch: recommendations.value.easyToWatch.filter(
-        (r) => r.tmdb_id !== title.tmdb_id
-      ),
-      basedOnLikes: recommendations.value.basedOnLikes.filter(
-        (r) => r.tmdb_id !== title.tmdb_id
-      ),
-    };
+    recommendations.value = recommendations.value.filter(
+      (r) => r.tmdb_id !== title.tmdb_id
+    );
   } catch (error) {
     if (process.env.NODE_ENV === 'development') {
       console.error('[handleMarkLiked] Error:', error);
@@ -482,6 +466,53 @@ const handleGetStarted = async () => {
     if (element) {
       element.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
+  }
+};
+
+// Populate recommendation pool manually
+const populatePool = async () => {
+  if (populatingPool.value) return;
+
+  populatingPool.value = true;
+  try {
+    const {
+      data: { session },
+    } = await getSession();
+
+    if (!session?.access_token) {
+      showToast('Error: No se pudo obtener la sesión', null, 3000);
+      return;
+    }
+
+    const result = await $fetch('/api/recommendations/populate-pool', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      credentials: 'include',
+    });
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[PopulatePool] Result:', result);
+    }
+
+    showToast(
+      `Pool poblado: ${result.inserted} recomendaciones agregadas`,
+      null,
+      3000
+    );
+
+    // Refresh recommendations after populating pool
+    await fetchRecommendations();
+  } catch (error) {
+    console.error('[PopulatePool] Error:', error);
+    showToast(
+      'Error al generar recomendaciones. Por favor, intenta de nuevo.',
+      null,
+      3000
+    );
+  } finally {
+    populatingPool.value = false;
   }
 };
 
@@ -544,24 +575,26 @@ onMounted(() => {
         class="py-12 md:py-16 md:px-4"
       >
         <div class="container mx-auto max-w-7xl">
+          <!-- Mood Selector -->
+          <MoodSelector v-if="userStore.hasCompletedOnboarding" />
           <!-- Loading State -->
-          <div v-if="loadingRecommendations" class="text-center py-12">
-            <div
-              class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"
-            ></div>
-            <p class="text-gray-800 dark:text-gray-300">
-              Cargando recomendaciones...
-            </p>
-          </div>
+          <Spinner
+            v-if="loadingRecommendations || populatingPool"
+            :message="
+              populatingPool
+                ? 'Generando recomendaciones...'
+                : 'Cargando recomendaciones...'
+            "
+          />
 
           <!-- Empty State -->
           <!-- Only show "no recommendations" message if we've attempted to load and there are none -->
+          <!-- Don't show empty state if we're populating the pool -->
           <div
             v-else-if="
+              !populatingPool &&
               hasAttemptedLoad &&
-              recommendations.recommended.length === 0 &&
-              recommendations.easyToWatch.length === 0 &&
-              recommendations.basedOnLikes.length === 0
+              recommendations.length === 0
             "
             class="text-center py-12"
           >
@@ -582,14 +615,38 @@ onMounted(() => {
               <h3
                 class="text-xl font-semibold dark:text-gray-300 text-gray-800 mb-2 font-heading"
               >
-                Aún no hay recomendaciones
+                {{
+                  userStore.hasLikes
+                    ? 'Generando tus recomendaciones'
+                    : 'Aún no hay recomendaciones'
+                }}
               </h3>
               <p class="text-gray-800 dark:text-gray-300 mb-6">
-                Para recibir recomendaciones personalizadas, primero necesitas
-                agregar películas y series que te gusten. Esto nos ayuda a
-                conocerte mejor y sugerirte contenido que realmente disfrutarás.
+                {{
+                  userStore.hasLikes
+                    ? 'Estamos preparando recomendaciones personalizadas basadas en tus gustos. Esto puede tardar unos momentos.'
+                    : 'Para recibir recomendaciones personalizadas, primero necesitas agregar películas y series que te gusten. Esto nos ayuda a conocerte mejor y sugerirte contenido que realmente disfrutarás.'
+                }}
               </p>
+              <div v-if="userStore.hasLikes" class="space-y-3">
+                <button
+                  :disabled="populatingPool"
+                  class="inline-block px-6 py-3 bg-primary-800 dark:bg-primary hover:bg-primary-900 dark:hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-medium text-base transition-all duration-300 shadow-lg backdrop-blur-sm border border-primary-600/50"
+                  @click="populatePool"
+                >
+                  {{
+                    populatingPool
+                      ? 'Generando recomendaciones...'
+                      : 'Generar recomendaciones ahora'
+                  }}
+                </button>
+                <p class="text-sm text-gray-600 dark:text-gray-400">
+                  Si ya esperaste un momento y no aparecen recomendaciones, haz
+                  clic en el botón para generarlas manualmente.
+                </p>
+              </div>
               <nuxt-link
+                v-else
                 to="/onboarding"
                 class="inline-block px-6 py-3 bg-primary-800 dark:bg-primary hover:bg-primary-900 dark:hover:bg-primary-600 text-white rounded-lg font-medium text-base transition-all duration-300 shadow-lg backdrop-blur-sm border border-primary-600/50"
               >
@@ -598,51 +655,14 @@ onMounted(() => {
             </div>
           </div>
 
-          <!-- Recommendations Sections -->
+          <!-- Recommendations Section -->
           <div v-else>
             <RecommendationSection
-              v-if="
-                recommendations.recommended &&
-                recommendations.recommended.length > 0
-              "
-              :key="`rec-${recommendations.recommended.length}`"
-              title="Recomendado para ti"
-              description="Elegidas pensando en ti y en lo que sueles disfrutar."
-              :recommendations="recommendations.recommended"
-              @mark-seen="handleTitleStatus($event, TitleStatus.SEEN)"
-              @mark-not-interested="
-                handleTitleStatus($event, TitleStatus.NOT_INTERESTED)
-              "
-              @mark-liked="handleMarkLiked($event)"
-              @mark-watchlist="handleTitleStatus($event, TitleStatus.WATCHLIST)"
-            />
-
-            <RecommendationSection
-              v-if="
-                recommendations.easyToWatch &&
-                recommendations.easyToWatch.length > 0
-              "
-              :key="`easy-${recommendations.easyToWatch.length}`"
-              title="Fácil de ver / Baja atención"
-              description="Para esos momentos en los que quieres ver algo sin complicarte."
-              :recommendations="recommendations.easyToWatch"
-              @mark-seen="handleTitleStatus($event, TitleStatus.SEEN)"
-              @mark-not-interested="
-                handleTitleStatus($event, TitleStatus.NOT_INTERESTED)
-              "
-              @mark-liked="handleMarkLiked($event)"
-              @mark-watchlist="handleTitleStatus($event, TitleStatus.WATCHLIST)"
-            />
-
-            <RecommendationSection
-              v-if="
-                recommendations.basedOnLikes &&
-                recommendations.basedOnLikes.length > 0
-              "
-              :key="`based-${recommendations.basedOnLikes.length}`"
-              title="Basado en lo que te gusta"
-              description="Porque ya nos has dicho qué te funciona."
-              :recommendations="recommendations.basedOnLikes"
+              v-if="recommendations && recommendations.length > 0"
+              :key="`rec-${recommendations.length}`"
+              title="Recomendaciones para ti"
+              description="Personalizadas según tu estado de ánimo y nivel de atención."
+              :recommendations="recommendations"
               @mark-seen="handleTitleStatus($event, TitleStatus.SEEN)"
               @mark-not-interested="
                 handleTitleStatus($event, TitleStatus.NOT_INTERESTED)

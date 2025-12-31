@@ -248,7 +248,7 @@ const fetchSeenTitles = async () => {
       return;
     }
 
-    const response = await $fetch('/api/user-history', {
+    const response = await $fetch('/api/users/history', {
       headers: {
         Authorization: `Bearer ${session.access_token}`,
       },
@@ -306,7 +306,7 @@ const handleRemoveTitle = async (title: SeenTitle) => {
     }
 
     // Delete title status
-    await $fetch('/api/user-title-status', {
+    await $fetch('/api/users/title-status', {
       method: 'DELETE',
       headers: {
         Authorization: `Bearer ${session.access_token}`,
@@ -349,7 +349,7 @@ const handleMarkAsLiked = async (title: SeenTitle) => {
     }
 
     // Update title status to set liked=true
-    await $fetch('/api/user-title-status', {
+    await $fetch('/api/users/title-status', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${session.access_token}`,

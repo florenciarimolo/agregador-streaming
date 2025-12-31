@@ -34,8 +34,6 @@
           class="block"
         >
           <div class="aspect-[2/3] overflow-hidden relative">
-            <RatingBadge :rating="season.vote_average" />
-
             <img
               v-if="season.poster_path"
               :src="`https://image.tmdb.org/t/p/w780${season.poster_path}`"
@@ -45,8 +43,7 @@
             <div
               class="absolute bottom-0 left-0 flex flex-col items-center justify-center w-full h-full px-4 transition-all duration-300 rounded opacity-0 group-hover:opacity-100 backdrop-blur-md w-inherit dark:bg-black/80 bg-white/80"
             >
-              <RatingBadge :rating="season.vote_average" />
-              <p class="mt-4 dark:text-gray-300 text-gray-800 font-semibold"
+              <p class="dark:text-gray-300 text-gray-800 font-semibold"
                 >Ver episodios</p
               >
             </div>
@@ -54,10 +51,16 @@
         </nuxt-link>
 
         <div class="flex flex-col justify-around py-5 px-6 min-h-[120px]">
-          <p
-            class="text-lg font-semibold uppercase dark:text-gray-300 text-gray-800"
-            >{{ season.name }}</p
-          >
+          <div class="flex items-center gap-3">
+            <p
+              class="text-lg font-semibold uppercase dark:text-gray-300 text-gray-800"
+              >{{ season.name }}</p
+            >
+            <RatingBadge
+              v-if="season.vote_average"
+              :rating="season.vote_average"
+            />
+          </div>
           <div class="flex items-center gap-2 dark:text-gray-300 text-gray-800">
             <IconCalendar icon-class="w-4 h-4" />
             <span>{{ formatDateToSpanish(season.air_date) }}</span>
@@ -85,6 +88,7 @@ import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 import type { Media } from '@/types/Media';
 import IconCalendar from '@/components/icons/IconCalendar.vue';
 import IconEpisodes from '@/components/icons/IconEpisodes.vue';
+import RatingBadge from '@/components/RatingBadge.vue';
 
 const route = useRoute();
 

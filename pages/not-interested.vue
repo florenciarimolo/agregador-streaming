@@ -186,7 +186,7 @@ const fetchNotInterestedTitles = async () => {
       return;
     }
 
-    const response = await $fetch('/api/user-history', {
+    const response = await $fetch('/api/users/history', {
       headers: {
         Authorization: `Bearer ${session.access_token}`,
       },
@@ -219,14 +219,6 @@ const showError = (message: string) => {
   }, 5000);
 };
 
-const showSuccess = (message: string) => {
-  successMessage.value = message;
-  errorMessage.value = null;
-  setTimeout(() => {
-    successMessage.value = null;
-  }, 5000);
-};
-
 const handleUndo = async (title: NotInterestedTitle) => {
   if (isUndoing.value) return;
 
@@ -253,7 +245,7 @@ const handleUndo = async (title: NotInterestedTitle) => {
     }
 
     // Delete title status (remove from not_interested)
-    await $fetch('/api/user-title-status', {
+    await $fetch('/api/users/title-status', {
       method: 'DELETE',
       headers: {
         Authorization: `Bearer ${session.access_token}`,
@@ -270,7 +262,7 @@ const handleUndo = async (title: NotInterestedTitle) => {
         label: 'Deshacer',
         action: async () => {
           // Re-add as not_interested
-          await $fetch('/api/user-title-status', {
+          await $fetch('/api/users/title-status', {
             method: 'POST',
             headers: {
               Authorization: `Bearer ${session.access_token}`,

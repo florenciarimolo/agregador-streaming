@@ -174,7 +174,7 @@
                   d="M6 18L18 6M6 6l12 12"
                 />
               </svg>
-                <span class="tooltip">Eliminar de la lista</span>
+              <span class="tooltip">Eliminar de la lista</span>
             </button>
           </nuxt-link>
 
@@ -438,6 +438,7 @@ const handleTitleSelected = async (result: TMDBSearchResult) => {
     const { data: newLike, error: likeError } = await upsertUserTitleStatus({
       user_id: userId,
       tmdb_id: result.id,
+      type: result.media_type,
       status: TitleStatus.SEEN,
       liked: true,
     });

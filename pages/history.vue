@@ -356,7 +356,7 @@ const fetchHistory = async () => {
       return;
     }
 
-    const response = await $fetch('/api/user-history', {
+    const response = await $fetch('/api/users/history', {
       headers: {
         Authorization: `Bearer ${session.access_token}`,
       },
@@ -439,7 +439,7 @@ const confirmRemoveTitle = async () => {
     }
 
     // Delete title status
-    await $fetch('/api/user-title-status', {
+    await $fetch('/api/users/title-status', {
       method: 'DELETE',
       headers: {
         Authorization: `Bearer ${session.access_token}`,

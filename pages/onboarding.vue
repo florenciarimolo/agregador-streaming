@@ -195,6 +195,25 @@ const saveSelections = async () => {
     // This will update likesCount and onboarding_completed
     await userStore.fetchProfile();
 
+    // Populate recommendation pool after onboarding completion
+    try {
+      const {
+        data: { session },
+      } = await getSession();
+      if (session?.access_token) {
+        await $fetch('/api/recommendations/populate-pool', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          credentials: 'include',
+        });
+      }
+    } catch (poolError) {
+      // Don't fail onboarding if pool population fails
+      console.error('Error populating recommendation pool:', poolError);
+    }
+
     // Redirect to home
     await router.push('/');
   } catch (err: unknown) {
@@ -411,6 +430,21 @@ const saveSelections = async () => {
         >
           {{ saving ? 'Guardando...' : 'Continuar' }}
         </button>
+      </div>
+
+      <!-- Saving Loading Overlay -->
+      <div
+        v-if="saving"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-background-dark/80 dark:bg-background-dark/80 backdrop-blur-sm"
+      >
+        <div class="flex flex-col items-center gap-4">
+          <div
+            class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"
+          ></div>
+          <p class="text-lg font-medium dark:text-gray-300 text-gray-800">
+            Guardando tu selección...
+          </p>
+        </div>
       </div>
     </div>
   </div>

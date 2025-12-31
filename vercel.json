@@ -2,5 +2,11 @@
   "buildCommand": "npm run build",
   "devCommand": "npm run dev",
   "installCommand": "npm install",
-  "framework": "nuxtjs"
+  "framework": "nuxtjs",
+  "crons": [
+    {
+      "path": "/api/recommendations/refresh-pool",
+      "schedule": "0 2 * * *"
+    }
+  ]
 }

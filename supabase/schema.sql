@@ -135,3 +135,41 @@ CREATE TRIGGER update_titles_updated_at
   FOR EACH ROW
   EXECUTE FUNCTION public.handle_updated_at();
 
+-- Recommendation pool table (Phase 2: Persistent recommendation system)
+CREATE TABLE IF NOT EXISTS public.recommendation_pool (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  tmdb_id INTEGER NOT NULL,
+  type TEXT NOT NULL CHECK (type IN ('movie', 'tv')),
+  source TEXT NOT NULL CHECK (source IN ('based_on_like', 'trending', 'discover', 'easy', 'mood')),
+  score FLOAT DEFAULT 0 CHECK (score >= -100 AND score <= 100),
+  explanation_code TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL,
+  last_shown_at TIMESTAMP WITH TIME ZONE,
+  UNIQUE(user_id, tmdb_id)
+);
+
+-- Indexes for recommendation_pool
+CREATE INDEX IF NOT EXISTS idx_recommendation_pool_user_id ON public.recommendation_pool(user_id);
+CREATE INDEX IF NOT EXISTS idx_recommendation_pool_score ON public.recommendation_pool(user_id, score DESC);
+CREATE INDEX IF NOT EXISTS idx_recommendation_pool_tmdb_id ON public.recommendation_pool(tmdb_id);
+
+-- RLS Policies for recommendation_pool
+ALTER TABLE public.recommendation_pool ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view own recommendation pool"
+  ON public.recommendation_pool FOR SELECT
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert own recommendation pool"
+  ON public.recommendation_pool FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own recommendation pool"
+  ON public.recommendation_pool FOR UPDATE
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete own recommendation pool"
+  ON public.recommendation_pool FOR DELETE
+  USING (auth.uid() = user_id);
+

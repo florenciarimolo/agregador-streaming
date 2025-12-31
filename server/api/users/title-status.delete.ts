@@ -1,5 +1,7 @@
 import { serverSupabaseUser } from '#supabase/server';
 import { createClient } from '@supabase/supabase-js';
+import { TitleStatus } from '@/types/TitleStatus';
+import { updatePoolScore } from '@/composables/database/recommendationPool';
 
 /**
  * Delete user title status (remove from seen or not_interested)
@@ -91,6 +93,14 @@ export default defineEventHandler(async (event) => {
   });
 
   try {
+    // Get previous status before deleting
+    const { data: previousStatus } = await supabase
+      .from('user_title_status')
+      .select('status, liked')
+      .eq('user_id', userId)
+      .eq('tmdb_id', tmdbIdNumber)
+      .maybeSingle();
+
     // Delete user title status
     const { error } = await supabase
       .from('user_title_status')
@@ -106,6 +116,24 @@ export default defineEventHandler(async (event) => {
         statusCode: 500,
         message: 'Error al eliminar el estado del título',
       });
+    }
+
+    // Update recommendation pool score based on deleted status
+    try {
+      // If status was 'seen', revert the score decrease (+50)
+      if (previousStatus?.status === TitleStatus.SEEN) {
+        await updatePoolScore(userId, tmdbIdNumber, 50, supabase);
+      }
+
+      // If liked was true, revert the score increase (-30)
+      if (previousStatus?.liked === true) {
+        await updatePoolScore(userId, tmdbIdNumber, -30, supabase);
+      }
+    } catch (poolError) {
+      // Don't fail the request if pool update fails
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error updating recommendation pool:', poolError);
+      }
     }
 
     return { success: true };

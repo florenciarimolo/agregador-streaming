@@ -32,6 +32,7 @@ import {
   getFallbackSearchUrl,
 } from '@/utils/providerLinks';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
+import IconPlay from '@/components/icons/IconPlay.vue';
 
 const props = defineProps({
   mediaProviderPropList: {
