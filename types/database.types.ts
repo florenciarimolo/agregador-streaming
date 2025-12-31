@@ -96,7 +96,8 @@ export interface Database {
           id: string;
           user_id: string;
           tmdb_id: number;
-          status: 'seen' | 'not_interested' | 'watch_later';
+          type: 'movie' | 'tv';
+          status: 'seen' | 'not_interested' | 'watchlist';
           liked: boolean;
           created_at: string;
         };
@@ -104,7 +105,8 @@ export interface Database {
           id?: string;
           user_id: string;
           tmdb_id: number;
-          status: 'seen' | 'not_interested' | 'watch_later';
+          type: 'movie' | 'tv';
+          status: 'seen' | 'not_interested' | 'watchlist';
           liked?: boolean;
           created_at?: string;
         };
@@ -112,7 +114,8 @@ export interface Database {
           id?: string;
           user_id?: string;
           tmdb_id?: number;
-          status?: 'seen' | 'not_interested' | 'watch_later';
+          type?: 'movie' | 'tv';
+          status?: 'seen' | 'not_interested' | 'watchlist';
           liked?: boolean;
           created_at?: string;
         };

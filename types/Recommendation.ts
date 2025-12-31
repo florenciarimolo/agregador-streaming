@@ -17,6 +17,7 @@ export type Recommendation = {
   first_air_date: string | null;
   explanation: string;
   providers?: Provider[];
+  in_watchlist?: boolean; // Indicates if title is in user's watchlist
 };
 
 export type Recommendations = {

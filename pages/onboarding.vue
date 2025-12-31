@@ -164,9 +164,13 @@ const saveSelections = async () => {
       }
 
       // Insert user title status as seen with liked=true (will fail silently if duplicate due to UNIQUE constraint)
+      if (!title.media_type) {
+        throw new Error('Media type is required');
+      }
       const { error: likeError } = await upsertUserTitleStatus({
         user_id: userId,
         tmdb_id: title.id,
+        type: title.media_type,
         status: TitleStatus.SEEN,
         liked: true,
       });
@@ -219,7 +223,7 @@ const saveSelections = async () => {
         </p>
         <div class="mt-4">
           <span
-            class="inline-block px-4 py-2 bg-primary/10 text-primary rounded-full text-sm font-medium"
+            class="inline-block px-4 py-2 bg-primary/10 dark:bg-primary-500/20 text-primary dark:text-primary-400 rounded-full text-sm font-medium"
           >
             {{ selectedTitles.length }} / 10 seleccionados
           </span>

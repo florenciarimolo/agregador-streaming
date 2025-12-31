@@ -22,6 +22,8 @@
         :title="recommendation"
         @mark-seen="$emit('mark-seen', $event)"
         @mark-not-interested="$emit('mark-not-interested', $event)"
+        @mark-liked="$emit('mark-liked', $event)"
+        @mark-watchlist="$emit('mark-watchlist', $event)"
       />
     </div>
   </section>
@@ -41,5 +43,7 @@ const props = defineProps<Props>();
 defineEmits<{
   'mark-seen': [title: Recommendation];
   'mark-not-interested': [title: Recommendation];
+  'mark-liked': [title: Recommendation];
+  'mark-watchlist': [title: Recommendation];
 }>();
 </script>

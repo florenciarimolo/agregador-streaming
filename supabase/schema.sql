@@ -35,12 +35,13 @@ CREATE TABLE IF NOT EXISTS public.titles (
 CREATE INDEX IF NOT EXISTS idx_titles_tmdb_id ON public.titles(tmdb_id);
 CREATE INDEX IF NOT EXISTS idx_titles_type ON public.titles(type);
 
--- User title status table (tracks seen/not_interested/watch_later titles)
+-- User title status table (tracks seen/not_interested/watchlist titles)
 CREATE TABLE IF NOT EXISTS public.user_title_status (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
   tmdb_id INTEGER NOT NULL,
-  status TEXT NOT NULL CHECK (status IN ('seen', 'not_interested', 'watch_later')),
+  type TEXT NOT NULL CHECK (type IN ('movie', 'tv')), -- 'movie' or 'tv'
+  status TEXT NOT NULL CHECK (status IN ('seen', 'not_interested', 'watchlist')),
   liked BOOLEAN DEFAULT FALSE NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL,
   UNIQUE(user_id, tmdb_id) -- Prevent duplicate statuses for same user/title (one status per title)

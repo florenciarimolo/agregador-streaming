@@ -6,7 +6,7 @@ import { TitleStatus } from '@/types/TitleStatus';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 
 /**
- * Get user title status history (seen and not_interested)
+ * Get user watchlist (watchlist status)
  * Returns titles with full TMDB details
  */
 export default defineEventHandler(async (event) => {
@@ -23,7 +23,7 @@ export default defineEventHandler(async (event) => {
 
     if (userId) {
       user = { id: userId, sub: userId };
-      devLog('[User History] User from cookies');
+      devLog('[User Watchlist] User from cookies');
     }
   } else {
     // Try Authorization header
@@ -46,21 +46,21 @@ export default defineEventHandler(async (event) => {
 
           if (userId) {
             user = { id: userId, sub: userId };
-            devLog('[User History] User from Authorization header');
+            devLog('[User Watchlist] User from Authorization header');
           }
         }
       } catch (err) {
-        safeError('[User History] Error decoding token', err);
+        safeError('[User Watchlist] Error decoding token', err);
       }
     } else {
       devWarn(
-        '[User History] No user from cookies and no Authorization header'
+        '[User Watchlist] No user from cookies and no Authorization header'
       );
     }
   }
 
   if (!user || !userId) {
-    devError('[User History] Unauthorized - no user found');
+    devError('[User Watchlist] Unauthorized - no user found');
     throw createError({
       statusCode: 401,
       message: 'Unauthorized',
@@ -73,7 +73,7 @@ export default defineEventHandler(async (event) => {
 
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
     devWarn(
-      '[User History] WARNING: Using anon key instead of service role key. RLS policies may block queries.'
+      '[User Watchlist] WARNING: Using anon key instead of service role key. RLS policies may block queries.'
     );
   }
 
@@ -86,16 +86,17 @@ export default defineEventHandler(async (event) => {
   });
 
   try {
-    // Fetch user title statuses (include liked field and type)
+    // Fetch user title statuses with watchlist status (include type)
     const { data: statuses, error: statusError } = await supabase
       .from('user_title_status')
-      .select('tmdb_id, type, status, liked, created_at')
+      .select('tmdb_id, type, created_at')
       .eq('user_id', userId)
+      .eq('status', TitleStatus.WATCHLIST)
       .order('created_at', { ascending: false });
 
     if (statusError) {
       safeError(
-        '[User History] Error fetching user title statuses',
+        '[User Watchlist] Error fetching user title statuses',
         statusError,
         {
           userId,
@@ -104,17 +105,16 @@ export default defineEventHandler(async (event) => {
       );
       throw createError({
         statusCode: 500,
-        message: 'Error al obtener el historial',
+        message: 'Error al obtener la lista para ver',
       });
     }
 
-    devLog('[User History] Statuses count:', statuses?.length || 0);
+    devLog('[User Watchlist] Statuses count:', statuses?.length || 0);
 
     if (!statuses || statuses.length === 0) {
-      devLog('[User History] No statuses found for user');
+      devLog('[User Watchlist] No watchlist statuses found for user');
       return {
-        seen: [],
-        not_interested: [],
+        watchlist: [],
       };
     }
 
@@ -130,20 +130,10 @@ export default defineEventHandler(async (event) => {
       [key: string]: unknown;
     };
 
-    const seenPromises: Promise<
+    const watchlistPromises: Promise<
       | (TMDBTitle & {
           type: string;
           tmdb_id: number;
-          status: string;
-          created_at: string;
-        })
-      | null
-    >[] = [];
-    const notInterestedPromises: Promise<
-      | (TMDBTitle & {
-          type: string;
-          tmdb_id: number;
-          status: string;
           created_at: string;
         })
       | null
@@ -168,8 +158,6 @@ export default defineEventHandler(async (event) => {
               ...result,
               type: status.type,
               tmdb_id: status.tmdb_id,
-              status: status.status,
-              liked: status.liked || false,
               created_at: status.created_at,
             };
           }
@@ -180,29 +168,14 @@ export default defineEventHandler(async (event) => {
           return null;
         });
 
-      if (status.status === TitleStatus.SEEN) {
-        seenPromises.push(fetchPromise);
-      } else {
-        notInterestedPromises.push(fetchPromise);
-      }
+      watchlistPromises.push(fetchPromise);
     }
 
     // Wait for all promises
-    const [seenResults, notInterestedResults] = await Promise.all([
-      Promise.all(seenPromises),
-      Promise.all(notInterestedPromises),
-    ]);
+    const watchlistResults = await Promise.all(watchlistPromises);
 
     // Filter out null results and format
-    const seen = seenResults
-      .filter((result) => result !== null)
-      .map((result) => ({
-        ...result,
-        title: result.title || result.name,
-        release_date: result.release_date || result.first_air_date,
-      }));
-
-    const notInterested = notInterestedResults
+    const watchlist = watchlistResults
       .filter((result) => result !== null)
       .map((result) => ({
         ...result,
@@ -211,12 +184,13 @@ export default defineEventHandler(async (event) => {
       }));
 
     return {
-      seen,
-      not_interested: notInterested,
+      watchlist,
     };
   } catch (error: unknown) {
     const errorMessage =
-      error instanceof Error ? error.message : 'Error al obtener el historial';
+      error instanceof Error
+        ? error.message
+        : 'Error al obtener la lista para ver';
     throw createError({
       statusCode: 500,
       message: errorMessage,

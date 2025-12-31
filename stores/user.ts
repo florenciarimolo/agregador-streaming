@@ -32,7 +32,7 @@ export const useUserStore = defineStore('user', {
 
   getters: {
     isAuthenticated: (state) => !!state.user,
-    // hasLikes is calculated based on whether user has records in user_likes table
+    // hasLikes is calculated based on whether user has records in user_title_status with liked=true
     hasLikes: (state) => (state.likesCount ?? 0) > 0,
     // hasCompletedOnboarding checks the onboarding_completed flag in profiles table
     hasCompletedOnboarding: (state) =>

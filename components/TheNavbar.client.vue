@@ -24,11 +24,29 @@
 
         <!-- Desktop Menu -->
         <div class="flex items-center gap-4 w-[70%] justify-end">
+          <!-- Navigation Links (only if logged in) -->
+          <nav v-if="currentUser" class="flex items-center gap-6 mr-4">
+            <nuxt-link
+              to="/"
+              class="text-sm font-medium dark:text-gray-300 text-gray-800 hover:text-primary dark:hover:text-primary-400 transition-colors"
+              active-class="text-primary dark:text-primary-400"
+            >
+              Inicio
+            </nuxt-link>
+            <nuxt-link
+              to="/watchlist"
+              class="text-sm font-medium dark:text-gray-300 text-gray-800 hover:text-primary dark:hover:text-primary-400 transition-colors"
+              active-class="text-primary dark:text-primary-400"
+            >
+              Para ver
+            </nuxt-link>
+          </nav>
+
           <!-- Theme Switcher -->
           <ThemeSwitcher />
 
           <!-- User Avatar (if logged in) -->
-          <div v-if="currentUser" class="relative">
+          <div v-if="currentUser" ref="userMenuContainer" class="relative">
             <button
               type="button"
               class="w-10 h-10 rounded-full bg-gradient-to-br from-primary via-accent to-secondary flex items-center justify-center text-white font-semibold text-sm hover:ring-2 hover:ring-primary/50 transition-all cursor-pointer shadow-md"
@@ -48,7 +66,7 @@
             >
               <div
                 v-if="showUserMenu"
-                class="absolute right-0 mt-2 w-64 dark:bg-gray-900/40 bg-gray-100/80 backdrop-blur-xl rounded-lg border border-gray-300/50 dark:border-white/10 z-50"
+                class="absolute right-0 mt-2 w-64 dark:bg-gray-900/90 bg-gray-100/90 backdrop-blur-xl rounded-lg border border-gray-300/50 dark:border-white/10 z-50"
                 @click.stop
               >
                 <div class="p-4">
@@ -58,23 +76,33 @@
                     {{ currentUser.email }}
                   </p>
                   <nuxt-link
-                    to="/preferences"
+                    to="/profile"
                     class="block w-full px-4 py-2 text-sm dark:text-gray-300 text-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-left mb-2"
                     @click="showUserMenu = false"
                   >
-                    Editar preferencias
+                    Editar perfil
                   </nuxt-link>
                   <nuxt-link
-                    to="/history"
+                    to="/seen"
                     class="block w-full px-4 py-2 text-sm dark:text-gray-300 text-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-left mb-2"
                     @click="showUserMenu = false"
                   >
-                    Historial
+                    Visto
                   </nuxt-link>
+                  <nuxt-link
+                    to="/not-interested"
+                    class="block w-full px-4 py-2 text-sm dark:text-gray-300 text-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-left mb-2"
+                    @click="showUserMenu = false"
+                  >
+                    No me interesa
+                  </nuxt-link>
+                  <div
+                    class="border-t border-gray-300/50 dark:border-white/10 my-2"
+                  ></div>
                   <button
                     type="button"
                     class="w-full px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors text-left"
-                    @click="handleLogout"
+                    @click="handleLogoutClick"
                   >
                     Cerrar sesión
                   </button>
@@ -112,11 +140,33 @@
 
         <!-- Mobile Menu -->
         <div class="flex items-center gap-2">
+          <!-- Navigation Links (only if logged in) -->
+          <nav v-if="currentUser" class="flex items-center gap-4 mr-2">
+            <nuxt-link
+              to="/"
+              class="text-xs font-medium dark:text-gray-300 text-gray-800 hover:text-primary dark:hover:text-primary-400 transition-colors"
+              active-class="text-primary dark:text-primary-400"
+            >
+              Inicio
+            </nuxt-link>
+            <nuxt-link
+              to="/watchlist"
+              class="text-xs font-medium dark:text-gray-300 text-gray-800 hover:text-primary dark:hover:text-primary-400 transition-colors"
+              active-class="text-primary dark:text-primary-400"
+            >
+              Para ver
+            </nuxt-link>
+          </nav>
+
           <!-- Theme Switcher -->
           <ThemeSwitcher />
 
           <!-- User Avatar (if logged in) -->
-          <div v-if="currentUser" class="relative">
+          <div
+            v-if="currentUser"
+            ref="userMenuContainerMobile"
+            class="relative"
+          >
             <button
               type="button"
               class="w-8 h-8 rounded-full bg-gradient-to-br from-primary via-accent to-secondary flex items-center justify-center text-white font-semibold text-xs hover:ring-2 hover:ring-primary/50 transition-all cursor-pointer shadow-md"
@@ -136,7 +186,7 @@
             >
               <div
                 v-if="showUserMenu"
-                class="absolute right-0 mt-2 w-64 dark:bg-gray-800 bg-white backdrop-blur-sm rounded-lg shadow-xl border border-primary/20 z-50"
+                class="absolute right-0 mt-2 w-64 dark:bg-gray-900/90 bg-gray-100/90 backdrop-blur-xl rounded-lg border border-gray-300/50 dark:border-white/10 z-50"
                 @click.stop
               >
                 <div class="p-4">
@@ -146,23 +196,33 @@
                     {{ currentUser.email }}
                   </p>
                   <nuxt-link
-                    to="/preferences"
+                    to="/profile"
                     class="block w-full px-4 py-2 text-sm dark:text-gray-300 text-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-left mb-2"
                     @click="showUserMenu = false"
                   >
-                    Editar preferencias
+                    Editar perfil
                   </nuxt-link>
                   <nuxt-link
-                    to="/history"
+                    to="/seen"
                     class="block w-full px-4 py-2 text-sm dark:text-gray-300 text-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-left mb-2"
                     @click="showUserMenu = false"
                   >
-                    Historial
+                    Visto
                   </nuxt-link>
+                  <nuxt-link
+                    to="/not-interested"
+                    class="block w-full px-4 py-2 text-sm dark:text-gray-300 text-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-left mb-2"
+                    @click="showUserMenu = false"
+                  >
+                    No me interesa
+                  </nuxt-link>
+                  <div
+                    class="border-t border-gray-300/50 dark:border-white/10 my-2"
+                  ></div>
                   <button
                     type="button"
                     class="w-full px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors text-left"
-                    @click="handleLogout"
+                    @click="handleLogoutClick"
                   >
                     Cerrar sesión
                   </button>
@@ -205,6 +265,50 @@
       </svg>
     </button>
   </Transition>
+
+  <!-- Logout Confirmation Dialog -->
+  <Transition
+    enter-active-class="transition duration-200 ease-out"
+    enter-from-class="transform scale-95 opacity-0"
+    enter-to-class="transform scale-100 opacity-100"
+    leave-active-class="transition duration-150 ease-in"
+    leave-from-class="transform scale-100 opacity-100"
+    leave-to-class="transform scale-95 opacity-0"
+  >
+    <div
+      v-if="showLogoutConfirm"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+      @click="cancelLogout"
+    >
+      <div
+        class="dark:bg-gray-900/40 bg-gray-100/80 backdrop-blur-xl border border-gray-300/50 dark:border-white/10 rounded-3xl shadow-xl p-6 max-w-md mx-4"
+        @click.stop
+      >
+        <h3 class="text-lg font-semibold dark:text-gray-300 text-gray-800 mb-2">
+          Confirmar cierre de sesión
+        </h3>
+        <p class="text-gray-800 dark:text-gray-300 mb-4">
+          ¿Estás seguro de que quieres cerrar sesión?
+        </p>
+        <div class="flex gap-3 justify-end">
+          <button
+            type="button"
+            class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+            @click="cancelLogout"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            class="px-4 py-2 text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors"
+            @click="confirmLogout"
+          >
+            Cerrar sesión
+          </button>
+        </div>
+      </div>
+    </div>
+  </Transition>
 </template>
 
 <script setup lang="ts">
@@ -240,22 +344,48 @@ const toggleUserMenu = () => {
   showUserMenu.value = !showUserMenu.value;
 };
 
-// Handle logout
-const handleLogout = async () => {
+// Logout confirmation state
+const showLogoutConfirm = ref(false);
+
+// Handle logout click (show confirmation)
+const handleLogoutClick = () => {
+  showLogoutConfirm.value = true;
+  showUserMenu.value = false;
+};
+
+// Confirm logout
+const confirmLogout = async () => {
   try {
-    showUserMenu.value = false;
+    showLogoutConfirm.value = false;
     await signOut();
     await router.push('/');
   } catch (error) {
-    console.error('Error signing out:', error);
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Error signing out:', error);
+    }
   }
 };
+
+// Cancel logout
+const cancelLogout = () => {
+  showLogoutConfirm.value = false;
+};
+
+// Refs for user menu containers
+const userMenuContainer = ref<HTMLElement | null>(null);
+const userMenuContainerMobile = ref<HTMLElement | null>(null);
 
 // Close user menu when clicking outside
 const handleClickOutside = (event: MouseEvent) => {
   if (!showUserMenu.value) return;
   const target = event.target as HTMLElement;
-  if (!target.closest('.relative')) {
+
+  // Check if click is outside the active menu container (desktop or mobile)
+  // Only one container will be active at a time (desktop or mobile)
+  const activeContainer =
+    userMenuContainer.value || userMenuContainerMobile.value;
+
+  if (activeContainer && !activeContainer.contains(target)) {
     showUserMenu.value = false;
   }
 };

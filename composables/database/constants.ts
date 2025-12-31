@@ -44,6 +44,7 @@ export const USER_TITLE_STATUS_FIELDS = {
   ID: 'id',
   USER_ID: 'user_id',
   TMDB_ID: 'tmdb_id',
+  TYPE: 'type',
   STATUS: 'status',
   LIKED: 'liked',
   CREATED_AT: 'created_at',

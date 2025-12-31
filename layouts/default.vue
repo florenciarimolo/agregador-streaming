@@ -40,9 +40,13 @@
         </p>
       </div>
     </footer>
+
+    <!-- Global Undo Toast -->
+    <UndoToast />
   </div>
 </template>
 
 <script setup lang="ts">
+import UndoToast from '@/components/UndoToast.vue';
 // Layout por defecto - se aplica a todas las páginas
 </script>

@@ -50,6 +50,16 @@
         class="absolute top-2 left-2 z-10"
       />
 
+      <!-- Watchlist Badge (top-left, below rating if rating exists) -->
+      <div
+        v-if="props.title.in_watchlist"
+        class="absolute left-2 z-10 p-2 rounded-full bg-primary/80 backdrop-blur-sm"
+        :class="props.title.vote_average ? 'top-12' : 'top-2'"
+        title="Guardado para ver más tarde"
+      >
+        <IconClock icon-class="w-4 h-4 text-white" />
+      </div>
+
       <!-- Actions Menu (top-right) -->
       <div class="absolute top-2 right-2 z-20">
         <button
@@ -140,7 +150,7 @@
               <button
                 type="button"
                 class="w-full px-4 py-2 text-sm dark:text-gray-300 text-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-left flex items-center gap-2"
-                @click.stop.prevent="handleAction(TitleStatus.WATCH_LATER)"
+                @click.stop.prevent="handleAction(TitleStatus.WATCHLIST)"
               >
                 <svg
                   class="w-4 h-4"
@@ -219,6 +229,7 @@
 import { ref, onMounted, onUnmounted } from 'vue';
 import RatingBadge from './RatingBadge.vue';
 import IconMoreVertical from './icons/IconMoreVertical.vue';
+import IconClock from './icons/IconClock.vue';
 import { TitleStatus } from '@/types/TitleStatus';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 import type { Recommendation } from '@/types/Recommendation';
@@ -235,7 +246,7 @@ const emit = defineEmits<{
   'mark-seen': [title: Recommendation];
   'mark-not-interested': [title: Recommendation];
   'mark-liked': [title: Recommendation];
-  'mark-watch-later': [title: Recommendation];
+  'mark-watchlist': [title: Recommendation];
 }>();
 
 const handleAction = (action: TitleStatus | 'liked') => {
@@ -246,8 +257,8 @@ const handleAction = (action: TitleStatus | 'liked') => {
     emit('mark-liked', props.title);
   } else if (action === TitleStatus.NOT_INTERESTED) {
     emit('mark-not-interested', props.title);
-  } else if (action === TitleStatus.WATCH_LATER) {
-    emit('mark-watch-later', props.title);
+  } else if (action === TitleStatus.WATCHLIST) {
+    emit('mark-watchlist', props.title);
   }
 };
 

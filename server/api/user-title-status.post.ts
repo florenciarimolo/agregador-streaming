@@ -3,8 +3,9 @@ import { createClient } from '@supabase/supabase-js';
 import { TitleStatus } from '@/types/TitleStatus';
 
 /**
- * Update user title status (seen, not_interested, or watch_later)
- * Body: { tmdb_id: number, status: TitleStatus, liked?: boolean }
+ * Update user title status (seen, not_interested, or watchlist)
+ * Body: { tmdb_id: number, type: 'movie' | 'tv', status: TitleStatus, liked?: boolean }
+ * Note: Single active status - setting a new status replaces the old one
  */
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig();
@@ -62,23 +63,30 @@ export default defineEventHandler(async (event) => {
 
   // Get request body
   const body = await readBody(event);
-  const { tmdb_id, status, liked } = body;
+  const { tmdb_id, type, status, liked } = body;
 
-  if (!tmdb_id || !status) {
+  if (!tmdb_id || !type || !status) {
     throw createError({
       statusCode: 400,
-      message: 'tmdb_id and status are required',
+      message: 'tmdb_id, type, and status are required',
+    });
+  }
+
+  if (type !== 'movie' && type !== 'tv') {
+    throw createError({
+      statusCode: 400,
+      message: "type must be 'movie' or 'tv'",
     });
   }
 
   if (
     status !== TitleStatus.SEEN &&
     status !== TitleStatus.NOT_INTERESTED &&
-    status !== TitleStatus.WATCH_LATER
+    status !== TitleStatus.WATCHLIST
   ) {
     throw createError({
       statusCode: 400,
-      message: `status must be '${TitleStatus.SEEN}', '${TitleStatus.NOT_INTERESTED}', or '${TitleStatus.WATCH_LATER}'`,
+      message: `status must be '${TitleStatus.SEEN}', '${TitleStatus.NOT_INTERESTED}', or '${TitleStatus.WATCHLIST}'`,
     });
   }
 
@@ -99,11 +107,13 @@ export default defineEventHandler(async (event) => {
     const upsertData: {
       user_id: string;
       tmdb_id: number;
+      type: string;
       status: string;
       liked?: boolean;
     } = {
       user_id: userId,
       tmdb_id,
+      type,
       status,
     };
 

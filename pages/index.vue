@@ -3,6 +3,7 @@ import { useUserStore } from '../stores/user';
 import { Recommendations, Recommendation } from '@/types/Recommendation';
 import { TitleStatus } from '@/types/TitleStatus';
 import { getSession } from '@/composables/database/auth';
+import { useUndoToast } from '@/composables/useUndoToast';
 import { nextTick, onMounted, computed } from 'vue';
 
 // Type for Supabase user that may have either 'id' or 'sub' as identifier
@@ -158,6 +159,7 @@ const handleUserStateChange = async () => {
 const isFetchingProfile = ref(false);
 const lastFetchedUserId = ref<string | null>(null);
 const isHydrating = ref(true); // Track if we're still in hydration phase
+const isMounted = ref(false); // Track if component is mounted
 
 // Single reactive watcher as the single source of truth
 // CRITICAL: Only watch after auth is initialized to avoid race conditions on refresh
@@ -250,7 +252,14 @@ watch(
   { immediate: true }
 );
 
+// Undo toast for not_interested actions
+const { showToast } = useUndoToast();
+
 // Handle marking a title with different statuses
+// New logic: Single active status (watchlist/seen/not_interested)
+// - Liking implies seen and removes from watchlist
+// - Marking seen or liked removes from watchlist
+// - Marking not_interested removes from all other states
 const handleTitleStatus = async (
   title: Recommendation,
   status: TitleStatus,
@@ -266,20 +275,72 @@ const handleTitleStatus = async (
     }
 
     // Update status in backend
-    await $fetch('/api/user-title-status', {
+    const response = await $fetch('/api/user-title-status', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${session.access_token}`,
       },
       body: {
         tmdb_id: title.tmdb_id,
+        type: title.type,
         status,
         liked,
       },
     });
 
-    // Optimistically remove from UI (except watch_later which stays)
-    if (status !== TitleStatus.WATCH_LATER) {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[handleTitleStatus] Success:', { status, response });
+    }
+
+    // Show toast with appropriate message and action based on status
+    if (status === TitleStatus.NOT_INTERESTED) {
+      showToast(
+        `"${title.title}" marcado como no me interesa`,
+        {
+          label: 'Deshacer',
+          action: async () => {
+            // Undo: delete the not_interested status
+            await $fetch('/api/user-title-status', {
+              method: 'DELETE',
+              headers: {
+                Authorization: `Bearer ${session.access_token}`,
+              },
+              query: {
+                tmdb_id: title.tmdb_id,
+              },
+            });
+            // Re-fetch recommendations to update UI
+            await fetchRecommendations();
+          },
+        },
+        7000
+      );
+    } else if (status === TitleStatus.SEEN) {
+      showToast(
+        `"${title.title}" marcado como visto`,
+        {
+          label: 'Ver vistos',
+          action: async () => {
+            await navigateTo('/seen');
+          },
+        },
+        5000
+      );
+    } else if (status === TitleStatus.WATCHLIST) {
+      showToast(
+        `"${title.title}" guardado para ver más tarde`,
+        {
+          label: 'Ver lista',
+          action: async () => {
+            await navigateTo('/watchlist');
+          },
+        },
+        5000
+      );
+    }
+
+    // Optimistically remove from UI (except watchlist which stays)
+    if (status !== TitleStatus.WATCHLIST) {
       recommendations.value = {
         recommended: recommendations.value.recommended.filter(
           (r) => r.tmdb_id !== title.tmdb_id
@@ -293,11 +354,21 @@ const handleTitleStatus = async (
       };
     }
   } catch (error) {
-    console.error('Error updating title status:', error);
+    if (process.env.NODE_ENV === 'development') {
+      console.error('[handleTitleStatus] Error:', error);
+    }
+    // Show error toast
+    const errorMessage =
+      status === TitleStatus.WATCHLIST
+        ? `Error al guardar "${title.title}" para ver más tarde`
+        : status === TitleStatus.SEEN
+          ? `Error al marcar "${title.title}" como visto`
+          : `Error al actualizar el estado de "${title.title}"`;
+    showToast(errorMessage, null, 3000);
   }
 };
 
-// Handle marking as liked (updates existing status with liked=true)
+// Handle marking as liked (implies seen, removes from watchlist)
 const handleMarkLiked = async (title: Recommendation) => {
   try {
     const {
@@ -305,23 +376,61 @@ const handleMarkLiked = async (title: Recommendation) => {
     } = await getSession();
 
     if (!session?.access_token) {
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('[handleMarkLiked] No session available');
+      }
       return;
     }
 
-    // Update or insert with liked=true
-    await $fetch('/api/user-title-status', {
+    // Update or insert with liked=true and status=seen
+    // This automatically removes from watchlist (single active status)
+    const response = await $fetch('/api/user-title-status', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${session.access_token}`,
       },
       body: {
         tmdb_id: title.tmdb_id,
-        status: TitleStatus.SEEN, // Default to seen when liked
+        type: title.type,
+        status: TitleStatus.SEEN, // Liked implies seen
         liked: true,
       },
     });
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[handleMarkLiked] Success:', response);
+    }
+
+    // Show toast with link to see liked titles
+    showToast(
+      `"${title.title}" agregado a tus favoritos`,
+      {
+        label: 'Ver favoritos',
+        action: async () => {
+          await navigateTo('/profile');
+        },
+      },
+      5000
+    );
+
+    // Optimistically remove from UI (liked titles are seen, not in recommendations)
+    recommendations.value = {
+      recommended: recommendations.value.recommended.filter(
+        (r) => r.tmdb_id !== title.tmdb_id
+      ),
+      easyToWatch: recommendations.value.easyToWatch.filter(
+        (r) => r.tmdb_id !== title.tmdb_id
+      ),
+      basedOnLikes: recommendations.value.basedOnLikes.filter(
+        (r) => r.tmdb_id !== title.tmdb_id
+      ),
+    };
   } catch (error) {
-    console.error('Error marking title as liked:', error);
+    if (process.env.NODE_ENV === 'development') {
+      console.error('[handleMarkLiked] Error:', error);
+    }
+    // Show error toast
+    showToast(`Error al agregar "${title.title}" a favoritos`, null, 3000);
   }
 };
 
@@ -392,6 +501,7 @@ onMounted(() => {
   // Use nextTick to ensure all reactive updates have completed
   nextTick(() => {
     isHydrating.value = false;
+    isMounted.value = true;
   });
 });
 </script>
@@ -429,7 +539,10 @@ onMounted(() => {
 
     <!-- Personalized Recommendations -->
     <ClientOnly>
-      <section v-if="effectiveUser" class="py-12 md:py-16 md:px-4">
+      <section
+        v-if="isMounted && userStore.authInitialized && effectiveUser"
+        class="py-12 md:py-16 md:px-4"
+      >
         <div class="container mx-auto max-w-7xl">
           <!-- Loading State -->
           <div v-if="loadingRecommendations" class="text-center py-12">
@@ -501,9 +614,7 @@ onMounted(() => {
                 handleTitleStatus($event, TitleStatus.NOT_INTERESTED)
               "
               @mark-liked="handleMarkLiked($event)"
-              @mark-watch-later="
-                handleTitleStatus($event, TitleStatus.WATCH_LATER)
-              "
+              @mark-watchlist="handleTitleStatus($event, TitleStatus.WATCHLIST)"
             />
 
             <RecommendationSection
@@ -520,9 +631,7 @@ onMounted(() => {
                 handleTitleStatus($event, TitleStatus.NOT_INTERESTED)
               "
               @mark-liked="handleMarkLiked($event)"
-              @mark-watch-later="
-                handleTitleStatus($event, TitleStatus.WATCH_LATER)
-              "
+              @mark-watchlist="handleTitleStatus($event, TitleStatus.WATCHLIST)"
             />
 
             <RecommendationSection
@@ -539,13 +648,15 @@ onMounted(() => {
                 handleTitleStatus($event, TitleStatus.NOT_INTERESTED)
               "
               @mark-liked="handleMarkLiked($event)"
-              @mark-watch-later="
-                handleTitleStatus($event, TitleStatus.WATCH_LATER)
-              "
+              @mark-watchlist="handleTitleStatus($event, TitleStatus.WATCHLIST)"
             />
           </div>
         </div>
       </section>
+      <template #fallback>
+        <!-- Empty fallback to prevent hydration mismatch -->
+        <div></div>
+      </template>
     </ClientOnly>
 
     <!-- How It Works Section -->

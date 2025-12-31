@@ -5,6 +5,7 @@ import { TitleStatus } from '@/types/TitleStatus';
 export interface UpsertUserTitleStatusData {
   user_id: string;
   tmdb_id: number;
+  type: 'movie' | 'tv';
   status: TitleStatus;
   liked?: boolean;
 }
@@ -20,6 +21,7 @@ export async function upsertUserTitleStatus(data: UpsertUserTitleStatusData) {
       {
         [USER_TITLE_STATUS_FIELDS.USER_ID]: data.user_id,
         [USER_TITLE_STATUS_FIELDS.TMDB_ID]: data.tmdb_id,
+        [USER_TITLE_STATUS_FIELDS.TYPE]: data.type,
         [USER_TITLE_STATUS_FIELDS.STATUS]: data.status,
         [USER_TITLE_STATUS_FIELDS.LIKED]: data.liked ?? false,
       },
@@ -39,7 +41,7 @@ export async function getUserLikedTitles(userId: string) {
   const supabase = useSupabaseClient();
   return await supabase
     .from(TABLES.USER_TITLE_STATUS)
-    .select('id, tmdb_id')
+    .select('id, tmdb_id, type')
     .eq(USER_TITLE_STATUS_FIELDS.USER_ID, userId)
     .eq(USER_TITLE_STATUS_FIELDS.LIKED, true)
     .order(USER_TITLE_STATUS_FIELDS.CREATED_AT, { ascending: false });
@@ -60,13 +62,13 @@ export async function getUserLikedTitle(userId: string, tmdbId: number) {
 }
 
 /**
- * Get user's liked statuses with tmdb_ids
+ * Get user's liked statuses with tmdb_ids and types
  */
 export async function getUserLikedStatuses(userId: string) {
   const supabase = useSupabaseClient();
   return await supabase
     .from(TABLES.USER_TITLE_STATUS)
-    .select('tmdb_id')
+    .select('tmdb_id, type')
     .eq(USER_TITLE_STATUS_FIELDS.USER_ID, userId)
     .eq(USER_TITLE_STATUS_FIELDS.LIKED, true);
 }

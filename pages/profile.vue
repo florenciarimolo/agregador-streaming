@@ -4,7 +4,7 @@
       <h1
         class="text-3xl md:text-4xl font-bold dark:text-gray-300 text-gray-800 mb-2 font-heading"
       >
-        Editar preferencias
+        Editar perfil
       </h1>
       <p class="text-gray-800 dark:text-gray-300">
         Gestiona tus películas y series favoritas. Puedes tener hasta 10
@@ -162,7 +162,7 @@
               @mousedown.stop.prevent
             >
               <svg
-                class="w-4 h-4"
+                class="w-4 h-4 text-white"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -174,7 +174,7 @@
                   d="M6 18L18 6M6 6l12 12"
                 />
               </svg>
-                <span class="tooltip">Eliminar de la lista</span>
+              <span class="tooltip">Eliminar de la lista</span>
             </button>
           </nuxt-link>
 
@@ -435,9 +435,14 @@ const handleTitleSelected = async (result: TMDBSearchResult) => {
     }
 
     // Insert user like status (as seen with liked=true)
+    if (!result.media_type) {
+      showError('Tipo de medio no válido.');
+      return;
+    }
     const { data: newLike, error: likeError } = await upsertUserTitleStatus({
       user_id: userId,
       tmdb_id: result.id,
+      type: result.media_type,
       status: TitleStatus.SEEN,
       liked: true,
     });
@@ -489,7 +494,7 @@ definePageMeta({
 });
 
 useHead({
-  title: 'Editar preferencias - UpNext',
+  title: 'Editar perfil - UpNext',
 });
 </script>
 

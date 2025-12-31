@@ -180,24 +180,6 @@ button:not([role='switch']):not([aria-label='Toggle menu']):not(
     [class*='rounded-full']
   ):not([class*='rounded-lg']):not([class*='rounded-xl']):not(
     [class*='rounded-md']
-  ):hover {
-  border-color: #f97316;
-  background: linear-gradient(
-    135deg,
-    #21186e 0%,
-    #4a3ba8 30%,
-    #8b5cf6 60%,
-    #f97316 100%
-  );
-  color: white;
-}
-
-button:not([role='switch']):not([aria-label='Toggle menu']):not(
-    [data-icon-only]
-  ):not([class*='bg-gradient']):not([class*='bg-primary']):not(
-    [class*='rounded-full']
-  ):not([class*='rounded-lg']):not([class*='rounded-xl']):not(
-    [class*='rounded-md']
   ):focus,
 button:not([role='switch']):not([aria-label='Toggle menu']):not(
     [data-icon-only]

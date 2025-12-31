@@ -35,7 +35,7 @@
         @click="titleToRemove = null"
       >
         <div
-          class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 max-w-md mx-4"
+          class="dark:bg-gray-900/40 bg-gray-100/80 backdrop-blur-xl border border-gray-300/50 dark:border-white/10 rounded-3xl shadow-xl p-6 max-w-md mx-4"
           @click.stop
         >
           <h3
@@ -109,7 +109,7 @@
             <nuxt-link
               :to="`/${title.type === MediaTypeEnum.movie ? 'pelicula' : 'serie'}/${title.tmdb_id}`"
               :aria-label="`Ver detalles de ${title.title}`"
-              class="block aspect-[2/3] relative bg-gray-800 rounded-t-lg focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+              class="block aspect-[2/3] relative bg-gray-800 rounded-t-lg focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 overflow-visible"
             >
               <div
                 v-if="title.poster_path"
@@ -147,7 +147,7 @@
                 type="button"
                 class="tooltip-container absolute top-2 right-2 z-20 p-2 rounded-full bg-black/50 hover:bg-red-600/80 backdrop-blur-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-black/50 pointer-events-auto"
                 :aria-label="`Eliminar ${title.title} de la lista de vistas`"
-                title="Eliminar de vistas"
+                title="Eliminar de la lista"
                 @click.stop.prevent="handleRemoveTitle(title, TitleStatus.SEEN)"
                 @mousedown.stop.prevent
               >
@@ -164,7 +164,7 @@
                     d="M6 18L18 6M6 6l12 12"
                   />
                 </svg>
-                <span class="tooltip">Eliminar de vistas</span>
+                <span class="tooltip">Eliminar de la lista</span>
               </button>
             </nuxt-link>
 
@@ -215,7 +215,7 @@
             <nuxt-link
               :to="`/${title.type === MediaTypeEnum.movie ? 'pelicula' : 'serie'}/${title.tmdb_id}`"
               :aria-label="`Ver detalles de ${title.title}`"
-              class="block aspect-[2/3] relative bg-gray-800 rounded-t-lg focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+              class="block aspect-[2/3] relative bg-gray-800 rounded-t-lg focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 overflow-visible"
             >
               <div
                 v-if="title.poster_path"
@@ -253,7 +253,7 @@
                 type="button"
                 class="tooltip-container absolute top-2 right-2 z-20 p-2 rounded-full bg-black/50 hover:bg-red-600/80 backdrop-blur-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-black/50 pointer-events-auto"
                 :aria-label="`Eliminar ${title.title} de la lista de no me interesan`"
-                title="Eliminar de no me interesan"
+                title="Eliminar de la lista"
                 @click.stop.prevent="
                   handleRemoveTitle(title, TitleStatus.NOT_INTERESTED)
                 "
@@ -272,7 +272,7 @@
                     d="M6 18L18 6M6 6l12 12"
                   />
                 </svg>
-                <span class="tooltip">Eliminar de no me interesan</span>
+                <span class="tooltip">Eliminar de la lista</span>
               </button>
             </nuxt-link>
 
