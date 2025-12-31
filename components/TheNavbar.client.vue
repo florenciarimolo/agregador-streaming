@@ -48,7 +48,7 @@
             >
               <div
                 v-if="showUserMenu"
-                class="absolute right-0 mt-2 w-64 dark:bg-gray-800/90 bg-white/90 backdrop-blur-sm rounded-lg shadow-xl border border-primary/20 z-50"
+                class="absolute right-0 mt-2 w-64 dark:bg-gray-900/40 bg-gray-100/80 backdrop-blur-xl rounded-lg border border-gray-300/50 dark:border-white/10 z-50"
                 @click.stop
               >
                 <div class="p-4">
