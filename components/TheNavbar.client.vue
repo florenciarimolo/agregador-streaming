@@ -169,7 +169,7 @@
           >
             <button
               type="button"
-              class="w-8 h-8 rounded-full bg-gradient-to-br from-primary via-accent to-secondary flex items-center justify-center text-white font-semibold text-xs hover:ring-2 hover:ring-primary/50 transition-all cursor-pointer shadow-md"
+              class="w-8 h-8 rounded-full bg-gradient-to-br from-primary via-accent to-secondary flex items-center justify-center text-white font-semibold text-xs hover:ring-2 hover:ring-primary/50 transition-all cursor-pointer shadow-md touch-manipulation"
               :aria-label="`Menú de usuario para ${currentUser.email || 'usuario'}`"
               @click="toggleUserMenu"
             >
@@ -186,7 +186,7 @@
             >
               <div
                 v-if="showUserMenu"
-                class="absolute right-0 mt-2 w-64 dark:bg-gray-900/90 bg-gray-100/90 backdrop-blur-xl rounded-lg border border-gray-300/50 dark:border-white/10 z-50"
+                class="absolute right-0 mt-2 w-64 max-w-[calc(100vw-2rem)] dark:bg-gray-900/90 bg-gray-100/90 backdrop-blur-xl rounded-lg border border-gray-300/50 dark:border-white/10 z-[60] shadow-xl"
                 @click.stop
               >
                 <div class="p-4">
@@ -312,7 +312,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed } from 'vue';
+import { ref, onMounted, onUnmounted, computed, nextTick } from 'vue';
 
 // User state
 const user = useSupabaseUser();
@@ -340,8 +340,20 @@ const getUserInitials = (email: string | undefined | null): string => {
 };
 
 // Toggle user menu
-const toggleUserMenu = () => {
+const toggleUserMenu = async (event?: Event) => {
+  // Prevent the click from immediately triggering handleClickOutside
+  if (event) {
+    event.stopPropagation();
+  }
+
+  const wasOpen = showUserMenu.value;
   showUserMenu.value = !showUserMenu.value;
+
+  // If we just opened the menu, wait for next tick to ensure DOM is updated
+  // before allowing handleClickOutside to process
+  if (!wasOpen && showUserMenu.value) {
+    await nextTick();
+  }
 };
 
 // Logout confirmation state
@@ -376,18 +388,33 @@ const userMenuContainer = ref<HTMLElement | null>(null);
 const userMenuContainerMobile = ref<HTMLElement | null>(null);
 
 // Close user menu when clicking outside
-const handleClickOutside = (event: MouseEvent) => {
+const handleClickOutside = (event: Event) => {
+  // Don't process if menu is closed
   if (!showUserMenu.value) return;
-  const target = event.target as HTMLElement;
 
-  // Check if click is outside the active menu container (desktop or mobile)
-  // Only one container will be active at a time (desktop or mobile)
+  const target = event.target as HTMLElement;
+  if (!target) return;
+
+  // Get the active container (desktop or mobile)
   const activeContainer =
     userMenuContainer.value || userMenuContainerMobile.value;
 
-  if (activeContainer && !activeContainer.contains(target)) {
-    showUserMenu.value = false;
+  // If no container found, don't do anything
+  if (!activeContainer) return;
+
+  // Check if the click was inside the container (button or menu)
+  // This includes the button that toggles the menu
+  if (activeContainer.contains(target)) {
+    return; // Click was inside, don't close
   }
+
+  // Click was outside, close the menu
+  // Use nextTick to ensure this runs after toggleUserMenu has finished
+  nextTick(() => {
+    if (showUserMenu.value) {
+      showUserMenu.value = false;
+    }
+  });
 };
 
 // Scroll to top state
@@ -443,13 +470,14 @@ onMounted(() => {
   checkMobile();
   window.addEventListener('scroll', handleScroll);
   window.addEventListener('resize', handleResize);
-  document.addEventListener('click', handleClickOutside);
+  // Use bubbling phase (default) so button handlers run first
+  document.addEventListener('click', handleClickOutside, false);
 });
 
 onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll);
   window.removeEventListener('resize', handleResize);
-  document.removeEventListener('click', handleClickOutside);
+  document.removeEventListener('click', handleClickOutside, false);
 });
 </script>
 
@@ -473,5 +501,10 @@ onUnmounted(() => {
 .mobile-menu-leave-to {
   opacity: 0;
   transform: translateY(-10px);
+}
+
+.touch-manipulation {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 </style>

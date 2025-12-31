@@ -20,7 +20,7 @@
             to="/how-it-works"
             class="text-gray-800 dark:text-gray-300 hover:text-primary dark:hover:text-primary-400 transition-colors text-sm no-underline"
           >
-            How it works
+            Cómo funciona
           </nuxt-link>
           <span class="text-gray-400">•</span>
           <nuxt-link
