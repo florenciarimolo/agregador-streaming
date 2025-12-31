@@ -26,12 +26,13 @@
 </template>
 <script setup lang="ts">
 import type { WatchProvider } from '@/types/WatchProvider';
-import { watch, PropType, ref, onMounted } from 'vue';
+import { PropType, ref, onMounted } from 'vue';
 import {
   generateProviderSearchUrl,
   getFallbackSearchUrl,
 } from '@/utils/providerLinks';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
+// @ts-expect-error - Used in template, linter doesn't detect template usage
 import IconPlay from '@/components/icons/IconPlay.vue';
 
 const props = defineProps({
@@ -65,6 +66,7 @@ const props = defineProps({
 const providerUrls = ref<Record<string, string>>({});
 
 // Generate provider URL with search functionality
+// @ts-expect-error - Used in template, linter doesn't detect template usage
 const _getProviderUrl = (providerName: string): string => {
   // Check if we have a pre-computed URL (for async providers)
   if (providerUrls.value[providerName]) {
@@ -131,24 +133,7 @@ onMounted(async () => {
   }
 });
 
-watch(
-  () => props.mediaProviderPropList,
-  (newValue) => {
-    if (newValue.length === 0) {
-      console.warn('No providers available for this media.');
-    }
-  },
-  { immediate: true }
-);
-
-watch(
-  () => props.watchTypeProp,
-  (newValue) => {
-    if (!newValue) {
-      console.warn('Watch type is not defined.');
-    }
-  },
-  { immediate: true }
-);
+// Removed console.warn statements - these were causing unnecessary warnings
+// The template already handles empty states with v-if conditions
 </script>
 <style scoped></style>

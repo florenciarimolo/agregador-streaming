@@ -115,15 +115,16 @@ const handleResetPassword = async () => {
 
     if (result.error) {
       // Handle rate limit error with specific message
+      const errorObj = result.error as Error & { code?: string };
       if (
-        result.error.name === 'RateLimitError' ||
-        result.error.code === 'over_email_send_rate_limit'
+        errorObj.name === 'RateLimitError' ||
+        errorObj.code === 'over_email_send_rate_limit'
       ) {
-        error.value = result.error.message;
+        error.value = errorObj.message;
       } else {
         // For other errors, show the error message
         error.value =
-          result.error.message ||
+          errorObj.message ||
           'Ocurrió un error al enviar el enlace de recuperación.';
       }
       return;
