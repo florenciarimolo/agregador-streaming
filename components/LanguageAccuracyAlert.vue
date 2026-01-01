@@ -9,13 +9,13 @@
   >
     <div
       v-if="isVisible"
-      class="fixed bottom-4 right-4 max-w-md bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg shadow-lg p-4 z-50"
+      class="fixed bottom-4 right-4 max-w-md bg-gray-100/95 dark:bg-gray-900/95 backdrop-blur-md border border-gray-300/50 dark:border-white/10 rounded-lg shadow-lg p-4 z-50"
       role="alert"
     >
       <div class="flex items-start gap-3">
         <div class="flex-shrink-0">
           <svg
-            class="w-5 h-5 text-yellow-600 dark:text-yellow-400"
+            class="w-5 h-5 text-gray-600 dark:text-gray-400"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -29,32 +29,18 @@
           </svg>
         </div>
         <div class="flex-1 min-w-0">
-          <p class="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+          <p class="text-sm font-medium text-gray-800 dark:text-gray-200">
             {{ $t('languageAccuracy.alert.title') }}
           </p>
-          <p class="mt-1 text-sm text-yellow-700 dark:text-yellow-300">
+          <p class="mt-1 text-sm text-gray-700 dark:text-gray-300">
             {{ $t('languageAccuracy.alert.message') }}
           </p>
         </div>
-        <button
-          @click="dismiss"
-          class="flex-shrink-0 text-yellow-600 dark:text-yellow-400 hover:text-yellow-800 dark:hover:text-yellow-200 transition-colors"
+        <ToastCloseButton
           :aria-label="$t('languageAccuracy.alert.dismiss')"
-        >
-          <svg
-            class="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
-        </button>
+          custom-class="flex-shrink-0"
+          @click="dismiss"
+        />
       </div>
     </div>
   </Transition>
@@ -62,12 +48,33 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
+import ToastCloseButton from '@/components/ui/ToastCloseButton.vue';
+
+const COOKIE_NAME = 'languageAccuracyAlertDismissed';
+const COOKIE_MAX_AGE = 365 * 24 * 60 * 60; // 1 year in seconds
 
 const isVisible = ref(false);
 
+// Helper function to get cookie value
+const getCookie = (name: string): string | null => {
+  if (typeof document === 'undefined') return null;
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) {
+    return parts.pop()?.split(';').shift() || null;
+  }
+  return null;
+};
+
+// Helper function to set cookie
+const setCookie = (name: string, value: string, maxAge: number) => {
+  if (typeof document === 'undefined') return;
+  document.cookie = `${name}=${value}; max-age=${maxAge}; path=/; SameSite=Lax`;
+};
+
 onMounted(() => {
-  // Check if user has already dismissed this alert
-  const dismissed = localStorage.getItem('languageAccuracyAlertDismissed');
+  // Check if user has already dismissed this alert (using cookies)
+  const dismissed = getCookie(COOKIE_NAME);
   if (!dismissed) {
     isVisible.value = true;
   }
@@ -75,8 +82,8 @@ onMounted(() => {
 
 const dismiss = () => {
   isVisible.value = false;
-  // Store dismissal in localStorage
-  localStorage.setItem('languageAccuracyAlertDismissed', 'true');
+  // Store dismissal in cookies (persists for 1 year)
+  setCookie(COOKIE_NAME, 'true', COOKIE_MAX_AGE);
 };
 </script>
 

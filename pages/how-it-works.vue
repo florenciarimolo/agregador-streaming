@@ -1,6 +1,6 @@
 <template>
   <div class="max-w-4xl mx-auto px-4 py-8">
-    <div class="mb-8">
+    <div class="mb-6">
       <h1 class="text-4xl font-bold dark:text-gray-300 text-gray-800 mb-4">
         {{ $t('howItWorks.title') }}
       </h1>
@@ -9,7 +9,7 @@
       </p>
     </div>
 
-    <div class="space-y-8">
+    <div class="space-y-6">
       <!-- Sección 1: Introducción -->
       <section
         class="bg-white/60 dark:bg-gray-900/40 backdrop-blur-xl rounded-2xl p-6 border border-gray-300/50 dark:border-white/10"

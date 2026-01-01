@@ -1,10 +1,11 @@
 /**
- * Detect if a text contains non-Latin characters that don't belong to the expected language
- * This helps identify cases where TMDB returns titles in unexpected languages (e.g., Japanese, Chinese, Hindi)
+ * Detect if a text uses a non-Latin alphabet
+ * This helps identify cases where TMDB returns titles in non-Latin scripts (e.g., Japanese, Chinese, Hindi)
+ * Only checks for ES region languages (es, ca, eu, gl)
  *
  * @param text The text to check
  * @param expectedLanguage The expected language code (e.g., 'es', 'ca', 'eu', 'gl')
- * @returns true if the text contains unexpected non-Latin characters
+ * @returns true if the text uses a non-Latin alphabet (more than 50% non-Latin characters)
  */
 export function hasUnexpectedCharacters(
   text: string | null | undefined,
@@ -15,9 +16,9 @@ export function hasUnexpectedCharacters(
   }
 
   // Languages in ES region that use Latin script
-  const latinLanguages = ['es', 'ca', 'eu', 'gl', 'en'];
+  const latinLanguages = ['es', 'ca', 'eu', 'gl'];
 
-  // If the expected language is not a Latin script language, don't check
+  // If the expected language is not a Latin script language in ES region, don't check
   if (!latinLanguages.includes(expectedLanguage)) {
     return false;
   }
@@ -33,24 +34,45 @@ export function hasUnexpectedCharacters(
     /[\u0600-\u06FF]/g, // Arabic
     /[\u0590-\u05FF]/g, // Hebrew
     /[\u0400-\u04FF]/g, // Cyrillic
-    /[\u0370-\u03FF]/g, // Greek (though sometimes used, we'll flag it for ES region)
+    /[\u0370-\u03FF]/g, // Greek
   ];
 
-  // Check if text contains any non-Latin characters
-  // Note: This should NOT match Catalan, Basque, or Galician diacritics
-  // (à, è, é, í, ò, ó, ú, ç, ñ, etc.) as they are part of Latin Extended-A (00C0-00FF)
-  for (const pattern of nonLatinPatterns) {
-    if (pattern.test(text)) {
-      // Only return true if we find actual non-Latin scripts
-      // This should be very rare - only when TMDB returns titles in completely wrong scripts
-      if (import.meta.dev) {
-        console.log(
-          `[LanguageDetection] Found unexpected characters in ${expectedLanguage} text:`,
-          text.substring(0, 50)
-        );
-      }
-      return true;
+  // Count non-Latin characters
+  let nonLatinCount = 0;
+  let totalChars = 0;
+
+  // Count only printable characters (ignore spaces, punctuation, numbers)
+  for (const char of text) {
+    // Skip whitespace, numbers, and common punctuation
+    if (/[\s0-9.,;:!?\-_()[\]{}'"/\\]/.test(char)) {
+      continue;
     }
+    totalChars++;
+
+    // Check if character is non-Latin
+    for (const pattern of nonLatinPatterns) {
+      if (pattern.test(char)) {
+        nonLatinCount++;
+        break;
+      }
+    }
+  }
+
+  // If we have no meaningful characters, don't flag as unexpected
+  if (totalChars === 0) {
+    return false;
+  }
+
+  // If more than 50% of characters are non-Latin, consider it non-Latin alphabet
+  const nonLatinRatio = nonLatinCount / totalChars;
+  if (nonLatinRatio > 0.5) {
+    if (import.meta.dev) {
+      console.log(
+        `[LanguageDetection] Found non-Latin alphabet in ${expectedLanguage} text (${Math.round(nonLatinRatio * 100)}% non-Latin):`,
+        text.substring(0, 50)
+      );
+    }
+    return true;
   }
 
   return false;

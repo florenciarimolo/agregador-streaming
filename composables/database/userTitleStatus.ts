@@ -123,7 +123,7 @@ export async function getUserSeenTitles(userId: string) {
 
   const result = await supabase
     .from(TABLES.USER_TITLE_STATUS)
-    .select('id, tmdb_id, type')
+    .select('id, tmdb_id, type, liked')
     .eq(USER_TITLE_STATUS_FIELDS.USER_ID, userId)
     .eq(USER_TITLE_STATUS_FIELDS.STATUS, 'seen')
     .order(USER_TITLE_STATUS_FIELDS.CREATED_AT, { ascending: false });

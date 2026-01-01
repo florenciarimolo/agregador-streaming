@@ -5,6 +5,14 @@ import { getTitleByTmdbId, insertTitle } from '@/composables/database/titles';
 import { upsertUserTitleStatus } from '@/composables/database/userTitleStatus';
 import { getSession } from '@/composables/database/auth';
 import { isUniqueViolationError } from '@/composables/database/errorCodes';
+import {
+  AVAILABLE_LANGUAGES,
+  LanguageCode,
+} from '@/constants/languages';
+import type { Language } from '@/constants/languages';
+import RegionSelector from '@/components/RegionSelector.vue';
+import CloseButton from '@/components/ui/CloseButton.vue';
+import Card from '@/components/ui/Card.vue';
 
 definePageMeta({
   middleware: 'auth',
@@ -40,6 +48,18 @@ const userStore = useUserStore();
 const router = useRouter();
 const user = useSupabaseUser();
 
+// Onboarding steps
+const currentStep = ref<'preferences' | 'titles'>('preferences');
+const preferencesSaved = ref(false);
+
+// Preferences state
+const selectedLanguage = ref<Language | null>(
+  AVAILABLE_LANGUAGES.find((l) => l.code === LanguageCode.SPANISH) || null
+);
+const selectedRegion = ref<string | null>(null);
+const savingPreferences = ref(false);
+
+// Titles state
 const searchQuery = ref('');
 const searchResults = ref<TitleResult[]>([]);
 const selectedTitles = ref<TitleResult[]>([]);
@@ -111,6 +131,84 @@ const removeTitle = (id: number) => {
   selectedTitles.value = selectedTitles.value.filter((t) => t.id !== id);
 };
 
+// Save preferences (language and region) first
+const savePreferences = async () => {
+  if (!selectedLanguage.value) {
+    error.value = t('onboarding.languageRequired');
+    return;
+  }
+
+  savingPreferences.value = true;
+  error.value = null;
+
+  try {
+    const currentUser = userStore.user || user.value;
+
+    if (!currentUser || !currentUser.id) {
+      const {
+        data: { session },
+      } = await getSession();
+      if (!session?.user) {
+        error.value = t('onboarding.authRequired');
+        savingPreferences.value = false;
+        return;
+      }
+      userStore.setUser(session.user);
+      await userStore.fetchProfile();
+    }
+
+    const userId = (userStore.user || user.value)!.id;
+
+    const {
+      data: { session },
+    } = await getSession();
+
+    if (!session?.access_token) {
+      error.value = t('onboarding.authRequired');
+      savingPreferences.value = false;
+      return;
+    }
+
+    // Save preferences with language and region
+    const preferencesToSave = {
+      preferred_language: selectedLanguage.value.code,
+      region: selectedRegion.value || null,
+      favorite_genres: [],
+      included_providers: [],
+      content_types: [],
+    };
+
+    const saveResponse = await $fetch<{
+      success: boolean;
+      preferences: unknown;
+    }>('/api/users/preferences', {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: preferencesToSave,
+    });
+
+    if (!saveResponse.success) {
+      throw new Error('Failed to save preferences');
+    }
+
+    preferencesSaved.value = true;
+    currentStep.value = 'titles';
+    success.value = t('onboarding.preferencesSaved');
+    setTimeout(() => {
+      success.value = null;
+    }, 3000);
+  } catch (err: unknown) {
+    console.error('Error saving preferences:', err);
+    const errorMessage =
+      err instanceof Error ? err.message : t('onboarding.savePreferencesError');
+    error.value = errorMessage;
+  } finally {
+    savingPreferences.value = false;
+  }
+};
+
 const saveSelections = async () => {
   if (selectedTitles.value.length === 0) return;
 
@@ -138,7 +236,15 @@ const saveSelections = async () => {
 
     const userId = (userStore.user || user.value)!.id;
 
+    // Ensure preferences are saved before proceeding
+    if (!preferencesSaved.value) {
+      error.value = t('onboarding.preferencesRequired');
+      saving.value = false;
+      return;
+    }
+
     // First, ensure all titles exist in the database, then insert likes
+    // The TMDB endpoints will automatically use the saved preferences (language and region)
     for (const title of selectedTitles.value) {
       // Check if title exists
       const { data: existingTitle } = await getTitleByTmdbId(
@@ -147,21 +253,21 @@ const saveSelections = async () => {
       );
 
       if (!existingTitle) {
-        // Insert new title
-        const { error: insertError } = await insertTitle({
-          tmdb_id: title.id,
-          title: title.title || title.name || 'Unknown',
-          type: title.media_type,
-          poster_path: title.poster_path,
-          backdrop_path: title.backdrop_path || null,
-          overview: title.overview || null,
-          release_date: title.release_date || null,
-          first_air_date: title.first_air_date || null,
-          genres: title.genre_ids || null,
-          vote_average: title.vote_average || null,
-        });
-
-        if (insertError) throw insertError;
+        // Fetch title from TMDB - this will automatically use saved preferences
+        // and insert the title with correct language in JSONB fields
+        try {
+          const endpoint = title.media_type === 'movie' ? 'movies' : 'tvshows';
+          await $fetch(`/api/tmdb/${endpoint}/${title.id}`);
+        } catch (tmdbError) {
+          console.error(
+            `[saveSelections] Error fetching title ${title.id} from TMDB:`,
+            tmdbError
+          );
+          // If TMDB fetch fails, we can't proceed without proper title data
+          throw new Error(
+            `Failed to fetch title ${title.id} from TMDB. Please try again.`
+          );
+        }
       }
 
       // Insert user title status as seen with liked=true (will fail silently if duplicate due to UNIQUE constraint)
@@ -236,9 +342,13 @@ const saveSelections = async () => {
           {{ $t('onboarding.title') }}
         </h1>
         <p class="text-gray-800 dark:text-gray-300">
-          {{ $t('onboarding.description') }}
+          {{
+            currentStep === 'preferences'
+              ? $t('onboarding.preferencesDescription')
+              : $t('onboarding.description')
+          }}
         </p>
-        <div class="mt-4">
+        <div v-if="currentStep === 'titles'" class="mt-4">
           <span
             class="inline-block px-4 py-2 bg-primary/10 dark:bg-primary-500/20 text-primary dark:text-primary-400 rounded-full text-sm font-medium"
           >
@@ -251,7 +361,80 @@ const saveSelections = async () => {
       <AlertMessage v-if="error" :message="error" type="error" />
       <AlertMessage v-if="success" :message="success" type="success" />
 
-      <!-- Search -->
+      <!-- Step 1: Preferences -->
+      <div v-if="currentStep === 'preferences'" class="space-y-6">
+        <!-- Preferred Language -->
+        <Card padding="lg">
+          <h2
+            class="text-xl font-semibold dark:text-gray-300 text-gray-800 mb-2"
+          >
+            {{ $t('preferences.content.preferredLanguage.title') }}
+          </h2>
+          <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+            {{ $t('preferences.content.preferredLanguage.description') }}
+          </p>
+
+          <!-- Language Radio Buttons -->
+          <div class="space-y-2">
+            <label
+              v-for="lang in AVAILABLE_LANGUAGES"
+              :key="lang.code"
+              class="flex items-center gap-3 p-3 rounded-lg dark:hover:bg-gray-800/50 hover:bg-gray-100/50 transition-colors duration-150 cursor-pointer custom-radio-label"
+              :class="{
+                'dark:bg-gray-800/30 bg-gray-100/50':
+                  selectedLanguage?.code === lang.code,
+              }"
+            >
+              <input
+                :id="`lang-${lang.code}`"
+                type="radio"
+                name="preferred-language"
+                :value="lang.code"
+                :checked="selectedLanguage?.code === lang.code"
+                class="custom-radio"
+                @change="selectedLanguage = lang"
+              />
+              <span class="text-sm dark:text-gray-300 text-gray-800 flex-1">
+                {{ `${lang.name} (${lang.code})` }}
+              </span>
+            </label>
+          </div>
+        </Card>
+
+        <!-- Region -->
+        <Card padding="lg">
+          <h2
+            class="text-xl font-semibold dark:text-gray-300 text-gray-800 mb-2"
+          >
+            {{ $t('preferences.content.region.title') }}
+          </h2>
+          <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+            {{ $t('preferences.content.region.description') }}
+          </p>
+          <RegionSelector v-model="selectedRegion" />
+        </Card>
+
+        <!-- Continue Button -->
+        <div class="mt-8 text-center">
+          <Button
+            size="medium"
+            variant="primary"
+            :disabled="!selectedLanguage || savingPreferences"
+            custom-class="shadow-lg backdrop-blur-sm border border-primary-600/50"
+            @click="savePreferences"
+          >
+            {{
+              savingPreferences
+                ? $t('onboarding.saving')
+                : $t('onboarding.continue')
+            }}
+          </Button>
+        </div>
+      </div>
+
+      <!-- Step 2: Titles Selection -->
+      <div v-if="currentStep === 'titles'">
+        <!-- Search -->
       <div class="mb-6">
         <div class="relative">
           <input
@@ -303,32 +486,17 @@ const saveSelections = async () => {
               >
                 {{ $t('onboarding.noImage') }}
               </div>
-              <button
-                type="button"
+              <CloseButton
+                size="large"
+                variant="red"
+                custom-class="absolute top-1 right-1 z-10 cursor-pointer"
                 :aria-label="
                   $t('onboarding.removeTitle', {
                     title: title.title || title.name,
                   })
                 "
-                data-icon-only="true"
-                class="absolute top-1 right-1 w-7 h-7 !bg-red-500 hover:!bg-red-600 rounded-full flex items-center justify-center text-white shadow-lg transition-all duration-200 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-transparent z-10 !p-0 cursor-pointer"
                 @click.stop="removeTitle(title.id)"
-              >
-                <svg
-                  class="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
+              />
             </div>
             <p
               class="mt-1 text-xs text-center dark:text-gray-300 text-gray-800 max-w-[96px] truncate"
@@ -425,20 +593,23 @@ const saveSelections = async () => {
         ></div>
       </div>
 
-      <!-- Continue Button -->
-      <div class="mt-8 text-center">
-        <button
-          :disabled="selectedTitles.length === 0 || saving"
-          class="px-6 py-3 bg-primary-800 dark:bg-primary hover:bg-primary-900 dark:hover:bg-primary-600 text-white rounded-lg font-medium text-base transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg backdrop-blur-sm border border-primary-600/50"
-          @click="saveSelections"
-        >
-          {{ saving ? $t('onboarding.saving') : $t('onboarding.continue') }}
-        </button>
+        <!-- Continue Button -->
+        <div class="mt-8 text-center">
+          <Button
+            size="medium"
+            variant="primary"
+            :disabled="selectedTitles.length === 0 || saving"
+            custom-class="shadow-lg backdrop-blur-sm border border-primary-600/50"
+            @click="saveSelections"
+          >
+            {{ saving ? $t('onboarding.saving') : $t('onboarding.continue') }}
+          </Button>
+        </div>
       </div>
 
       <!-- Saving Loading Overlay -->
       <div
-        v-if="saving"
+        v-if="saving || savingPreferences"
         class="fixed inset-0 z-50 flex items-center justify-center bg-background-dark/80 dark:bg-background-dark/80 backdrop-blur-sm"
       >
         <div class="flex flex-col items-center gap-4">
@@ -446,7 +617,11 @@ const saveSelections = async () => {
             class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"
           ></div>
           <p class="text-lg font-medium dark:text-gray-300 text-gray-800">
-            {{ $t('onboarding.savingSelection') }}
+            {{
+              savingPreferences
+                ? $t('onboarding.savingPreferences')
+                : $t('onboarding.savingSelection')
+            }}
           </p>
         </div>
       </div>

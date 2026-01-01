@@ -7,21 +7,20 @@
     leave-from-class="transform scale-100 opacity-100"
     leave-to-class="transform scale-95 opacity-0"
   >
-    <div
+    <Alert
       v-if="message"
-      :class="[
-        'mb-4 p-3 rounded-lg text-sm',
-        type === 'error'
-          ? 'bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400'
-          : 'bg-green-500/10 border border-green-500/20 text-green-600 dark:text-green-400',
-      ]"
+      :variant="type === 'error' ? 'error' : 'success'"
+      custom-class="mb-4"
+      :show-icon="false"
     >
       {{ message }}
-    </div>
+    </Alert>
   </Transition>
 </template>
 
 <script setup lang="ts">
+import Alert from '@/components/ui/Alert.vue';
+
 interface Props {
   message?: string | null;
   type?: 'error' | 'success';

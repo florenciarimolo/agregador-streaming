@@ -142,7 +142,7 @@ export default defineEventHandler(async (event) => {
       // Extract language-specific text from JSONB (now with all languages)
       const titleText = getTitleInLanguage(titleJsonb, userLangCode, region);
       const overviewText = getTitleInLanguage(overviewJsonb, userLangCode, region);
-      const posterPathText = getTitleInLanguage(posterPathJsonb, userLangCode, region);
+      const posterPathText = getTitleInLanguage(posterPathJsonb, userLangCode, region, true);
 
       // Map DB title to TVShow format
       const tvShow: any = {

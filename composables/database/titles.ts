@@ -32,7 +32,8 @@ export interface InsertTitleData {
 export function getTitleInLanguage(
   titleJsonb: MultiLanguageText | null | undefined,
   language: string,
-  userRegion?: string | null
+  userRegion?: string | null,
+  isImagePath: boolean = false
 ): string {
   if (!titleJsonb || typeof titleJsonb !== 'object') {
     return '';
@@ -42,32 +43,35 @@ export function getTitleInLanguage(
   if (titleJsonb[language]) {
     const titleText = titleJsonb[language];
 
-    // IMPORTANT: Only check for unexpected characters if we're in ES region and language is NOT Spanish
-    // This check should ONLY trigger when TMDB returns titles in completely wrong scripts
-    // (e.g., Japanese, Chinese, Hindi characters when expecting Catalan)
+    // IMPORTANT: Never check language for image paths - they are universal
+    // IMPORTANT: Only check for non-Latin alphabet if we're in ES region and language is NOT Spanish
+    // This check should ONLY trigger when TMDB returns titles in completely wrong alphabets
+    // (e.g., Japanese, Chinese, Hindi alphabets when expecting Catalan)
     // Catalan diacritics (à, è, é, í, ò, ó, ú, ç) are Latin and should NOT trigger this
-    const langCode = language.split('-')[0]?.toLowerCase() || '';
-    if (userRegion && userRegion.toUpperCase() === 'ES' && langCode !== 'es') {
-      const hasUnexpected = hasUnexpectedCharacters(titleText, langCode);
-      if (hasUnexpected) {
-        // Only fallback to Spanish if we detect actual non-Latin scripts
-        // This should be very rare - only when TMDB returns titles in completely wrong scripts
-        if (import.meta.dev) {
-          console.log(
-            `[getTitleInLanguage] Falling back to Spanish for language ${language} due to unexpected characters in:`,
-            titleText.substring(0, 50)
+    if (!isImagePath) {
+      const langCode = language.split('-')[0]?.toLowerCase() || '';
+      if (userRegion && userRegion.toUpperCase() === 'ES' && langCode !== 'es') {
+        const hasUnexpected = hasUnexpectedCharacters(titleText, langCode);
+        if (hasUnexpected) {
+          // Only fallback to Spanish if we detect non-Latin alphabet (more than 50% non-Latin chars)
+          // This should be very rare - only when TMDB returns titles in completely wrong alphabets
+          if (import.meta.dev) {
+            console.log(
+              `[getTitleInLanguage] Falling back to Spanish for language ${language} due to non-Latin alphabet in:`,
+              titleText.substring(0, 50)
+            );
+          }
+          // Try Spanish in ISO format first
+          if (titleJsonb['es-ES']) {
+            return titleJsonb['es-ES'];
+          }
+          // Fallback to any Spanish variant
+          const spanishKey = Object.keys(titleJsonb).find((k) =>
+            k.startsWith('es-')
           );
-        }
-        // Try Spanish in ISO format first
-        if (titleJsonb['es-ES']) {
-          return titleJsonb['es-ES'];
-        }
-        // Fallback to any Spanish variant
-        const spanishKey = Object.keys(titleJsonb).find((k) =>
-          k.startsWith('es-')
-        );
-        if (spanishKey) {
-          return titleJsonb[spanishKey];
+          if (spanishKey) {
+            return titleJsonb[spanishKey];
+          }
         }
       }
     }
@@ -424,7 +428,8 @@ export async function getTitlesByTmdbIds(
     poster_path: getTitleInLanguage(
       title.poster_path as MultiLanguageText | null,
       language,
-      userRegion
+      userRegion,
+      true // isImagePath = true - don't check language for image paths
     ),
   }));
 
@@ -547,7 +552,8 @@ export async function getTitleByTmdbIdWithLanguage(
   const posterPathText = getTitleInLanguage(
     posterPathJsonb,
     language,
-    userRegion
+    userRegion,
+    true // isImagePath = true - don't check language for image paths
   );
   const overviewText = getTitleInLanguage(overviewJsonb, language, userRegion);
 

@@ -29,9 +29,7 @@
           v-else
           class="w-full h-full flex items-center justify-center text-gray-400 overflow-hidden rounded-t-lg"
           role="img"
-          :aria-label="
-            $t('media.noPosterAvailableFor', { title: title.title })
-          "
+          :aria-label="$t('media.noPosterAvailableFor', { title: title.title })"
         >
           <svg
             class="w-12 h-12"
@@ -49,7 +47,34 @@
           </svg>
         </div>
 
-        <!-- Remove Button -->
+        <!-- Like Button (top-left) -->
+        <button
+          v-if="onLike"
+          type="button"
+          :class="[
+            'tooltip-container absolute top-2 left-2 z-20 p-2 rounded-full backdrop-blur-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-black/50 pointer-events-auto',
+            title.liked === true
+              ? 'bg-primary-800 text-white border border-gray-700/50 dark:bg-primary-600/70 dark:border-primary-800 hover:bg-primary-900 dark:hover:bg-primary-600 focus:ring-primary'
+              : 'bg-black/50 hover:bg-red-500/80 focus:ring-red-500',
+          ]"
+          :aria-label="likeLabel || $t('media.liked')"
+          :title="likeLabel || $t('media.liked')"
+          @click.stop.prevent="onLike(title)"
+          @mousedown.stop.prevent
+        >
+          <svg
+            class="w-4 h-4 text-white"
+            fill="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+            />
+          </svg>
+          <span class="tooltip">{{ likeLabel || $t('media.liked') }}</span>
+        </button>
+
+        <!-- Remove Button (top-right) -->
         <button
           v-if="onRemove"
           type="button"
@@ -74,6 +99,15 @@
           </svg>
           <span class="tooltip">{{ removeLabel || $t('common.delete') }}</span>
         </button>
+
+        <!-- Hover Overlay (same as RecommendationCard) -->
+        <div
+          class="absolute bottom-0 left-0 flex flex-col items-center justify-center w-full h-full px-4 transition-all duration-300 opacity-0 group-hover:opacity-100 backdrop-blur-md dark:bg-black/80 bg-white/80"
+        >
+          <p class="dark:text-gray-300 text-gray-800 font-semibold">
+            {{ $t('media.viewDetails') }}
+          </p>
+        </div>
       </nuxt-link>
 
       <!-- Title -->
@@ -97,6 +131,7 @@
 
 <script setup lang="ts">
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
+import { watch } from 'vue';
 
 interface Title {
   id: string;
@@ -104,15 +139,40 @@ interface Title {
   type: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv;
   poster_path: string | null;
   tmdb_id: number;
+  liked?: boolean;
 }
 
 interface Props {
   titles: Title[];
   onRemove?: (title: Title) => void;
   removeLabel?: string;
+  onLike?: (title: Title) => void;
+  likeLabel?: string;
 }
 
-defineProps<Props>();
+const props = defineProps<Props>();
+
+// Debug: log titles with liked status
+if (import.meta.dev && props.onLike) {
+  watch(
+    () => props.titles,
+    (titles) => {
+      titles.forEach((title) => {
+        if (title.liked !== undefined) {
+          console.log(
+            '[TitleGrid] Title:',
+            title.title,
+            'liked:',
+            title.liked,
+            'type:',
+            typeof title.liked
+          );
+        }
+      });
+    },
+    { immediate: true, deep: true }
+  );
+}
 </script>
 
 <style scoped>
@@ -166,4 +226,3 @@ div[class*='group relative'] {
   overflow: visible;
 }
 </style>
-

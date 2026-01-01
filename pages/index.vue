@@ -5,6 +5,7 @@ import { TitleStatus } from '@/types/TitleStatus';
 import { getSession } from '@/composables/database/auth';
 import { useUndoToast } from '@/composables/useUndoToast';
 import { nextTick, onMounted, computed, watch, watchEffect } from 'vue';
+import Card from '@/components/ui/Card.vue';
 
 // Type for Supabase user that may have either 'id' or 'sub' as identifier
 type SupabaseUserWithSub = {
@@ -799,9 +800,10 @@ onMounted(() => {
         >
           {{ $t('home.howItWorksTitle') }}
         </h2>
-        <div class="grid md:grid-cols-3 gap-8">
-          <div
-            class="bg-white/60 dark:bg-gray-900/40 backdrop-blur-xl border border-gray-300/50 dark:border-white/10 rounded-3xl p-6 md:p-8 relative overflow-hidden group hover:border-primary/50 dark:hover:border-purple-500/30 transition-colors flex flex-col text-center"
+        <div class="grid md:grid-cols-3 gap-4">
+          <Card
+            padding="lg"
+            custom-class="!bg-white/60 dark:!bg-gray-900/40 md:p-8 relative overflow-hidden group hover:border-primary/50 dark:hover:border-purple-500/30 transition-colors flex flex-col text-center"
           >
             <div
               class="w-16 h-16 bg-gradient-to-r from-primary to-accent rounded-full flex items-center justify-center mx-auto mb-4"
@@ -816,9 +818,10 @@ onMounted(() => {
             <p class="text-gray-800 dark:text-gray-300">
               {{ $t('home.step1Description') }}
             </p>
-          </div>
-          <div
-            class="bg-white/60 dark:bg-gray-900/40 backdrop-blur-xl border border-gray-300/50 dark:border-white/10 rounded-3xl p-6 md:p-8 relative overflow-hidden group hover:border-primary/50 dark:hover:border-purple-500/30 transition-colors flex flex-col text-center"
+          </Card>
+          <Card
+            padding="lg"
+            custom-class="!bg-white/60 dark:!bg-gray-900/40 md:p-8 relative overflow-hidden group hover:border-primary/50 dark:hover:border-purple-500/30 transition-colors flex flex-col text-center"
           >
             <div
               class="w-16 h-16 bg-gradient-to-r from-accent to-secondary rounded-full flex items-center justify-center mx-auto mb-4"
@@ -833,9 +836,10 @@ onMounted(() => {
             <p class="text-gray-800 dark:text-gray-300">
               {{ $t('home.step2Description') }}
             </p>
-          </div>
-          <div
-            class="bg-white/60 dark:bg-gray-900/40 backdrop-blur-xl border border-gray-300/50 dark:border-white/10 rounded-3xl p-6 md:p-8 relative overflow-hidden group hover:border-primary/50 dark:hover:border-purple-500/30 transition-colors flex flex-col text-center"
+          </Card>
+          <Card
+            padding="lg"
+            custom-class="!bg-white/60 dark:!bg-gray-900/40 md:p-8 relative overflow-hidden group hover:border-primary/50 dark:hover:border-purple-500/30 transition-colors flex flex-col text-center"
           >
             <div
               class="w-16 h-16 bg-gradient-to-r from-secondary to-pink rounded-full flex items-center justify-center mx-auto mb-4"
@@ -850,7 +854,7 @@ onMounted(() => {
             <p class="text-gray-800 dark:text-gray-300">
               {{ $t('home.step3Description') }}
             </p>
-          </div>
+          </Card>
         </div>
       </div>
     </section>

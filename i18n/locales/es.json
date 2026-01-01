@@ -173,9 +173,15 @@
   "onboarding": {
     "title": "¿Qué te gusta ver?",
     "description": "Selecciona hasta 10 películas o series que disfrutes. Esto nos ayuda a recomendarte contenido que te encantará.",
+    "preferencesDescription": "Primero, configura tus preferencias de idioma y región para personalizar tu experiencia.",
     "selected": "{count} / 10 seleccionados",
     "searchPlaceholder": "Buscar películas o series...",
     "yourSelections": "Tus selecciones",
+    "languageRequired": "Por favor, selecciona un idioma preferido.",
+    "preferencesRequired": "Por favor, completa primero las preferencias de idioma y región.",
+    "preferencesSaved": "Preferencias guardadas correctamente.",
+    "savePreferencesError": "Error al guardar las preferencias. Por favor, intenta de nuevo.",
+    "savingPreferences": "Guardando preferencias...",
     "removeTitle": "Eliminar {title}",
     "noImage": "Sin imagen",
     "continue": "Continuar",
@@ -208,7 +214,7 @@
     "loading": "Cargando lista de para ver...",
     "empty": "No has guardado ningún título para ver más tarde todavía.",
     "removeTitle": "Eliminar {title} de la lista para ver",
-    "removeTooltip": "Eliminar de la lista",
+    "removeTooltip": "Eliminar",
     "viewDetails": "Ver detalles de {title}",
     "titleRemoved": "Título eliminado de la lista para ver.",
     "errorRemoving": "Error al eliminar el título. Por favor, intenta de nuevo.",
@@ -227,7 +233,7 @@
     "notAuthenticated": "No estás autenticado. Por favor, inicia sesión.",
     "markedLiked": "Título marcado como me gusta.",
     "errorMarkingLiked": "Error al marcar como me gusta. Por favor, intenta de nuevo.",
-    "removeFromList": "Eliminar de la lista",
+    "removeFromList": "Eliminar",
     "noTitle": "Sin título"
   },
   "notInterested": {
@@ -285,7 +291,7 @@
     "errorAdding": "Error al agregar el título. Por favor, intenta de nuevo.",
     "alreadyInPreferences": "Este título ya está en tus preferencias.",
     "invalidMediaType": "Tipo de medio no válido.",
-    "removeFromList": "Eliminar de la lista",
+    "removeFromList": "Eliminar",
     "removeTitle": "Eliminar {title}",
     "tabs": {
       "favorites": "Me gusta",
@@ -294,12 +300,6 @@
     "content": {
       "title": "Preferencias de contenido",
       "description": "Personaliza qué tipo de contenido quieres ver y de dónde.",
-      "preferredLanguage": {
-        "title": "Idioma preferido",
-        "description": "Selecciona el idioma en el que prefieres ver contenido.",
-        "selected": "Idioma seleccionado",
-        "noneSelected": "No has seleccionado un idioma todavía."
-      },
       "contentTypes": {
         "title": "Tipo de contenido",
         "description": "Selecciona qué tipo de contenido quieres ver.",
@@ -338,7 +338,9 @@
         "poolRegenerated": "Recomendaciones actualizadas correctamente.",
         "languageUpdatedAndRegenerating": "Idioma actualizado correctamente. Se están regenerando las recomendaciones...",
         "errorRegenerating": "Error al actualizar las recomendaciones. Inténtalo de nuevo más tarde.",
-        "saving": "Guardando cambios..."
+        "saving": "Guardando cambios...",
+        "selected": "Idioma seleccionado",
+        "noneSelected": "No has seleccionado un idioma todavía."
       },
       "saved": "Preferencias guardadas exitosamente.",
       "errorSaving": "Inténtalo de nuevo más tarde.",
@@ -361,7 +363,7 @@
     "titleRemoved": "Título eliminado del historial exitosamente.",
     "errorRemoving": "Error al eliminar el título. Por favor, intenta de nuevo.",
     "notAuthenticated": "No estás autenticado. Por favor, inicia sesión.",
-    "removeFromList": "Eliminar de la lista",
+    "removeFromList": "Eliminar",
     "removeFromSeenList": "Eliminar {title} de la lista de vistas",
     "removeFromNotInterestedList": "Eliminar {title} de la lista de no me interesan"
   },
