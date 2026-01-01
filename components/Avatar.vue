@@ -17,32 +17,20 @@
       class="w-full h-full object-cover rounded-full"
     />
     <span v-else class="select-none">{{ initials }}</span>
-    
+
     <!-- Edit icon overlay on hover (only when editable) -->
     <div
       v-if="editable"
       class="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200"
     >
-      <svg
-        class="w-6 h-6 text-white"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-        aria-hidden="true"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-        />
-      </svg>
+      <IconEdit :icon-class="iconSizeClasses + ' text-white'" />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue';
+import IconEdit from './icons/IconEdit.vue';
 
 const { t } = useI18n();
 
@@ -74,6 +62,16 @@ const sizeClasses = computed(() => {
     md: 'w-10 h-10 text-sm',
     lg: 'w-16 h-16 text-lg',
     xl: 'w-24 h-24 text-2xl',
+  };
+  return sizes[props.size];
+});
+
+const iconSizeClasses = computed(() => {
+  const sizes = {
+    sm: 'w-3 h-3',
+    md: 'w-4 h-4',
+    lg: 'w-6 h-6',
+    xl: 'w-8 h-8',
   };
   return sizes[props.size];
 });

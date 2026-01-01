@@ -1,7 +1,7 @@
 <template>
   <div class="avatar-upload">
     <div
-      class="relative inline-block rounded-full"
+      class="relative inline-block rounded-full border border-primary"
       @click="triggerFileInput"
       @dragover.prevent="isDragging = true"
       @dragleave.prevent="isDragging = false"

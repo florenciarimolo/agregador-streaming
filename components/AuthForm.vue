@@ -236,7 +236,7 @@ const backToLogin = () => {
             :class="[
               'flex-1 py-2.5 px-4 rounded-full font-medium transition-all text-sm',
               authMethod === 'password'
-                ? 'bg-primary-800  text-white border border-gray-700/50 dark:border-gray-600/50'
+                ? 'bg-primary-800 text-white border border-gray-700/50 dark:bg-gray-600/70 dark:border-primary-700'
                 : 'dark:bg-gray-800/50 bg-gray-100/50 dark:text-gray-300 text-gray-700 border border-gray-700/30 dark:border-gray-600/30',
             ]"
             @click="authMethod = 'password'"
@@ -247,7 +247,7 @@ const backToLogin = () => {
             :class="[
               'flex-1 py-2.5 px-4 rounded-full font-medium transition-all text-sm',
               authMethod === 'magic'
-                ? 'bg-primary-800 text-white border border-gray-700/50 dark:border-gray-600/50'
+                ? 'bg-primary-800 text-white border border-gray-700/50 dark:bg-gray-600/70 dark:border-primary-700'
                 : 'dark:bg-gray-800/50 bg-gray-100/50 dark:text-gray-300 text-gray-700 border border-gray-700/30 dark:border-gray-600/30',
             ]"
             @click="authMethod = 'magic'"

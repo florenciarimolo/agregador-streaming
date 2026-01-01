@@ -100,20 +100,6 @@
                   >
                     {{ $t('navbar.editProfile') }}
                   </nuxt-link>
-                  <nuxt-link
-                    to="/seen"
-                    class="block w-full px-4 py-2 text-sm dark:text-gray-300 text-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-left mb-2"
-                    @click="showUserMenu = false"
-                  >
-                    {{ $t('navbar.seen') }}
-                  </nuxt-link>
-                  <nuxt-link
-                    to="/not-interested"
-                    class="block w-full px-4 py-2 text-sm dark:text-gray-300 text-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-left mb-2"
-                    @click="showUserMenu = false"
-                  >
-                    {{ $t('navbar.notInterested') }}
-                  </nuxt-link>
                   <div
                     class="border-t border-gray-300/50 dark:border-white/10 my-2"
                   ></div>
@@ -237,20 +223,6 @@
                     @click="showUserMenu = false"
                   >
                     {{ $t('navbar.editProfile') }}
-                  </nuxt-link>
-                  <nuxt-link
-                    to="/seen"
-                    class="block w-full px-4 py-2 text-sm dark:text-gray-300 text-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-left mb-2"
-                    @click="showUserMenu = false"
-                  >
-                    {{ $t('navbar.seen') }}
-                  </nuxt-link>
-                  <nuxt-link
-                    to="/not-interested"
-                    class="block w-full px-4 py-2 text-sm dark:text-gray-300 text-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-left mb-2"
-                    @click="showUserMenu = false"
-                  >
-                    {{ $t('navbar.notInterested') }}
                   </nuxt-link>
                   <div
                     class="border-t border-gray-300/50 dark:border-white/10 my-2"

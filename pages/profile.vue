@@ -95,29 +95,27 @@
 
     <!-- Tabs for Lists -->
     <div class="mb-8">
-      <div class="border-b border-gray-300 dark:border-gray-700">
-        <nav class="-mb-px flex space-x-8 overflow-x-auto">
-          <button
-            v-for="tab in tabs"
-            :key="tab.id"
-            :class="[
-              'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors',
-              activeTab === tab.id
-                ? 'border-primary text-primary dark:text-primary-400'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300',
-            ]"
-            @click="activeTab = tab.id"
+      <nav class="flex items-center gap-2 overflow-x-auto">
+        <button
+          v-for="tab in tabs"
+          :key="tab.id"
+          :class="[
+            'py-2.5 px-4 rounded-full font-medium transition-all text-sm whitespace-nowrap flex items-center gap-2',
+            activeTab === tab.id
+              ? 'bg-primary-800 text-white border border-gray-700/50 dark:bg-gray-600/70 dark:border-primary-700'
+              : 'dark:bg-gray-800/50 bg-gray-100/50 dark:text-gray-300 text-gray-700 border border-gray-700/30 dark:border-gray-600/30',
+          ]"
+          @click="activeTab = tab.id"
+        >
+          {{ tab.label }}
+          <span
+            v-if="tab.count !== null"
+            class="px-2 py-0.5 text-xs rounded-full bg-gray-200 dark:bg-gray-700 text-primary"
           >
-            {{ tab.label }}
-            <span
-              v-if="tab.count !== null"
-              class="ml-2 px-2 py-0.5 text-xs rounded-full bg-gray-200 dark:bg-gray-700"
-            >
-              {{ tab.count }}
-            </span>
-          </button>
-        </nav>
-      </div>
+            {{ tab.count }}
+          </span>
+        </button>
+      </nav>
     </div>
 
     <!-- Tab Content -->
