@@ -11,21 +11,36 @@ export default defineEventHandler(async (event) => {
     const query = getQuery(event);
     const type = (query.type as string) || 'movie'; // 'movie' or 'tv'
 
+    // Extract language code only (e.g., 'es-ES' -> 'es')
+    // TMDB genres API only accepts ISO 639-1 language code, not the full locale
+    // IMPORTANT: If region is ES, always use 'es' regardless of preferred language
+    const languageCode =
+      config.region === 'ES' ? 'es' : config.language.split('-')[0] || 'es';
+    console.log('languageCode', languageCode);
+
+    const url = `${config.baseUrl}/genre/${type}/list`;
+    const queryParams = {
+      api_key: config.apiKey,
+      language: languageCode,
+    };
+
+
     // Fetch genres for the specified type
     const response = await $fetch<{
       genres: Array<{
         id: number;
         name: string;
       }>;
-    }>(`${config.baseUrl}/genre/${type}/list`, {
-      query: {
-        api_key: config.apiKey,
-        language: config.language,
-      },
+    }>(url, {
+      query: queryParams,
     });
+
 
     return response;
   } catch (error) {
+    if (process.env.NODE_ENV === 'development') {
+      console.error('[TMDB Genres] Error:', error);
+    }
     throw createError({
       statusCode: 500,
       statusMessage: 'Error fetching genres',

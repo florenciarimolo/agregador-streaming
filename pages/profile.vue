@@ -532,6 +532,7 @@
                     v-if="
                       showProviderResults &&
                       providerSearchQuery.trim() &&
+                      filteredProviders.length > 0 &&
                       providerDropdownPosition
                     "
                     class="fixed z-[9999] dark:bg-gray-900/95 bg-white/95 backdrop-blur-sm dark:border-gray-600 border-gray-300 rounded-lg shadow-xl max-h-64 overflow-y-auto custom-scrollbar"
@@ -857,14 +858,7 @@ const fetchAllLists = async () => {
 const fetchLikedTitles = async () => {
   const id = userId.value;
 
-  if (import.meta.dev) {
-    console.log('[fetchLikedTitles] Starting fetch, userId:', id);
-  }
-
   if (!id) {
-    if (import.meta.dev) {
-      console.warn('[fetchLikedTitles] No userId found');
-    }
     return;
   }
 
@@ -872,20 +866,12 @@ const fetchLikedTitles = async () => {
     const { data: likedStatuses, error: statusError } =
       await getUserLikedTitles(id);
     if (statusError) {
-      console.error('[fetchLikedTitles] Error getting statuses:', statusError);
       throw statusError;
     }
 
     if (!likedStatuses || likedStatuses.length === 0) {
-      if (import.meta.dev) {
-        console.log('[fetchLikedTitles] No liked statuses found');
-      }
       likedTitles.value = [];
       return;
-    }
-
-    if (import.meta.dev) {
-      console.log('[fetchLikedTitles] Found statuses:', likedStatuses.length);
     }
 
     const tmdbIds = likedStatuses.map((s) => s.tmdb_id);
@@ -899,15 +885,6 @@ const fetchLikedTitles = async () => {
     const preferredLang =
       contentPreferences.value.preferred_language || LanguageCode.SPANISH;
 
-    if (import.meta.dev) {
-      console.log(
-        '[fetchLikedTitles] Fetching titles for tmdbIds:',
-        tmdbIds,
-        'with language:',
-        preferredLang
-      );
-    }
-
     const { data: titlesData, error: titlesError } = await getTitlesByTmdbIds(
       tmdbIds,
       preferredLang,
@@ -916,37 +893,15 @@ const fetchLikedTitles = async () => {
     );
 
     if (titlesError) {
-      console.error('[fetchLikedTitles] Error getting titles:', titlesError);
       throw titlesError;
     }
 
-    if (import.meta.dev) {
-      console.log(
-        '[fetchLikedTitles] Titles data received:',
-        titlesData?.length || 0
-      );
-    }
-
     const titleMap = new Map(titlesData?.map((t) => [t.tmdb_id, t]) || []);
-
-    if (import.meta.dev) {
-      console.log('[fetchLikedTitles] Title map size:', titleMap.size);
-      console.log(
-        '[fetchLikedTitles] Missing titles:',
-        tmdbIds.filter((id) => !titleMap.has(id))
-      );
-    }
 
     likedTitles.value = likedStatuses
       .map((status) => {
         const title = titleMap.get(status.tmdb_id);
         if (!title) {
-          if (import.meta.dev) {
-            console.warn(
-              '[fetchLikedTitles] Title not found for tmdb_id:',
-              status.tmdb_id
-            );
-          }
           return null;
         }
         return {
@@ -958,15 +913,8 @@ const fetchLikedTitles = async () => {
         };
       })
       .filter((t): t is NonNullable<typeof t> => t !== null);
-
-    if (import.meta.dev) {
-      console.log(
-        '[fetchLikedTitles] Final liked titles count:',
-        likedTitles.value.length
-      );
-    }
-  } catch (error) {
-    console.error('[fetchLikedTitles] Error fetching liked titles:', error);
+  } catch {
+    // Error handled silently
   }
 };
 
@@ -1005,16 +953,6 @@ const fetchSeenTitles = async () => {
         const title = titleMap.get(status.tmdb_id);
         if (!title) return null;
         const isLiked = status.liked === true;
-        if (import.meta.dev) {
-          console.log(
-            '[fetchSeenTitles] Title:',
-            title.title,
-            'liked:',
-            status.liked,
-            'isLiked:',
-            isLiked
-          );
-        }
         return {
           id: status.id,
           title: title.title,
@@ -1025,8 +963,8 @@ const fetchSeenTitles = async () => {
         };
       })
       .filter((t): t is NonNullable<typeof t> => t !== null);
-  } catch (error) {
-    console.error('Error fetching seen titles:', error);
+  } catch {
+    // Error handled silently
   }
 };
 
@@ -1075,8 +1013,8 @@ const fetchNotInterestedTitles = async () => {
         };
       })
       .filter((t): t is NonNullable<typeof t> => t !== null);
-  } catch (error) {
-    console.error('Error fetching not interested titles:', error);
+  } catch {
+    // Error handled silently
   }
 };
 
@@ -1125,8 +1063,8 @@ const fetchWatchlistTitles = async () => {
         };
       })
       .filter((t): t is NonNullable<typeof t> => t !== null);
-  } catch (error) {
-    console.error('Error fetching watchlist titles:', error);
+  } catch {
+    // Error handled silently
   }
 };
 
@@ -1294,8 +1232,7 @@ const handleTitleSelected = async (result: TMDBSearchResult) => {
 
     await userStore.fetchProfile();
     showSuccess(t('preferences.titleAdded'));
-  } catch (error) {
-    console.error('Error adding title:', error);
+  } catch {
     showError(t('preferences.errorAdding'));
   }
 };
@@ -1350,8 +1287,7 @@ const confirmRemoveLiked = async () => {
       },
       7000
     );
-  } catch (error) {
-    console.error('Error removing title:', error);
+  } catch {
     showError(t('preferences.errorRemoving'));
     await fetchLikedTitles();
   }
@@ -1368,8 +1304,7 @@ const handleRemoveSeen = async (title: {
 
     seenTitles.value = seenTitles.value.filter((t) => t.id !== title.id);
     showSuccess(t('seen.titleRemoved'));
-  } catch (error) {
-    console.error('Error removing title:', error);
+  } catch {
     showError(t('seen.errorRemoving'));
     await fetchSeenTitles();
   }
@@ -1508,8 +1443,7 @@ const handleRemoveNotInterested = async (title: {
       },
       7000
     );
-  } catch (error) {
-    console.error('Error removing title:', error);
+  } catch {
     showError(t('notInterested.errorUndo'));
     await fetchNotInterestedTitles();
   }
@@ -1564,15 +1498,20 @@ const availableGenres = computed(() => {
 
   // Merge and deduplicate by ID
   const genreMap = new Map<number, string>();
-  genresData.value.movie.genres.forEach((g: { id: number; name: string }) =>
-    genreMap.set(g.id, g.name)
-  );
-  genresData.value.tv.genres.forEach((g: { id: number; name: string }) =>
-    genreMap.set(g.id, g.name)
-  );
+  genresData.value.movie.genres.forEach((g: { id: number; name: string }) => {
+    if (g.name) {
+      genreMap.set(g.id, g.name);
+    }
+  });
+  genresData.value.tv.genres.forEach((g: { id: number; name: string }) => {
+    if (g.name) {
+      genreMap.set(g.id, g.name);
+    }
+  });
 
   return Array.from(genreMap.entries())
     .map(([id, name]) => ({ id, name }))
+    .filter((genre) => genre.name) // Filter out any genres without a name
     .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 });
 
@@ -1613,11 +1552,29 @@ const { data: providersData } = useLazyFetch<{
 });
 
 const availableProviders = computed(() => {
-  if (!providersData.value || !providersData.value.results) {
+  if (!providersData.value) {
+    if (import.meta.dev) {
+      console.log('[AvailableProviders] providersData.value is null/undefined');
+    }
+    return [];
+  }
+
+  if (!providersData.value.results) {
     if (import.meta.dev) {
       console.log(
-        '[AvailableProviders] No providers data:',
+        '[AvailableProviders] No results in providersData:',
         providersData.value
+      );
+    }
+    return [];
+  }
+
+  if (!Array.isArray(providersData.value.results)) {
+    if (import.meta.dev) {
+      console.log(
+        '[AvailableProviders] results is not an array:',
+        typeof providersData.value.results,
+        providersData.value.results
       );
     }
     return [];
@@ -1629,6 +1586,7 @@ const availableProviders = computed(() => {
       provider_name: p.provider_name,
       logo_path: p.logo_path,
     }))
+    .filter((p) => p.provider_id && p.provider_name) // Filter out invalid entries
     .sort((a, b) => a.provider_name.localeCompare(b.provider_name));
 
   if (import.meta.dev) {
@@ -1803,16 +1761,12 @@ const filterProviders = () => {
   if (!providerSearchQuery.value.trim()) {
     filteredProviders.value = [];
     showProviderResults.value = false;
+    providerDropdownPosition.value = null;
     return;
   }
 
   // Always show dropdown when user types
   showProviderResults.value = true;
-
-  // Ensure dropdown position is calculated
-  nextTick(() => {
-    updateProviderDropdownPosition();
-  });
 
   const query = providerSearchQuery.value.toLowerCase().trim();
 
@@ -1848,9 +1802,35 @@ const filterProviders = () => {
     );
   }
 
-  // Update dropdown position after filtering
-  nextTick(() => {
+  // Ensure dropdown position is calculated after filtering
+  // Use multiple attempts to ensure position is set
+  const attemptUpdatePosition = (attempt = 0) => {
+    if (attempt > 5) {
+      if (import.meta.dev) {
+        console.error(
+          '[FilterProviders] Failed to set dropdown position after 5 attempts'
+        );
+      }
+      return;
+    }
+
     updateProviderDropdownPosition();
+
+    if (!providerDropdownPosition.value && providerInputRef.value) {
+      // Try again after a short delay
+      setTimeout(() => {
+        attemptUpdatePosition(attempt + 1);
+      }, 50);
+    } else if (providerDropdownPosition.value && import.meta.dev) {
+      console.log(
+        '[FilterProviders] Dropdown position successfully set on attempt',
+        attempt + 1
+      );
+    }
+  };
+
+  nextTick(() => {
+    attemptUpdatePosition();
   });
 };
 
@@ -1896,27 +1876,51 @@ const updateProviderDropdownPosition = () => {
       left: rect.left + window.scrollX,
       width: rect.width,
     };
+    if (import.meta.dev) {
+      console.log(
+        '[FilterProviders] Dropdown position set:',
+        providerDropdownPosition.value
+      );
+    }
+  } else {
+    if (import.meta.dev) {
+      console.warn('[FilterProviders] providerInputRef is not available');
+    }
   }
 };
 
 // Handle provider search focus
 const handleProviderFocus = () => {
+  // Clear any pending blur timeout
+  if (blurTimeout) {
+    clearTimeout(blurTimeout);
+    blurTimeout = null;
+  }
   showProviderResults.value = true;
   // If there's already a search query, filter immediately
   if (providerSearchQuery.value.trim()) {
     filterProviders();
+  } else {
+    // Even without query, ensure position is set
+    nextTick(() => {
+      updateProviderDropdownPosition();
+    });
   }
-  nextTick(() => {
-    updateProviderDropdownPosition();
-  });
 };
 
 // Handle provider search blur
+let blurTimeout: ReturnType<typeof setTimeout> | null = null;
 const handleProviderBlur = () => {
-  setTimeout(() => {
+  // Clear any existing timeout
+  if (blurTimeout) {
+    clearTimeout(blurTimeout);
+  }
+  // Delay closing to allow clicks on dropdown items
+  blurTimeout = setTimeout(() => {
     showProviderResults.value = false;
     providerDropdownPosition.value = null;
-  }, 200);
+    blurTimeout = null;
+  }, 300);
 };
 
 // Change selected language (single selection)
@@ -2095,6 +2099,7 @@ const filterGenres = () => {
   filteredGenres.value = availableGenres.value
     .filter(
       (genre) =>
+        genre.name &&
         genre.name.toLowerCase().includes(query) &&
         !selectedGenres.value.some((g) => g.id === genre.id)
     )

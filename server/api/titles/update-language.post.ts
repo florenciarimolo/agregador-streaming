@@ -149,18 +149,6 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    // Log successful update for debugging
-    if (import.meta.dev) {
-      console.log(
-        `[update-language] Successfully updated title ${tmdb_id} with language ${userLanguage}`,
-        {
-          hasTitle: !!updatedTitle[userLanguage],
-          hasOverview: !!updatedOverview[userLanguage],
-          hasPosterPath: !!updatedPosterPath[userLanguage],
-        }
-      );
-    }
-
     return {
       success: true,
       title: updatedTitle[userLanguage] || titleJsonb[userLanguage] || '',

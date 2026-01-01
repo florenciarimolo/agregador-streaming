@@ -10,7 +10,7 @@
       <!-- Selected Value Display -->
       <button
         type="button"
-        class="w-full px-4 py-2 dark:bg-gray-800/50 bg-gray-100/80 border border-gray-300 dark:border-gray-700 rounded-lg dark:text-gray-300 text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary backdrop-blur-xs transition-all opacity-90 hover:opacity-100 text-left flex items-center justify-between gap-2"
+        class="w-full px-4 py-2 dark:bg-gray-800/50 bg-white/80 border border-gray-300 dark:border-gray-600 rounded-lg dark:text-gray-300 text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-transparent focus:border-transparent backdrop-blur-xs transition-all opacity-90 hover:opacity-100 text-left flex items-center justify-between gap-2"
       >
       <div class="flex items-center gap-2 flex-1 min-w-0">
         <img
