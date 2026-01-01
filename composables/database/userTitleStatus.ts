@@ -39,12 +39,27 @@ export async function upsertUserTitleStatus(data: UpsertUserTitleStatusData) {
  */
 export async function getUserLikedTitles(userId: string) {
   const supabase = useSupabaseClient();
-  return await supabase
+
+  if (import.meta.dev) {
+    console.log('[getUserLikedTitles] Querying for userId:', userId);
+  }
+
+  const result = await supabase
     .from(TABLES.USER_TITLE_STATUS)
     .select('id, tmdb_id, type')
     .eq(USER_TITLE_STATUS_FIELDS.USER_ID, userId)
     .eq(USER_TITLE_STATUS_FIELDS.LIKED, true)
     .order(USER_TITLE_STATUS_FIELDS.CREATED_AT, { ascending: false });
+
+  if (import.meta.dev) {
+    console.log('[getUserLikedTitles] Result:', {
+      data: result.data,
+      error: result.error,
+      count: result.data?.length || 0,
+    });
+  }
+
+  return result;
 }
 
 /**
@@ -101,12 +116,27 @@ export async function countUserLikedTitles(userId: string) {
  */
 export async function getUserSeenTitles(userId: string) {
   const supabase = useSupabaseClient();
-  return await supabase
+
+  if (import.meta.dev) {
+    console.log('[getUserSeenTitles] Querying for userId:', userId);
+  }
+
+  const result = await supabase
     .from(TABLES.USER_TITLE_STATUS)
     .select('id, tmdb_id, type')
     .eq(USER_TITLE_STATUS_FIELDS.USER_ID, userId)
     .eq(USER_TITLE_STATUS_FIELDS.STATUS, 'seen')
     .order(USER_TITLE_STATUS_FIELDS.CREATED_AT, { ascending: false });
+
+  if (import.meta.dev) {
+    console.log('[getUserSeenTitles] Result:', {
+      data: result.data,
+      error: result.error,
+      count: result.data?.length || 0,
+    });
+  }
+
+  return result;
 }
 
 /**
@@ -114,12 +144,27 @@ export async function getUserSeenTitles(userId: string) {
  */
 export async function getUserNotInterestedTitles(userId: string) {
   const supabase = useSupabaseClient();
-  return await supabase
+
+  if (import.meta.dev) {
+    console.log('[getUserNotInterestedTitles] Querying for userId:', userId);
+  }
+
+  const result = await supabase
     .from(TABLES.USER_TITLE_STATUS)
     .select('id, tmdb_id, type')
     .eq(USER_TITLE_STATUS_FIELDS.USER_ID, userId)
     .eq(USER_TITLE_STATUS_FIELDS.STATUS, 'not_interested')
     .order(USER_TITLE_STATUS_FIELDS.CREATED_AT, { ascending: false });
+
+  if (import.meta.dev) {
+    console.log('[getUserNotInterestedTitles] Result:', {
+      data: result.data,
+      error: result.error,
+      count: result.data?.length || 0,
+    });
+  }
+
+  return result;
 }
 
 /**

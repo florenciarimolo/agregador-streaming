@@ -44,44 +44,72 @@ export default defineEventHandler(async (event) => {
 
     // If found in DB, check if we have the required language
     if (titleFromDb && !dbError) {
-      const titleJsonb = titleFromDb.title as MultiLanguageText;
-      const overviewJsonb = titleFromDb.overview as MultiLanguageText | null;
+      let titleJsonb = titleFromDb.title as MultiLanguageText;
+      let overviewJsonb = titleFromDb.overview as MultiLanguageText | null;
+      let posterPathJsonb = titleFromDb.poster_path as MultiLanguageText | null;
 
-      // Check if we have the user's language
-      const hasUserLanguage =
-        titleJsonb && typeof titleJsonb === 'object' && titleJsonb[userLangCode];
-
-      // If missing user's language, fetch it from TMDB and update
-      if (!hasUserLanguage) {
+      // Check which languages we already have
+      const existingLanguages = new Set<string>();
+      if (titleJsonb && typeof titleJsonb === 'object') {
+        Object.keys(titleJsonb).forEach((lang) => existingLanguages.add(lang));
+      }
+      
+      // Check if we need to fetch missing languages
+      // If title only has Spanish (or very few languages), fetch all supported languages
+      const supportedLanguages = ['es', 'ca', 'eu', 'gl', 'en'];
+      const missingLanguages = supportedLanguages.filter((lang) => !existingLanguages.has(lang));
+      
+      // If we're missing languages, fetch all missing ones from TMDB
+      if (missingLanguages.length > 0) {
         const tmdbConfig = getTMDBConfig(userLanguage, region);
-        const tvShowResponse = await $fetch(`${tmdbConfig.baseUrl}/tv/${tmdbId}`, {
-          query: {
-            api_key: tmdbConfig.apiKey,
-            language: tmdbConfig.language,
-            region: tmdbConfig.region,
-          },
-        }).catch(() => null);
-
-        if (tvShowResponse?.name && tvShowResponse?.overview) {
-          // Update JSONB with new language
-          const updatedTitle = {
-            ...(titleJsonb || {}),
-            [userLangCode]: tvShowResponse.name,
-          };
-          const updatedOverview = {
-            ...(overviewJsonb || {}),
-            [userLangCode]: tvShowResponse.overview || '',
-          };
-
-          await supabase
-            .from(TABLES.TITLES)
-            .update({
-              title: updatedTitle,
-              overview: updatedOverview,
-            })
-            .eq(TITLES_FIELDS.TMDB_ID, tmdbId)
-            .eq(TITLES_FIELDS.TYPE, 'tv');
-        }
+        
+        // Fetch all missing languages in parallel
+        const languagePromises = missingLanguages.map(async (lang) => {
+          const langCode = lang === 'es' ? 'es-ES' : lang === 'en' ? 'en-US' : `${lang}-ES`;
+          try {
+            const response = await $fetch(`${tmdbConfig.baseUrl}/tv/${tmdbId}`, {
+              query: {
+                api_key: tmdbConfig.apiKey,
+                language: langCode,
+                region: tmdbConfig.region,
+              },
+            });
+            return { lang, data: response };
+          } catch {
+            return { lang, data: null };
+          }
+        });
+        
+        const languageResults = await Promise.all(languagePromises);
+        
+        // Build updated multi-language JSONB objects
+        const updatedTitle = { ...(titleJsonb || {}) };
+        const updatedOverview = { ...(overviewJsonb || {}) };
+        const updatedPosterPath = { ...(posterPathJsonb || {}) };
+        
+        languageResults.forEach(({ lang, data }) => {
+          if (data) {
+            if (data.name) updatedTitle[lang] = data.name;
+            if (data.overview) updatedOverview[lang] = data.overview || '';
+            if (data.poster_path) updatedPosterPath[lang] = data.poster_path;
+          }
+        });
+        
+        // Update database with all languages
+        await supabase
+          .from(TABLES.TITLES)
+          .update({
+            title: updatedTitle,
+            overview: updatedOverview,
+            poster_path: Object.keys(updatedPosterPath).length > 0 ? updatedPosterPath : null,
+          })
+          .eq(TITLES_FIELDS.TMDB_ID, tmdbId)
+          .eq(TITLES_FIELDS.TYPE, 'tv');
+        
+        // Update local references to use the updated JSONB
+        titleJsonb = updatedTitle;
+        overviewJsonb = updatedOverview;
+        posterPathJsonb = updatedPosterPath;
       }
 
       // Get user preferences for seasons, genres, providers and alternative titles
@@ -111,9 +139,10 @@ export default defineEventHandler(async (event) => {
           }).catch(() => null),
         ]);
 
-      // Extract language-specific text from JSONB
-      const titleText = getTitleInLanguage(titleJsonb, userLangCode);
-      const overviewText = getTitleInLanguage(overviewJsonb, userLangCode);
+      // Extract language-specific text from JSONB (now with all languages)
+      const titleText = getTitleInLanguage(titleJsonb, userLangCode, region);
+      const overviewText = getTitleInLanguage(overviewJsonb, userLangCode, region);
+      const posterPathText = getTitleInLanguage(posterPathJsonb, userLangCode, region);
 
       // Map DB title to TVShow format
       const tvShow: any = {
@@ -121,7 +150,7 @@ export default defineEventHandler(async (event) => {
         name: titleText || fullTvShowResponse?.name,
         original_name: fullTvShowResponse?.original_name,
         overview: overviewText || fullTvShowResponse?.overview,
-        poster_path: titleFromDb.poster_path,
+        poster_path: posterPathText || fullTvShowResponse?.poster_path,
         backdrop_path: titleFromDb.backdrop_path,
         first_air_date: titleFromDb.first_air_date,
         vote_average: titleFromDb.vote_average,
@@ -174,7 +203,7 @@ export default defineEventHandler(async (event) => {
     // Build multi-language JSONB objects
     const titleMultiLang: MultiLanguageText = {};
     const overviewMultiLang: MultiLanguageText = {};
-    let posterPath: string | null = null;
+    const posterPathMultiLang: MultiLanguageText = {};
     let backdropPath: string | null = null;
     let firstAirDate: string | null = null;
     let voteAverage: number | null = null;
@@ -184,8 +213,8 @@ export default defineEventHandler(async (event) => {
       if (data) {
         if (data.name) titleMultiLang[lang] = data.name;
         if (data.overview) overviewMultiLang[lang] = data.overview;
+        if (data.poster_path) posterPathMultiLang[lang] = data.poster_path;
         // Use first successful response for non-language fields
-        if (!posterPath && data.poster_path) posterPath = data.poster_path;
         if (!backdropPath && data.backdrop_path) backdropPath = data.backdrop_path;
         if (!firstAirDate && data.first_air_date) firstAirDate = data.first_air_date;
         if (!voteAverage && data.vote_average) voteAverage = data.vote_average;
@@ -202,7 +231,7 @@ export default defineEventHandler(async (event) => {
           type: 'tv',
           title: titleMultiLang,
           overview: overviewMultiLang,
-          poster_path: posterPath,
+          poster_path: Object.keys(posterPathMultiLang).length > 0 ? posterPathMultiLang : null,
           backdrop_path: backdropPath,
           first_air_date: firstAirDate,
           vote_average: voteAverage,

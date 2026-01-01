@@ -19,13 +19,13 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 );
 
 -- Titles table (movies and TV shows)
--- Note: title and overview are JSONB multi-language: {"es": "...", "ca": "...", "eu": "...", "gl": "...", "en": "..."}
+-- Note: title, overview, and poster_path are JSONB multi-language: {"es": "...", "ca": "...", "eu": "...", "gl": "...", "en": "..."}
 CREATE TABLE IF NOT EXISTS public.titles (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   tmdb_id INTEGER UNIQUE NOT NULL, -- TMDB ID for reference
   title JSONB NOT NULL, -- Multi-language: {"es": "...", "ca": "...", "eu": "...", "gl": "...", "en": "..."}
   type TEXT NOT NULL CHECK (type IN ('movie', 'tv')), -- 'movie' or 'tv'
-  poster_path TEXT,
+  poster_path JSONB, -- Multi-language: {"es": "...", "ca": "...", "eu": "...", "gl": "...", "en": "..."}
   backdrop_path TEXT,
   overview JSONB, -- Multi-language: {"es": "...", "ca": "...", "eu": "...", "gl": "...", "en": "..."}
   release_date DATE, -- For movies
@@ -274,4 +274,3 @@ CREATE POLICY "Users can view own activity"
 CREATE POLICY "Users can insert own activity"
   ON public.user_activity FOR INSERT
   WITH CHECK (auth.uid() = user_id);
-

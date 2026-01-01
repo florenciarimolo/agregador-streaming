@@ -584,5 +584,12 @@
     "a10": "Nos encantaría escuchar tus comentarios. Puedes contactarnos en hello{'@'}getupnext.io con cualquier error que encuentres, sugerencia de mejora o pregunta que no esté respondida en esta sección. Tu feedback nos ayuda a mejorar UpNext continuamente.",
     "moreQuestions": "¿Tienes más preguntas?",
     "contactUs": "Contáctanos"
+  },
+  "languageAccuracy": {
+    "alert": {
+      "title": "Precisión de idiomas",
+      "message": "No nos hacemos responsables de que los títulos y descripciones de las películas y series sean 100% del idioma que eliges, ya que usamos una fuente externa (TMDB).",
+      "dismiss": "Cerrar"
+    }
   }
 }

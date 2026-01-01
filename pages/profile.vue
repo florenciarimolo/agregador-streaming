@@ -796,11 +796,7 @@ import UndoToast from '@/components/UndoToast.vue';
 import IconEdit from '@/components/icons/IconEdit.vue';
 import { useUndoToast } from '@/composables/useUndoToast';
 import type { TMDBSearchResult } from '@/types/TMDBSearch';
-import {
-  AVAILABLE_LANGUAGES,
-  LanguageCode,
-  extractLanguageCode,
-} from '@/constants/languages';
+import { AVAILABLE_LANGUAGES, LanguageCode } from '@/constants/languages';
 import type { Language } from '@/constants/languages';
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -960,35 +956,99 @@ const fetchAllLists = async () => {
 // Fetch functions for each list
 const fetchLikedTitles = async () => {
   const id = userId.value;
-  if (!id) return;
+
+  if (import.meta.dev) {
+    console.log('[fetchLikedTitles] Starting fetch, userId:', id);
+  }
+
+  if (!id) {
+    if (import.meta.dev) {
+      console.warn('[fetchLikedTitles] No userId found');
+    }
+    return;
+  }
 
   try {
     const { data: likedStatuses, error: statusError } =
       await getUserLikedTitles(id);
-    if (statusError) throw statusError;
+    if (statusError) {
+      console.error('[fetchLikedTitles] Error getting statuses:', statusError);
+      throw statusError;
+    }
 
     if (!likedStatuses || likedStatuses.length === 0) {
+      if (import.meta.dev) {
+        console.log('[fetchLikedTitles] No liked statuses found');
+      }
       likedTitles.value = [];
       return;
     }
 
+    if (import.meta.dev) {
+      console.log('[fetchLikedTitles] Found statuses:', likedStatuses.length);
+    }
+
     const tmdbIds = likedStatuses.map((s) => s.tmdb_id);
-    // Extract language code from TMDB format (e.g., 'ca-ES' -> 'ca')
-    // Use preferred language or default to Spanish
+    // Create a map of tmdb_id to type for titles that might not exist in database
+    const titleTypesMap = new Map(
+      likedStatuses.map((s) => [s.tmdb_id, s.type])
+    );
+
+    // Use preferred language in ISO/TMDB format (e.g., 'ca-ES', 'es-ES')
+    // This ensures consistency with the format stored in JSONB fields
     const preferredLang =
       contentPreferences.value.preferred_language || LanguageCode.SPANISH;
-    const langCode = extractLanguageCode(preferredLang);
+
+    if (import.meta.dev) {
+      console.log(
+        '[fetchLikedTitles] Fetching titles for tmdbIds:',
+        tmdbIds,
+        'with language:',
+        preferredLang
+      );
+    }
+
     const { data: titlesData, error: titlesError } = await getTitlesByTmdbIds(
       tmdbIds,
-      langCode
+      preferredLang,
+      contentPreferences.value.region,
+      titleTypesMap
     );
-    if (titlesError) throw titlesError;
+
+    if (titlesError) {
+      console.error('[fetchLikedTitles] Error getting titles:', titlesError);
+      throw titlesError;
+    }
+
+    if (import.meta.dev) {
+      console.log(
+        '[fetchLikedTitles] Titles data received:',
+        titlesData?.length || 0
+      );
+    }
 
     const titleMap = new Map(titlesData?.map((t) => [t.tmdb_id, t]) || []);
+
+    if (import.meta.dev) {
+      console.log('[fetchLikedTitles] Title map size:', titleMap.size);
+      console.log(
+        '[fetchLikedTitles] Missing titles:',
+        tmdbIds.filter((id) => !titleMap.has(id))
+      );
+    }
+
     likedTitles.value = likedStatuses
       .map((status) => {
         const title = titleMap.get(status.tmdb_id);
-        if (!title) return null;
+        if (!title) {
+          if (import.meta.dev) {
+            console.warn(
+              '[fetchLikedTitles] Title not found for tmdb_id:',
+              status.tmdb_id
+            );
+          }
+          return null;
+        }
         return {
           id: status.id,
           title: title.title,
@@ -998,8 +1058,15 @@ const fetchLikedTitles = async () => {
         };
       })
       .filter((t): t is NonNullable<typeof t> => t !== null);
+
+    if (import.meta.dev) {
+      console.log(
+        '[fetchLikedTitles] Final liked titles count:',
+        likedTitles.value.length
+      );
+    }
   } catch (error) {
-    console.error('Error fetching liked titles:', error);
+    console.error('[fetchLikedTitles] Error fetching liked titles:', error);
   }
 };
 
@@ -1018,14 +1085,17 @@ const fetchSeenTitles = async () => {
     }
 
     const tmdbIds = seenStatuses.map((s) => s.tmdb_id);
-    // Extract language code from TMDB format (e.g., 'ca-ES' -> 'ca')
-    // Use preferred language or default to Spanish
+    // Create a map of tmdb_id to type for titles that might not exist in database
+    const titleTypesMap = new Map(seenStatuses.map((s) => [s.tmdb_id, s.type]));
+    // Use preferred language in ISO/TMDB format (e.g., 'ca-ES', 'es-ES')
+    // This ensures consistency with the format stored in JSONB fields
     const preferredLang =
       contentPreferences.value.preferred_language || LanguageCode.SPANISH;
-    const langCode = extractLanguageCode(preferredLang);
     const { data: titlesData, error: titlesError } = await getTitlesByTmdbIds(
       tmdbIds,
-      langCode
+      preferredLang,
+      contentPreferences.value.region,
+      titleTypesMap
     );
     if (titlesError) throw titlesError;
 
@@ -1063,14 +1133,19 @@ const fetchNotInterestedTitles = async () => {
     }
 
     const tmdbIds = notInterestedStatuses.map((s) => s.tmdb_id);
-    // Extract language code from TMDB format (e.g., 'ca-ES' -> 'ca')
-    // Use preferred language or default to Spanish
+    // Create a map of tmdb_id to type for titles that might not exist in database
+    const titleTypesMap = new Map(
+      notInterestedStatuses.map((s) => [s.tmdb_id, s.type])
+    );
+    // Use preferred language in ISO/TMDB format (e.g., 'ca-ES', 'es-ES')
+    // This ensures consistency with the format stored in JSONB fields
     const preferredLang =
       contentPreferences.value.preferred_language || LanguageCode.SPANISH;
-    const langCode = extractLanguageCode(preferredLang);
     const { data: titlesData, error: titlesError } = await getTitlesByTmdbIds(
       tmdbIds,
-      langCode
+      preferredLang,
+      contentPreferences.value.region,
+      titleTypesMap
     );
     if (titlesError) throw titlesError;
 
@@ -1108,14 +1183,19 @@ const fetchWatchlistTitles = async () => {
     }
 
     const tmdbIds = watchlistStatuses.map((s) => s.tmdb_id);
-    // Extract language code from TMDB format (e.g., 'ca-ES' -> 'ca')
-    // Use preferred language or default to Spanish
+    // Create a map of tmdb_id to type for titles that might not exist in database
+    const titleTypesMap = new Map(
+      watchlistStatuses.map((s) => [s.tmdb_id, s.type])
+    );
+    // Use preferred language in ISO/TMDB format (e.g., 'ca-ES', 'es-ES')
+    // This ensures consistency with the format stored in JSONB fields
     const preferredLang =
       contentPreferences.value.preferred_language || LanguageCode.SPANISH;
-    const langCode = extractLanguageCode(preferredLang);
     const { data: titlesData, error: titlesError } = await getTitlesByTmdbIds(
       tmdbIds,
-      langCode
+      preferredLang,
+      contentPreferences.value.region,
+      titleTypesMap
     );
     if (titlesError) throw titlesError;
 
@@ -1251,7 +1331,7 @@ const handleTitleSelected = async (result: TMDBSearchResult) => {
         tmdb_id: result.id,
         title: { es: result.title || result.name || 'Unknown' }, // Multi-language JSONB
         type: result.media_type,
-        poster_path: result.poster_path,
+        poster_path: result.poster_path ? { es: result.poster_path } : null, // Multi-language JSONB
         backdrop_path: result.backdrop_path || null,
         overview: result.overview ? { es: result.overview } : null, // Multi-language JSONB
         release_date: result.release_date || null,
@@ -1280,14 +1360,14 @@ const handleTitleSelected = async (result: TMDBSearchResult) => {
       throw likeError;
     }
 
-    // Get title in user's preferred language
-    const langCode = extractLanguageCode(
-      contentPreferences.value.preferred_language || LanguageCode.SPANISH
-    );
+    // Get title in user's preferred language (using ISO/TMDB format)
+    const preferredLang =
+      contentPreferences.value.preferred_language || LanguageCode.SPANISH;
     const { data: titleData } = await getTitleByTmdbIdWithLanguage(
       result.id,
       result.media_type!,
-      langCode
+      preferredLang,
+      contentPreferences.value.region
     );
 
     if (titleData) {
@@ -1929,6 +2009,10 @@ const confirmLanguageChange = async () => {
 
     // Refresh preferences from server to ensure UI is in sync
     await fetchContentPreferences();
+
+    // Recargar todas las listas de títulos con el nuevo idioma
+    // Esto también actualizará los campos jsonb en la base de datos si falta el idioma
+    await fetchAllLists();
 
     // Show success toast with message about language update and pool regeneration
     showSuccess(

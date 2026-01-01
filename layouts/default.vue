@@ -60,10 +60,14 @@
 
     <!-- Global Undo Toast -->
     <UndoToast />
+    
+    <!-- Language Accuracy Alert -->
+    <LanguageAccuracyAlert />
   </div>
 </template>
 
 <script setup lang="ts">
 import UndoToast from '@/components/UndoToast.vue';
+import LanguageAccuracyAlert from '@/components/LanguageAccuracyAlert.vue';
 // Layout por defecto - se aplica a todas las páginas
 </script>
