@@ -1,5 +1,5 @@
 <template>
-  <div class="container mx-auto max-w-4xl px-4 py-12">
+  <div class="container mx-auto max-w-4xl px-4 pb-6 pt-6">
     <div class="mb-8">
       <h1
         class="text-3xl md:text-4xl font-bold dark:text-gray-300 text-gray-800 mb-2 font-heading"

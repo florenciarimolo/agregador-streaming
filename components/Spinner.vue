@@ -46,6 +46,7 @@ const containerClass = computed(() => {
 });
 
 const messageClass = computed(() => {
-  return 'mt-4 text-gray-800 dark:text-gray-300';
+  const base = props.fullScreen ? 'mt-4 text-lg font-medium' : 'mt-4';
+  return `${base} text-gray-800 dark:text-gray-300`;
 });
 </script>

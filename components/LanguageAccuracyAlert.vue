@@ -8,8 +8,8 @@
     leave-to-class="opacity-0 translate-y-2"
   >
     <div
-      v-if="isVisible"
-      class="fixed bottom-4 right-4 max-w-md bg-gray-100/95 dark:bg-gray-900/95 backdrop-blur-md border border-gray-300/50 dark:border-white/10 rounded-lg shadow-lg p-4 z-50"
+      v-if="isVisible && shouldShowAlert"
+      class="fixed bottom-4 right-4 max-w-md dark:bg-gray-900/40 bg-gray-100/80 backdrop-blur-xl border border-gray-300/50 dark:border-white/10 rounded-3xl shadow-lg p-4 z-50"
       role="alert"
     >
       <div class="flex items-start gap-3">
@@ -47,13 +47,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import ToastCloseButton from '@/components/ui/ToastCloseButton.vue';
 
 const COOKIE_NAME = 'languageAccuracyAlertDismissed';
 const COOKIE_MAX_AGE = 365 * 24 * 60 * 60; // 1 year in seconds
 
 const isVisible = ref(false);
+const user = useSupabaseUser();
+
+// Only show alert if user is logged in
+const shouldShowAlert = computed(() => {
+  return !!user.value;
+});
 
 // Helper function to get cookie value
 const getCookie = (name: string): string | null => {
@@ -73,10 +79,12 @@ const setCookie = (name: string, value: string, maxAge: number) => {
 };
 
 onMounted(() => {
-  // Check if user has already dismissed this alert (using cookies)
-  const dismissed = getCookie(COOKIE_NAME);
-  if (!dismissed) {
-    isVisible.value = true;
+  // Only show alert if user is logged in and hasn't dismissed it
+  if (shouldShowAlert.value) {
+    const dismissed = getCookie(COOKIE_NAME);
+    if (!dismissed) {
+      isVisible.value = true;
+    }
   }
 });
 
@@ -86,4 +94,3 @@ const dismiss = () => {
   setCookie(COOKIE_NAME, 'true', COOKIE_MAX_AGE);
 };
 </script>
-

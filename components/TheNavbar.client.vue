@@ -47,7 +47,12 @@
 
           <!-- User Avatar (if logged in) -->
           <div v-if="currentUser" class="relative">
-            <Dropdown position="right" width="w-64" ref="userMenuDropdownRef">
+            <Dropdown
+              ref="userMenuDropdownRef"
+              position="right"
+              width="w-64"
+              custom-class="backdrop-blur-3xl"
+            >
               <template #trigger>
                 <button
                   type="button"
@@ -69,38 +74,38 @@
                   />
                 </button>
               </template>
-              <div class="p-4">
-                  <p
-                    class="text-sm font-medium dark:text-gray-300 text-gray-800 truncate mb-3"
-                  >
-                    {{ userProfile?.display_name || currentUser.email }}
-                  </p>
-                  <p
-                    v-if="userProfile?.display_name && currentUser.email"
-                    class="text-xs text-gray-500 dark:text-gray-400 truncate mb-3"
-                  >
-                    {{ currentUser.email }}
-                  </p>
-                  <nuxt-link
-                    to="/profile"
-                    class="block w-full px-4 py-2 text-sm dark:text-gray-300 text-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-left mb-2"
-                    @click="userMenuDropdownRef?.close()"
-                  >
-                    {{ $t('navbar.editProfile') }}
-                  </nuxt-link>
-                  <div
-                    class="border-t border-gray-300/50 dark:border-white/10 my-2"
-                  ></div>
-                  <button
-                    type="button"
-                    class="w-full px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors text-left"
-                    @click="
-                      userMenuDropdownRef?.close();
-                      handleLogoutClick();
-                    "
-                  >
-                    {{ $t('navbar.logout') }}
-                  </button>
+              <div class="p-4 backdrop-blur-3xl">
+                <p
+                  class="text-sm font-medium dark:text-gray-300 text-gray-800 truncate mb-3"
+                >
+                  {{ userProfile?.display_name || currentUser.email }}
+                </p>
+                <p
+                  v-if="userProfile?.display_name && currentUser.email"
+                  class="text-xs text-gray-500 dark:text-gray-400 truncate mb-3"
+                >
+                  {{ currentUser.email }}
+                </p>
+                <nuxt-link
+                  to="/profile"
+                  class="block w-full px-4 py-2 text-sm dark:text-gray-300 text-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-left mb-2"
+                  @click="userMenuDropdownRef?.close()"
+                >
+                  {{ $t('navbar.editProfile') }}
+                </nuxt-link>
+                <div
+                  class="border-t border-gray-300/50 dark:border-white/10 my-2"
+                ></div>
+                <button
+                  type="button"
+                  class="w-full px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors text-left"
+                  @click="
+                    userMenuDropdownRef?.close();
+                    handleLogoutClick();
+                  "
+                >
+                  {{ $t('navbar.logout') }}
+                </button>
               </div>
             </Dropdown>
           </div>
@@ -115,7 +120,7 @@
     :style="{ transform: `translateY(${isNavbarVisible ? '0' : '-10px'})` }"
   >
     <nav
-      class="dark:bg-gray-900/40 bg-gray-100/90 backdrop-blur-xl rounded-lg border border-gray-300/50 dark:border-white/10"
+      class="dark:bg-gray-900/40 bg-gray-100/90 backdrop-blur-xl rounded-3xl border border-gray-300/50 dark:border-white/10"
     >
       <div class="flex items-center justify-between px-6 py-3">
         <!-- Logo -->
@@ -193,7 +198,7 @@
   >
     <div
       v-if="showMobileMenu && currentUser"
-      class="fixed top-0 right-0 z-[100] w-80 max-w-[85vw] h-full dark:bg-gray-900/95 bg-gray-100/95 backdrop-blur-xl border-l border-gray-300/50 dark:border-white/10 shadow-2xl md:hidden overflow-y-auto"
+      class="fixed top-0 right-0 z-[100] w-80 max-w-[85vw] h-full dark:bg-gray-900/95 bg-gray-100/95 backdrop-blur-xl border-3xl border-gray-300/50 dark:border-white/10 shadow-2xl md:hidden overflow-y-auto"
       style="z-index: 100"
       @click.stop
     >
@@ -310,54 +315,30 @@
   </Transition>
 
   <!-- Logout Confirmation Dialog -->
-  <Transition
-    enter-active-class="transition duration-200 ease-out"
-    enter-from-class="transform scale-95 opacity-0"
-    enter-to-class="transform scale-100 opacity-100"
-    leave-active-class="transition duration-150 ease-in"
-    leave-from-class="transform scale-100 opacity-100"
-    leave-to-class="transform scale-95 opacity-0"
-  >
-    <div
-      v-if="showLogoutConfirm"
-      class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
-      @click="cancelLogout"
-    >
-      <div
-        class="dark:bg-gray-900/40 bg-gray-100/80 backdrop-blur-xl border border-gray-300/50 dark:border-white/10 rounded-3xl shadow-xl p-6 max-w-md mx-4"
-        @click.stop
-      >
-        <h3 class="text-lg font-semibold dark:text-gray-300 text-gray-800 mb-2">
-          {{ $t('navbar.logoutConfirm') }}
-        </h3>
-        <p class="text-gray-800 dark:text-gray-300 mb-4">
-          {{ $t('navbar.logoutConfirmMessage') }}
-        </p>
-        <div class="flex gap-3 justify-end">
-          <button
-            type="button"
-            class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-            @click="cancelLogout"
-          >
-            {{ $t('common.cancel') }}
-          </button>
-          <button
-            type="button"
-            class="px-4 py-2 text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors"
-            @click="confirmLogout"
-          >
-            {{ $t('navbar.logout') }}
-          </button>
-        </div>
-      </div>
+  <Modal :is-open="showLogoutConfirm" @close="cancelLogout">
+    <h3 class="text-lg font-semibold dark:text-gray-300 text-gray-800 mb-2">
+      {{ $t('navbar.logoutConfirm') }}
+    </h3>
+    <p class="text-gray-800 dark:text-gray-300 mb-4">
+      {{ $t('navbar.logoutConfirmMessage') }}
+    </p>
+    <div class="flex gap-3 justify-end">
+      <Button size="small" variant="outline" @click="cancelLogout">
+        {{ $t('common.cancel') }}
+      </Button>
+      <Button size="small" variant="danger" @click="confirmLogout">
+        {{ $t('navbar.logout') }}
+      </Button>
     </div>
-  </Transition>
+  </Modal>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed } from 'vue';
 import Avatar from './Avatar.vue';
 import Dropdown from '@/components/ui/Dropdown.vue';
+import Modal from '@/components/ui/Modal.vue';
+import Button from '@/components/ui/Button.vue';
 
 // User state
 const user = useSupabaseUser();
@@ -414,7 +395,6 @@ const confirmLogout = async () => {
 const cancelLogout = () => {
   showLogoutConfirm.value = false;
 };
-
 
 // Scroll to top state
 const showScrollToTop = ref(false);

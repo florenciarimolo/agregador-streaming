@@ -589,7 +589,7 @@ onMounted(() => {
   // Check if pool regeneration is in progress
   if (sessionStorage.getItem('regeneratingPool')) {
     populatingPool.value = true;
-    
+
     // Poll to check if regeneration is complete
     const checkRegenerationStatus = setInterval(() => {
       if (!sessionStorage.getItem('regeneratingPool')) {
@@ -605,13 +605,16 @@ onMounted(() => {
     }, 2000); // Check every 2 seconds
 
     // Cleanup interval after 5 minutes (safety timeout)
-    setTimeout(() => {
-      clearInterval(checkRegenerationStatus);
-      if (populatingPool.value) {
-        populatingPool.value = false;
-        sessionStorage.removeItem('regeneratingPool');
-      }
-    }, 5 * 60 * 1000);
+    setTimeout(
+      () => {
+        clearInterval(checkRegenerationStatus);
+        if (populatingPool.value) {
+          populatingPool.value = false;
+          sessionStorage.removeItem('regeneratingPool');
+        }
+      },
+      5 * 60 * 1000
+    );
   }
 
   // Mark hydration as complete after mount
@@ -658,11 +661,10 @@ onMounted(() => {
 
     <!-- Personalized Recommendations -->
     <ClientOnly>
-      <section
-        v-if="isMounted && userStore.authInitialized && effectiveUser"
-        class="py-12 md:py-16 md:px-4"
-      >
-        <div class="container mx-auto max-w-7xl w-full">
+      <section v-if="isMounted && userStore.authInitialized && effectiveUser">
+        <div
+          class="container mx-auto max-w-7xl w-full flex flex-col gap-6 pt-6 pb-6 px-4 md:px-0"
+        >
           <!-- Mood Selector -->
           <MoodSelector v-if="userStore.hasCompletedOnboarding" />
           <!-- Loading State -->
@@ -683,11 +685,11 @@ onMounted(() => {
               hasAttemptedLoad &&
               hasPreferredLanguage === false
             "
-            class="text-center py-12"
+            class="text-center py-6"
           >
             <div class="max-w-md mx-auto">
               <svg
-                class="w-16 h-16 text-gray-400 mx-auto mb-4"
+                class="w-16 h-16 text-gray-600 dark:text-gray-500 mx-auto mb-4"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -726,11 +728,11 @@ onMounted(() => {
               hasPreferredLanguage !== false &&
               !userStore.hasLikes
             "
-            class="text-center py-12"
+            class="text-center py-6"
           >
             <div class="max-w-md mx-auto">
               <svg
-                class="w-16 h-16 text-gray-400 mx-auto mb-4"
+                class="w-16 h-16 text-gray-600 dark:text-gray-500 mx-auto mb-4"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -778,8 +780,12 @@ onMounted(() => {
         </div>
       </section>
       <template #fallback>
-        <!-- Empty fallback to prevent hydration mismatch -->
-        <div></div>
+        <!-- Placeholder section to prevent hydration mismatch -->
+        <section>
+          <div
+            class="container mx-auto max-w-7xl w-full flex flex-col gap-6 pt-6 pb-6 px-4 md:px-0"
+          ></div>
+        </section>
       </template>
     </ClientOnly>
 
@@ -792,11 +798,11 @@ onMounted(() => {
           (initialProfileLoaded && !userStore.hasCompletedOnboarding))
       "
       id="como-funciona"
-      class="pb-16 md:pt-16 md:px-4"
+      class="py-6 md:px-4"
     >
       <div class="container mx-auto max-w-6xl">
         <h2
-          class="text-3xl md:text-4xl font-bold text-center mb-16 dark:text-gray-300 text-gray-800 font-heading"
+          class="text-3xl md:text-4xl font-bold text-center mb-6 dark:text-gray-300 text-gray-800 font-heading"
         >
           {{ $t('home.howItWorksTitle') }}
         </h2>
@@ -867,12 +873,12 @@ onMounted(() => {
     >
       <div class="container mx-auto max-w-4xl text-center">
         <p
-          class="text-2xl md:text-3xl text-gray-800 dark:text-gray-300 leading-relaxed font-semibold mb-6"
+          class="text-2xl md:text-3xl text-gray-900 dark:text-gray-100 leading-relaxed font-semibold mb-6"
         >
           {{ $t('home.tagline1') }}
         </p>
         <p
-          class="text-3xl md:text-5xl text-gray-800 dark:text-gray-300 leading-relaxed font-semibold"
+          class="text-3xl md:text-5xl text-gray-900 dark:text-gray-100 leading-relaxed font-semibold"
         >
           {{ $t('home.tagline2') }}
           <span

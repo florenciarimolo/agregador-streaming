@@ -1,5 +1,5 @@
 <template>
-  <div class="container mx-auto max-w-7xl px-4 py-16">
+  <div class="container mx-auto max-w-7xl px-4 pb-6 pt-6">
     <!-- Profile Header -->
     <div class="mb-6">
       <div class="flex flex-row items-center gap-4 md:gap-6">
@@ -211,14 +211,7 @@
             </p>
           </div>
 
-          <div v-if="isLoading" class="text-center py-12">
-            <div
-              class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"
-            ></div>
-            <p class="text-gray-800 dark:text-gray-300">
-              {{ $t('preferences.loading') }}
-            </p>
-          </div>
+          <Spinner v-if="isLoading" :message="$t('preferences.loading')" />
 
           <TitleGrid
             v-else-if="likedTitles.length > 0"
@@ -236,14 +229,7 @@
 
         <!-- Seen Tab -->
         <div v-if="currentTab === 'seen'">
-          <div v-if="isLoading" class="text-center py-12">
-            <div
-              class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"
-            ></div>
-            <p class="text-gray-800 dark:text-gray-300">
-              {{ $t('seen.loading') }}
-            </p>
-          </div>
+          <Spinner v-if="isLoading" :message="$t('seen.loading')" />
 
           <TitleGrid
             v-else-if="seenTitles.length > 0"
@@ -259,14 +245,7 @@
 
         <!-- Not Interested Tab -->
         <div v-if="currentTab === 'not-interested'">
-          <div v-if="isLoading" class="text-center py-12">
-            <div
-              class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"
-            ></div>
-            <p class="text-gray-800 dark:text-gray-300">
-              {{ $t('notInterested.loading') }}
-            </p>
-          </div>
+          <Spinner v-if="isLoading" :message="$t('notInterested.loading')" />
 
           <TitleGrid
             v-else-if="notInterestedTitles.length > 0"
@@ -711,6 +690,7 @@ import SearchBar from '@/components/SearchBar.vue';
 import AvatarUpload from '@/components/AvatarUpload.vue';
 import TitleGrid from '@/components/TitleGrid.vue';
 import EmptyState from '@/components/EmptyState.vue';
+import Spinner from '@/components/Spinner.vue';
 import UndoToast from '@/components/UndoToast.vue';
 import IconEdit from '@/components/icons/IconEdit.vue';
 import { useUndoToast } from '@/composables/useUndoToast';

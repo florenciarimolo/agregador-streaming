@@ -45,6 +45,7 @@ useSeoMeta({
 const supabase = useSupabaseClient();
 const router = useRouter();
 const route = useRoute();
+const userStore = useUserStore();
 
 const error = ref<string | null>(null);
 const loading = ref(true);
@@ -64,6 +65,43 @@ const parseHashParams = (): Record<string, string> => {
     }
   }
   return params;
+};
+
+// Helper function to redirect based on onboarding status
+const redirectAfterAuth = async () => {
+  // Wait a bit for the session to be fully established
+  await new Promise((resolve) => setTimeout(resolve, 500));
+
+  // Get the current session and user
+  const { data: sessionData } = await supabase.auth.getSession();
+
+  if (sessionData?.session?.user) {
+    const user = sessionData.session.user;
+
+    // Set user in store
+    const userId = user.id || (user as { sub?: string })?.sub;
+    const currentUserId =
+      userStore.user?.id || (userStore.user as { sub?: string })?.sub;
+
+    if (!userStore.user || currentUserId !== userId) {
+      userStore.setUser(user);
+      // Ensure profile is loaded
+      await userStore.ensureProfile();
+    }
+
+    // Check if user has completed onboarding
+    const hasCompletedOnboarding = userStore.hasCompletedOnboarding;
+
+    // Redirect to onboarding if not completed, otherwise to home
+    if (!hasCompletedOnboarding) {
+      router.replace('/onboarding');
+    } else {
+      router.replace('/');
+    }
+  } else {
+    // No user, redirect to home
+    router.replace('/');
+  }
 };
 
 onMounted(async () => {
@@ -139,9 +177,8 @@ onMounted(async () => {
         return;
       }
 
-      // Session set successfully, redirect to home
-      // Recovery detection will happen in middleware
-      router.replace('/');
+      // Session set successfully, check onboarding and redirect
+      await redirectAfterAuth();
       return;
     }
 
@@ -168,9 +205,8 @@ onMounted(async () => {
             const { data: sessionData } = await supabase.auth.getSession();
             if (sessionData?.session) {
               sessionFound = true;
-              // Session was established, redirect to home
-              // Recovery detection will happen in middleware
-              router.replace('/');
+              // Session was established, check onboarding and redirect
+              await redirectAfterAuth();
               return;
             }
             attempts++;
@@ -198,9 +234,8 @@ onMounted(async () => {
           const { data: sessionData } = await supabase.auth.getSession();
 
           if (sessionData?.session) {
-            // Session was established, redirect to home
-            // Recovery detection will happen in middleware
-            router.replace('/');
+            // Session was established, check onboarding and redirect
+            await redirectAfterAuth();
             return;
           }
 
@@ -217,9 +252,8 @@ onMounted(async () => {
           return;
         }
       } else {
-        // Code exchanged successfully, redirect to home
-        // Recovery detection will happen in middleware
-        router.replace('/');
+        // Code exchanged successfully, check onboarding and redirect
+        await redirectAfterAuth();
         return;
       }
     }
@@ -243,9 +277,8 @@ onMounted(async () => {
       }
 
       if (sessionData.session) {
-        // Session exists, redirect to home
-        // Recovery detection will happen in middleware
-        router.replace('/');
+        // Session exists, check onboarding and redirect
+        await redirectAfterAuth();
         return;
       }
     }

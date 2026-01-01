@@ -1,6 +1,6 @@
 <template>
   <div
-    class="min-h-screen mx-auto w-full md:w-[85%] xl:w-[1400px] relative overflow-hidden py-8 md:py-0"
+    class="min-h-screen mx-auto w-full md:w-[85%] xl:w-[1400px] relative overflow-hidden"
   >
     <!-- Simple Background -->
 
@@ -8,7 +8,7 @@
     <TheNavbar />
 
     <!-- Contenido principal -->
-    <main class="container mx-auto pb-4 pt-20 relative z-0 w-full">
+    <main class="pb-4 pt-0 relative z-0 w-full">
       <slot />
     </main>
 

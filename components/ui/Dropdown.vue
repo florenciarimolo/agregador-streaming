@@ -1,5 +1,5 @@
 <template>
-  <div class="relative" ref="dropdownRef">
+  <div ref="dropdownRef" class="relative">
     <!-- Trigger Slot -->
     <div @click="toggleDropdown">
       <slot name="trigger" :is-open="isOpen" />
@@ -17,7 +17,7 @@
       <div
         v-if="isOpen"
         :class="[
-          'absolute z-50 mt-2 dark:bg-gray-900/40 bg-gray-100/80 backdrop-blur-xl rounded-lg border border-gray-300/50 dark:border-white/10 shadow-xl',
+          'absolute z-50 mt-2 dark:bg-gray-900/40 bg-gray-100/80 rounded-3xl border border-gray-300/50 dark:border-white/10 shadow-xl overflow-hidden',
           widthClass,
           positionClass,
           customClass,
@@ -91,7 +91,7 @@ const closeDropdown = () => {
 
 const handleClickOutside = (event: MouseEvent) => {
   if (!props.closeOnClickOutside) return;
-  
+
   const target = event.target as HTMLElement;
   if (dropdownRef.value && !dropdownRef.value.contains(target)) {
     closeDropdown();
@@ -120,4 +120,3 @@ defineExpose({
   toggle: toggleDropdown,
 });
 </script>
-

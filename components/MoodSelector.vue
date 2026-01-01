@@ -1,6 +1,6 @@
 <template>
   <div
-    class="bg-white/60 dark:bg-gray-900/40 backdrop-blur-xl border border-gray-300/50 dark:border-white/10 rounded-3xl p-6 md:p-8 mb-8"
+    class="bg-white/60 dark:bg-gray-900/40 backdrop-blur-xl border border-gray-300/50 dark:border-white/10 rounded-3xl p-6 md:p-8"
   >
     <div class="flex flex-col gap-6">
       <div class="flex flex-col gap-2">

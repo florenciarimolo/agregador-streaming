@@ -2,12 +2,16 @@
   <div>
     <!-- Tab Buttons -->
     <nav :class="['flex items-center gap-2 overflow-x-auto', customClass]">
-      <slot name="buttons" :activeTab="activeTab" :setActiveTab="setActiveTab" />
+      <slot
+        name="buttons"
+        :active-tab="activeTab"
+        :set-active-tab="setActiveTab"
+      />
     </nav>
 
     <!-- Tab Content -->
-    <div class="mt-4">
-      <slot :activeTab="activeTab" />
+    <div class="mt-6">
+      <slot :active-tab="activeTab" />
     </div>
   </div>
 </template>
@@ -22,6 +26,7 @@ const props = withDefaults(
   }>(),
   {
     defaultTab: '',
+    customClass: '',
   }
 );
 
@@ -52,4 +57,3 @@ defineExpose({
   setActiveTab,
 });
 </script>
-

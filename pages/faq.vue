@@ -1,5 +1,5 @@
 <template>
-  <div class="max-w-4xl mx-auto px-4 py-8">
+  <div class="max-w-4xl mx-auto px-4 pb-6 pt-6">
     <div class="mb-8">
       <h1 class="text-4xl font-bold dark:text-gray-300 text-gray-800 mb-4">
         {{ $t('faq.title') }}

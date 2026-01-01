@@ -19,8 +19,8 @@
     :media-type="MediaTypeEnum.tv"
     :in-production="tvShowWithProviders.in_production"
   />
-  <section>
-    <h2 class="col-span-4 text-2xl font-semibold py-16">Temporadas</h2>
+  <section class="mt-6 mb-6">
+    <h2 class="col-span-4 text-2xl font-semibold mb-6">Temporadas</h2>
     <div
       class="relative grid grid-cols-2 gap-4 md:gap-8 justify-items-stretch lg:grid-cols-3 xl:grid-cols-4"
     >

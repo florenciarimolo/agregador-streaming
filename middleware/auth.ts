@@ -68,12 +68,12 @@ export default defineNuxtRouteMiddleware(async (to) => {
     const hasCompletedOnboarding = userStore.hasCompletedOnboarding;
 
     // Only redirect to onboarding if user hasn't completed onboarding AND not already on onboarding page
-    // AND not on the homepage (homepage can show recommendations if onboarding is complete)
+    // AND not on auth callback (which handles its own flow)
+    // Homepage should redirect to onboarding if user hasn't completed it
     if (
       !hasCompletedOnboarding &&
       to.path !== '/onboarding' &&
-      to.path !== '/auth/callback' &&
-      to.path !== '/'
+      to.path !== '/auth/callback'
     ) {
       return navigateTo('/onboarding');
     }

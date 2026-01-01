@@ -1,5 +1,5 @@
 <template>
-  <section v-if="recommendations.length > 0" class="mb-12">
+  <section v-if="recommendations.length > 0">
     <div class="mb-6">
       <h2
         class="text-2xl font-bold dark:text-gray-300 text-gray-800 mb-2 font-heading"
@@ -13,9 +13,7 @@
         {{ description }}
       </p>
     </div>
-    <div
-      class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4"
-    >
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
       <RecommendationCard
         v-for="recommendation in recommendations"
         :key="recommendation.id"
@@ -32,13 +30,11 @@
 <script setup lang="ts">
 import type { Recommendation } from '@/types/Recommendation';
 
-interface Props {
+defineProps<{
   title: string;
   description?: string;
   recommendations: Recommendation[];
-}
-
-const props = defineProps<Props>();
+}>();
 
 defineEmits<{
   'mark-seen': [title: Recommendation];

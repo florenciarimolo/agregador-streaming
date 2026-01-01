@@ -23,7 +23,7 @@
       </div>
       <div
         v-else
-        class="w-full h-full flex items-center justify-center text-gray-400 overflow-hidden rounded-t-lg"
+        class="w-full h-full flex items-center justify-center text-gray-600 dark:text-gray-500 overflow-hidden rounded-t-lg"
         role="img"
         :aria-label="
           $t('media.noPosterAvailableFor', { title: props.title.title })
@@ -191,7 +191,7 @@
       >
         {{ props.title.title }}
       </h3>
-      <p class="text-xs dark:text-gray-300 text-gray-500 mb-2">
+      <p class="text-xs dark:text-gray-300 text-gray-700 mb-2">
         {{
           props.title.type === MediaTypeEnum.movie
             ? $t('media.movie')
@@ -206,7 +206,7 @@
       >
         {{ props.title.overview }}
       </p>
-      <p v-else class="text-xs dark:text-gray-300 text-gray-600 mb-3 italic">
+      <p v-else class="text-xs dark:text-gray-300 text-gray-700 mb-3 italic">
         {{ $t('media.noDescriptionAvailable') }}
       </p>
 
@@ -224,7 +224,7 @@
           :title="provider.provider_name"
         />
       </div>
-      <div v-else class="text-xs dark:text-gray-400 text-gray-500 italic">
+      <div v-else class="text-xs dark:text-gray-300 text-gray-700 italic">
         {{ $t('media.noPlatforms') }}
       </div>
     </div>

@@ -590,7 +590,7 @@
   "languageAccuracy": {
     "alert": {
       "title": "Precisión de idiomas",
-      "message": "No nos hacemos responsables de que los títulos y descripciones de las películas y series sean 100% del idioma que eliges, ya que usamos una fuente externa (TMDB).",
+      "message": "Los títulos y descripciones se obtienen de fuentes externas (TMDB) y pueden no estar disponibles al 100% en el idioma seleccionado. Hacemos nuestro mejor esfuerzo para mostrar el contenido en tu idioma preferido.",
       "dismiss": "Cerrar"
     }
   }
