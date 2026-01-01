@@ -1,14 +1,14 @@
 <template>
-  <div
-    class="min-h-screen mx-auto xl:w-[1400px] relative overflow-hidden"
-  >
+  <div class="min-h-screen mx-auto xl:w-[1400px] relative overflow-hidden">
     <!-- Simple Background -->
 
     <!-- Navbar -->
     <TheNavbar />
 
     <!-- Contenido principal -->
-    <main class="pb-[54px] pt-[104px] relative z-0 md:w-[80%] lg:w-full mx-auto">
+    <main
+      class="pb-[54px] pt-[104px] relative z-0 md:w-[80%] lg:w-full mx-auto"
+    >
       <slot />
     </main>
 
@@ -59,7 +59,7 @@
     </footer>
 
     <!-- Global Undo Toast -->
-    <UndoToast />
+    <Toast />
 
     <!-- Language Accuracy Alert -->
     <LanguageAccuracyAlert />
@@ -67,7 +67,7 @@
 </template>
 
 <script setup lang="ts">
-import UndoToast from '@/components/UndoToast.vue';
+import Toast from '@/components/ui/Toast.vue';
 import LanguageAccuracyAlert from '@/components/LanguageAccuracyAlert.vue';
 // Layout por defecto - se aplica a todas las páginas
 </script>

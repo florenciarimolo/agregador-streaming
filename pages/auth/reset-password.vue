@@ -5,13 +5,13 @@
         <!-- Light mode -->
         <img
           src="/logo-light.png"
-          alt="UpNext"
+          :alt="$t('common.appName')"
           class="h-12 w-12 mx-auto mb-4 object-contain dark:hidden"
         />
         <!-- Dark mode -->
         <img
           src="/logo-dark.png"
-          alt="UpNext"
+          :alt="$t('common.appName')"
           class="h-12 w-12 mx-auto mb-4 object-contain hidden dark:block"
         />
         <h1 class="text-3xl font-bold dark:text-gray-300 text-gray-800 mb-2">
@@ -360,7 +360,7 @@ import {
 definePageMeta({
   layout: false,
   ssr: false, // Client-side only
-  middleware: [], // Recovery detection happens globally, not here
+  middleware: [], // Recovery handled in this page, not in middleware
 });
 
 const { t } = useI18n();

@@ -35,7 +35,7 @@
 import { computed, useSlots } from 'vue';
 
 type ButtonSize = 'small' | 'medium' | 'large';
-type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'danger';
+type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'danger' | 'ghost';
 type IconPosition = 'left' | 'right';
 
 const props = withDefaults(
@@ -86,6 +86,8 @@ const variantClasses = computed(() => {
     outline:
       'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-300 dark:border-gray-600 focus:ring-gray-500',
     danger: 'text-white bg-red-500 hover:bg-red-600 focus:ring-red-500',
+    ghost:
+      'text-primary dark:text-primary-300 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary/10 dark:hover:bg-primary-400/20 focus:ring-primary',
   };
   return classes[props.variant];
 });

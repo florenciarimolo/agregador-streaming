@@ -8,7 +8,7 @@
         class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"
       ></div>
       <p v-if="loading" class="text-gray-800 dark:text-gray-300">
-        Completando inicio de sesión...
+        {{ $t('auth.callbackCompleting') }}
       </p>
       <AlertMessage v-if="error" :message="error" type="error" />
       <div v-if="error" class="mt-4">
@@ -16,7 +16,7 @@
           to="/"
           class="inline-block px-6 py-3 dark:bg-gray-900/90 bg-gray-800/90 hover:dark:bg-gray-800/80 hover:bg-gray-900/90 text-white rounded-lg font-medium transition-all duration-300 shadow-lg border border-gray-700/50 dark:border-gray-600/50"
         >
-          Volver al inicio
+          {{ $t('auth.callbackBackToHome') }}
         </nuxt-link>
       </div>
     </div>
@@ -26,20 +26,21 @@
 <script setup lang="ts">
 // Callback page - MINIMAL RESPONSIBILITY
 // Only exchanges code for session and redirects
-// Does NOT detect recovery, login, registration, etc.
-// Recovery detection happens in middleware using session.user.recovery_sent_at
+// Recovery detection happens in this page, not in middleware
 
 definePageMeta({
   ssr: false, // Client-side only to handle query params
 });
 
+const { t } = useI18n();
+
 useHead({
-  title: 'Autenticación - UpNext',
+  title: t('auth.callbackTitle'),
 });
 
 useSeoMeta({
-  title: 'Autenticación - UpNext',
-  description: 'Completando inicio de sesión',
+  title: t('auth.callbackTitle'),
+  description: t('auth.callbackDescription'),
 });
 
 const supabase = useSupabaseClient();
@@ -130,13 +131,10 @@ onMounted(async () => {
         errorText = decodeURIComponent(errorDescription);
       } else if (errorCode) {
         const errorMessages: Record<string, string> = {
-          otp_expired:
-            'El enlace de inicio de sesión ha expirado. Por favor, solicita uno nuevo.',
-          access_denied:
-            'Acceso denegado. El enlace no es válido o ha expirado.',
-          invalid_request: 'Solicitud inválida. Por favor, intenta de nuevo.',
-          expired_token:
-            'El token ha expirado. Por favor, solicita un nuevo enlace.',
+          otp_expired: t('auth.callbackLinkExpired'),
+          access_denied: t('auth.callbackAccessDenied'),
+          invalid_request: t('auth.callbackInvalidRequest'),
+          expired_token: t('auth.callbackTokenExpired'),
         };
         errorText = errorMessages[errorCode] || `Error: ${errorCode}`;
       } else if (errorMessage) {
@@ -144,11 +142,10 @@ onMounted(async () => {
       } else if (supabaseError) {
         errorText =
           supabaseError === 'access_denied'
-            ? 'Acceso denegado. El enlace no es válido o ha expirado.'
+            ? t('auth.callbackAccessDenied')
             : `Error: ${supabaseError}`;
       } else {
-        errorText =
-          'Ocurrió un error al procesar el enlace. Por favor, intenta de nuevo.';
+        errorText = t('auth.callbackErrorProcessing');
       }
 
       error.value = errorText;
@@ -173,8 +170,7 @@ onMounted(async () => {
 
       if (sessionError) {
         console.error('[Callback] Session error:', sessionError);
-        error.value =
-          'Error al establecer la sesión. Por favor, intenta de nuevo.';
+        error.value = t('auth.callbackSessionError');
         loading.value = false;
         setTimeout(() => {
           router.replace('/');
@@ -225,8 +221,7 @@ onMounted(async () => {
                 codeError
               );
             }
-            error.value =
-              'El enlace de inicio de sesión ha expirado o no es válido. Por favor, solicita uno nuevo.';
+            error.value = t('auth.callbackLinkExpiredOrInvalid');
             loading.value = false;
             setTimeout(() => {
               router.replace('/');
@@ -248,8 +243,7 @@ onMounted(async () => {
           if (process.env.NODE_ENV === 'development') {
             console.error('[Callback] Code exchange error:', codeError);
           }
-          error.value =
-            'El enlace de inicio de sesión ha expirado o no es válido. Por favor, solicita uno nuevo.';
+          error.value = t('auth.callbackLinkExpiredOrInvalid');
           loading.value = false;
           setTimeout(() => {
             router.replace('/');
@@ -272,8 +266,7 @@ onMounted(async () => {
         if (process.env.NODE_ENV === 'development') {
           console.error('[Callback] Get session error:', sessionError);
         }
-        error.value =
-          'Error al obtener la sesión. Por favor, intenta de nuevo.';
+        error.value = t('auth.callbackGetSessionError');
         loading.value = false;
         setTimeout(() => {
           router.replace('/');
@@ -289,14 +282,14 @@ onMounted(async () => {
     }
 
     // No code, no tokens, no session
-    error.value = 'No se pudo establecer la sesión. Redirigiendo...';
+    error.value = t('auth.callbackSessionNotEstablished');
     loading.value = false;
     setTimeout(() => {
       router.replace('/');
     }, 2000);
   } catch (err: unknown) {
     console.error('[Callback] Unexpected error:', err);
-    error.value = 'Ocurrió un error inesperado. Por favor, intenta de nuevo.';
+    error.value = t('auth.callbackUnexpectedError');
     loading.value = false;
     setTimeout(() => {
       router.replace('/');

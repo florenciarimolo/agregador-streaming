@@ -47,6 +47,7 @@ const props = withDefaults(
   {
     width: 'w-48',
     position: 'right',
+    customClass: '',
     closeOnClickOutside: true,
   }
 );

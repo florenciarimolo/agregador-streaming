@@ -312,6 +312,10 @@ const handleTitleStatus = async (
   status: TitleStatus,
   liked: boolean = false
 ) => {
+  // Store original state for rollback in case of error
+  let originalTitleIndex = -1;
+  let originalInWatchlist: boolean | undefined = undefined;
+
   try {
     const {
       data: { session },
@@ -319,6 +323,21 @@ const handleTitleStatus = async (
 
     if (!session?.access_token) {
       return;
+    }
+
+    // Optimistically update in_watchlist for watchlist status
+    if (status === TitleStatus.WATCHLIST) {
+      originalTitleIndex = recommendations.value.findIndex(
+        (r: Recommendation) => r.tmdb_id === title.tmdb_id
+      );
+      if (originalTitleIndex !== -1) {
+        originalInWatchlist =
+          recommendations.value[originalTitleIndex].in_watchlist;
+        recommendations.value[originalTitleIndex] = {
+          ...recommendations.value[originalTitleIndex],
+          in_watchlist: true,
+        };
+      }
     }
 
     // Update status in backend
@@ -393,6 +412,14 @@ const handleTitleStatus = async (
       );
     }
   } catch (error) {
+    // Rollback optimistic update if error occurred
+    if (status === TitleStatus.WATCHLIST && originalTitleIndex !== -1) {
+      recommendations.value[originalTitleIndex] = {
+        ...recommendations.value[originalTitleIndex],
+        in_watchlist: originalInWatchlist,
+      };
+    }
+
     if (process.env.NODE_ENV === 'development') {
       console.error('[handleTitleStatus] Error:', error);
     }

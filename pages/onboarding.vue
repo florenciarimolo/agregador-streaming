@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { TitleStatus } from '@/types/TitleStatus';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
-import { getTitleByTmdbId, insertTitle } from '@/composables/database/titles';
+import { getTitleByTmdbId } from '@/composables/database/titles';
 import { upsertUserTitleStatus } from '@/composables/database/userTitleStatus';
 import { getSession } from '@/composables/database/auth';
 import { isUniqueViolationError } from '@/composables/database/errorCodes';
@@ -155,8 +155,6 @@ const savePreferences = async () => {
       userStore.setUser(session.user);
       await userStore.fetchProfile();
     }
-
-    const userId = (userStore.user || user.value)!.id;
 
     const {
       data: { session },

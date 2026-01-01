@@ -2,7 +2,6 @@
 // Redirect to home page with auth query param to show AuthForm
 definePageMeta({
   layout: false,
-  middleware: ['guest', 'login-redirect'],
 });
 
 useHead({

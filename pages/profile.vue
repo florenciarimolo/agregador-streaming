@@ -82,7 +82,7 @@
     </div>
 
     <!-- Undo Toast -->
-    <UndoToast />
+    <Toast />
 
     <!-- Confirmation Dialog for Delete -->
     <Modal :is-open="!!titleToDelete" @close="titleToDelete = null">
@@ -691,7 +691,7 @@ import AvatarUpload from '@/components/AvatarUpload.vue';
 import TitleGrid from '@/components/TitleGrid.vue';
 import EmptyState from '@/components/EmptyState.vue';
 import Spinner from '@/components/Spinner.vue';
-import UndoToast from '@/components/UndoToast.vue';
+import Toast from '@/components/ui/Toast.vue';
 import IconEdit from '@/components/icons/IconEdit.vue';
 import { useUndoToast } from '@/composables/useUndoToast';
 import type { TMDBSearchResult } from '@/types/TMDBSearch';

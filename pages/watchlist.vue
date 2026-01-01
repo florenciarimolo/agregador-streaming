@@ -107,6 +107,15 @@
               </svg>
               <span class="tooltip">{{ $t('watchlist.removeTooltip') }}</span>
             </button>
+
+            <!-- Hover Overlay (same as RecommendationCard) -->
+            <div
+              class="absolute bottom-0 left-0 flex flex-col items-center justify-center w-full h-full px-4 transition-all duration-300 opacity-0 group-hover:opacity-100 backdrop-blur-md dark:bg-black/80 bg-white/80"
+            >
+              <p class="dark:text-gray-300 text-gray-800 font-semibold">
+                {{ $t('media.viewDetails') }}
+              </p>
+            </div>
           </nuxt-link>
 
           <!-- Content -->

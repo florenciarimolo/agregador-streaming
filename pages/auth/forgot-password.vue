@@ -90,7 +90,6 @@
 <script setup lang="ts">
 definePageMeta({
   layout: false,
-  middleware: 'guest', // Only allow unauthenticated users
 });
 
 const { t } = useI18n();
