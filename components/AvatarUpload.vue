@@ -2,7 +2,7 @@
   <div class="avatar-upload">
     <div
       class="relative inline-block rounded-full border border-primary"
-      @click="triggerFileInput"
+      @click.stop="triggerFileInput"
       @dragover.prevent="isDragging = true"
       @dragleave.prevent="isDragging = false"
       @drop.prevent="handleDrop"
@@ -14,7 +14,7 @@
         :user-id="userId"
         :size="size"
         :editable="true"
-        @click="triggerFileInput"
+        @click.stop="triggerFileInput"
       />
       <div
         v-if="isDragging"
@@ -117,6 +117,13 @@ const handleFileSelect = (event: Event) => {
   if (file) {
     processFile(file);
   }
+  // Reset input value to allow selecting the same file again
+  // But do it after a small delay to prevent immediate reopening
+  setTimeout(() => {
+    if (fileInput.value) {
+      fileInput.value.value = '';
+    }
+  }, 100);
 };
 
 const handleDrop = (event: DragEvent) => {
@@ -193,10 +200,6 @@ const processFile = async (file: File) => {
     emit('error', message);
   } finally {
     isUploading.value = false;
-    // Reset file input
-    if (fileInput.value) {
-      fileInput.value.value = '';
-    }
   }
 };
 </script>

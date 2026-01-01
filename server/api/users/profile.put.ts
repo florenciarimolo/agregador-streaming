@@ -1,26 +1,35 @@
-import { updateProfile } from '@/composables/database/profiles';
+import { serverSupabaseUser } from '#supabase/server';
+import { createClient } from '@supabase/supabase-js';
 import { getSession } from '@/composables/database/auth';
+import { TABLES, PROFILES_FIELDS } from '@/composables/database/constants';
 
 export default defineEventHandler(async (event) => {
   try {
-    const {
-      data: { session },
-    } = await getSession();
+    const config = useRuntimeConfig();
+    let userId: string | null = null;
 
-    if (!session?.access_token) {
-      throw createError({
-        statusCode: 401,
-        statusMessage: 'Unauthorized',
-      });
+    // Try to get user from cookies first
+    const userFromCookies = await serverSupabaseUser(event);
+
+    if (userFromCookies) {
+      userId =
+        userFromCookies.id || (userFromCookies as { sub?: string }).sub || null;
+    } else {
+      // Try Authorization header
+      const {
+        data: { session },
+      } = await getSession();
+
+      if (session?.access_token) {
+        userId =
+          session.user.id || (session.user as { sub?: string }).sub || null;
+      }
     }
-
-    const userId =
-      session.user.id || (session.user as { sub?: string }).sub;
 
     if (!userId) {
       throw createError({
         statusCode: 401,
-        statusMessage: 'User ID not found',
+        statusMessage: 'Unauthorized',
       });
     }
 
@@ -33,17 +42,34 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    const updateData: { display_name?: string; avatar_url?: string } = {};
+    const updateData: Record<string, unknown> = {};
 
     if (typeof body.display_name === 'string') {
-      updateData.display_name = body.display_name.trim() || null;
+      updateData[PROFILES_FIELDS.DISPLAY_NAME] = body.display_name.trim() || null;
     }
 
     if (typeof body.avatar_url === 'string') {
-      updateData.avatar_url = body.avatar_url || null;
+      updateData[PROFILES_FIELDS.AVATAR_URL] = body.avatar_url || null;
     }
 
-    const { data, error } = await updateProfile(userId, updateData);
+    // Create Supabase client for server-side operations
+    const supabaseKey =
+      process.env.SUPABASE_SERVICE_ROLE_KEY || config.public.supabaseAnonKey;
+
+    const supabase = createClient(config.public.supabaseUrl, supabaseKey, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+      },
+    });
+
+    const { data, error } = await supabase
+      .from(TABLES.PROFILES)
+      .update(updateData)
+      .eq(PROFILES_FIELDS.ID, userId)
+      .select()
+      .single();
 
     if (error) {
       throw createError({
@@ -57,7 +83,7 @@ export default defineEventHandler(async (event) => {
       profile: data,
     };
   } catch (error) {
-    if (error.statusCode) {
+    if (error && typeof error === 'object' && 'statusCode' in error) {
       throw error;
     }
     throw createError({

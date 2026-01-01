@@ -19,11 +19,23 @@
         <!-- Profile Info -->
         <div class="flex-1 min-w-0">
           <div v-if="!isEditing" class="space-y-2">
-            <h1
-              class="text-3xl md:text-4xl font-bold dark:text-gray-300 text-gray-800 font-heading"
-            >
-              {{ displayName || currentUser?.email || $t('profile.user') }}
-            </h1>
+            <div class="flex items-center gap-2">
+              <h1
+                class="text-3xl md:text-4xl font-bold dark:text-gray-300 text-gray-800 font-heading"
+              >
+                {{ displayName || currentUser?.email || $t('profile.user') }}
+              </h1>
+              <button
+                type="button"
+                :aria-label="$t('profile.editProfile')"
+                class="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                @click="startEdit"
+              >
+                <IconEdit
+                  icon-class="w-5 h-5 text-gray-600 dark:text-gray-400"
+                />
+              </button>
+            </div>
             <p
               v-if="currentUser?.email"
               class="text-gray-600 dark:text-gray-400"
@@ -48,6 +60,8 @@
                 class="w-full px-4 py-2 dark:bg-gray-800 bg-gray-100 border border-gray-300 dark:border-gray-700 rounded-lg dark:text-gray-300 text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary"
                 :placeholder="$t('profile.displayNamePlaceholder')"
                 maxlength="50"
+                @keydown.enter="saveProfile"
+                @keydown.esc="cancelEdit"
               />
             </div>
             <div class="flex gap-3">
@@ -66,17 +80,6 @@
                 {{ $t('common.cancel') }}
               </button>
             </div>
-          </div>
-
-          <!-- View Mode Actions -->
-          <div v-if="!isEditing" class="mt-4">
-            <button
-              type="button"
-              class="px-4 py-2 text-sm font-medium dark:text-gray-300 text-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-              @click="startEdit"
-            >
-              {{ $t('profile.editProfile') }}
-            </button>
           </div>
         </div>
       </div>
@@ -102,7 +105,7 @@
           :class="[
             'py-2.5 px-4 rounded-full font-medium transition-all text-sm whitespace-nowrap flex items-center gap-2',
             activeTab === tab.id
-              ? 'bg-primary-800 text-white border border-gray-700/50 dark:bg-gray-600/70 dark:border-primary-700'
+              ? 'bg-primary-800 text-white border border-gray-700/50 dark:bg-primary-600/70 dark:border-primary-800'
               : 'dark:bg-gray-800/50 bg-gray-100/50 dark:text-gray-300 text-gray-700 border border-gray-700/30 dark:border-gray-600/30',
           ]"
           @click="activeTab = tab.id"
@@ -110,7 +113,7 @@
           {{ tab.label }}
           <span
             v-if="tab.count !== null"
-            class="px-2 py-0.5 text-xs rounded-full bg-gray-200 dark:bg-gray-700 text-primary"
+            class="px-2 py-0.5 text-xs rounded-full bg-gray-200 dark:bg-gray-400 text-primary"
           >
             {{ tab.count }}
           </span>
@@ -256,6 +259,7 @@ import AvatarUpload from '@/components/AvatarUpload.vue';
 import TitleGrid from '@/components/TitleGrid.vue';
 import EmptyState from '@/components/EmptyState.vue';
 import UndoToast from '@/components/UndoToast.vue';
+import IconEdit from '@/components/icons/IconEdit.vue';
 import { useUndoToast } from '@/composables/useUndoToast';
 import type { TMDBSearchResult } from '@/types/TMDBSearch';
 
@@ -576,7 +580,13 @@ const saveProfile = async () => {
       throw new Error(t('profile.notAuthenticated'));
     }
 
-    const response = await $fetch('/api/users/profile', {
+    const response = await $fetch<{
+      success: boolean;
+      profile: {
+        display_name?: string | null;
+        avatar_url?: string | null;
+      };
+    }>('/api/users/profile', {
       method: 'PUT',
       headers: {
         Authorization: `Bearer ${session.access_token}`,
@@ -586,11 +596,17 @@ const saveProfile = async () => {
       },
     });
 
-    if (response.success) {
-      profile.value = response.profile;
+    if (response.success && response.profile) {
+      profile.value = {
+        ...profile.value,
+        display_name: response.profile.display_name,
+        avatar_url: response.profile.avatar_url || profile.value?.avatar_url,
+      };
       await userStore.fetchProfile();
       isEditing.value = false;
       showSuccess(t('profile.profileUpdated'));
+    } else {
+      throw new Error('Failed to update profile');
     }
   } catch (error) {
     console.error('Error updating profile:', error);
