@@ -4,9 +4,9 @@ import { createError, defineEventHandler, getQuery } from 'h3';
 
 export default defineEventHandler(async (event) => {
   try {
-    // Get user preferences for language
-    const { language } = await getUserTMDBParams(event);
-    const config = getTMDBConfig(language);
+    // Get user preferences for language and region
+    const params = await getUserTMDBParams(event);
+    const config = getTMDBConfig(params.language, params.region);
 
     const query = getQuery(event);
     const type = (query.type as string) || 'movie'; // 'movie' or 'tv'

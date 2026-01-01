@@ -332,7 +332,7 @@
         <div class="space-y-8">
           <!-- Preferred Languages -->
           <div
-            class="dark:bg-gray-900/40 bg-gray-100/80 backdrop-blur-xl rounded-lg border border-gray-300/50 dark:border-white/10 p-6 relative"
+            class="dark:bg-gray-900/40 bg-gray-100/80 backdrop-blur-xl rounded-3xl border border-gray-300/50 dark:border-white/10 p-6 relative"
           >
             <h2
               class="text-xl font-semibold dark:text-gray-300 text-gray-800 mb-2"
@@ -372,7 +372,7 @@
 
           <!-- Content Types -->
           <div
-            class="dark:bg-gray-900/40 bg-gray-100/80 backdrop-blur-xl rounded-lg border border-gray-300/50 dark:border-white/10 p-6"
+            class="dark:bg-gray-900/40 bg-gray-100/80 backdrop-blur-xl rounded-3xl border border-gray-300/50 dark:border-white/10 p-6"
           >
             <h2
               class="text-xl font-semibold dark:text-gray-300 text-gray-800 mb-2"
@@ -416,7 +416,7 @@
 
           <!-- Favorite Genres -->
           <div
-            class="dark:bg-gray-900/40 bg-gray-100/80 backdrop-blur-xl rounded-lg border border-gray-300/50 dark:border-white/10 p-6 relative"
+            class="dark:bg-gray-900/40 bg-gray-100/80 backdrop-blur-xl rounded-3xl border border-gray-300/50 dark:border-white/10 p-6 relative"
           >
             <h2
               class="text-xl font-semibold dark:text-gray-300 text-gray-800 mb-2"
@@ -479,7 +479,7 @@
                     filteredGenres.length > 0 &&
                     genreDropdownPosition
                   "
-                  class="fixed z-[9999] dark:bg-gray-900/95 bg-white/95 backdrop-blur-sm dark:border-gray-600 border-gray-300 rounded-lg shadow-xl max-h-64 overflow-y-auto custom-scrollbar"
+                  class="fixed z-[9999] dark:bg-gray-900/95 bg-white/95 backdrop-blur-sm dark:border-gray-600 border-gray-300 rounded-3xl shadow-xl max-h-64 overflow-y-auto custom-scrollbar"
                   :style="{
                     top: `${genreDropdownPosition.top}px`,
                     left: `${genreDropdownPosition.left}px`,
@@ -561,7 +561,7 @@
 
           <!-- Included Providers -->
           <div
-            class="dark:bg-gray-900/40 bg-gray-100/80 backdrop-blur-xl rounded-lg border border-gray-300/50 dark:border-white/10 p-6 relative"
+            class="dark:bg-gray-900/40 bg-gray-100/80 backdrop-blur-xl rounded-3xl border border-gray-300/50 dark:border-white/10 p-6 relative"
           >
             <h2
               class="text-xl font-semibold dark:text-gray-300 text-gray-800 mb-2"
@@ -623,7 +623,7 @@
                 <div
                   v-if="
                     showProviderResults &&
-                    filteredProviders.length > 0 &&
+                    providerSearchQuery.trim() &&
                     providerDropdownPosition
                   "
                   class="fixed z-[9999] dark:bg-gray-900/95 bg-white/95 backdrop-blur-sm dark:border-gray-600 border-gray-300 rounded-lg shadow-xl max-h-64 overflow-y-auto custom-scrollbar"
@@ -635,31 +635,42 @@
                   @mousedown.prevent
                 >
                   <div class="py-2">
-                    <div
-                      v-for="provider in filteredProviders"
-                      :key="provider.provider_id"
-                      class="flex items-center gap-3 px-4 py-3 cursor-pointer dark:hover:bg-gray-800/50 hover:bg-gray-100/50 transition-colors duration-150"
-                      @mousedown.prevent="addProvider(provider)"
-                      @click="addProvider(provider)"
-                    >
-                      <img
-                        v-if="provider.logo_path"
-                        :src="`https://image.tmdb.org/t/p/w45${provider.logo_path}`"
-                        :alt="provider.provider_name"
-                        class="h-8 w-auto object-contain flex-shrink-0"
-                      />
+                    <div v-if="filteredProviders.length > 0">
                       <div
-                        v-else
-                        class="h-8 w-8 flex items-center justify-center bg-gray-200 dark:bg-gray-700 rounded flex-shrink-0"
+                        v-for="provider in filteredProviders"
+                        :key="provider.provider_id"
+                        class="flex items-center gap-3 px-4 py-3 cursor-pointer dark:hover:bg-gray-800/50 hover:bg-gray-100/50 transition-colors duration-150"
+                        @mousedown.prevent="addProvider(provider)"
+                        @click="addProvider(provider)"
                       >
+                        <img
+                          v-if="provider.logo_path"
+                          :src="`https://image.tmdb.org/t/p/w45${provider.logo_path}`"
+                          :alt="provider.provider_name"
+                          class="h-8 w-auto object-contain flex-shrink-0"
+                        />
+                        <div
+                          v-else
+                          class="h-8 w-8 flex items-center justify-center bg-gray-200 dark:bg-gray-700 rounded flex-shrink-0"
+                        >
+                          <span
+                            class="text-xs text-gray-600 dark:text-gray-300"
+                            >{{ provider.provider_name.charAt(0) }}</span
+                          >
+                        </div>
                         <span
-                          class="text-xs text-gray-600 dark:text-gray-300"
-                          >{{ provider.provider_name.charAt(0) }}</span
+                          class="text-sm dark:text-gray-300 text-gray-800"
+                          >{{ provider.provider_name }}</span
                         >
                       </div>
-                      <span class="text-sm dark:text-gray-300 text-gray-800">{{
-                        provider.provider_name
-                      }}</span>
+                    </div>
+                    <div
+                      v-else
+                      class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400 text-center"
+                    >
+                      {{
+                        $t('preferences.content.includedProviders.noResults')
+                      }}
                     </div>
                   </div>
                 </div>
@@ -729,7 +740,7 @@
 
           <!-- Region -->
           <div
-            class="dark:bg-gray-900/40 bg-gray-100/80 backdrop-blur-xl rounded-lg border border-gray-300/50 dark:border-white/10 p-6"
+            class="dark:bg-gray-900/40 bg-gray-100/80 backdrop-blur-xl rounded-3xl border border-gray-300/50 dark:border-white/10 p-6"
           >
             <h2
               class="text-xl font-semibold dark:text-gray-300 text-gray-800 mb-2"
@@ -769,6 +780,7 @@ import {
   getTitleByTmdbId,
   insertTitle,
   getTitlesByTmdbIds,
+  getTitleByTmdbIdWithLanguage,
 } from '@/composables/database/titles';
 import {
   isNotFoundError,
@@ -962,11 +974,14 @@ const fetchLikedTitles = async () => {
 
     const tmdbIds = likedStatuses.map((s) => s.tmdb_id);
     // Extract language code from TMDB format (e.g., 'ca-ES' -> 'ca')
-    const langCode = extractLanguageCode(
-      contentPreferences.value.preferred_language
+    // Use preferred language or default to Spanish
+    const preferredLang =
+      contentPreferences.value.preferred_language || LanguageCode.SPANISH;
+    const langCode = extractLanguageCode(preferredLang);
+    const { data: titlesData, error: titlesError } = await getTitlesByTmdbIds(
+      tmdbIds,
+      langCode
     );
-    const { data: titlesData, error: titlesError } =
-      await getTitlesByTmdbIds(tmdbIds, langCode);
     if (titlesError) throw titlesError;
 
     const titleMap = new Map(titlesData?.map((t) => [t.tmdb_id, t]) || []);
@@ -1004,11 +1019,14 @@ const fetchSeenTitles = async () => {
 
     const tmdbIds = seenStatuses.map((s) => s.tmdb_id);
     // Extract language code from TMDB format (e.g., 'ca-ES' -> 'ca')
-    const langCode = extractLanguageCode(
-      contentPreferences.value.preferred_language
+    // Use preferred language or default to Spanish
+    const preferredLang =
+      contentPreferences.value.preferred_language || LanguageCode.SPANISH;
+    const langCode = extractLanguageCode(preferredLang);
+    const { data: titlesData, error: titlesError } = await getTitlesByTmdbIds(
+      tmdbIds,
+      langCode
     );
-    const { data: titlesData, error: titlesError } =
-      await getTitlesByTmdbIds(tmdbIds, langCode);
     if (titlesError) throw titlesError;
 
     const titleMap = new Map(titlesData?.map((t) => [t.tmdb_id, t]) || []);
@@ -1046,11 +1064,14 @@ const fetchNotInterestedTitles = async () => {
 
     const tmdbIds = notInterestedStatuses.map((s) => s.tmdb_id);
     // Extract language code from TMDB format (e.g., 'ca-ES' -> 'ca')
-    const langCode = extractLanguageCode(
-      contentPreferences.value.preferred_language
+    // Use preferred language or default to Spanish
+    const preferredLang =
+      contentPreferences.value.preferred_language || LanguageCode.SPANISH;
+    const langCode = extractLanguageCode(preferredLang);
+    const { data: titlesData, error: titlesError } = await getTitlesByTmdbIds(
+      tmdbIds,
+      langCode
     );
-    const { data: titlesData, error: titlesError } =
-      await getTitlesByTmdbIds(tmdbIds, langCode);
     if (titlesError) throw titlesError;
 
     const titleMap = new Map(titlesData?.map((t) => [t.tmdb_id, t]) || []);
@@ -1088,11 +1109,14 @@ const fetchWatchlistTitles = async () => {
 
     const tmdbIds = watchlistStatuses.map((s) => s.tmdb_id);
     // Extract language code from TMDB format (e.g., 'ca-ES' -> 'ca')
-    const langCode = extractLanguageCode(
-      contentPreferences.value.preferred_language
+    // Use preferred language or default to Spanish
+    const preferredLang =
+      contentPreferences.value.preferred_language || LanguageCode.SPANISH;
+    const langCode = extractLanguageCode(preferredLang);
+    const { data: titlesData, error: titlesError } = await getTitlesByTmdbIds(
+      tmdbIds,
+      langCode
     );
-    const { data: titlesData, error: titlesError } =
-      await getTitlesByTmdbIds(tmdbIds, langCode);
     if (titlesError) throw titlesError;
 
     const titleMap = new Map(titlesData?.map((t) => [t.tmdb_id, t]) || []);
@@ -1256,9 +1280,14 @@ const handleTitleSelected = async (result: TMDBSearchResult) => {
       throw likeError;
     }
 
-    const { data: titleData } = await getTitleByTmdbId(
+    // Get title in user's preferred language
+    const langCode = extractLanguageCode(
+      contentPreferences.value.preferred_language || LanguageCode.SPANISH
+    );
+    const { data: titleData } = await getTitleByTmdbIdWithLanguage(
       result.id,
-      result.media_type!
+      result.media_type!,
+      langCode
     );
 
     if (titleData) {
@@ -1308,18 +1337,20 @@ const confirmRemoveLiked = async () => {
         action: async () => {
           // Re-add the like
           if (titleToRestore) {
-            const titleData = await getTitleByTmdbId(
+            // Just check if title exists, then restore and refetch (which will use correct language)
+            const titleCheck = await getTitleByTmdbId(
               titleToRestore.tmdb_id,
               titleToRestore.type
             );
-            if (titleData?.data) {
+            if (titleCheck?.data) {
               await upsertUserTitleStatus({
                 user_id: userId.value!,
-                tmdb_id: titleData.data.tmdb_id,
-                type: titleData.data.type,
+                tmdb_id: titleToRestore.tmdb_id,
+                type: titleToRestore.type,
                 status: TitleStatus.SEEN,
                 liked: true,
               });
+              // Refetch will use the correct language
               await fetchLikedTitles();
             }
           }
@@ -1478,6 +1509,7 @@ const genreDropdownPosition = ref<{
 } | null>(null);
 
 // Preload providers using useLazyFetch (runs during setup, before mount)
+// Include credentials to ensure user session is sent for region detection
 const { data: providersData } = useLazyFetch<{
   results: Array<{
     provider_id: number;
@@ -1486,19 +1518,38 @@ const { data: providersData } = useLazyFetch<{
   }>;
 }>('/api/tmdb/watch-providers', {
   server: false, // Only fetch on client
+  credentials: 'include', // Include cookies for authentication
   default: () => ({ results: [] }),
 });
 
 const availableProviders = computed(() => {
-  if (!providersData.value) return [];
+  if (!providersData.value || !providersData.value.results) {
+    if (import.meta.dev) {
+      console.log(
+        '[AvailableProviders] No providers data:',
+        providersData.value
+      );
+    }
+    return [];
+  }
 
-  return providersData.value.results
+  const providers = providersData.value.results
     .map((p) => ({
       provider_id: p.provider_id,
       provider_name: p.provider_name,
       logo_path: p.logo_path,
     }))
     .sort((a, b) => a.provider_name.localeCompare(b.provider_name));
+
+  if (import.meta.dev) {
+    console.log('[AvailableProviders] Loaded providers:', providers.length);
+    console.log(
+      '[AvailableProviders] Sample providers:',
+      providers.slice(0, 5).map((p) => p.provider_name)
+    );
+  }
+
+  return providers;
 });
 
 // Provider selector state
@@ -1661,10 +1712,29 @@ const fetchContentPreferences = async () => {
 const filterProviders = () => {
   if (!providerSearchQuery.value.trim()) {
     filteredProviders.value = [];
+    showProviderResults.value = false;
     return;
   }
 
+  // Always show dropdown when user types
+  showProviderResults.value = true;
+
+  // Ensure dropdown position is calculated
+  nextTick(() => {
+    updateProviderDropdownPosition();
+  });
+
   const query = providerSearchQuery.value.toLowerCase().trim();
+
+  // Debug: log available providers count
+  if (import.meta.dev) {
+    console.log(
+      '[FilterProviders] Available providers:',
+      availableProviders.value.length
+    );
+    console.log('[FilterProviders] Search query:', query);
+  }
+
   filteredProviders.value = availableProviders.value
     .filter(
       (provider) =>
@@ -1675,6 +1745,23 @@ const filterProviders = () => {
     )
     .sort((a, b) => a.provider_name.localeCompare(b.provider_name))
     .slice(0, 10); // Limit to 10 results
+
+  // Debug: log filtered results
+  if (import.meta.dev) {
+    console.log(
+      '[FilterProviders] Filtered providers:',
+      filteredProviders.value.length
+    );
+    console.log(
+      '[FilterProviders] Results:',
+      filteredProviders.value.map((p) => p.provider_name)
+    );
+  }
+
+  // Update dropdown position after filtering
+  nextTick(() => {
+    updateProviderDropdownPosition();
+  });
 };
 
 // Add provider to selected list
@@ -1725,6 +1812,10 @@ const updateProviderDropdownPosition = () => {
 // Handle provider search focus
 const handleProviderFocus = () => {
   showProviderResults.value = true;
+  // If there's already a search query, filter immediately
+  if (providerSearchQuery.value.trim()) {
+    filterProviders();
+  }
   nextTick(() => {
     updateProviderDropdownPosition();
   });
@@ -1853,7 +1944,7 @@ const confirmLanguageChange = async () => {
     // Regenerate recommendation pool in background (silently)
     // Set flag in sessionStorage to indicate regeneration is in progress
     sessionStorage.setItem('regeneratingPool', 'true');
-    
+
     // Call regenerate-pool endpoint in background (don't await)
     $fetch<{
       success: boolean;
@@ -1868,7 +1959,10 @@ const confirmLanguageChange = async () => {
         if (poolResponse.success) {
           console.log('[LanguageChange] Pool regenerated successfully');
         } else {
-          console.error('[LanguageChange] Pool regeneration failed:', poolResponse);
+          console.error(
+            '[LanguageChange] Pool regeneration failed:',
+            poolResponse
+          );
         }
       })
       .catch((poolError) => {
@@ -2264,7 +2358,9 @@ watch(
         console.log('[Profile Watch] No language code, defaulting to Spanish');
       }
       selectedLanguage.value =
-        availableLanguages.find((l: Language) => l.code === LanguageCode.SPANISH) || null;
+        availableLanguages.find(
+          (l: Language) => l.code === LanguageCode.SPANISH
+        ) || null;
     }
   },
   { immediate: false } // Don't run immediately, let fetchContentPreferences set it first
@@ -2292,12 +2388,10 @@ onMounted(async () => {
     }
   }
 
-  // Fetch preferences and other data
-  await Promise.all([
-    fetchProfile(),
-    fetchAllLists(),
-    fetchContentPreferences(),
-  ]);
+  // Fetch preferences first to ensure preferred_language is available
+  await Promise.all([fetchProfile(), fetchContentPreferences()]);
+  // Then fetch all lists (which will use the preferred language)
+  await fetchAllLists();
 
   // Add scroll and resize listeners
   window.addEventListener('scroll', updateAllDropdownPositions, true);

@@ -321,6 +321,7 @@
         "searchPlaceholder": "Buscar plataformas...",
         "selected": "Plataformas seleccionadas",
         "allIncluded": "Todas las plataformas están incluidas. Busca y selecciona plataformas para limitar el contenido.",
+        "noResults": "No se encontraron plataformas.",
         "remove": "Eliminar {name}"
       },
       "region": {

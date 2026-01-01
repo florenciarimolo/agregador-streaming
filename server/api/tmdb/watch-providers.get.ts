@@ -5,8 +5,8 @@ import { createError, defineEventHandler } from 'h3';
 export default defineEventHandler(async (event) => {
   try {
     // Get user preferences for language and region
-    const { language, region } = await getUserTMDBParams(event);
-    const config = getTMDBConfig(language, region);
+    const params = await getUserTMDBParams(event);
+    const config = getTMDBConfig(params.language, params.region);
 
     // Fetch watch providers for movies (they're the same for TV)
     // TMDB returns providers available in the specified region
