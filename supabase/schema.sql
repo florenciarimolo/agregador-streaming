@@ -9,6 +9,10 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE TABLE IF NOT EXISTS public.profiles (
   id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
   email TEXT,
+  display_name TEXT,
+  avatar_url TEXT,
+  settings JSONB DEFAULT '{}'::jsonb,
+  deleted_at TIMESTAMP WITH TIME ZONE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL,
   onboarding_completed BOOLEAN DEFAULT FALSE NOT NULL
@@ -172,4 +176,94 @@ CREATE POLICY "Users can update own recommendation pool"
 CREATE POLICY "Users can delete own recommendation pool"
   ON public.recommendation_pool FOR DELETE
   USING (auth.uid() = user_id);
+
+-- Phase 1: Profile & Personalization - Storage bucket for avatars
+-- Note: Storage buckets must be created via Supabase Dashboard or API
+-- This is a reference for the bucket configuration:
+-- Bucket name: 'avatars'
+-- Public: true (for public read access)
+-- File size limit: 5MB
+-- Allowed MIME types: image/jpeg, image/png, image/webp
+
+-- Storage policies (run these in Supabase SQL Editor after creating the bucket)
+-- CREATE POLICY "Avatar images are publicly accessible"
+--   ON storage.objects FOR SELECT
+--   USING (bucket_id = 'avatars');
+--
+-- CREATE POLICY "Users can upload their own avatar"
+--   ON storage.objects FOR INSERT
+--   WITH CHECK (bucket_id = 'avatars' AND auth.uid()::text = (storage.foldername(name))[1]);
+--
+-- CREATE POLICY "Users can update their own avatar"
+--   ON storage.objects FOR UPDATE
+--   USING (bucket_id = 'avatars' AND auth.uid()::text = (storage.foldername(name))[1]);
+--
+-- CREATE POLICY "Users can delete their own avatar"
+--   ON storage.objects FOR DELETE
+--   USING (bucket_id = 'avatars' AND auth.uid()::text = (storage.foldername(name))[1]);
+
+-- Phase 2: User Preferences
+CREATE TABLE IF NOT EXISTS public.user_preferences (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE UNIQUE NOT NULL,
+  favorite_genres INTEGER[], -- TMDB genre IDs
+  preferred_languages TEXT[], -- ISO 639-1 codes (e.g., 'es', 'en')
+  content_types TEXT[] CHECK (content_types <@ ARRAY['movie', 'tv']), -- 'movie', 'tv', or both
+  included_providers INTEGER[], -- TMDB provider IDs
+  excluded_providers INTEGER[], -- TMDB provider IDs
+  exploration_mode TEXT CHECK (exploration_mode IN ('similar', 'balanced', 'surprise')) DEFAULT 'balanced',
+  prioritize_content TEXT CHECK (prioritize_content IN ('new', 'classics', 'top_rated')) DEFAULT 'new',
+  excluded_types TEXT[] CHECK (excluded_types <@ ARRAY['reality', 'anime', 'documentary']) DEFAULT ARRAY[]::TEXT[],
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL
+);
+
+-- Indexes for user_preferences
+CREATE INDEX IF NOT EXISTS idx_user_preferences_user_id ON public.user_preferences(user_id);
+
+-- RLS Policies for user_preferences
+ALTER TABLE public.user_preferences ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view own preferences"
+  ON public.user_preferences FOR SELECT
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert own preferences"
+  ON public.user_preferences FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own preferences"
+  ON public.user_preferences FOR UPDATE
+  USING (auth.uid() = user_id);
+
+-- Trigger for updated_at on user_preferences
+CREATE TRIGGER update_user_preferences_updated_at
+  BEFORE UPDATE ON public.user_preferences
+  FOR EACH ROW
+  EXECUTE FUNCTION public.handle_updated_at();
+
+-- Phase 5: User Activity Tracking
+CREATE TABLE IF NOT EXISTS public.user_activity (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+  action TEXT NOT NULL, -- 'login', 'logout', 'title_action', etc.
+  metadata JSONB,
+  ip_address INET,
+  user_agent TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_activity_user_id ON public.user_activity(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_activity_created_at ON public.user_activity(created_at DESC);
+
+-- RLS Policies for user_activity
+ALTER TABLE public.user_activity ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view own activity"
+  ON public.user_activity FOR SELECT
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert own activity"
+  ON public.user_activity FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
 

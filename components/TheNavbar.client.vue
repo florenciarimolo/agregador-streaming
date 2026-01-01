@@ -49,7 +49,7 @@
           <div v-if="currentUser" ref="userMenuContainer" class="relative">
             <button
               type="button"
-              class="w-10 h-10 rounded-full bg-gradient-to-br from-primary via-accent to-secondary flex items-center justify-center text-white font-semibold text-sm hover:ring-2 hover:ring-primary/50 transition-all cursor-pointer shadow-md"
+              class="hover:ring-2 hover:ring-primary/50 transition-all cursor-pointer shadow-md rounded-full border border-primary"
               :aria-label="
                 $t('navbar.userMenuFor', {
                   email: currentUser.email || 'usuario',
@@ -57,7 +57,15 @@
               "
               @click="toggleUserMenu"
             >
-              {{ getUserInitials(currentUser.email) }}
+              <Avatar
+                :avatar-url="userProfile?.avatar_url"
+                :display-name="userProfile?.display_name"
+                :email="currentUser.email"
+                :user-id="
+                  currentUser.id || (currentUser as { sub?: string })?.sub
+                "
+                size="md"
+              />
             </button>
             <!-- User Menu Dropdown -->
             <Transition
@@ -76,6 +84,12 @@
                 <div class="p-4">
                   <p
                     class="text-sm font-medium dark:text-gray-300 text-gray-800 truncate mb-3"
+                  >
+                    {{ userProfile?.display_name || currentUser.email }}
+                  </p>
+                  <p
+                    v-if="userProfile?.display_name && currentUser.email"
+                    class="text-xs text-gray-500 dark:text-gray-400 truncate mb-3"
                   >
                     {{ currentUser.email }}
                   </p>
@@ -173,7 +187,7 @@
           >
             <button
               type="button"
-              class="w-8 h-8 rounded-full bg-gradient-to-br from-primary via-accent to-secondary flex items-center justify-center text-white font-semibold text-xs hover:ring-2 hover:ring-primary/50 transition-all cursor-pointer shadow-md touch-manipulation"
+              class="hover:ring-2 hover:ring-primary/50 transition-all cursor-pointer shadow-md touch-manipulation border border-primary"
               :aria-label="
                 $t('navbar.userMenuFor', {
                   email: currentUser.email || 'usuario',
@@ -181,7 +195,15 @@
               "
               @click="toggleUserMenu"
             >
-              {{ getUserInitials(currentUser.email) }}
+              <Avatar
+                :avatar-url="userProfile?.avatar_url"
+                :display-name="userProfile?.display_name"
+                :email="currentUser.email"
+                :user-id="
+                  currentUser.id || (currentUser as { sub?: string })?.sub
+                "
+                size="sm"
+              />
             </button>
             <!-- User Menu Dropdown (Mobile) -->
             <Transition
@@ -200,6 +222,12 @@
                 <div class="p-4">
                   <p
                     class="text-sm font-medium dark:text-gray-300 text-gray-800 truncate mb-3"
+                  >
+                    {{ userProfile?.display_name || currentUser.email }}
+                  </p>
+                  <p
+                    v-if="userProfile?.display_name && currentUser.email"
+                    class="text-xs text-gray-500 dark:text-gray-400 truncate mb-3"
                   >
                     {{ currentUser.email }}
                   </p>
@@ -321,6 +349,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed, nextTick } from 'vue';
+import Avatar from './Avatar.vue';
 
 // User state
 const user = useSupabaseUser();
@@ -337,15 +366,10 @@ const currentUser = computed(() => {
   return user.value || userStore.user;
 });
 
-// Get user initials from email
-const getUserInitials = (email: string | undefined | null): string => {
-  if (!email) return 'U';
-  const parts = email.split('@')[0].split(/[._-]/);
-  if (parts.length >= 2) {
-    return (parts[0][0] + parts[1][0]).toUpperCase();
-  }
-  return email.substring(0, 2).toUpperCase();
-};
+// Get user profile for display name and avatar
+const userProfile = computed(() => {
+  return userStore.profile;
+});
 
 // Toggle user menu
 const toggleUserMenu = async (event?: Event) => {

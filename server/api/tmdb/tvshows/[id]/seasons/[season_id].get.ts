@@ -1,5 +1,6 @@
 import { Season } from '@/types/TVShow';
 import { getTMDBConfig } from '../../../../../utils/config';
+import { getUserTMDBParams } from '../../../../../utils/user-preferences';
 import {
   createError,
   defineEventHandler,
@@ -10,7 +11,10 @@ import {
 export default defineEventHandler(
   async (event: H3Event<EventHandlerRequest>) => {
     try {
-      const config = getTMDBConfig();
+      // Get user preferences for language and region
+      const { language, region } = await getUserTMDBParams(event);
+      const config = getTMDBConfig(language, region);
+      
       const { id, season_id } = event.context.params as {
         id: string;
         season_id: string;
@@ -22,6 +26,7 @@ export default defineEventHandler(
           query: {
             api_key: config.apiKey,
             language: config.language,
+            region: config.region,
             include_adult: config.includeAdult,
             append_to_response: 'tv-watch-providers',
           },

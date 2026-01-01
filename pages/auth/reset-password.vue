@@ -387,25 +387,9 @@ const showPassword = ref(false);
 const showConfirmPassword = ref(false);
 const codeValidated = ref(false);
 
-// Prevent navigation away from this page until password is reset
-// This ensures users complete the password reset flow even if they have a session
+// Allow navigation away from this page at any time
 onBeforeRouteLeave((_to, _from, next) => {
-  if (passwordReset.value) {
-    // Password was reset, allow navigation
-    next();
-  } else if (codeValidated.value && !error.value && !errorMessage.value) {
-    // Code is validated and form is shown, but password not reset yet
-    // Ask user to confirm before leaving
-    const confirmed = window.confirm(t('media.confirmLeave'));
-    if (confirmed) {
-      next();
-    } else {
-      next(false);
-    }
-  } else {
-    // Still validating or error state, allow navigation
-    next();
-  }
+  next();
 });
 
 // Password validation

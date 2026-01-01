@@ -1,6 +1,7 @@
 import { serverSupabaseUser } from '#supabase/server';
 import { createClient } from '@supabase/supabase-js';
 import { getTMDBConfig } from '../../utils/config';
+import { getUserTMDBParams } from '../../utils/user-preferences';
 import { devLog, devError, safeError } from '../../utils/logger';
 import {
   getPoolCount,
@@ -93,6 +94,11 @@ export default defineEventHandler(async (event) => {
   });
 
   try {
+    // Get user preferences for language and region
+    const { language, region } = await getUserTMDBParams(event);
+    const tmdbConfig = getTMDBConfig(language, region);
+    devLog('[PopulatePool] Using language:', language, 'region:', region);
+
     // Check current pool size
     const currentPoolCount = await getPoolCount(userId, supabase);
     devLog('[PopulatePool] Current pool count:', currentPoolCount);
@@ -134,7 +140,6 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    const tmdbConfig = getTMDBConfig();
     const entriesToInsert: Array<{
       tmdb_id: number;
       type: 'movie' | 'tv';
@@ -191,6 +196,7 @@ export default defineEventHandler(async (event) => {
               ...queryParams,
               api_key: tmdbConfig.apiKey,
               language: tmdbConfig.language,
+              region: tmdbConfig.region,
               page,
             },
           });
@@ -297,10 +303,7 @@ export default defineEventHandler(async (event) => {
     const { data: likedTitlesForGenres } = await supabase
       .from('titles')
       .select('genres')
-      .in(
-        'tmdb_id',
-        userLikedStatuses?.map((s) => s.tmdb_id) || []
-      )
+      .in('tmdb_id', userLikedStatuses?.map((s) => s.tmdb_id) || [])
       .not('genres', 'is', null);
 
     const genreFrequency = new Map<number, number>();
@@ -381,7 +384,11 @@ export default defineEventHandler(async (event) => {
     // Insert entries into pool
     if (entriesToInsert.length > 0) {
       devLog('[PopulatePool] Inserting entries:', entriesToInsert.length);
-      const inserted = await insertPoolEntries(userId, entriesToInsert, supabase);
+      const inserted = await insertPoolEntries(
+        userId,
+        entriesToInsert,
+        supabase
+      );
       devLog('[PopulatePool] Successfully inserted:', inserted);
     }
 
@@ -398,4 +405,3 @@ export default defineEventHandler(async (event) => {
     });
   }
 });
-

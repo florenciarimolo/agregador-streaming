@@ -31,7 +31,8 @@ export default defineNuxtRouteMiddleware(async (to) => {
 
   // SAFETY CHECK: If this is a recovery session, redirect immediately
   // (This should never happen if 00-recovery-detection.ts runs first, but safety first)
-  if (user.value && process.client) {
+  // Only redirect if on homepage to avoid interrupting normal navigation
+  if (user.value && process.client && to.path === '/') {
     try {
       const supabase = useSupabaseClient();
       const { data: sessionData } = await supabase.auth.getSession();
@@ -43,7 +44,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
         }
         return navigateTo('/auth/reset-password', { replace: true });
       }
-    } catch (error) {
+    } catch {
       // Silently continue if check fails
     }
   }

@@ -8,6 +8,10 @@ import { isNotFoundError } from '@/composables/database/errorCodes';
 interface Profile {
   id: string;
   email: string | null;
+  display_name?: string | null;
+  avatar_url?: string | null;
+  settings?: Record<string, unknown> | null;
+  deleted_at?: string | null;
   created_at: string;
   updated_at: string;
   onboarding_completed: boolean;

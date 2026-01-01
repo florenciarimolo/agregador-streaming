@@ -12,6 +12,7 @@ import {
   type AttentionEnum as AttentionEnumType,
 } from '@/types/enums/AttentionEnum';
 import { getTMDBConfig } from '../../utils/config';
+import { getUserTMDBParams } from '../../utils/user-preferences';
 import {
   RECOMMENDATION_POOL_FIELDS,
   RECOMMENDATION_POOL_TABLES,
@@ -489,7 +490,9 @@ export default defineEventHandler(async (event) => {
 
       // Transform sorted pool entries to recommendations
       const recommendations: Recommendation[] = [];
-      const tmdbConfig = getTMDBConfig();
+      // Get user preferences for language and region
+      const { language, region } = await getUserTMDBParams(event);
+      const tmdbConfig = getTMDBConfig(language, region);
       const tmdbIdsToTrack: number[] = [];
 
       for (const entry of entriesWithTitles.slice(0, MAX_RECOMMENDATIONS)) {
@@ -504,7 +507,7 @@ export default defineEventHandler(async (event) => {
               : `/tv/${entry.tmdb_id}/watch/providers`;
           const providerResponse = await $fetch<{
             results?: {
-              ES?: {
+              [key: string]: {
                 flatrate?: Provider[];
                 buy?: Provider[];
                 rent?: Provider[];
@@ -517,11 +520,13 @@ export default defineEventHandler(async (event) => {
             },
           });
 
-          const esProviders = providerResponse.results?.ES;
-          if (esProviders) {
-            const streamingProviders = esProviders.flatrate || [];
-            const buyProviders = esProviders.buy || [];
-            const rentProviders = esProviders.rent || [];
+          // Use user's region for providers, fallback to ES
+          const regionProviders =
+            providerResponse.results?.[region] || providerResponse.results?.ES;
+          if (regionProviders) {
+            const streamingProviders = regionProviders.flatrate || [];
+            const buyProviders = regionProviders.buy || [];
+            const rentProviders = regionProviders.rent || [];
             providers = [
               ...streamingProviders,
               ...buyProviders,

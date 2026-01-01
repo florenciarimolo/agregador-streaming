@@ -14,6 +14,10 @@ export const TABLES = {
 export const PROFILES_FIELDS = {
   ID: 'id',
   EMAIL: 'email',
+  DISPLAY_NAME: 'display_name',
+  AVATAR_URL: 'avatar_url',
+  SETTINGS: 'settings',
+  DELETED_AT: 'deleted_at',
   CREATED_AT: 'created_at',
   UPDATED_AT: 'updated_at',
   ONBOARDING_COMPLETED: 'onboarding_completed',

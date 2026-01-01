@@ -8,6 +8,7 @@ import {
 } from '@/composables/database/recommendationPool';
 import { TABLES, TITLES_FIELDS } from '@/composables/database/constants';
 import { getTMDBConfig } from '../../utils/config';
+import { getUserTMDBParamsByUserId } from '../../utils/user-preferences';
 import { TitleStatus } from '@/types/TitleStatus';
 
 /**
@@ -99,7 +100,6 @@ export default defineEventHandler(async (event) => {
     }
 
     let refreshedCount = 0;
-    const tmdbConfig = getTMDBConfig();
 
     // Process each user
     for (const user of usersWithLowPool) {
@@ -153,6 +153,13 @@ export default defineEventHandler(async (event) => {
             likedTmdbIds.add(status.tmdb_id);
           });
         }
+
+        // Get user preferences for language and region
+        const { language, region } = await getUserTMDBParamsByUserId(userId);
+        const tmdbConfig = getTMDBConfig(language, region);
+        devLog(
+          `[RefreshPool] Using language: ${language}, region: ${region} for user ${userId}`
+        );
 
         const entriesToInsert: Array<{
           tmdb_id: number;
@@ -210,6 +217,7 @@ export default defineEventHandler(async (event) => {
                   ...queryParams,
                   api_key: tmdbConfig.apiKey,
                   language: tmdbConfig.language,
+                  region: tmdbConfig.region,
                   page,
                 },
               });

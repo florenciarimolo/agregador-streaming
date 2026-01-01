@@ -1,6 +1,7 @@
 import { serverSupabaseUser } from '#supabase/server';
 import { createClient } from '@supabase/supabase-js';
 import { getTMDBConfig } from '../../utils/config';
+import { getUserTMDBParams } from '../../utils/user-preferences';
 import { devLog, devError, devWarn, safeError } from '../../utils/logger';
 import { TitleStatus } from '@/types/TitleStatus';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
@@ -118,8 +119,9 @@ export default defineEventHandler(async (event) => {
       };
     }
 
-    // Get TMDB config
-    const tmdbConfig = getTMDBConfig();
+    // Get user preferences for language and region
+    const { language, region } = await getUserTMDBParams(event);
+    const tmdbConfig = getTMDBConfig(language, region);
 
     // Fetch TMDB details for each title
     type TMDBTitle = {
@@ -158,6 +160,7 @@ export default defineEventHandler(async (event) => {
           query: {
             api_key: tmdbConfig.apiKey,
             language: tmdbConfig.language,
+            region: tmdbConfig.region,
             include_adult: tmdbConfig.includeAdult,
           },
         }

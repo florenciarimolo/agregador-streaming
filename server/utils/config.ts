@@ -1,4 +1,4 @@
-export const getTMDBConfig = () => {
+export const getTMDBConfig = (language?: string, region?: string) => {
   const apiKey = process.env.NUXT_TMDB_API_KEY;
   if (!apiKey) {
     throw new Error('TMDB API key not found in environment variables');
@@ -13,7 +13,8 @@ export const getTMDBConfig = () => {
   return {
     apiKey,
     baseUrl,
-    language: 'es-ES',
+    language: language || 'es-ES',
+    region: region || 'ES',
     includeAdult: false, // Changed to false as per requirements
   };
 };

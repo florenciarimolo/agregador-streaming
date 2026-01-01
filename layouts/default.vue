@@ -15,7 +15,7 @@
       <div
         class="border-t border-gray-300/50 dark:border-white/10 py-6 px-6 text-center"
       >
-        <div class="flex flex-wrap justify-center gap-4 mb-4">
+        <div class="flex flex-wrap justify-center items-center gap-4 mb-4">
           <nuxt-link
             to="/how-it-works"
             class="text-gray-800 dark:text-gray-300 hover:text-primary dark:hover:text-primary-400 transition-colors text-sm no-underline"

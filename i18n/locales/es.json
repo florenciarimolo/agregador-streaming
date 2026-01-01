@@ -25,6 +25,7 @@
     "editProfile": "Editar perfil",
     "seen": "Visto",
     "notInterested": "No me interesa",
+    "settings": "Configuración",
     "logout": "Cerrar sesión",
     "logoutConfirm": "Confirmar cierre de sesión",
     "logoutConfirmMessage": "¿Estás seguro de que quieres cerrar sesión?",
@@ -237,7 +238,27 @@
     "title": "Perfil",
     "editProfile": "Editar perfil",
     "email": "Email",
-    "preferences": "Preferencias"
+    "preferences": "Preferencias",
+    "user": "Usuario",
+    "displayName": "Nombre visible",
+    "displayNamePlaceholder": "Tu nombre o apodo",
+    "profileUpdated": "Perfil actualizado exitosamente.",
+    "avatarUpdated": "Avatar actualizado exitosamente.",
+    "errorUpdating": "Error al actualizar el perfil. Por favor, intenta de nuevo.",
+    "uploading": "Subiendo...",
+    "dropImage": "Suelta la imagen",
+    "invalidFileType": "Tipo de archivo inválido. Solo se permiten JPEG, PNG y WebP.",
+    "fileSizeExceeded": "El tamaño del archivo excede el límite de 5MB.",
+    "notAuthenticated": "No estás autenticado.",
+    "uploadFailed": "Error al subir el avatar.",
+    "failedToUpload": "Error al subir el avatar.",
+    "userAvatar": "Avatar de usuario",
+    "tabs": {
+      "liked": "Me gusta",
+      "seen": "Vistos",
+      "notInterested": "No me interesa",
+      "watchlist": "Para ver"
+    }
   },
   "preferences": {
     "title": "Preferencias",
@@ -388,6 +409,32 @@
   "undo": {
     "undo": "Deshacer",
     "actionUndone": "Acción deshecha"
+  },
+  "settings": {
+    "title": "Configuración",
+    "description": "Personaliza tu experiencia en UpNext.",
+    "saved": "Configuración guardada exitosamente.",
+    "errorSaving": "Error al guardar la configuración. Por favor, intenta de nuevo.",
+    "theme": {
+      "title": "Tema",
+      "light": "Claro",
+      "dark": "Oscuro",
+      "system": "Sistema"
+    },
+    "language": {
+      "title": "Idioma de la aplicación"
+    },
+    "region": {
+      "title": "Región"
+    },
+    "autoplayTrailers": {
+      "title": "Reproducir trailers automáticamente",
+      "description": "Los trailers se reproducirán automáticamente cuando visites una página de detalles."
+    },
+    "hideSpoilers": {
+      "title": "Ocultar spoilers",
+      "description": "Oculta descripciones largas que puedan contener spoilers."
+    }
   },
   "seo": {
     "defaultTitle": "UpNext",

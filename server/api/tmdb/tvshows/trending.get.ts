@@ -1,15 +1,19 @@
 import { getTMDBConfig } from '../../../utils/config';
+import { getUserTMDBParams } from '../../../utils/user-preferences';
 import { createError, defineEventHandler, H3Event } from 'h3';
 import type { MediaResponse } from '@/types/Media';
 
 export default defineEventHandler(async (event: H3Event) => {
   try {
-    const config = getTMDBConfig();
+    // Get user preferences for language and region
+    const { language, region } = await getUserTMDBParams(event);
+    const config = getTMDBConfig(language, region);
 
     const response = await $fetch(`${config.baseUrl}/trending/tv/week`, {
       query: {
         api_key: config.apiKey,
         language: config.language,
+        region: config.region,
         include_adult: config.includeAdult,
       },
     });

@@ -47,16 +47,36 @@ export default defineNuxtRouteMiddleware(async (to) => {
     // recovery_sent_at exists ONLY in recovery sessions
     // This is the official and reliable way to detect recovery in Supabase PKCE
     if (session.user?.recovery_sent_at) {
-      if (process.env.NODE_ENV === 'development') {
-        console.log(
-          '[Recovery Detection] Detected recovery session, redirecting to reset-password',
-          { recovery_sent_at: session.user.recovery_sent_at }
-        );
-      }
+      // Only redirect if user is on homepage
+      // This prevents redirecting users who are already using the app normally
+      // If user is navigating to a protected route (like /profile), they likely
+      // already completed recovery or are using a normal session, so don't interrupt them
+      const isHomepage = to.path === '/';
 
-      // PRIORITY: Redirect IMMEDIATELY to reset-password
-      // This prevents any other middleware from redirecting to home/onboarding
-      return navigateTo('/auth/reset-password', { replace: true });
+      // Only redirect if on homepage (user likely just came from callback)
+      // Don't redirect if user is navigating to other pages (they may have already completed recovery)
+      if (isHomepage) {
+        if (process.env.NODE_ENV === 'development') {
+          console.log(
+            '[Recovery Detection] Detected recovery session on homepage, redirecting to reset-password',
+            { recovery_sent_at: session.user.recovery_sent_at }
+          );
+        }
+
+        // PRIORITY: Redirect IMMEDIATELY to reset-password
+        // This prevents any other middleware from redirecting to home/onboarding
+        return navigateTo('/auth/reset-password', { replace: true });
+      } else {
+        // User is navigating to a protected route but has recovery_sent_at
+        // This might be a stale recovery session - don't interrupt normal navigation
+        // The reset-password page will handle validation if user goes there directly
+        if (process.env.NODE_ENV === 'development') {
+          console.log(
+            '[Recovery Detection] Recovery session detected but user is navigating to protected route, skipping redirect',
+            { path: to.path }
+          );
+        }
+      }
     }
   } catch (error) {
     // Silently fail - don't break the app if there's an error
