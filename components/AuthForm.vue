@@ -3,6 +3,8 @@ import {
   validatePassword,
   getPasswordHelperText,
 } from '../utils/passwordValidation';
+import Input from '@/components/ui/Input.vue';
+import TabButton from '@/components/ui/TabButton.vue';
 
 // Type for Supabase user that may have either 'id' or 'sub' as identifier
 type SupabaseUserWithSub = {
@@ -217,7 +219,7 @@ const backToLogin = () => {
   <section id="auth-form" class="py-16 md:pb-0 md:px-4">
     <div class="container mx-auto max-w-md">
       <div
-        class="bg-white/60 dark:bg-gray-900/40 backdrop-blur-xl rounded-xl p-6 md:p-8 border border-gray-300/50 dark:border-white/10 shadow-lg"
+        class="bg-white/60 dark:bg-gray-900/40 backdrop-blur-xl rounded-3xl p-6 md:p-8 border border-gray-300/50 dark:border-white/10 shadow-lg"
       >
         <div class="text-center mb-6">
           <h2
@@ -239,28 +241,20 @@ const backToLogin = () => {
           v-if="!isSignUp && authMethod !== 'forgot'"
           class="flex gap-2 mb-6"
         >
-          <button
-            :class="[
-              'flex-1 py-2.5 px-4 rounded-full font-medium transition-all text-sm',
-              authMethod === 'password'
-                ? 'bg-primary-800 text-white border border-gray-700/50 dark:bg-gray-600/70 dark:border-primary-700'
-                : 'dark:bg-gray-800/50 bg-gray-100/50 dark:text-gray-300 text-gray-700 border border-gray-700/30 dark:border-gray-600/30',
-            ]"
+          <TabButton
+            :is-active="authMethod === 'password'"
+            full-width
             @click="authMethod = 'password'"
           >
             {{ t('auth.passwordTab') }}
-          </button>
-          <button
-            :class="[
-              'flex-1 py-2.5 px-4 rounded-full font-medium transition-all text-sm',
-              authMethod === 'magic'
-                ? 'bg-primary-800 text-white border border-gray-700/50 dark:bg-gray-600/70 dark:border-primary-700'
-                : 'dark:bg-gray-800/50 bg-gray-100/50 dark:text-gray-300 text-gray-700 border border-gray-700/30 dark:border-gray-600/30',
-            ]"
+          </TabButton>
+          <TabButton
+            :is-active="authMethod === 'magic'"
+            full-width
             @click="authMethod = 'magic'"
           >
             {{ t('auth.magicLinkTab') }}
-          </button>
+          </TabButton>
         </div>
 
         <!-- Error message -->
@@ -285,134 +279,121 @@ const backToLogin = () => {
           @submit.prevent="handlePasswordAuth"
         >
           <div class="mb-4">
-            <label
-              for="email"
-              class="block text-sm font-medium dark:text-gray-300 text-gray-800 mb-2"
-            >
-              {{ t('auth.emailLabel') }}
-            </label>
-            <input
+            <Input
               id="email"
               v-model="email"
               type="email"
-              required
-              class="w-full px-4 py-3 bg-transparent dark:bg-transparent dark:text-gray-300 text-gray-800 border dark:border-gray-700/50 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all"
-              style="
+              :label="t('auth.emailLabel')"
+              :placeholder="t('auth.emailPlaceholderAuth')"
+              :required="isSignUp"
+              input-style="
                 background-color: transparent !important;
                 -webkit-appearance: none;
                 -moz-appearance: none;
                 appearance: none;
               "
-              :placeholder="t('auth.emailPlaceholderAuth')"
             />
           </div>
 
           <div v-if="isSignUp" class="mb-4">
-            <label
-              for="display-name"
-              class="block text-sm font-medium dark:text-gray-300 text-gray-800 mb-2"
-            >
-              {{ t('auth.displayNameLabel') }}
-            </label>
-            <input
+            <Input
               id="display-name"
               v-model="displayName"
               type="text"
-              class="w-full px-4 py-3 bg-transparent dark:bg-transparent dark:text-gray-300 text-gray-800 border dark:border-gray-700/50 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all"
-              style="
+              :label="t('auth.displayNameLabel')"
+              :placeholder="t('auth.displayNamePlaceholder')"
+              :maxlength="50"
+              required
+              input-style="
                 background-color: transparent !important;
                 -webkit-appearance: none;
                 -moz-appearance: none;
                 appearance: none;
               "
-              :placeholder="t('auth.displayNamePlaceholder')"
-              maxlength="50"
             />
           </div>
 
           <div class="mb-4">
-            <label
-              for="password"
-              class="block text-sm font-medium dark:text-gray-300 text-gray-800 mb-2"
-            >
-              {{ t('auth.passwordLabel') }}
-            </label>
-            <div class="relative">
-              <input
-                id="password"
-                v-model="password"
-                :type="showPassword ? 'text' : 'password'"
-                :autocomplete="isSignUp ? 'new-password' : 'current-password'"
-                :required="isSignUp"
-                style="
+            <Input
+              id="password"
+              v-model="password"
+              :type="showPassword ? 'text' : 'password'"
+              :autocomplete="isSignUp ? 'new-password' : 'current-password'"
+              :label="t('auth.passwordLabel')"
+              :required="isSignUp"
+              placeholder="••••••••"
+              :error="
+                isSignUp &&
+                passwordValidation &&
+                !passwordValidation.isValid &&
+                password.length > 0
+                  ? t('auth.passwordNotValid')
+                  : ''
+              "
+              input-style="
                   background-color: transparent !important;
                   -webkit-background-color: transparent !important;
                   -moz-background-color: transparent !important;
                   -o-background-color: transparent !important;
                   -ms-background-color: transparent !important;
                 "
-                :class="[
-                  'w-full px-4 py-3 pr-10 bg-transparent dark:bg-transparent dark:text-gray-300 text-gray-800 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all',
-                  isSignUp &&
-                  passwordValidation &&
-                  !passwordValidation.isValid &&
-                  password.length > 0
-                    ? 'border-red-500 dark:border-red-500'
-                    : 'dark:border-gray-700/50 border-gray-300',
-                ]"
-                placeholder="••••••••"
-              />
-              <button
-                type="button"
-                data-icon-only="true"
-                :aria-label="
-                  showPassword ? t('auth.hidePassword') : t('auth.showPassword')
-                "
-                class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 focus:outline-none transition-colors"
-                @click="showPassword = !showPassword"
-                @keydown.enter.prevent="showPassword = !showPassword"
-                @keydown.space.prevent="showPassword = !showPassword"
-              >
-                <!-- Eye icon (visible) -->
-                <svg
-                  v-if="showPassword"
-                  class="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
+              custom-class="pr-10"
+            >
+              <template #icon>
+                <button
+                  type="button"
+                  data-icon-only="true"
+                  :aria-label="
+                    showPassword
+                      ? t('auth.hidePassword')
+                      : t('auth.showPassword')
+                  "
+                  class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 focus:outline-none transition-colors pointer-events-auto"
+                  @click="showPassword = !showPassword"
+                  @keydown.enter.prevent="showPassword = !showPassword"
+                  @keydown.space.prevent="showPassword = !showPassword"
                 >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                  />
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                  />
-                </svg>
-                <!-- Eye slash icon (hidden) -->
-                <svg
-                  v-else
-                  class="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.29 3.29m0 0A9.97 9.97 0 015.12 5.12m3.29 3.29L3 3m14.29 14.29L21 21M14.88 14.88a3 3 0 11-4.243-4.243m4.242 4.242L21 21"
-                  />
-                </svg>
-              </button>
-            </div>
+                  <!-- Eye icon (visible) -->
+                  <svg
+                    v-if="showPassword"
+                    class="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                    />
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                    />
+                  </svg>
+                  <!-- Eye slash icon (hidden) -->
+                  <svg
+                    v-else
+                    class="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.29 3.29m0 0A9.97 9.97 0 015.12 5.12m3.29 3.29L3 3m14.29 14.29L21 21M14.88 14.88a3 3 0 11-4.243-4.243m4.242 4.242L21 21"
+                    />
+                  </svg>
+                </button>
+              </template>
+            </Input>
             <!-- Helper text (only show for signup) -->
             <p
               v-if="isSignUp"
@@ -519,25 +500,19 @@ const backToLogin = () => {
           @submit.prevent="handleForgotPassword"
         >
           <div class="mb-4">
-            <label
-              for="forgot-email"
-              class="block text-sm font-medium dark:text-gray-300 text-gray-800 mb-2"
-            >
-              {{ t('auth.emailField') }}
-            </label>
-            <input
+            <Input
               id="forgot-email"
               v-model="email"
               type="email"
+              :label="t('auth.emailField')"
+              placeholder="tu@email.com"
               required
-              class="w-full px-4 py-3 bg-transparent dark:bg-transparent dark:text-gray-300 text-gray-800 border dark:border-gray-700/50 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all"
-              style="
+              input-style="
                 background-color: transparent !important;
                 -webkit-appearance: none;
                 -moz-appearance: none;
                 appearance: none;
               "
-              placeholder="tu@email.com"
             />
           </div>
 
@@ -570,25 +545,19 @@ const backToLogin = () => {
         <!-- Magic link form -->
         <form v-else @submit.prevent="handleMagicLink">
           <div class="mb-4">
-            <label
-              for="magic-email"
-              class="block text-sm font-medium dark:text-gray-300 text-gray-800 mb-2"
-            >
-              {{ t('auth.emailLabel') }}
-            </label>
-            <input
+            <Input
               id="magic-email"
               v-model="email"
               type="email"
+              :label="t('auth.emailLabel')"
+              :placeholder="t('auth.emailPlaceholderAuth')"
               required
-              class="w-full px-4 py-3 bg-transparent dark:bg-transparent dark:text-gray-300 text-gray-800 border dark:border-gray-700/50 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all"
-              style="
+              input-style="
                 background-color: transparent !important;
                 -webkit-appearance: none;
                 -moz-appearance: none;
                 appearance: none;
               "
-              :placeholder="t('auth.emailPlaceholderAuth')"
             />
           </div>
 

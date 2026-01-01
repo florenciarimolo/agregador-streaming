@@ -22,12 +22,12 @@
   <section>
     <h2 class="col-span-4 text-2xl font-semibold py-16">Temporadas</h2>
     <div
-      class="relative grid grid-cols-1 gap-y-8 sm:gap-8 justify-items-center lg:justify-items-stretch md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+      class="relative grid grid-cols-2 gap-4 md:gap-8 justify-items-stretch lg:grid-cols-3 xl:grid-cols-4"
     >
       <article
         v-for="season in tvShowWithProviders.seasons"
         :key="season.id"
-        class="rounded-3xl relative flex flex-col text-sm overflow-hidden bg-white/60 dark:bg-gray-900/40 backdrop-blur-xl border border-gray-300/50 dark:border-white/10 w-[300px] cursor-pointer group hover:border-primary/50 dark:hover:border-purple-500/30 transition-colors shadow-lg"
+        class="rounded-3xl relative flex flex-col text-sm overflow-hidden bg-white/60 dark:bg-gray-900/40 backdrop-blur-xl border border-gray-300/50 dark:border-white/10 w-full cursor-pointer group hover:border-primary/50 dark:hover:border-purple-500/30 transition-colors shadow-lg"
       >
         <nuxt-link
           :to="`/serie/${tvShowId}/temporada/${season.season_number}`"
@@ -38,7 +38,7 @@
               v-if="season.poster_path"
               :src="`https://image.tmdb.org/t/p/w780${season.poster_path}`"
               :alt="season.name"
-              class="w-[300px] h-full object-cover"
+              class="w-full h-full object-cover"
             />
             <div
               class="absolute bottom-0 left-0 flex flex-col items-center justify-center w-full h-full px-4 transition-all duration-300 rounded opacity-0 group-hover:opacity-100 backdrop-blur-md w-inherit dark:bg-black/80 bg-white/80"

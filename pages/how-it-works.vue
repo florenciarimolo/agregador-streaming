@@ -235,7 +235,7 @@
     </div>
 
     <!-- CTA -->
-    <div class="mt-8 text-center">
+    <div class="mt-6 text-center">
       <nuxt-link
         to="/"
         class="inline-block px-6 py-3 bg-primary-800 dark:bg-primary hover:bg-primary-900 dark:hover:bg-primary-600 text-white rounded-lg font-medium transition-all duration-300"

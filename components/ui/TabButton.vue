@@ -2,10 +2,11 @@
   <button
     type="button"
     :class="[
-      'py-1.5 md:py-2.5 px-4 rounded-full font-semibold transition-all text-xs md:text-sm whitespace-nowrap flex items-center gap-1',
+      'h-8 px-4 py-1.5 text-xs font-semibold rounded-full transition-all whitespace-nowrap flex items-center justify-center gap-1',
       isActive
-        ? 'bg-primary-800 text-white border border-gray-700/50 dark:bg-primary-600/70 dark:border-primary-800'
-        : 'dark:bg-gray-800/50 bg-gray-100/50 dark:text-gray-300 text-gray-700 border border-gray-700/30 dark:border-gray-600/30',
+        ? 'bg-primary-900 text-white border border-primary-950 dark:bg-primary-700 dark:border-primary-500'
+        : 'dark:bg-gray-800/50 bg-gray-100/50 dark:text-gray-300 text-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-700',
+      fullWidth ? 'flex-1' : '',
       customClass,
     ]"
     @click="$emit('click', $event)"
@@ -26,10 +27,13 @@ withDefaults(
     isActive: boolean;
     badge?: number | string | null;
     customClass?: string;
+    fullWidth?: boolean;
   }>(),
   {
     isActive: false,
     badge: undefined,
+    customClass: '',
+    fullWidth: false,
   }
 );
 
@@ -37,4 +41,3 @@ defineEmits<{
   click: [event: MouseEvent];
 }>();
 </script>
-

@@ -1,7 +1,7 @@
 <template>
   <div class="container mx-auto max-w-7xl px-4 py-16">
     <!-- Profile Header -->
-    <div class="mb-8">
+    <div class="mb-6">
       <div class="flex flex-row items-center gap-4 md:gap-6">
         <!-- Avatar -->
         <div class="flex-shrink-0 flex items-center">

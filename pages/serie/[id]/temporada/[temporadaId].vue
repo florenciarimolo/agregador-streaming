@@ -29,7 +29,7 @@
         style="top: 0px; right: 0px; bottom: 0px; left: 0px"
       ></div>
       <div
-        class="relative overflow-hidden rounded-xl w-full max-w-80 lg:w-80 flex-shrink-0 aspect-[2/3]"
+        class="relative overflow-hidden rounded-3xl w-full max-w-80 lg:w-80 flex-shrink-0 aspect-[2/3]"
         style="
           filter: drop-shadow(0 10px 15px -3px rgb(0 0 0 / 0.1))
             drop-shadow(0 4px 6px -4px rgb(0 0 0 / 0.1))
@@ -40,8 +40,8 @@
           v-if="seasonWithProviders?.poster_path"
           :src="`https://image.tmdb.org/t/p/w780${seasonWithProviders.poster_path}`"
           :alt="seasonWithProviders.name"
-          class="object-cover w-full h-full rounded-xl"
-          style="clip-path: inset(0 round 0.75rem)"
+          class="object-contain w-full h-full rounded-3xl max-h-[400px] lg:max-h-[500px]"
+          style="clip-path: inset(0 round 1.5rem)"
         />
       </div>
       <div
@@ -168,7 +168,7 @@
               v-if="episode.still_path"
               :src="`https://image.tmdb.org/t/p/w500${episode.still_path}`"
               :alt="episode.name"
-              class="object-cover w-full h-full"
+              class="object-contain w-full h-full rounded-t-3xl max-h-[400px] lg:max-h-[500px]"
             />
             <div
               v-else

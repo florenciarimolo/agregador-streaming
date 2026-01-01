@@ -8,7 +8,7 @@
     <TheNavbar />
 
     <!-- Contenido principal -->
-    <main class="container mx-auto pb-4 pt-4 lg:pt-16 relative z-0 w-full">
+    <main class="container mx-auto pb-4 pt-20 relative z-0 w-full">
       <slot />
     </main>
 
@@ -60,7 +60,7 @@
 
     <!-- Global Undo Toast -->
     <UndoToast />
-    
+
     <!-- Language Accuracy Alert -->
     <LanguageAccuracyAlert />
   </div>

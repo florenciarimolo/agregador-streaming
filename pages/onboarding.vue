@@ -337,7 +337,7 @@ const saveSelections = async () => {
   <div class="min-h-screen py-8 px-4">
     <div class="max-w-4xl mx-auto">
       <!-- Header -->
-      <div class="text-center mb-8">
+      <div class="text-center mb-6">
         <h1 class="text-3xl font-bold dark:text-gray-300 text-gray-800 mb-2">
           {{ $t('onboarding.title') }}
         </h1>
@@ -415,7 +415,7 @@ const saveSelections = async () => {
         </Card>
 
         <!-- Continue Button -->
-        <div class="mt-8 text-center">
+        <div class="mt-6 text-center">
           <Button
             size="medium"
             variant="primary"
@@ -594,7 +594,7 @@ const saveSelections = async () => {
       </div>
 
         <!-- Continue Button -->
-        <div class="mt-8 text-center">
+        <div class="mt-6 text-center">
           <Button
             size="medium"
             variant="primary"

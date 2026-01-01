@@ -11,7 +11,7 @@
       style="top: 0px; right: 0px; bottom: 0px; left: 0px"
     ></div>
     <div
-      class="relative overflow-hidden rounded-xl w-full max-w-80 lg:w-80 flex-shrink-0 aspect-[2/3]"
+      class="relative overflow-hidden rounded-3xl w-full max-w-80 lg:w-80 flex-shrink-0 aspect-[2/3]"
       style="
         filter: drop-shadow(0 10px 15px -3px rgb(0 0 0 / 0.1))
           drop-shadow(0 4px 6px -4px rgb(0 0 0 / 0.1))
@@ -23,8 +23,8 @@
           `https://image.tmdb.org/t/p/w780` + mediaWithProviders.poster_path
         "
         :alt="mediaWithProviders.title"
-        class="object-cover w-full h-full rounded-xl"
-        style="clip-path: inset(0 round 0.75rem)"
+        class="object-contain w-full h-full rounded-3xl max-h-[400px] lg:max-h-[500px]"
+        style="clip-path: inset(0 round 1.5rem)"
       />
     </div>
     <div
@@ -74,7 +74,7 @@
               :in-theaters="inTheaters"
             />
             <!-- Actions Menu -->
-            <Dropdown position="right" width="w-48" ref="dropdownRef">
+            <Dropdown ref="dropdownRef" position="right" width="w-48">
               <template #trigger>
                 <button
                   type="button"
@@ -93,98 +93,98 @@
                 </button>
               </template>
               <div class="p-4">
-                    <button
-                      type="button"
-                      class="w-full px-4 py-2 text-sm dark:text-gray-300 text-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-left flex items-center gap-2 mb-2"
-                      @click.stop.prevent="
-                        dropdownRef?.close();
-                        handleAction(TitleStatus.SEEN);
-                      "
-                    >
-                      <svg
-                        class="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
-                      {{ $t('media.seen') }}
-                    </button>
-                    <button
-                      type="button"
-                      class="w-full px-4 py-2 text-sm dark:text-gray-300 text-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-left flex items-center gap-2 mb-2"
-                      @click.stop.prevent="
-                        dropdownRef?.close();
-                        handleAction('liked');
-                      "
-                    >
-                      <svg
-                        class="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                        />
-                      </svg>
-                      {{ $t('media.liked') }}
-                    </button>
-                    <button
-                      type="button"
-                      class="w-full px-4 py-2 text-sm dark:text-gray-300 text-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-left flex items-center gap-2 mb-2"
-                      @click.stop.prevent="
-                        dropdownRef?.close();
-                        handleAction(TitleStatus.NOT_INTERESTED);
-                      "
-                    >
-                      <svg
-                        class="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M6 18L18 6M6 6l12 12"
-                        />
-                      </svg>
-                      {{ $t('media.notInterested') }}
-                    </button>
-                    <button
-                      type="button"
-                      class="w-full px-4 py-2 text-sm dark:text-gray-300 text-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-left flex items-center gap-2"
-                      @click.stop.prevent="
-                        dropdownRef?.close();
-                        handleAction(TitleStatus.WATCHLIST);
-                      "
-                    >
-                      <svg
-                        class="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                        />
-                      </svg>
-                      {{ $t('media.watchLater') }}
-                    </button>
+                <button
+                  type="button"
+                  class="w-full px-4 py-2 text-sm dark:text-gray-300 text-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-left flex items-center gap-2 mb-2"
+                  @click.stop.prevent="
+                    dropdownRef?.close();
+                    handleAction(TitleStatus.SEEN);
+                  "
+                >
+                  <svg
+                    class="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                  {{ $t('media.seen') }}
+                </button>
+                <button
+                  type="button"
+                  class="w-full px-4 py-2 text-sm dark:text-gray-300 text-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-left flex items-center gap-2 mb-2"
+                  @click.stop.prevent="
+                    dropdownRef?.close();
+                    handleAction('liked');
+                  "
+                >
+                  <svg
+                    class="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                    />
+                  </svg>
+                  {{ $t('media.liked') }}
+                </button>
+                <button
+                  type="button"
+                  class="w-full px-4 py-2 text-sm dark:text-gray-300 text-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-left flex items-center gap-2 mb-2"
+                  @click.stop.prevent="
+                    dropdownRef?.close();
+                    handleAction(TitleStatus.NOT_INTERESTED);
+                  "
+                >
+                  <svg
+                    class="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                  {{ $t('media.notInterested') }}
+                </button>
+                <button
+                  type="button"
+                  class="w-full px-4 py-2 text-sm dark:text-gray-300 text-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-left flex items-center gap-2"
+                  @click.stop.prevent="
+                    dropdownRef?.close();
+                    handleAction(TitleStatus.WATCHLIST);
+                  "
+                >
+                  <svg
+                    class="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                  {{ $t('media.watchLater') }}
+                </button>
               </div>
             </Dropdown>
           </div>
@@ -384,7 +384,6 @@ const sectionStyle = computed(() => ({
 }));
 
 const handleAction = async (action: TitleStatus | 'liked') => {
-
   try {
     const {
       data: { session },
