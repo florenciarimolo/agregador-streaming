@@ -66,14 +66,17 @@ export default defineEventHandler(async (event) => {
       );
     }
 
-    // Always set preferred_languages (even if empty array)
-    if (Array.isArray(body.preferred_languages)) {
-      preferences.preferred_languages = body.preferred_languages.filter(
-        (l: unknown) => typeof l === 'string'
-      );
-    } else if (body.preferred_languages === null || body.preferred_languages === undefined) {
-      // Explicitly set to empty array if null/undefined
-      preferences.preferred_languages = [];
+    // Handle preferred_language (single string value in TMDB format)
+    if (typeof body.preferred_language === 'string') {
+      // Import language constants
+      const { LanguageCode, toTMDBLanguageCode } = await import('@/constants/languages');
+      
+      // Convert to TMDB format (handles both legacy and TMDB codes)
+      preferences.preferred_language = toTMDBLanguageCode(body.preferred_language);
+    } else if (body.preferred_language === null || body.preferred_language === undefined) {
+      // Default to Spanish if not provided
+      const { LanguageCode } = await import('@/constants/languages');
+      preferences.preferred_language = LanguageCode.SPANISH;
     }
 
     if (Array.isArray(body.content_types)) {
@@ -140,24 +143,24 @@ export default defineEventHandler(async (event) => {
 
     // Merge with existing or create new
     // Important: Explicitly set all fields to ensure they're updated
-    // If preferred_languages is explicitly provided (even if empty), use it
+    // If preferred_language is explicitly provided, use it; otherwise keep current or default to 'es'
     const mergedPreferences = current
       ? {
           ...current,
           ...preferences,
-          // Explicitly set preferred_languages if provided in body (even if empty array)
-          preferred_languages:
-            body.preferred_languages !== undefined
-              ? preferences.preferred_languages
-              : current.preferred_languages,
+          // Explicitly set preferred_language if provided in body, otherwise keep current or default
+          preferred_language:
+            body.preferred_language !== undefined
+              ? preferences.preferred_language
+              : current.preferred_language || 'es',
         }
-      : { user_id: userId, ...preferences };
+      : { user_id: userId, preferred_language: 'es', ...preferences };
 
     // Log for debugging
     if (import.meta.dev) {
       console.log('[Preferences PUT] Saving preferences:', {
         userId,
-        preferred_languages: mergedPreferences.preferred_languages,
+        preferred_language: mergedPreferences.preferred_language,
         allPreferences: mergedPreferences,
       });
     }
@@ -182,7 +185,7 @@ export default defineEventHandler(async (event) => {
     // Log for debugging
     if (import.meta.dev) {
       console.log('[Preferences PUT] Successfully saved:', {
-        preferred_languages: data?.preferred_languages,
+        preferred_language: data?.preferred_language,
       });
     }
 

@@ -8,7 +8,7 @@ import {
 } from '@/composables/database/userTitleStatus';
 import { getUserActivity } from '@/composables/database/activity';
 import { getSession } from '@/composables/database/auth';
-import { getTitlesByTmdbIds } from '@/composables/database/titles';
+import { getTitlesByTmdbIds, getTitleInLanguage, type MultiLanguageText } from '@/composables/database/titles';
 
 export default defineEventHandler(async (event) => {
   try {
@@ -51,7 +51,21 @@ export default defineEventHandler(async (event) => {
     });
 
     const { data: titlesData } = await getTitlesByTmdbIds(Array.from(allTmdbIds));
-    const titleMap = new Map(titlesData?.map((t) => [t.tmdb_id, t]) || []);
+    
+    // Get user's preferred language
+    const userLanguage = preferences.data?.preferred_language || 'es';
+    
+    // Extract language-specific text from JSONB and create map
+    const titleMap = new Map(
+      titlesData?.map((t) => {
+        const titleWithLanguage = {
+          ...t,
+          title: getTitleInLanguage(t.title as MultiLanguageText, userLanguage),
+          overview: getTitleInLanguage(t.overview as MultiLanguageText, userLanguage),
+        };
+        return [t.tmdb_id, titleWithLanguage];
+      }) || []
+    );
 
     // Format export data
     const exportData = {

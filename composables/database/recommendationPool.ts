@@ -18,6 +18,7 @@ export const RECOMMENDATION_POOL_FIELDS = {
   SOURCE: 'source',
   SCORE: 'score',
   EXPLANATION_CODE: 'explanation_code',
+  TITLE_DATA: 'title_data',
   CREATED_AT: 'created_at',
   LAST_SHOWN_AT: 'last_shown_at',
 } as const;
@@ -29,6 +30,17 @@ export type RecommendationPoolSource =
   | 'easy'
   | 'mood';
 
+export type TitleData = {
+  title: string; // Depende de idioma
+  overview: string; // Depende de idioma
+  poster_path: string | null; // NO depende de idioma
+  backdrop_path: string | null; // NO depende de idioma
+  vote_average: number | null; // NO depende de idioma
+  genres: Array<{ id: number; name: string }>; // NO depende de idioma (guardar completo)
+  release_date: string | null; // NO depende de idioma (movies)
+  first_air_date: string | null; // NO depende de idioma (tv)
+};
+
 export type RecommendationPoolEntry = {
   id: string;
   user_id: string;
@@ -37,6 +49,7 @@ export type RecommendationPoolEntry = {
   source: RecommendationPoolSource;
   score: number;
   explanation_code: string | null;
+  title_data: TitleData | null;
   created_at: string;
   last_shown_at: string | null;
 };
@@ -120,6 +133,7 @@ export async function insertPoolEntries(
     source: RecommendationPoolSource;
     score?: number;
     explanation_code?: string | null;
+    title_data?: TitleData | null;
   }>,
   supabaseClient?: ReturnType<typeof useSupabaseClient>
 ): Promise<number> {
@@ -132,6 +146,7 @@ export async function insertPoolEntries(
     source: entry.source,
     score: entry.score ?? 0,
     explanation_code: entry.explanation_code ?? null,
+    title_data: entry.title_data ?? null,
   }));
 
   // Use upsert with ignoreDuplicates to skip existing entries
@@ -277,4 +292,38 @@ export async function getPoolEntries(
   }
 
   return (data as RecommendationPoolEntry[]) || [];
+}
+
+/**
+ * Update title and overview in title_data for all pool entries of a user
+ * Used when user changes their preferred language
+ */
+export async function updateTitleDataLanguage(
+  userId: string,
+  newLanguage: string,
+  supabaseClient?: ReturnType<typeof useSupabaseClient>
+): Promise<void> {
+  const supabase = supabaseClient || useSupabaseClient();
+
+  // Get all pool entries for the user
+  const { data: poolEntries, error: selectError } = await supabase
+    .from(TABLES.RECOMMENDATION_POOL)
+    .select(`${RECOMMENDATION_POOL_FIELDS.TMDB_ID}, ${RECOMMENDATION_POOL_FIELDS.TYPE}, ${RECOMMENDATION_POOL_FIELDS.TITLE_DATA}`)
+    .eq(RECOMMENDATION_POOL_FIELDS.USER_ID, userId);
+
+  if (selectError) {
+    console.error(
+      '[RecommendationPool] Error selecting pool entries for language update:',
+      selectError
+    );
+    throw selectError;
+  }
+
+  if (!poolEntries || poolEntries.length === 0) {
+    return;
+  }
+
+  // Note: The actual fetching from TMDB and updating will be done in the API endpoint
+  // This function is a placeholder for the structure
+  // The actual implementation will be in regenerate-pool.post.ts
 }

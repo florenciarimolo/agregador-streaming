@@ -175,20 +175,18 @@
                 class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 dark:border-primary-400"
               ></div>
               <p class="text-sm text-gray-700 dark:text-gray-300">
-                {{ $t('preferences.content.preferredLanguages.saving') }}
+                {{ $t('preferences.content.preferredLanguage.saving') }}
               </p>
             </div>
           </div>
           <h3
             class="text-lg font-semibold dark:text-gray-300 text-gray-800 mb-2"
           >
-            {{
-              $t('preferences.content.preferredLanguages.confirmChangeTitle')
-            }}
+            {{ $t('preferences.content.preferredLanguage.confirmChangeTitle') }}
           </h3>
           <p class="text-gray-800 dark:text-gray-300 mb-4">
             {{
-              $t('preferences.content.preferredLanguages.confirmChangeMessage')
+              $t('preferences.content.preferredLanguage.confirmChangeMessage')
             }}
           </p>
           <div class="flex gap-3 justify-end">
@@ -339,154 +337,37 @@
             <h2
               class="text-xl font-semibold dark:text-gray-300 text-gray-800 mb-2"
             >
-              {{ $t('preferences.content.preferredLanguages.title') }}
+              {{ $t('preferences.content.preferredLanguage.title') }}
             </h2>
             <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
-              {{ $t('preferences.content.preferredLanguages.description') }}
+              {{ $t('preferences.content.preferredLanguage.description') }}
             </p>
 
-            <!-- Language Search -->
-            <div class="relative mb-4">
-              <div class="relative">
+            <!-- Language Radio Buttons -->
+            <div class="space-y-2">
+              <label
+                v-for="lang in availableLanguages"
+                :key="lang.code"
+                class="flex items-center gap-3 p-3 rounded-lg dark:hover:bg-gray-800/50 hover:bg-gray-100/50 transition-colors duration-150 cursor-pointer custom-radio-label"
+                :class="{
+                  'dark:bg-gray-800/30 bg-gray-100/50':
+                    selectedLanguage?.code === lang.code,
+                }"
+              >
                 <input
-                  ref="languageInputRef"
-                  v-model="languageSearchQuery"
-                  type="text"
-                  :placeholder="
-                    $t(
-                      'preferences.content.preferredLanguages.searchPlaceholder'
-                    )
-                  "
-                  class="w-full px-4 py-2 pl-10 pr-4 text-sm dark:text-gray-300 text-gray-800 dark:bg-gray-800/50 bg-white/80 dark:border-gray-600 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-transparent focus:border-transparent backdrop-blur-xs transition-all opacity-90 hover:opacity-100"
-                  @input="filterLanguages"
-                  @focus="handleLanguageFocus"
-                  @blur="handleLanguageBlur"
-                  @keydown.escape="showLanguageResults = false"
+                  :id="`lang-${lang.code}`"
+                  type="radio"
+                  name="preferred-language"
+                  :value="lang.code"
+                  :checked="selectedLanguage?.code === lang.code"
+                  class="custom-radio"
+                  @change="changeLanguage(lang)"
                 />
-                <!-- Search Icon -->
-                <div
-                  class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none"
-                >
-                  <svg
-                    class="w-4 h-4 text-gray-400"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                    />
-                  </svg>
-                </div>
-              </div>
+                <span class="text-sm dark:text-gray-300 text-gray-800 flex-1">
+                  {{ `${lang.name} (${lang.code})` }}
+                </span>
+              </label>
             </div>
-
-            <!-- Language Search Results Dropdown (Teleported) -->
-            <Teleport to="body">
-              <Transition
-                enter-active-class="transition duration-200 ease-out"
-                enter-from-class="transform scale-95 opacity-0"
-                enter-to-class="transform scale-100 opacity-100"
-                leave-active-class="transition duration-150 ease-in"
-                leave-from-class="transform scale-100 opacity-100"
-                leave-to-class="transform scale-95 opacity-0"
-              >
-                <div
-                  v-if="showLanguageResults && languageDropdownPosition"
-                  class="fixed z-[9999] dark:bg-gray-900/95 bg-white/95 backdrop-blur-sm dark:border-gray-600 border-gray-300 rounded-lg shadow-xl max-h-64 overflow-y-auto custom-scrollbar"
-                  :style="{
-                    top: `${languageDropdownPosition.top}px`,
-                    left: `${languageDropdownPosition.left}px`,
-                    width: `${languageDropdownPosition.width}px`,
-                  }"
-                  @mousedown.prevent
-                >
-                  <div class="py-2">
-                    <div
-                      v-if="displayedLanguages.length === 0"
-                      class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400 text-center"
-                    >
-                      {{
-                        $t('preferences.content.preferredLanguages.noResults')
-                      }}
-                    </div>
-                    <div
-                      v-for="lang in displayedLanguages"
-                      :key="lang.code"
-                      class="flex items-center gap-3 px-4 py-3 cursor-pointer dark:hover:bg-gray-800/50 hover:bg-gray-100/50 transition-colors duration-150"
-                      :class="{
-                        'dark:bg-gray-800/30 bg-gray-100/50':
-                          selectedLanguages.some((l) => l.code === lang.code),
-                      }"
-                      @mousedown.prevent="addLanguage(lang)"
-                      @click="addLanguage(lang)"
-                    >
-                      <span class="text-sm dark:text-gray-300 text-gray-800">{{
-                        `${lang.name} (${lang.code.toUpperCase()})`
-                      }}</span>
-                    </div>
-                  </div>
-                </div>
-              </Transition>
-            </Teleport>
-
-            <!-- Selected Languages List -->
-            <div v-if="selectedLanguages.length > 0" class="mb-4">
-              <p
-                class="text-sm font-medium dark:text-gray-300 text-gray-800 mb-2"
-              >
-                {{ $t('preferences.content.preferredLanguages.selected') }}
-                ({{ selectedLanguages.length }})
-              </p>
-              <div class="flex flex-wrap gap-2">
-                <div
-                  v-for="lang in selectedLanguages"
-                  :key="lang.code"
-                  class="flex items-center gap-2 py-1.5 md:py-2.5 px-4 dark:bg-gray-900/40 bg-gray-100/80 backdrop-blur-xl rounded-full border border-gray-300/50 dark:border-white/10"
-                >
-                  <span
-                    class="text-xs md:text-sm font-medium dark:text-gray-300 text-gray-800"
-                    >{{ `${lang.name} (${lang.code.toUpperCase()})` }}</span
-                  >
-                  <button
-                    v-if="selectedLanguages.length > 1"
-                    type="button"
-                    class="ml-1 p-1.5 rounded-full bg-black/50 hover:bg-red-600/80 backdrop-blur-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
-                    :aria-label="
-                      $t('preferences.content.preferredLanguages.remove', {
-                        name: lang.name,
-                      })
-                    "
-                    @click="removeLanguage(lang.code)"
-                  >
-                    <svg
-                      class="w-3 h-3 text-white"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M6 18L18 6M6 6l12 12"
-                      />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <!-- Info Message -->
-            <p
-              v-if="selectedLanguages.length === 0"
-              class="text-sm text-gray-600 dark:text-gray-400 italic"
-            >
-              {{ $t('preferences.content.preferredLanguages.noneSelected') }}
-            </p>
           </div>
 
           <!-- Content Types -->
@@ -502,24 +383,28 @@
               {{ $t('preferences.content.contentTypes.description') }}
             </p>
             <div class="flex flex-wrap gap-4">
-              <label class="flex items-center gap-2 cursor-pointer">
+              <label
+                class="flex items-center gap-2 cursor-pointer custom-checkbox-label"
+              >
                 <input
                   v-model="contentPreferences.content_types"
                   type="checkbox"
                   value="movie"
-                  class="w-4 h-4 text-primary focus:ring-primary rounded"
+                  class="custom-checkbox"
                   @change="saveContentPreferences"
                 />
                 <span class="text-sm dark:text-gray-300 text-gray-800">{{
                   $t('preferences.content.contentTypes.movie')
                 }}</span>
               </label>
-              <label class="flex items-center gap-2 cursor-pointer">
+              <label
+                class="flex items-center gap-2 cursor-pointer custom-checkbox-label"
+              >
                 <input
                   v-model="contentPreferences.content_types"
                   type="checkbox"
                   value="tv"
-                  class="w-4 h-4 text-primary focus:ring-primary rounded"
+                  class="custom-checkbox"
                   @change="saveContentPreferences"
                 />
                 <span class="text-sm dark:text-gray-300 text-gray-800">{{
@@ -899,6 +784,12 @@ import UndoToast from '@/components/UndoToast.vue';
 import IconEdit from '@/components/icons/IconEdit.vue';
 import { useUndoToast } from '@/composables/useUndoToast';
 import type { TMDBSearchResult } from '@/types/TMDBSearch';
+import {
+  AVAILABLE_LANGUAGES,
+  LanguageCode,
+  extractLanguageCode,
+} from '@/constants/languages';
+import type { Language } from '@/constants/languages';
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore - Auto-imported
@@ -922,7 +813,7 @@ const titleToDelete = ref<{ id: string; title: string } | null>(null);
 const showLanguageChangeModal = ref(false);
 const isConfirmingLanguageChange = ref(false);
 const pendingLanguageChange = ref<{
-  action: 'add' | 'remove';
+  action: 'add' | 'remove' | 'change';
   language: { code: string; name: string } | null;
   newLanguages: Array<{ code: string; name: string }>;
 } | null>(null);
@@ -1070,8 +961,12 @@ const fetchLikedTitles = async () => {
     }
 
     const tmdbIds = likedStatuses.map((s) => s.tmdb_id);
+    // Extract language code from TMDB format (e.g., 'ca-ES' -> 'ca')
+    const langCode = extractLanguageCode(
+      contentPreferences.value.preferred_language
+    );
     const { data: titlesData, error: titlesError } =
-      await getTitlesByTmdbIds(tmdbIds);
+      await getTitlesByTmdbIds(tmdbIds, langCode);
     if (titlesError) throw titlesError;
 
     const titleMap = new Map(titlesData?.map((t) => [t.tmdb_id, t]) || []);
@@ -1108,8 +1003,12 @@ const fetchSeenTitles = async () => {
     }
 
     const tmdbIds = seenStatuses.map((s) => s.tmdb_id);
+    // Extract language code from TMDB format (e.g., 'ca-ES' -> 'ca')
+    const langCode = extractLanguageCode(
+      contentPreferences.value.preferred_language
+    );
     const { data: titlesData, error: titlesError } =
-      await getTitlesByTmdbIds(tmdbIds);
+      await getTitlesByTmdbIds(tmdbIds, langCode);
     if (titlesError) throw titlesError;
 
     const titleMap = new Map(titlesData?.map((t) => [t.tmdb_id, t]) || []);
@@ -1146,8 +1045,12 @@ const fetchNotInterestedTitles = async () => {
     }
 
     const tmdbIds = notInterestedStatuses.map((s) => s.tmdb_id);
+    // Extract language code from TMDB format (e.g., 'ca-ES' -> 'ca')
+    const langCode = extractLanguageCode(
+      contentPreferences.value.preferred_language
+    );
     const { data: titlesData, error: titlesError } =
-      await getTitlesByTmdbIds(tmdbIds);
+      await getTitlesByTmdbIds(tmdbIds, langCode);
     if (titlesError) throw titlesError;
 
     const titleMap = new Map(titlesData?.map((t) => [t.tmdb_id, t]) || []);
@@ -1184,8 +1087,12 @@ const fetchWatchlistTitles = async () => {
     }
 
     const tmdbIds = watchlistStatuses.map((s) => s.tmdb_id);
+    // Extract language code from TMDB format (e.g., 'ca-ES' -> 'ca')
+    const langCode = extractLanguageCode(
+      contentPreferences.value.preferred_language
+    );
     const { data: titlesData, error: titlesError } =
-      await getTitlesByTmdbIds(tmdbIds);
+      await getTitlesByTmdbIds(tmdbIds, langCode);
     if (titlesError) throw titlesError;
 
     const titleMap = new Map(titlesData?.map((t) => [t.tmdb_id, t]) || []);
@@ -1318,11 +1225,11 @@ const handleTitleSelected = async (result: TMDBSearchResult) => {
     if (!existingTitle && result.media_type) {
       const { error: insertError } = await insertTitle({
         tmdb_id: result.id,
-        title: result.title || result.name || 'Unknown',
+        title: { es: result.title || result.name || 'Unknown' }, // Multi-language JSONB
         type: result.media_type,
         poster_path: result.poster_path,
         backdrop_path: result.backdrop_path || null,
-        overview: result.overview || null,
+        overview: result.overview ? { es: result.overview } : null, // Multi-language JSONB
         release_date: result.release_date || null,
         first_air_date: result.first_air_date || null,
         genres: null,
@@ -1489,47 +1396,25 @@ const handleRemoveNotInterested = async (title: {
 
 // Content Preferences State
 const contentPreferences = ref<{
-  preferred_languages?: string[];
+  preferred_language?: string;
   content_types?: ('movie' | 'tv')[];
   favorite_genres?: number[];
   included_providers?: number[];
   region?: string;
 }>({
-  preferred_languages: [],
+  preferred_language: LanguageCode.SPANISH, // Default to Spanish (TMDB format)
   content_types: [],
   favorite_genres: [],
   included_providers: [],
   region: undefined,
 });
 
-const availableLanguages = [
-  { code: 'es', name: 'Español' },
-  { code: 'ca', name: 'Català' },
-  { code: 'eu', name: 'Euskera' },
-  { code: 'gl', name: 'Galego' },
-  { code: 'en', name: 'Inglés' },
-].sort((a, b) => a.name.localeCompare(b.name));
+const availableLanguages = AVAILABLE_LANGUAGES;
 
 // Language selector state
-const languageSearchQuery = ref('');
-const showLanguageResults = ref(false);
-const filteredLanguages = ref<
-  Array<{
-    code: string;
-    name: string;
-  }>
->([]);
-const selectedLanguages = ref<
-  Array<{
-    code: string;
-    name: string;
-  }>
->([]);
-const languageInputRef = ref<HTMLInputElement | null>(null);
-const languageDropdownPosition = ref<{
-  top: number;
-  left: number;
-  width: number;
+const selectedLanguage = ref<{
+  code: string;
+  name: string;
 } | null>(null);
 
 // Preload genres using useAsyncData (runs during setup, before mount)
@@ -1657,7 +1542,7 @@ const fetchContentPreferences = async () => {
     const response = await $fetch<{
       success: boolean;
       preferences: {
-        preferred_languages?: string[];
+        preferred_language?: string;
         content_types?: ('movie' | 'tv')[];
         favorite_genres?: number[];
         included_providers?: number[];
@@ -1670,35 +1555,61 @@ const fetchContentPreferences = async () => {
     });
 
     if (response.success && response.preferences) {
+      // Debug: log the raw response
+      if (import.meta.dev) {
+        console.log(
+          '[Profile] Raw preferences from API:',
+          response.preferences
+        );
+        console.log(
+          '[Profile] preferred_language value:',
+          response.preferences.preferred_language
+        );
+      }
+
+      // Use the value from DB directly, only default to 'es' if it's truly null/undefined
+      const dbLanguage = response.preferences.preferred_language;
+
       contentPreferences.value = {
-        preferred_languages: response.preferences.preferred_languages || [],
+        preferred_language: dbLanguage ?? LanguageCode.SPANISH, // Only default if null/undefined
         content_types: response.preferences.content_types || [],
         favorite_genres: response.preferences.favorite_genres || [],
         included_providers: response.preferences.included_providers || [],
         region: response.preferences.region || undefined,
       };
 
-      // Load selected languages from codes
-      if (
-        contentPreferences.value.preferred_languages &&
-        contentPreferences.value.preferred_languages.length > 0
-      ) {
-        // Ensure availableLanguages is available and filter
-        const languagesToSelect = availableLanguages.filter((l) =>
-          contentPreferences.value.preferred_languages?.includes(l.code)
-        );
+      // Load selected language - use the actual DB value
+      const languageCode = dbLanguage ?? LanguageCode.SPANISH;
 
-        if (languagesToSelect.length > 0) {
-          selectedLanguages.value = languagesToSelect.sort((a, b) =>
-            a.name.localeCompare(b.name)
-          );
-        } else {
-          // If no languages found in available list, set to empty
-          selectedLanguages.value = [];
+      if (import.meta.dev) {
+        console.log('[Profile] Language code to select:', languageCode);
+        console.log(
+          '[Profile] Available languages:',
+          availableLanguages.map((l: Language) => l.code)
+        );
+      }
+
+      const languageToSelect = availableLanguages.find(
+        (l: Language) => l.code === languageCode
+      );
+
+      if (languageToSelect) {
+        selectedLanguage.value = languageToSelect;
+        if (import.meta.dev) {
+          console.log('[Profile] Selected language:', languageToSelect);
         }
       } else {
-        // No languages in DB, set to empty
-        selectedLanguages.value = [];
+        // Default to Spanish if not found
+        if (import.meta.dev) {
+          console.warn(
+            '[Profile] Language not found in available languages, defaulting to Spanish. Code was:',
+            languageCode
+          );
+        }
+        selectedLanguage.value =
+          availableLanguages.find(
+            (l: Language) => l.code === LanguageCode.SPANISH
+          ) || null;
       }
 
       // Map genres if they're already loaded
@@ -1728,11 +1639,11 @@ const fetchContentPreferences = async () => {
       }
     } else {
       // No preferences found, reset to empty
-      selectedLanguages.value = [];
+      selectedLanguage.value = null;
       selectedGenres.value = [];
       selectedProviders.value = [];
       contentPreferences.value = {
-        preferred_languages: [],
+        preferred_language: LanguageCode.SPANISH,
         content_types: [],
         favorite_genres: [],
         included_providers: [],
@@ -1827,106 +1738,20 @@ const handleProviderBlur = () => {
   }, 200);
 };
 
-// Computed: Display all languages when search is empty, filtered when searching
-const displayedLanguages = computed(() => {
-  let languages;
-  if (!languageSearchQuery.value.trim()) {
-    // Show all languages that are not selected
-    languages = availableLanguages.filter(
-      (lang) => !selectedLanguages.value.some((l) => l.code === lang.code)
-    );
-  } else {
-    languages = filteredLanguages.value;
-  }
-  // Sort alphabetically
-  return languages.sort((a, b) => a.name.localeCompare(b.name));
-});
-
-// Filter languages based on search query
-const filterLanguages = () => {
-  if (!languageSearchQuery.value.trim()) {
-    filteredLanguages.value = [];
+// Change selected language (single selection)
+const changeLanguage = (lang: { code: string; name: string }) => {
+  // If already selected, do nothing
+  if (selectedLanguage.value?.code === lang.code) {
     return;
   }
-
-  const query = languageSearchQuery.value.toLowerCase().trim();
-  filteredLanguages.value = availableLanguages.filter(
-    (lang) =>
-      (lang.name.toLowerCase().includes(query) ||
-        lang.code.toLowerCase().includes(query)) &&
-      !selectedLanguages.value.some((l) => l.code === lang.code)
-  );
-};
-
-// Add language to selected list
-const addLanguage = (lang: { code: string; name: string }) => {
-  // Check if already selected
-  if (selectedLanguages.value.some((l) => l.code === lang.code)) {
-    return;
-  }
-
-  // Close dropdown first before showing modal
-  showLanguageResults.value = false;
-  languageDropdownPosition.value = null;
-  languageSearchQuery.value = '';
-
-  // Use nextTick to ensure dropdown is closed before showing modal
-  nextTick(() => {
-    // Show confirmation modal
-    const newLanguages = [...selectedLanguages.value, lang];
-    pendingLanguageChange.value = {
-      action: 'add',
-      language: lang,
-      newLanguages,
-    };
-    showLanguageChangeModal.value = true;
-  });
-};
-
-// Remove language from selected list
-const removeLanguage = (langCode: string) => {
-  const langToRemove = selectedLanguages.value.find((l) => l.code === langCode);
-  if (!langToRemove) return;
 
   // Show confirmation modal
-  const newLanguages = selectedLanguages.value.filter(
-    (l) => l.code !== langCode
-  );
   pendingLanguageChange.value = {
-    action: 'remove',
-    language: langToRemove,
-    newLanguages,
+    action: 'change',
+    language: lang,
+    newLanguages: [lang], // Keep as array for compatibility with modal
   };
   showLanguageChangeModal.value = true;
-};
-
-// Calculate dropdown position for languages
-const updateLanguageDropdownPosition = () => {
-  if (languageInputRef.value) {
-    const rect = languageInputRef.value.getBoundingClientRect();
-    languageDropdownPosition.value = {
-      top: rect.bottom + 8, // 8px for mt-2, fixed position is relative to viewport
-      left: rect.left,
-      width: rect.width,
-    };
-  }
-};
-
-// Handle language search focus
-const handleLanguageFocus = () => {
-  showLanguageResults.value = true;
-  filterLanguages();
-  nextTick(() => {
-    updateLanguageDropdownPosition();
-  });
-};
-
-// Handle language search blur
-const handleLanguageBlur = () => {
-  setTimeout(() => {
-    showLanguageResults.value = false;
-    languageDropdownPosition.value = null;
-  }, 200);
 };
 
 // Confirm language change and regenerate pool
@@ -1937,22 +1762,19 @@ const confirmLanguageChange = async () => {
   isConfirmingLanguageChange.value = true;
 
   // Store original state for potential rollback
-  const originalLanguages = [...selectedLanguages.value];
-  const originalPreferences = [
-    ...(contentPreferences.value.preferred_languages || []),
-  ];
+  const originalLanguage = selectedLanguage.value;
+  const originalPreference =
+    contentPreferences.value.preferred_language || LanguageCode.SPANISH;
 
   try {
-    // Update selected languages
-    selectedLanguages.value = [...pendingLanguageChange.value.newLanguages];
+    // Update selected language
+    const newLanguage = pendingLanguageChange.value.newLanguages[0];
+    selectedLanguage.value = newLanguage;
 
-    // Map to language codes - ensure at least one language (default to Spanish)
-    const languageCodes =
-      selectedLanguages.value.length > 0
-        ? selectedLanguages.value.map((l) => l.code)
-        : ['es'];
+    // Map to language code (single value)
+    const languageCode = newLanguage?.code || 'es';
 
-    contentPreferences.value.preferred_languages = languageCodes;
+    contentPreferences.value.preferred_language = languageCode;
 
     // Save preferences - wait for it to complete
     const id = userId.value;
@@ -1970,7 +1792,7 @@ const confirmLanguageChange = async () => {
 
     // Build preferences to save
     const preferencesToSave = {
-      preferred_languages: languageCodes,
+      preferred_language: languageCode,
       favorite_genres:
         selectedGenres.value.length > 0
           ? selectedGenres.value.map((g) => g.id)
@@ -2005,61 +1827,66 @@ const confirmLanguageChange = async () => {
       saveResponse
     );
     console.log(
-      '[LanguageChange] Saved preferred_languages:',
+      '[LanguageChange] Saved preferred_language:',
       saveResponse.preferences &&
         typeof saveResponse.preferences === 'object' &&
-        'preferred_languages' in saveResponse.preferences
-        ? (saveResponse.preferences as { preferred_languages?: string[] })
-            .preferred_languages
+        'preferred_language' in saveResponse.preferences
+        ? (saveResponse.preferences as { preferred_language?: string })
+            .preferred_language
         : 'not found'
     );
 
     // Refresh preferences from server to ensure UI is in sync
     await fetchContentPreferences();
 
-    // Delete and regenerate recommendation pool
-    try {
-      const poolResponse = await $fetch<{
-        success: boolean;
-        message?: string;
-      }>('/api/recommendations/regenerate-pool', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
+    // Show success toast with message about language update and pool regeneration
+    showSuccess(
+      t('preferences.content.preferredLanguage.languageUpdatedAndRegenerating')
+    );
+
+    // Close modal after showing toast (use nextTick to ensure toast is rendered)
+    await nextTick();
+    showLanguageChangeModal.value = false;
+    pendingLanguageChange.value = null;
+    isConfirmingLanguageChange.value = false;
+
+    // Regenerate recommendation pool in background (silently)
+    // Set flag in sessionStorage to indicate regeneration is in progress
+    sessionStorage.setItem('regeneratingPool', 'true');
+    
+    // Call regenerate-pool endpoint in background (don't await)
+    $fetch<{
+      success: boolean;
+      message?: string;
+    }>('/api/recommendations/regenerate-pool', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+    })
+      .then((poolResponse) => {
+        if (poolResponse.success) {
+          console.log('[LanguageChange] Pool regenerated successfully');
+        } else {
+          console.error('[LanguageChange] Pool regeneration failed:', poolResponse);
+        }
+      })
+      .catch((poolError) => {
+        console.error('[LanguageChange] Error regenerating pool:', poolError);
+      })
+      .finally(() => {
+        // Clear the flag after regeneration completes
+        // Use a delay to allow for page navigation scenarios
+        setTimeout(() => {
+          sessionStorage.removeItem('regeneratingPool');
+        }, 1000);
       });
-
-      if (poolResponse.success) {
-        // Show success toast
-        showSuccess(
-          t('preferences.content.preferredLanguages.poolRegenerated')
-        );
-
-        // Close modal only after showing success toast
-        // Use nextTick to ensure toast is rendered before closing modal
-        await nextTick();
-        showLanguageChangeModal.value = false;
-        pendingLanguageChange.value = null;
-      } else {
-        showError(
-          t('preferences.content.preferredLanguages.errorRegenerating')
-        );
-        // Don't close modal on error, let user try again
-      }
-    } catch (poolError) {
-      console.error('Error regenerating pool:', poolError);
-      // Don't fail the whole operation if pool regeneration fails
-      showError(t('preferences.content.preferredLanguages.errorRegenerating'));
-      // Don't close modal on error, let user try again
-    } finally {
-      isConfirmingLanguageChange.value = false;
-    }
   } catch (error) {
     console.error('Error confirming language change:', error);
 
     // Revert language change on error
-    selectedLanguages.value = originalLanguages;
-    contentPreferences.value.preferred_languages = originalPreferences;
+    selectedLanguage.value = originalLanguage;
+    contentPreferences.value.preferred_language = originalPreference;
 
     showError(t('preferences.content.errorSaving'));
 
@@ -2161,10 +1988,9 @@ const saveContentPreferences = async () => {
     // Logic: Ensure at least one language (default to Spanish if empty)
     // If selection exists, include only selected items
     const preferencesToSave = {
-      preferred_languages:
-        selectedLanguages.value.length > 0
-          ? selectedLanguages.value.map((l) => l.code)
-          : ['es'], // Default to Spanish if no languages selected
+      preferred_languages: selectedLanguage.value
+        ? selectedLanguage.value.code
+        : ['es'], // Default to Spanish if no languages selected
       favorite_genres:
         selectedGenres.value.length > 0
           ? selectedGenres.value.map((g) => g.id)
@@ -2258,15 +2084,6 @@ const saveContentPreferences = async () => {
   }
 };
 
-// Watch for dropdown visibility changes to update positions
-watch(showLanguageResults, (isVisible) => {
-  if (isVisible) {
-    nextTick(() => {
-      updateLanguageDropdownPosition();
-    });
-  }
-});
-
 watch(showGenreResults, (isVisible) => {
   if (isVisible) {
     nextTick(() => {
@@ -2285,9 +2102,6 @@ watch(showProviderResults, (isVisible) => {
 
 // Update positions on scroll and resize
 const updateAllDropdownPositions = () => {
-  if (showLanguageResults.value) {
-    updateLanguageDropdownPosition();
-  }
   if (showGenreResults.value) {
     updateGenreDropdownPosition();
   }
@@ -2400,47 +2214,60 @@ watch(
   { immediate: true }
 );
 
-// Watch for when preferred_languages change to map selected languages
+// Watch for when preferred_language changes to map selected language
 watch(
-  () => contentPreferences.value.preferred_languages,
-  (languageCodes) => {
-    if (
-      languageCodes &&
-      languageCodes.length > 0 &&
-      availableLanguages.length > 0
-    ) {
-      const currentLanguageCodes = selectedLanguages.value
-        .map((l) => l.code)
-        .sort();
-      const prefLanguageCodes = [...languageCodes].sort();
-      const codesMatch =
-        currentLanguageCodes.length === prefLanguageCodes.length &&
-        currentLanguageCodes.every((code, i) => code === prefLanguageCodes[i]);
+  () => contentPreferences.value.preferred_language,
+  (languageCode) => {
+    if (import.meta.dev) {
+      console.log(
+        '[Profile Watch] preferred_language changed to:',
+        languageCode
+      );
+    }
 
-      if (!codesMatch) {
-        const languagesToSelect = availableLanguages.filter((l) =>
-          languageCodes.includes(l.code)
+    if (languageCode && availableLanguages.length > 0) {
+      const languageToSelect = availableLanguages.find(
+        (l: Language) => l.code === languageCode
+      );
+
+      if (languageToSelect) {
+        // Only update if it's different to avoid unnecessary updates
+        if (selectedLanguage.value?.code !== languageCode) {
+          if (import.meta.dev) {
+            console.log(
+              '[Profile Watch] Setting selected language to:',
+              languageToSelect
+            );
+          }
+          selectedLanguage.value = languageToSelect;
+        }
+      } else if (import.meta.dev) {
+        console.warn(
+          '[Profile Watch] Could not find language for code:',
+          languageCode,
+          'Available languages:',
+          availableLanguages.map((l: Language) => l.code)
         );
-
-        if (languagesToSelect.length > 0) {
-          selectedLanguages.value = languagesToSelect.sort((a, b) =>
-            a.name.localeCompare(b.name)
-          );
-        } else if (import.meta.dev) {
-          console.warn(
-            'Could not find languages for codes:',
-            languageCodes,
-            'Available languages:',
-            availableLanguages.map((l) => l.code)
-          );
+        // Only default to Spanish if the code is truly invalid
+        // Don't default if languageCode is a valid code that just isn't in availableLanguages
+        const validCodes = Object.values(LanguageCode);
+        if (!validCodes.includes(languageCode as LanguageCode)) {
+          selectedLanguage.value =
+            availableLanguages.find(
+              (l: Language) => l.code === LanguageCode.SPANISH
+            ) || null;
         }
       }
-    } else if (!languageCodes || languageCodes.length === 0) {
-      // No languages - set to empty
-      selectedLanguages.value = [];
+    } else if (!languageCode) {
+      // No language - default to Spanish only if truly null/undefined
+      if (import.meta.dev) {
+        console.log('[Profile Watch] No language code, defaulting to Spanish');
+      }
+      selectedLanguage.value =
+        availableLanguages.find((l: Language) => l.code === LanguageCode.SPANISH) || null;
     }
   },
-  { immediate: true }
+  { immediate: false } // Don't run immediately, let fetchContentPreferences set it first
 );
 
 // Lifecycle

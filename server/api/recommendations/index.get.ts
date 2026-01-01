@@ -16,8 +16,8 @@ import { getUserTMDBParams } from '../../utils/user-preferences';
 import {
   RECOMMENDATION_POOL_FIELDS,
   RECOMMENDATION_POOL_TABLES,
+  type TitleData,
 } from '@/composables/database/recommendationPool';
-import { TABLES, TITLES_FIELDS } from '@/composables/database/constants';
 import { updateLastShownAt } from '@/composables/database/recommendationPool';
 
 /**
@@ -339,7 +339,7 @@ export default defineEventHandler(async (event) => {
 
     // Fetch all recommendations from pool (no source filtering)
     const fetchRecommendations = async (): Promise<Recommendation[]> => {
-      // Build query to get pool entries (without title data - no FK relationship)
+      // Build query to get pool entries with title_data
       const query = supabase
         .from(RECOMMENDATION_POOL_TABLES.RECOMMENDATION_POOL)
         .select(
@@ -349,6 +349,7 @@ export default defineEventHandler(async (event) => {
           ${RECOMMENDATION_POOL_FIELDS.SOURCE},
           ${RECOMMENDATION_POOL_FIELDS.SCORE},
           ${RECOMMENDATION_POOL_FIELDS.EXPLANATION_CODE},
+          ${RECOMMENDATION_POOL_FIELDS.TITLE_DATA},
           ${RECOMMENDATION_POOL_FIELDS.CREATED_AT}
         `
         )
@@ -375,67 +376,133 @@ export default defineEventHandler(async (event) => {
         (entry) => !excludedTmdbIds.has(entry.tmdb_id)
       );
 
-      // Get unique tmdb_ids from filtered entries
-      const tmdbIds = Array.from(
-        new Set(filteredEntries.map((entry) => entry.tmdb_id))
-      );
+      // Get user preferences for language and region (needed for TMDB fallback)
+      const { language, region } = await getUserTMDBParams(event);
+      const tmdbConfig = getTMDBConfig(language, region);
 
-      // Fetch title data separately (no FK relationship, so we join manually)
-      const { data: titlesData, error: titlesError } = await supabase
-        .from(TABLES.TITLES)
-        .select(
-          `
-          ${TITLES_FIELDS.ID},
-          ${TITLES_FIELDS.TITLE},
-          ${TITLES_FIELDS.POSTER_PATH},
-          ${TITLES_FIELDS.BACKDROP_PATH},
-          ${TITLES_FIELDS.OVERVIEW},
-          ${TITLES_FIELDS.RELEASE_DATE},
-          ${TITLES_FIELDS.FIRST_AIR_DATE},
-          ${TITLES_FIELDS.GENRES},
-          ${TITLES_FIELDS.VOTE_AVERAGE},
-          ${TITLES_FIELDS.TMDB_ID}
-        `
-        )
-        .in(TITLES_FIELDS.TMDB_ID, tmdbIds);
+      // Helper to fetch title_data from TMDB if missing and update pool entry
+      const ensureTitleData = async (
+        entry: (typeof filteredEntries)[0]
+      ): Promise<TitleData | null> => {
+        // If title_data exists, use it
+        if (entry.title_data) {
+          const titleData = entry.title_data as any;
+          // Ensure title and overview are strings, not JSONB objects
+          // If they're objects (JSONB), extract the correct language
+          let title = titleData.title;
+          let overview = titleData.overview;
+          
+          // Extract language code from TMDB format (e.g., 'ca-ES' -> 'ca')
+          const { extractLanguageCode } = await import('@/constants/languages');
+          const langCode = extractLanguageCode(language);
+          
+          // If title is an object (multi-language JSONB), extract the user's language
+          if (title && typeof title === 'object' && !Array.isArray(title)) {
+            // Try user's preferred language first
+            if (title[langCode]) {
+              title = title[langCode];
+            } else if (title['es']) {
+              // Fallback to Spanish
+              title = title['es'];
+            } else {
+              // Fallback to first available language
+              const firstKey = Object.keys(title)[0];
+              title = firstKey ? title[firstKey] : '';
+            }
+          }
+          
+          // If overview is an object (multi-language JSONB), extract the user's language
+          if (overview && typeof overview === 'object' && !Array.isArray(overview)) {
+            // Try user's preferred language first
+            if (overview[langCode]) {
+              overview = overview[langCode];
+            } else if (overview['es']) {
+              // Fallback to Spanish
+              overview = overview['es'];
+            } else {
+              // Fallback to first available language
+              const firstKey = Object.keys(overview)[0];
+              overview = firstKey ? overview[firstKey] : '';
+            }
+          }
+          
+          return {
+            ...titleData,
+            title: typeof title === 'string' ? title : '',
+            overview: typeof overview === 'string' ? overview : '',
+          } as TitleData;
+        }
 
-      if (titlesError) {
-        safeError('[Recommendations] Error fetching titles', titlesError);
-        // Continue without title data - we'll skip entries without titles
-      }
+        // Otherwise, fetch from TMDB and update the pool entry
+        try {
+          const endpoint =
+            entry.type === 'movie'
+              ? `/movie/${entry.tmdb_id}`
+              : `/tv/${entry.tmdb_id}`;
+          const tmdbResponse = await $fetch<{
+            title?: string;
+            name?: string;
+            overview?: string;
+            poster_path?: string | null;
+            backdrop_path?: string | null;
+            vote_average?: number | null;
+            genres?: Array<{ id: number; name: string }>;
+            release_date?: string | null;
+            first_air_date?: string | null;
+          }>(`${tmdbConfig.baseUrl}${endpoint}`, {
+            query: {
+              api_key: tmdbConfig.apiKey,
+              language: tmdbConfig.language,
+              region: tmdbConfig.region,
+            },
+          });
 
-      // Create a map of tmdb_id -> title data for quick lookup
-      const titlesMap = new Map<number, Record<string, unknown>>();
-      if (titlesData) {
-        titlesData.forEach((title) => {
-          titlesMap.set(title.tmdb_id, title);
-        });
-      }
+          if (!tmdbResponse) return null;
 
-      // Combine pool entries with title data and calculate final scores
-      const entriesWithTitles = filteredEntries
-        .map((entry) => {
-          const title = titlesMap.get(entry.tmdb_id);
-          if (!title) return null;
+          const titleData: TitleData = {
+            title: tmdbResponse.title || tmdbResponse.name || '',
+            overview: tmdbResponse.overview || '',
+            poster_path: tmdbResponse.poster_path || null,
+            backdrop_path: tmdbResponse.backdrop_path || null,
+            vote_average: tmdbResponse.vote_average || null,
+            genres: (tmdbResponse.genres || []).map((g) => ({
+              id: g.id,
+              name: g.name,
+            })),
+            release_date: tmdbResponse.release_date || null,
+            first_air_date: tmdbResponse.first_air_date || null,
+          };
 
-          const genres = title[TITLES_FIELDS.GENRES] as
-            | number[]
-            | { id: number }[]
-            | null;
+          // Update the pool entry with title_data
+          await supabase
+            .from(RECOMMENDATION_POOL_TABLES.RECOMMENDATION_POOL)
+            .update({
+              [RECOMMENDATION_POOL_FIELDS.TITLE_DATA]: titleData,
+            })
+            .eq(RECOMMENDATION_POOL_FIELDS.USER_ID, userId)
+            .eq(RECOMMENDATION_POOL_FIELDS.TMDB_ID, entry.tmdb_id);
 
-          const genreIds = Array.isArray(genres)
-            ? (genres
-                .map((g) =>
-                  typeof g === 'number' ? g : (g as { id: number })?.id
-                )
-                .filter(Boolean) as number[])
-            : [];
+          return titleData;
+        } catch (error) {
+          safeError(
+            `[Recommendations] Error fetching title_data for ${entry.tmdb_id}`,
+            error
+          );
+          return null;
+        }
+      };
 
-          const voteAverage =
-            (title[TITLES_FIELDS.VOTE_AVERAGE] as number | null) || null;
+      // Combine pool entries with title_data and calculate final scores
+      const entriesWithTitles = await Promise.all(
+        filteredEntries.map(async (entry) => {
+          const titleData = await ensureTitleData(entry);
+          if (!titleData) return null;
+
+          const genreIds = titleData.genres.map((g) => g.id);
+          const voteAverage = titleData.vote_average;
 
           // Calculate boosts using the complete logic
-          // Note: runtime and episodeCount not available in titles table,
+          // Note: runtime and episodeCount not available in title_data,
           // so we'll use genre-based heuristics for attention
           const boost = calculateBoosts(
             genreIds,
@@ -453,16 +520,20 @@ export default defineEventHandler(async (event) => {
 
           return {
             ...entry,
-            titles: [title],
+            titleData,
             finalScore,
             baseScore,
             genreIds,
             voteAverage,
           };
         })
-        .filter((entry) => entry !== null) as Array<
+      );
+
+      const validEntries = entriesWithTitles.filter(
+        (entry) => entry !== null
+      ) as Array<
         (typeof filteredEntries)[0] & {
-          titles: Array<Record<string, unknown>>;
+          titleData: TitleData;
           finalScore: number;
           baseScore: number;
           genreIds: number[];
@@ -471,7 +542,7 @@ export default defineEventHandler(async (event) => {
       >;
 
       // Sort by final score (base + boosts), then by base score, then by created_at
-      entriesWithTitles.sort((a, b) => {
+      validEntries.sort((a, b) => {
         // First sort by final score
         if (b.finalScore !== a.finalScore) {
           return b.finalScore - a.finalScore;
@@ -490,13 +561,10 @@ export default defineEventHandler(async (event) => {
 
       // Transform sorted pool entries to recommendations
       const recommendations: Recommendation[] = [];
-      // Get user preferences for language and region
-      const { language, region } = await getUserTMDBParams(event);
-      const tmdbConfig = getTMDBConfig(language, region);
       const tmdbIdsToTrack: number[] = [];
 
-      for (const entry of entriesWithTitles.slice(0, MAX_RECOMMENDATIONS)) {
-        const title = entry.titles[0];
+      for (const entry of validEntries.slice(0, MAX_RECOMMENDATIONS)) {
+        const titleData = entry.titleData;
 
         // Fetch providers from TMDB (still need this for display)
         let providers: Provider[] = [];
@@ -558,18 +626,14 @@ export default defineEventHandler(async (event) => {
         recommendations.push({
           id: `pool-${entry.tmdb_id}`,
           tmdb_id: entry.tmdb_id,
-          title: (title[TITLES_FIELDS.TITLE] as string) || '',
+          title: titleData.title || '',
           type: entry.type as 'movie' | 'tv',
-          poster_path:
-            (title[TITLES_FIELDS.POSTER_PATH] as string | null) || null,
-          overview: (title[TITLES_FIELDS.OVERVIEW] as string | null) || null,
-          vote_average:
-            (title[TITLES_FIELDS.VOTE_AVERAGE] as number | null) || null,
+          poster_path: titleData.poster_path,
+          overview: titleData.overview || null,
+          vote_average: titleData.vote_average,
           genres: entry.genreIds.length > 0 ? entry.genreIds : null,
-          release_date:
-            (title[TITLES_FIELDS.RELEASE_DATE] as string | null) || null,
-          first_air_date:
-            (title[TITLES_FIELDS.FIRST_AIR_DATE] as string | null) || null,
+          release_date: titleData.release_date,
+          first_air_date: titleData.first_air_date,
           explanation,
           explanation_code: entry.explanation_code || null,
           providers,

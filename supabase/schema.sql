@@ -19,17 +19,18 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 );
 
 -- Titles table (movies and TV shows)
+-- Note: title and overview are JSONB multi-language: {"es": "...", "ca": "...", "eu": "...", "gl": "...", "en": "..."}
 CREATE TABLE IF NOT EXISTS public.titles (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   tmdb_id INTEGER UNIQUE NOT NULL, -- TMDB ID for reference
-  title TEXT NOT NULL,
+  title JSONB NOT NULL, -- Multi-language: {"es": "...", "ca": "...", "eu": "...", "gl": "...", "en": "..."}
   type TEXT NOT NULL CHECK (type IN ('movie', 'tv')), -- 'movie' or 'tv'
   poster_path TEXT,
   backdrop_path TEXT,
-  overview TEXT,
+  overview JSONB, -- Multi-language: {"es": "...", "ca": "...", "eu": "...", "gl": "...", "en": "..."}
   release_date DATE, -- For movies
   first_air_date DATE, -- For TV shows
-  genres JSONB, -- Array of genre objects from TMDB
+  genres JSONB, -- Array of genre objects from TMDB: [{"id": 28, "name": "Action"}, ...]
   vote_average DECIMAL(3, 1),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL
@@ -153,6 +154,7 @@ CREATE TABLE IF NOT EXISTS public.recommendation_pool (
   source TEXT NOT NULL CHECK (source IN ('based_on_like', 'trending', 'discover', 'easy', 'mood')),
   score FLOAT DEFAULT 0 CHECK (score >= -100 AND score <= 100),
   explanation_code TEXT,
+  title_data JSONB, -- Stores title, overview, poster_path, backdrop_path, vote_average, genres, etc.
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL,
   last_shown_at TIMESTAMP WITH TIME ZONE,
   UNIQUE(user_id, tmdb_id)
@@ -162,6 +164,7 @@ CREATE TABLE IF NOT EXISTS public.recommendation_pool (
 CREATE INDEX IF NOT EXISTS idx_recommendation_pool_user_id ON public.recommendation_pool(user_id);
 CREATE INDEX IF NOT EXISTS idx_recommendation_pool_score ON public.recommendation_pool(user_id, score DESC);
 CREATE INDEX IF NOT EXISTS idx_recommendation_pool_tmdb_id ON public.recommendation_pool(tmdb_id);
+CREATE INDEX IF NOT EXISTS idx_recommendation_pool_title_data ON public.recommendation_pool USING GIN (title_data);
 
 -- RLS Policies for recommendation_pool
 ALTER TABLE public.recommendation_pool ENABLE ROW LEVEL SECURITY;
@@ -212,7 +215,7 @@ CREATE TABLE IF NOT EXISTS public.user_preferences (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE UNIQUE NOT NULL,
   favorite_genres INTEGER[], -- TMDB genre IDs
-  preferred_languages TEXT[], -- ISO 639-1 codes (e.g., 'es', 'en')
+  preferred_language TEXT DEFAULT 'es-ES', -- TMDB format (e.g., 'es-ES', 'ca-ES', 'eu-ES', 'gl-ES', 'en-US')
   content_types TEXT[] CHECK (content_types <@ ARRAY['movie', 'tv']), -- 'movie', 'tv', or both
   included_providers INTEGER[], -- TMDB provider IDs (if empty, all providers are included)
   region TEXT, -- ISO 3166-1 alpha-2 country code (e.g., 'ES', 'US', 'MX')

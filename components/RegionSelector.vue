@@ -3,7 +3,7 @@
     <!-- Selected Value Display -->
     <button
       type="button"
-      class="w-full px-4 py-2 pl-12 pr-10 dark:bg-gray-800/50 bg-gray-100/80 border border-gray-300 dark:border-gray-700 rounded-lg dark:text-gray-300 text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary backdrop-blur-xs transition-all opacity-90 hover:opacity-100 text-left flex items-center justify-between"
+      class="w-full px-4 py-2 dark:bg-gray-800/50 bg-gray-100/80 border border-gray-300 dark:border-gray-700 rounded-lg dark:text-gray-300 text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary backdrop-blur-xs transition-all opacity-90 hover:opacity-100 text-left flex items-center justify-between gap-2"
       @click="toggleDropdown"
     >
       <div class="flex items-center gap-2 flex-1 min-w-0">
@@ -17,9 +17,9 @@
             (e) => ((e.target as HTMLImageElement).style.display = 'none')
           "
         />
-        <span class="truncate">{{
+        <span class="truncate text-sm">{{
           selectedRegion
-            ? regions.find((r) => r.code === selectedRegion)?.name ||
+            ? regions.find((r: Region) => r.code === selectedRegion)?.name ||
               selectedRegion
             : t('preferences.content.region.default')
         }}</span>
@@ -130,14 +130,11 @@
 
 <script setup lang="ts">
 import { ref, watch, onMounted, onUnmounted } from 'vue';
+import { AVAILABLE_REGIONS } from '@/constants/regions';
+import type { Region } from '@/constants/regions';
 
 interface Props {
   modelValue: string | null | undefined;
-}
-
-interface Region {
-  code: string;
-  name: string;
 }
 
 const props = defineProps<Props>();
@@ -152,39 +149,8 @@ const selectedRegion = ref<string | null>(props.modelValue || null);
 const searchQuery = ref('');
 const filteredRegions = ref<Region[]>([]);
 
-// Cache regions array (static, no need to fetch)
-const regions: Region[] = [
-  { code: 'ES', name: 'España' },
-  { code: 'US', name: 'United States' },
-  { code: 'MX', name: 'México' },
-  { code: 'AR', name: 'Argentina' },
-  { code: 'CO', name: 'Colombia' },
-  { code: 'CL', name: 'Chile' },
-  { code: 'PE', name: 'Perú' },
-  { code: 'VE', name: 'Venezuela' },
-  { code: 'EC', name: 'Ecuador' },
-  { code: 'GT', name: 'Guatemala' },
-  { code: 'CU', name: 'Cuba' },
-  { code: 'BO', name: 'Bolivia' },
-  { code: 'DO', name: 'República Dominicana' },
-  { code: 'HN', name: 'Honduras' },
-  { code: 'PY', name: 'Paraguay' },
-  { code: 'SV', name: 'El Salvador' },
-  { code: 'NI', name: 'Nicaragua' },
-  { code: 'CR', name: 'Costa Rica' },
-  { code: 'PA', name: 'Panamá' },
-  { code: 'UY', name: 'Uruguay' },
-  { code: 'PR', name: 'Puerto Rico' },
-  { code: 'FR', name: 'Francia' },
-  { code: 'GB', name: 'United Kingdom' },
-  { code: 'DE', name: 'Alemania' },
-  { code: 'IT', name: 'Italia' },
-  { code: 'PT', name: 'Portugal' },
-  { code: 'BR', name: 'Brasil' },
-  { code: 'CA', name: 'Canadá' },
-  { code: 'AU', name: 'Australia' },
-  { code: 'NZ', name: 'Nueva Zelanda' },
-].sort((a, b) => a.name.localeCompare(b.name));
+// Use regions from constants
+const regions = AVAILABLE_REGIONS;
 
 const toggleDropdown = () => {
   isOpen.value = !isOpen.value;
@@ -206,11 +172,11 @@ const filterRegions = () => {
   const query = searchQuery.value.toLowerCase().trim();
   filteredRegions.value = regions
     .filter(
-      (region) =>
+      (region: Region) =>
         region.name.toLowerCase().includes(query) ||
         region.code.toLowerCase().includes(query)
     )
-    .sort((a, b) => a.name.localeCompare(b.name));
+    .sort((a: Region, b: Region) => a.name.localeCompare(b.name));
 };
 
 const selectRegion = (code: string | null) => {

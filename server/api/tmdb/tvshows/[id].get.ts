@@ -3,6 +3,7 @@ import { getUserTMDBParams } from '../../../utils/user-preferences';
 import { createError, defineEventHandler } from 'h3';
 import { createClient } from '@supabase/supabase-js';
 import { TABLES, TITLES_FIELDS } from '@/composables/database/constants';
+import { getTitleInLanguage, type MultiLanguageText } from '@/composables/database/titles';
 
 export default defineEventHandler(async (event) => {
   try {
@@ -28,6 +29,12 @@ export default defineEventHandler(async (event) => {
       },
     });
 
+    // Get user preferences for language
+    const { language: userLanguage, region } = await getUserTMDBParams(event);
+    // Extract base language code (e.g., 'es-ES' -> 'es')
+    const userLangCode = userLanguage.split('-')[0] || 'es';
+    const supportedLanguages = ['es', 'ca', 'eu', 'gl', 'en'];
+
     const { data: titleFromDb, error: dbError } = await supabase
       .from(TABLES.TITLES)
       .select('*')
@@ -35,11 +42,50 @@ export default defineEventHandler(async (event) => {
       .eq(TITLES_FIELDS.TYPE, 'tv')
       .maybeSingle();
 
-    // If found in DB, return it (but we still need to fetch seasons, genres, providers and alternative titles from TMDB)
+    // If found in DB, check if we have the required language
     if (titleFromDb && !dbError) {
-      // Get user preferences for language and region (for seasons, genres, providers and alternative titles)
-      const { language, region } = await getUserTMDBParams(event);
-      const tmdbConfig = getTMDBConfig(language, region);
+      const titleJsonb = titleFromDb.title as MultiLanguageText;
+      const overviewJsonb = titleFromDb.overview as MultiLanguageText | null;
+
+      // Check if we have the user's language
+      const hasUserLanguage =
+        titleJsonb && typeof titleJsonb === 'object' && titleJsonb[userLangCode];
+
+      // If missing user's language, fetch it from TMDB and update
+      if (!hasUserLanguage) {
+        const tmdbConfig = getTMDBConfig(userLanguage, region);
+        const tvShowResponse = await $fetch(`${tmdbConfig.baseUrl}/tv/${tmdbId}`, {
+          query: {
+            api_key: tmdbConfig.apiKey,
+            language: tmdbConfig.language,
+            region: tmdbConfig.region,
+          },
+        }).catch(() => null);
+
+        if (tvShowResponse?.name && tvShowResponse?.overview) {
+          // Update JSONB with new language
+          const updatedTitle = {
+            ...(titleJsonb || {}),
+            [userLangCode]: tvShowResponse.name,
+          };
+          const updatedOverview = {
+            ...(overviewJsonb || {}),
+            [userLangCode]: tvShowResponse.overview || '',
+          };
+
+          await supabase
+            .from(TABLES.TITLES)
+            .update({
+              title: updatedTitle,
+              overview: updatedOverview,
+            })
+            .eq(TITLES_FIELDS.TMDB_ID, tmdbId)
+            .eq(TITLES_FIELDS.TYPE, 'tv');
+        }
+      }
+
+      // Get user preferences for seasons, genres, providers and alternative titles
+      const tmdbConfig = getTMDBConfig(userLanguage, region);
 
       // Fetch full TV show data, providers and alternative titles from TMDB
       const [fullTvShowResponse, providersResponse, alternativeTitlesResponse] =
@@ -65,17 +111,21 @@ export default defineEventHandler(async (event) => {
           }).catch(() => null),
         ]);
 
-      // Map DB title to TVShow format, but use seasons, genres, etc. from TMDB if available
+      // Extract language-specific text from JSONB
+      const titleText = getTitleInLanguage(titleJsonb, userLangCode);
+      const overviewText = getTitleInLanguage(overviewJsonb, userLangCode);
+
+      // Map DB title to TVShow format
       const tvShow: any = {
         id: titleFromDb.tmdb_id,
-        name: fullTvShowResponse?.name || titleFromDb.title,
+        name: titleText || fullTvShowResponse?.name,
         original_name: fullTvShowResponse?.original_name,
-        overview: fullTvShowResponse?.overview || titleFromDb.overview,
+        overview: overviewText || fullTvShowResponse?.overview,
         poster_path: titleFromDb.poster_path,
         backdrop_path: titleFromDb.backdrop_path,
         first_air_date: titleFromDb.first_air_date,
         vote_average: titleFromDb.vote_average,
-        genres: fullTvShowResponse?.genres || [],
+        genres: fullTvShowResponse?.genres || titleFromDb.genres || [],
         genre_ids: fullTvShowResponse?.genre_ids || [],
         seasons: fullTvShowResponse?.seasons || [],
         number_of_seasons: fullTvShowResponse?.number_of_seasons || 0,
@@ -99,21 +149,81 @@ export default defineEventHandler(async (event) => {
       return tvShow;
     }
 
-    // If not in DB, fetch from TMDB (but don't save it)
-    const { language, region } = await getUserTMDBParams(event);
-    const tmdbConfig = getTMDBConfig(language, region);
+    // If not in DB, fetch from TMDB for all supported languages and save
+    const tmdbConfig = getTMDBConfig(userLanguage, region);
 
-    const response = await $fetch(`${tmdbConfig.baseUrl}/tv/${tmdbId}`, {
-      query: {
-        api_key: tmdbConfig.apiKey,
-        language: tmdbConfig.language,
-        region: tmdbConfig.region,
-        include_adult: tmdbConfig.includeAdult,
-        append_to_response: 'tv-watch-providers',
-      },
+    // Fetch TV show data for all supported languages
+    const languagePromises = supportedLanguages.map(async (lang) => {
+      const langCode = lang === 'es' ? 'es-ES' : lang === 'en' ? 'en-US' : `${lang}-ES`;
+      try {
+        const response = await $fetch(`${tmdbConfig.baseUrl}/tv/${tmdbId}`, {
+          query: {
+            api_key: tmdbConfig.apiKey,
+            language: langCode,
+            region: tmdbConfig.region,
+          },
+        });
+        return { lang, data: response };
+      } catch {
+        return { lang, data: null };
+      }
     });
 
-    return response;
+    const languageResults = await Promise.all(languagePromises);
+
+    // Build multi-language JSONB objects
+    const titleMultiLang: MultiLanguageText = {};
+    const overviewMultiLang: MultiLanguageText = {};
+    let posterPath: string | null = null;
+    let backdropPath: string | null = null;
+    let firstAirDate: string | null = null;
+    let voteAverage: number | null = null;
+    let genres: Array<{ id: number; name: string }> = [];
+
+    languageResults.forEach(({ lang, data }) => {
+      if (data) {
+        if (data.name) titleMultiLang[lang] = data.name;
+        if (data.overview) overviewMultiLang[lang] = data.overview;
+        // Use first successful response for non-language fields
+        if (!posterPath && data.poster_path) posterPath = data.poster_path;
+        if (!backdropPath && data.backdrop_path) backdropPath = data.backdrop_path;
+        if (!firstAirDate && data.first_air_date) firstAirDate = data.first_air_date;
+        if (!voteAverage && data.vote_average) voteAverage = data.vote_average;
+        if (genres.length === 0 && data.genres) genres = data.genres;
+      }
+    });
+
+    // Save to database if we got at least one language
+    if (Object.keys(titleMultiLang).length > 0) {
+      await supabase
+        .from(TABLES.TITLES)
+        .upsert({
+          tmdb_id: tmdbId,
+          type: 'tv',
+          title: titleMultiLang,
+          overview: overviewMultiLang,
+          poster_path: posterPath,
+          backdrop_path: backdropPath,
+          first_air_date: firstAirDate,
+          vote_average: voteAverage,
+          genres: genres,
+        }, {
+          onConflict: 'tmdb_id',
+        });
+    }
+
+    // Return response in user's language (or first available)
+    const userLangData = languageResults.find((r) => r.lang === userLangCode)?.data ||
+      languageResults.find((r) => r.data)?.data;
+
+    if (!userLangData) {
+      throw createError({
+        statusCode: 404,
+        statusMessage: 'TV Show not found',
+      });
+    }
+
+    return userLangData;
   } catch (error) {
     throw createError({
       statusCode: 500,

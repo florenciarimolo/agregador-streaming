@@ -2,7 +2,7 @@
 
 export interface UserPreferences {
   favorite_genres?: number[];
-  preferred_languages?: string[];
+  preferred_language?: string; // ISO 639-1 code (e.g., 'es', 'ca', 'eu', 'gl', 'en')
   content_types?: ('movie' | 'tv')[];
   included_providers?: number[];
   region?: string; // ISO 3166-1 alpha-2 country code

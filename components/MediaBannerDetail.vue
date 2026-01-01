@@ -241,6 +241,7 @@
             "
             :alternative-titles="alternativeTitles"
             :media-type="mediaType"
+            :tmdb-id="mediaWithProviders.id"
           />
 
           <ProviderList
@@ -256,6 +257,7 @@
             "
             :alternative-titles="alternativeTitles"
             :media-type="mediaType"
+            :tmdb-id="mediaWithProviders.id"
           />
 
           <ProviderList
@@ -271,6 +273,7 @@
             "
             :alternative-titles="alternativeTitles"
             :media-type="mediaType"
+            :tmdb-id="mediaWithProviders.id"
           />
         </section>
         <section v-else class="dark:text-gray-400 text-gray-600">

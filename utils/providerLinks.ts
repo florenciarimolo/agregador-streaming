@@ -217,16 +217,43 @@ async function fetchAtresPlayerUrl(query: string): Promise<string | null> {
 
 /**
  * Generate a search URL for a provider with the media title
+ * @param providerName Name of the provider
+ * @param mediaTitle Localized media title (user's preferred language)
+ * @param originalTitle Original title (usually English)
+ * @param alternativeTitles Alternative titles array
+ * @param mediaType Type of media (movie or tv)
+ * @param region User's region (e.g., 'ES', 'US'). If 'ES', will use Spanish title for providers
+ * @param tmdbId TMDB ID of the media (required if region is 'ES' to fetch Spanish title)
+ * @param mediaTypeForDb Type for database lookup ('movie' or 'tv')
  */
 export async function generateProviderSearchUrl(
   providerName: string,
   mediaTitle: string,
   originalTitle?: string,
   alternativeTitles?: Array<{ title: string; type: string }>,
-  mediaType?: MediaTypeEnum
+  mediaType?: MediaTypeEnum,
+  region?: string,
+  tmdbId?: number,
+  mediaTypeForDb?: 'movie' | 'tv'
 ): Promise<string | null> {
   const provider = getProviderLink(providerName);
   if (!provider) return null;
+
+  // If region is ES, fetch Spanish title from database
+  let titleToUse = mediaTitle;
+  if (region === 'ES' && tmdbId && mediaTypeForDb) {
+    try {
+      const response = await $fetch<{ title: string | null }>(
+        `/api/titles/spanish-title?tmdb_id=${tmdbId}&type=${mediaTypeForDb}`
+      );
+      if (response.title) {
+        titleToUse = response.title;
+      }
+    } catch (error) {
+      console.error('Error fetching Spanish title for provider link:', error);
+      // Fallback to original mediaTitle
+    }
+  }
 
   // Special handling for Atres Player
   if (providerName === 'Atres Player' || providerName === 'atresplayer') {
@@ -235,12 +262,12 @@ export async function generateProviderSearchUrl(
     if (mediaType === MediaTypeEnum.movie) {
       searchTitle = getBestTitleForProvider(
         providerName,
-        mediaTitle,
+        titleToUse,
         originalTitle,
         alternativeTitles
       );
     } else {
-      searchTitle = mediaTitle;
+      searchTitle = titleToUse;
     }
     // Format title for URL (remove special characters, format spaces)
     const formattedTitle = formatTitleForUrl(searchTitle);
@@ -261,12 +288,12 @@ export async function generateProviderSearchUrl(
     if (mediaType === MediaTypeEnum.movie) {
       searchTitle = getBestTitleForProvider(
         providerName,
-        mediaTitle,
+        titleToUse,
         originalTitle,
         alternativeTitles
       );
     } else {
-      searchTitle = mediaTitle;
+      searchTitle = titleToUse;
     }
     // Format title for URL (remove special characters, format spaces)
     const formattedTitle = formatTitleForUrl(searchTitle);

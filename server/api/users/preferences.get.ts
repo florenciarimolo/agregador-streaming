@@ -74,6 +74,40 @@ export default defineEventHandler(async (event) => {
       });
     }
 
+    // Handle migration from preferred_languages (array) to preferred_language (string in TMDB format)
+    if (data) {
+      // Import language constants
+      const { LanguageCode, toTMDBLanguageCode } = await import('@/constants/languages');
+      
+      // If preferred_language doesn't exist but preferred_languages (old field) does, migrate it
+      if (!data.preferred_language && (data as any).preferred_languages) {
+        const oldLanguages = (data as any).preferred_languages as string[];
+        // Take the first language from the array, convert to TMDB format
+        const firstLang = oldLanguages && oldLanguages.length > 0 ? oldLanguages[0] : null;
+        data.preferred_language = toTMDBLanguageCode(firstLang);
+        
+        // Update the database to migrate the field
+        await supabase
+          .from('user_preferences')
+          .update({ preferred_language: data.preferred_language })
+          .eq('user_id', userId);
+      } else if (data.preferred_language) {
+        // Convert legacy simple codes to TMDB format if needed
+        const tmdbCode = toTMDBLanguageCode(data.preferred_language);
+        if (tmdbCode !== data.preferred_language) {
+          // Update the database if conversion was needed
+          data.preferred_language = tmdbCode;
+          await supabase
+            .from('user_preferences')
+            .update({ preferred_language: data.preferred_language })
+            .eq('user_id', userId);
+        }
+      } else if (!data.preferred_language) {
+        // If neither exists, set default
+        data.preferred_language = LanguageCode.SPANISH;
+      }
+    }
+
     return {
       success: true,
       preferences: data || null,

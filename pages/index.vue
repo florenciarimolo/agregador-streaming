@@ -66,7 +66,7 @@ const populatingPool = ref(false);
 const recommendations = ref<Recommendation[]>([]);
 const lastFetchedMood = ref<string | null>(null);
 const lastFetchedAttention = ref<string | null>(null);
-const hasPreferredLanguages = ref<boolean | null>(null); // null = not checked yet, true/false = checked
+const hasPreferredLanguage = ref<boolean | null>(null); // null = not checked yet, true/false = checked
 
 // Fetch recommendations function
 const fetchRecommendations = async (): Promise<Recommendation[]> => {
@@ -247,28 +247,27 @@ watch(
           const prefsResponse = await $fetch<{
             success: boolean;
             preferences: {
-              preferred_languages?: string[];
+              preferred_language?: string;
             } | null;
           }>('/api/users/preferences', {
             headers: {
               Authorization: `Bearer ${session.access_token}`,
             },
           });
-          hasPreferredLanguages.value = !!(
+          hasPreferredLanguage.value = !!(
             prefsResponse.success &&
-            prefsResponse.preferences?.preferred_languages &&
-            prefsResponse.preferences.preferred_languages.length > 0
+            prefsResponse.preferences?.preferred_language
           );
         } else {
-          hasPreferredLanguages.value = false;
+          hasPreferredLanguage.value = false;
         }
       } catch (error) {
         console.error('[index.vue] Error checking preferred languages:', error);
-        hasPreferredLanguages.value = false;
+        hasPreferredLanguage.value = false;
       }
 
       // Only fetch recommendations if user has preferred languages
-      if (hasPreferredLanguages.value) {
+      if (hasPreferredLanguage.value) {
         const fetched = await fetchRecommendations();
         recommendations.value = fetched;
 
@@ -586,6 +585,34 @@ onMounted(() => {
     });
   }
 
+  // Check if pool regeneration is in progress
+  if (sessionStorage.getItem('regeneratingPool')) {
+    populatingPool.value = true;
+    
+    // Poll to check if regeneration is complete
+    const checkRegenerationStatus = setInterval(() => {
+      if (!sessionStorage.getItem('regeneratingPool')) {
+        populatingPool.value = false;
+        clearInterval(checkRegenerationStatus);
+        // Refresh recommendations after regeneration completes
+        if (user.value && userStore.hasCompletedOnboarding) {
+          fetchRecommendations().then((fetched) => {
+            recommendations.value = fetched;
+          });
+        }
+      }
+    }, 2000); // Check every 2 seconds
+
+    // Cleanup interval after 5 minutes (safety timeout)
+    setTimeout(() => {
+      clearInterval(checkRegenerationStatus);
+      if (populatingPool.value) {
+        populatingPool.value = false;
+        sessionStorage.removeItem('regeneratingPool');
+      }
+    }, 5 * 60 * 1000);
+  }
+
   // Mark hydration as complete after mount
   // Use nextTick to ensure all reactive updates have completed
   nextTick(() => {
@@ -634,25 +661,26 @@ onMounted(() => {
         v-if="isMounted && userStore.authInitialized && effectiveUser"
         class="py-12 md:py-16 md:px-4"
       >
-        <div class="container mx-auto max-w-7xl">
+        <div class="container mx-auto max-w-7xl w-full">
           <!-- Mood Selector -->
           <MoodSelector v-if="userStore.hasCompletedOnboarding" />
           <!-- Loading State -->
-          <Spinner
-            v-if="loadingRecommendations || populatingPool"
-            :message="
-              populatingPool
-                ? $t('home.generatingButton')
-                : $t('home.loadingRecommendations')
-            "
-          />
+          <div v-if="loadingRecommendations || populatingPool" class="w-full">
+            <Spinner
+              :message="
+                populatingPool
+                  ? $t('home.generatingButton')
+                  : $t('home.loadingRecommendations')
+              "
+            />
+          </div>
 
           <!-- No Preferred Languages State -->
           <div
             v-else-if="
               !populatingPool &&
               hasAttemptedLoad &&
-              hasPreferredLanguages === false
+              hasPreferredLanguage === false
             "
             class="text-center py-12"
           >
@@ -673,16 +701,16 @@ onMounted(() => {
               <h3
                 class="text-xl font-semibold dark:text-gray-300 text-gray-800 mb-2 font-heading"
               >
-                {{ $t('home.noPreferredLanguages') }}
+                {{ $t('home.noPreferredLanguage') }}
               </h3>
               <p class="text-gray-800 dark:text-gray-300 mb-6">
-                {{ $t('home.noPreferredLanguagesDescription') }}
+                {{ $t('home.noPreferredLanguageDescription') }}
               </p>
               <nuxt-link
                 to="/profile?tab=content-preferences"
                 class="inline-block px-6 py-3 bg-primary-800 dark:bg-primary hover:bg-primary-900 dark:hover:bg-primary-600 text-white rounded-lg font-medium text-base transition-all duration-300 shadow-lg backdrop-blur-sm border border-primary-600/50"
               >
-                {{ $t('home.setPreferredLanguages') }}
+                {{ $t('home.setPreferredLanguage') }}
               </nuxt-link>
             </div>
           </div>
@@ -694,7 +722,7 @@ onMounted(() => {
               !populatingPool &&
               hasAttemptedLoad &&
               recommendations.length === 0 &&
-              hasPreferredLanguages !== false &&
+              hasPreferredLanguage !== false &&
               !userStore.hasLikes
             "
             class="text-center py-12"

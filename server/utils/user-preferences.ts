@@ -81,27 +81,12 @@ export async function getUserTMDBParamsByUserId(userId: string): Promise<{
       getSettingsServer(userId),
     ]);
 
-    // Priority: preferences.preferred_languages > settings.language > default
+    // Priority: preferences.preferred_language > settings.language > default
     let language = defaults.language;
-    if (preferencesResult.data?.preferred_languages?.length > 0) {
-      // Use first preferred language, convert to TMDB format (e.g., 'es' -> 'es-ES')
-      const lang = String(preferencesResult.data.preferred_languages[0]);
-      // Map common language codes to TMDB format
-      const langMap: Record<string, string> = {
-        es: 'es-ES',
-        ca: 'ca-ES', // Catalan (Spain)
-        eu: 'eu-ES', // Basque (Spain)
-        gl: 'gl-ES', // Galician (Spain)
-        en: 'en-US',
-        fr: 'fr-FR',
-        de: 'de-DE',
-        it: 'it-IT',
-        pt: 'pt-PT',
-        ja: 'ja-JP',
-        ko: 'ko-KR',
-        zh: 'zh-CN',
-      };
-      language = langMap[lang] || `${lang}-${lang.toUpperCase()}`;
+    if (preferencesResult.data?.preferred_language) {
+      // Use preferred language (should already be in TMDB format)
+      const { toTMDBLanguageCode } = await import('@/constants/languages');
+      language = toTMDBLanguageCode(preferencesResult.data.preferred_language);
     } else if (settingsResult.data?.language) {
       // Fallback to app language setting
       const lang = String(settingsResult.data.language);

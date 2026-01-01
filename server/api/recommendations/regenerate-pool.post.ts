@@ -10,6 +10,8 @@ import {
   insertPoolEntries,
   type RecommendationPoolSource,
   RECOMMENDATION_POOL_FIELDS,
+  TABLES as POOL_TABLES,
+  type TitleData,
 } from '@/composables/database/recommendationPool';
 
 const TARGET_POOL_SIZE = 200;
@@ -79,216 +81,96 @@ export default defineEventHandler(async (event) => {
     const tmdbConfig = getTMDBConfig(language, region);
     devLog('[RegeneratePool] Using language:', language, 'region:', region);
 
-    // Delete ALL entries from the pool
-    const { error: deleteError } = await supabase
-      .from('recommendation_pool')
-      .delete()
-      .eq('user_id', userId);
+    // Get all pool entries for the user (DO NOT DELETE)
+    const { data: poolEntries, error: fetchError } = await supabase
+      .from(POOL_TABLES.RECOMMENDATION_POOL)
+      .select(`${RECOMMENDATION_POOL_FIELDS.TMDB_ID}, ${RECOMMENDATION_POOL_FIELDS.TYPE}, ${RECOMMENDATION_POOL_FIELDS.TITLE_DATA}`)
+      .eq(RECOMMENDATION_POOL_FIELDS.USER_ID, userId);
 
-    if (deleteError) {
-      devError('[RegeneratePool] Error deleting pool:', deleteError);
-      throw deleteError;
+    if (fetchError) {
+      devError('[RegeneratePool] Error fetching pool entries:', fetchError);
+      throw fetchError;
     }
 
-    devLog('[RegeneratePool] Deleted all pool entries for user:', userId);
-
-    // Get excluded titles (seen + not_interested)
-    const { data: excludedStatuses } = await supabase
-      .from('user_title_status')
-      .select('tmdb_id')
-      .eq('user_id', userId)
-      .in('status', [TitleStatus.SEEN, TitleStatus.NOT_INTERESTED]);
-
-    const excludedTmdbIds = new Set<number>();
-    if (excludedStatuses) {
-      excludedStatuses.forEach((status) => {
-        excludedTmdbIds.add(status.tmdb_id);
-      });
+    if (!poolEntries || poolEntries.length === 0) {
+      devLog('[RegeneratePool] No pool entries to update');
+      return {
+        success: true,
+        message: 'No pool entries to update',
+        updated: 0,
+      };
     }
 
-    // Get user's liked titles
-    const { data: userLikedStatuses } = await supabase
-      .from('user_title_status')
-      .select('tmdb_id, type')
-      .eq('user_id', userId)
-      .eq('liked', true);
+    devLog('[RegeneratePool] Found', poolEntries.length, 'pool entries to update');
 
-    const likedTmdbIds = new Set<number>();
-    if (userLikedStatuses) {
-      userLikedStatuses.forEach((status) => {
-        likedTmdbIds.add(status.tmdb_id);
-      });
-    }
+    // Update title and overview for each pool entry
+    let updatedCount = 0;
 
-    const entriesToInsert: Array<{
-      tmdb_id: number;
-      type: 'movie' | 'tv';
-      source: RecommendationPoolSource;
-      score: number;
-      explanation_code: string | null;
-    }> = [];
-
-    // Helper to ensure title exists in titles table
-    const ensureTitleExists = async (tmdbId: number, type: 'movie' | 'tv') => {
-      const { data: existing } = await supabase
-        .from('titles')
-        .select('tmdb_id')
-        .eq('tmdb_id', tmdbId)
-        .eq('type', type)
-        .maybeSingle();
-
-      if (!existing) {
-        // Title doesn't exist, we'll skip it for now
-        // In production, you might want to fetch and insert it
-        return false;
-      }
-      return true;
-    };
-
-    // Fetch recommendations based on liked titles
-    if (likedTmdbIds.size > 0) {
-      for (const tmdbId of likedTmdbIds) {
-        const likedStatus = userLikedStatuses?.find(
-          (s) => s.tmdb_id === tmdbId
-        );
-        if (!likedStatus) continue;
-
-        const type = likedStatus.type as 'movie' | 'tv';
-        const url = `${tmdbConfig.baseUrl}${type}/${tmdbId}/recommendations?api_key=${tmdbConfig.apiKey}&language=${language}&page=1`;
-
-        try {
-          const response = await $fetch<{
-            results?: Array<{
-              id: number;
-              title?: string;
-              name?: string;
-              poster_path: string | null;
-              vote_average: number;
-            }>;
-          }>(url);
-
-          if (response && response.results && Array.isArray(response.results)) {
-            for (const result of response.results.slice(0, 10)) {
-              if (
-                excludedTmdbIds.has(result.id) ||
-                likedTmdbIds.has(result.id)
-              ) {
-                continue;
-              }
-
-              const exists = await ensureTitleExists(result.id, type);
-              if (!exists) continue;
-
-              entriesToInsert.push({
-                tmdb_id: result.id,
-                type,
-                source: 'based_on_like',
-                score: 50 + (result.vote_average || 0) * 2,
-                explanation_code: 'recommended_based_on_liked',
-              });
-            }
-          }
-        } catch (error) {
-          safeError(
-            `[RegeneratePool] Error fetching recommendations for ${tmdbId}`,
-            error
-          );
-        }
-      }
-    }
-
-    // Fetch trending content
-    for (const type of ['movie', 'tv'] as const) {
-      const url = `${tmdbConfig.baseUrl}trending/${type}/week?api_key=${tmdbConfig.apiKey}&language=${language}`;
-
+    for (const entry of poolEntries) {
       try {
-        const response = await $fetch<{
-          results?: Array<{
-            id: number;
-            title?: string;
-            name?: string;
-            poster_path: string | null;
-            vote_average: number;
-          }>;
-        }>(url);
+        const { tmdb_id, type, title_data } = entry;
+        const endpoint = type === 'movie' ? `/movie/${tmdb_id}` : `/tv/${tmdb_id}`;
 
-        if (response && response.results && Array.isArray(response.results)) {
-          for (const result of response.results.slice(0, 20)) {
-            if (
-              excludedTmdbIds.has(result.id) ||
-              likedTmdbIds.has(result.id)
-            ) {
-              continue;
-            }
+        // Fetch title and overview from TMDB with new language
+        const tmdbResponse = await $fetch(`${tmdbConfig.baseUrl}${endpoint}`, {
+          query: {
+            api_key: tmdbConfig.apiKey,
+            language: tmdbConfig.language,
+            region: tmdbConfig.region,
+          },
+        }).catch(() => null);
 
-            const exists = await ensureTitleExists(result.id, type);
-            if (!exists) continue;
-
-            entriesToInsert.push({
-              tmdb_id: result.id,
-              type,
-              source: 'trending',
-              score: 30 + (result.vote_average || 0) * 2,
-              explanation_code: 'trending',
-            });
-          }
+        if (!tmdbResponse) {
+          safeError(`[RegeneratePool] Failed to fetch ${type} ${tmdb_id} from TMDB`);
+          continue;
         }
+
+        // Get existing title_data or create new structure
+        const existingTitleData = (title_data as TitleData | null) || {
+          title: '',
+          overview: '',
+          poster_path: null,
+          backdrop_path: null,
+          vote_average: null,
+          genres: [],
+          release_date: null,
+          first_air_date: null,
+        };
+
+        // Update only title and overview, keep everything else
+        const updatedTitleData: TitleData = {
+          ...existingTitleData,
+          title: tmdbResponse.title || tmdbResponse.name || existingTitleData.title,
+          overview: tmdbResponse.overview || existingTitleData.overview,
+        };
+
+        // Update the pool entry
+        const { error: updateError } = await supabase
+          .from(POOL_TABLES.RECOMMENDATION_POOL)
+          .update({
+            [RECOMMENDATION_POOL_FIELDS.TITLE_DATA]: updatedTitleData,
+          })
+          .eq(RECOMMENDATION_POOL_FIELDS.USER_ID, userId)
+          .eq(RECOMMENDATION_POOL_FIELDS.TMDB_ID, tmdb_id);
+
+        if (updateError) {
+          safeError(`[RegeneratePool] Error updating pool entry ${tmdb_id}`, updateError);
+          continue;
+        }
+
+        updatedCount++;
       } catch (error) {
-        safeError(`[RegeneratePool] Error fetching trending ${type}`, error);
+        safeError(`[RegeneratePool] Error processing entry ${entry.tmdb_id}`, error);
       }
     }
 
-    // Fetch discover content
-    for (const type of ['movie', 'tv'] as const) {
-      const url = `${tmdbConfig.baseUrl}discover/${type}?api_key=${tmdbConfig.apiKey}&language=${language}&sort_by=popularity.desc&page=1`;
-
-      try {
-        const response = await $fetch<{
-          results?: Array<{
-            id: number;
-            title?: string;
-            name?: string;
-            poster_path: string | null;
-            vote_average: number;
-          }>;
-        }>(url);
-
-        if (response && response.results && Array.isArray(response.results)) {
-          for (const result of response.results.slice(0, 30)) {
-            if (
-              excludedTmdbIds.has(result.id) ||
-              likedTmdbIds.has(result.id)
-            ) {
-              continue;
-            }
-
-            const exists = await ensureTitleExists(result.id, type);
-            if (!exists) continue;
-
-            entriesToInsert.push({
-              tmdb_id: result.id,
-              type,
-              source: 'discover',
-              score: 20 + (result.vote_average || 0) * 2,
-              explanation_code: 'discover',
-            });
-          }
-        }
-      } catch (error) {
-        safeError(`[RegeneratePool] Error fetching discover ${type}`, error);
-      }
-    }
-
-    // Insert entries into pool
-    if (entriesToInsert.length > 0) {
-      devLog('[RegeneratePool] Inserting entries:', entriesToInsert.length);
-      const inserted = await insertPoolEntries(userId, entriesToInsert, supabase);
-      devLog('[RegeneratePool] Successfully inserted:', inserted);
-    }
+    devLog('[RegeneratePool] Updated', updatedCount, 'out of', poolEntries.length, 'entries');
 
     return {
       success: true,
-      message: 'Pool regenerated successfully',
+      message: 'Pool updated successfully',
+      updated: updatedCount,
+      total: poolEntries.length,
     };
   } catch (error) {
     devError('[RegeneratePool] Error:', error);

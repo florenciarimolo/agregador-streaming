@@ -118,6 +118,8 @@
               :media-provider-prop-list="seasonWithProviders.providers.flatrate"
               :watch-type-prop="$t('media.watchIn')"
               :media-type="MediaTypeEnum.tv"
+              :media-title="seasonWithProviders?.name || ''"
+              :tmdb-id="parseInt(seriesId as string, 10)"
             />
 
             <ProviderList
@@ -125,6 +127,8 @@
               :media-provider-prop-list="seasonWithProviders.providers.buy"
               :watch-type-prop="$t('media.buyIn')"
               :media-type="MediaTypeEnum.tv"
+              :media-title="seasonWithProviders?.name || ''"
+              :tmdb-id="parseInt(seriesId as string, 10)"
             />
 
             <ProviderList
@@ -132,6 +136,8 @@
               :media-provider-prop-list="seasonWithProviders.providers.rent"
               :watch-type-prop="$t('media.rentIn')"
               :media-type="MediaTypeEnum.tv"
+              :media-title="seasonWithProviders?.name || ''"
+              :tmdb-id="parseInt(seriesId as string, 10)"
             />
           </section>
           <section v-else class="dark:text-gray-400 text-gray-600">

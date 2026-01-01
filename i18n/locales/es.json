@@ -132,9 +132,9 @@
     "noRecommendations": "Aún no hay recomendaciones",
     "generatingDescription": "Estamos preparando recomendaciones personalizadas basadas en tus gustos. Esto puede tardar unos momentos.",
     "noRecommendationsDescription": "Para recibir recomendaciones personalizadas, primero necesitas agregar películas y series que te gusten. Esto nos ayuda a conocerte mejor y sugerirte contenido que realmente disfrutarás.",
-    "noPreferredLanguages": "Configura tus idiomas preferidos",
-    "noPreferredLanguagesDescription": "Para generar recomendaciones, necesitas configurar al menos un idioma preferido. Esto nos ayuda a mostrarte contenido en los idiomas que prefieres.",
-    "setPreferredLanguages": "Configurar idiomas preferidos",
+    "noPreferredLanguage": "Configura tu idioma preferido",
+    "noPreferredLanguageDescription": "Para generar recomendaciones, necesitas configurar tu idioma preferido. Esto nos ayuda a mostrarte contenido en el idioma que prefieres.",
+    "setPreferredLanguage": "Configurar idioma preferido",
     "generateButton": "Generar recomendaciones",
     "generatingButton": "Generando recomendaciones...",
     "loadingRecommendations": "Cargando recomendaciones...",
@@ -294,13 +294,11 @@
     "content": {
       "title": "Preferencias de contenido",
       "description": "Personaliza qué tipo de contenido quieres ver y de dónde.",
-      "preferredLanguages": {
-        "title": "Idiomas preferidos",
-        "description": "Selecciona los idiomas en los que prefieres ver contenido.",
-        "searchPlaceholder": "Buscar idiomas...",
-        "selected": "Idiomas seleccionados",
-        "noneSelected": "No has seleccionado idiomas todavía.",
-        "remove": "Eliminar {name}"
+      "preferredLanguage": {
+        "title": "Idioma preferido",
+        "description": "Selecciona el idioma en el que prefieres ver contenido.",
+        "selected": "Idioma seleccionado",
+        "noneSelected": "No has seleccionado un idioma todavía."
       },
       "contentTypes": {
         "title": "Tipo de contenido",
@@ -331,18 +329,14 @@
         "default": "Seleccionar región...",
         "searchPlaceholder": "Buscar región..."
       },
-      "preferredLanguages": {
-        "title": "Idiomas preferidos",
-        "description": "Selecciona los idiomas en los que prefieres ver contenido.",
-        "searchPlaceholder": "Buscar idiomas...",
-        "selected": "Idiomas seleccionados",
-        "noneSelected": "No has seleccionado idiomas todavía.",
-        "noResults": "No se encontraron idiomas.",
-        "remove": "Eliminar {name}",
-        "confirmChangeTitle": "Cambiar idiomas preferidos",
-        "confirmChangeMessage": "Al cambiar los idiomas preferidos, se eliminarán todas las recomendaciones actuales y se generarán nuevas recomendaciones basadas en los idiomas seleccionados. ¿Estás seguro de que quieres continuar?",
-        "poolRegenerated": "Recomendaciones regeneradas correctamente.",
-        "errorRegenerating": "Error al regenerar las recomendaciones. Inténtalo de nuevo más tarde.",
+      "preferredLanguage": {
+        "title": "Idioma preferido",
+        "description": "Selecciona el idioma en el que prefieres ver contenido.",
+        "confirmChangeTitle": "Cambiar idioma preferido",
+        "confirmChangeMessage": "Al cambiar el idioma preferido, se actualizarán todas las recomendaciones actuales con el nuevo idioma. ¿Estás seguro de que quieres continuar?",
+        "poolRegenerated": "Recomendaciones actualizadas correctamente.",
+        "languageUpdatedAndRegenerating": "Idioma actualizado correctamente. Se están regenerando las recomendaciones...",
+        "errorRegenerating": "Error al actualizar las recomendaciones. Inténtalo de nuevo más tarde.",
         "saving": "Guardando cambios..."
       },
       "saved": "Preferencias guardadas exitosamente.",

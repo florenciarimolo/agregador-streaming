@@ -3,8 +3,9 @@ import {
   getUserSeenTitles,
   getUserLikedTitles,
 } from '@/composables/database/userTitleStatus';
-import { getTitlesByTmdbIds } from '@/composables/database/titles';
+import { getTitlesByTmdbIds, getTitleInLanguage, type MultiLanguageText } from '@/composables/database/titles';
 import { getSession } from '@/composables/database/auth';
+import { getUserPreferences } from '@/composables/database/preferences';
 
 export default defineEventHandler(async (event) => {
   try {
@@ -46,11 +47,22 @@ export default defineEventHandler(async (event) => {
       };
     }
 
+    // Get user preferences for language
+    const { data: userPreferences } = await getUserPreferences(userId);
+    const userLanguage = userPreferences?.preferred_language || 'es';
+
     // Get title data
     const tmdbIds = seenStatuses.map((s) => s.tmdb_id);
     const { data: titlesData } = await getTitlesByTmdbIds(tmdbIds);
 
-    if (!titlesData || titlesData.length === 0) {
+    // Extract language-specific text from JSONB
+    const titlesWithLanguage = titlesData?.map((title) => ({
+      ...title,
+      title: getTitleInLanguage(title.title as MultiLanguageText, userLanguage),
+      overview: getTitleInLanguage(title.overview as MultiLanguageText, userLanguage),
+    })) || [];
+
+    if (!titlesWithLanguage || titlesWithLanguage.length === 0) {
       return {
         success: true,
         insights: {
@@ -71,7 +83,7 @@ export default defineEventHandler(async (event) => {
     let totalRating = 0;
     let ratedCount = 0;
 
-    titlesData.forEach((title) => {
+    titlesWithLanguage.forEach((title) => {
       // Count genres
       if (title.genres && Array.isArray(title.genres)) {
         title.genres.forEach((genre: { id: number }) => {
@@ -118,7 +130,7 @@ export default defineEventHandler(async (event) => {
           series: seriesCount,
         },
         averageRating,
-        totalTitles: titlesData.length,
+        totalTitles: titlesWithLanguage.length,
         likedCount: likedStatuses?.data?.length || 0,
       },
     };

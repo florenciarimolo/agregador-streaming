@@ -10,6 +10,7 @@ import {
   type RecommendationPoolSource,
   RECOMMENDATION_POOL_FIELDS,
   TABLES as POOL_TABLES,
+  type TitleData,
 } from '@/composables/database/recommendationPool';
 import { TABLES, TITLES_FIELDS } from '@/composables/database/constants';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
@@ -146,34 +147,45 @@ export default defineEventHandler(async (event) => {
       source: RecommendationPoolSource;
       score: number;
       explanation_code: string | null;
+      title_data: TitleData | null;
     }> = [];
 
-    // Helper to ensure title exists in titles table
-    const ensureTitleExists = async (
-      result: TMDBResult,
+    // Helper to fetch full title details from TMDB (including full genre objects)
+    const fetchTitleDetails = async (
+      tmdbId: number,
       type: 'movie' | 'tv'
-    ) => {
-      const { data: existingTitle } = await supabase
-        .from(TABLES.TITLES)
-        .select('id')
-        .eq(TITLES_FIELDS.TMDB_ID, result.id)
-        .eq(TITLES_FIELDS.TYPE, type)
-        .maybeSingle();
-
-      if (!existingTitle) {
-        // Insert title into titles table
-        await supabase.from(TABLES.TITLES).insert({
-          [TITLES_FIELDS.TMDB_ID]: result.id,
-          [TITLES_FIELDS.TITLE]: result.title || result.name || '',
-          [TITLES_FIELDS.TYPE]: type,
-          [TITLES_FIELDS.POSTER_PATH]: result.poster_path,
-          [TITLES_FIELDS.BACKDROP_PATH]: result.backdrop_path,
-          [TITLES_FIELDS.OVERVIEW]: result.overview,
-          [TITLES_FIELDS.RELEASE_DATE]: result.release_date || null,
-          [TITLES_FIELDS.FIRST_AIR_DATE]: result.first_air_date || null,
-          [TITLES_FIELDS.GENRES]: result.genre_ids,
-          [TITLES_FIELDS.VOTE_AVERAGE]: result.vote_average,
+    ): Promise<TitleData | null> => {
+      try {
+        const endpoint = type === 'movie' ? `/movie/${tmdbId}` : `/tv/${tmdbId}`;
+        const fullResponse = await $fetch(`${tmdbConfig.baseUrl}${endpoint}`, {
+          query: {
+            api_key: tmdbConfig.apiKey,
+            language: tmdbConfig.language,
+            region: tmdbConfig.region,
+          },
         });
+
+        if (!fullResponse) return null;
+
+        // Extract full genre objects (not just IDs)
+        const genres = fullResponse.genres || [];
+
+        return {
+          title: fullResponse.title || fullResponse.name || '',
+          overview: fullResponse.overview || '',
+          poster_path: fullResponse.poster_path || null,
+          backdrop_path: fullResponse.backdrop_path || null,
+          vote_average: fullResponse.vote_average || null,
+          genres: genres.map((g: { id: number; name: string }) => ({
+            id: g.id,
+            name: g.name,
+          })),
+          release_date: fullResponse.release_date || null,
+          first_air_date: fullResponse.first_air_date || null,
+        };
+      } catch (error) {
+        safeError(`[PopulatePool] Error fetching title details for ${tmdbId}`, error);
+        return null;
       }
     };
 
@@ -225,8 +237,8 @@ export default defineEventHandler(async (event) => {
 
             processed.add(result.id);
 
-            // Ensure title exists in titles table
-            await ensureTitleExists(result, type);
+            // Fetch full title details including complete genre objects
+            const titleData = await fetchTitleDetails(result.id, type);
 
             entriesToInsert.push({
               tmdb_id: result.id,
@@ -234,6 +246,7 @@ export default defineEventHandler(async (event) => {
               source,
               score: 0, // Initial score
               explanation_code: explanationCode,
+              title_data: titleData,
             });
           }
 

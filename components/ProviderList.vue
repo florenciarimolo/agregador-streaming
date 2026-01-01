@@ -32,6 +32,7 @@ import {
   getFallbackSearchUrl,
 } from '@/utils/providerLinks';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
+import { getSession } from '@/composables/database/auth';
 // @ts-expect-error - Used in template, linter doesn't detect template usage
 import IconPlay from '@/components/icons/IconPlay.vue';
 
@@ -60,6 +61,10 @@ const props = defineProps({
     type: String as PropType<MediaTypeEnum>,
     required: true,
   },
+  tmdbId: {
+    type: Number,
+    default: undefined,
+  },
 });
 
 // Store provider URLs (for async providers like Atres Player)
@@ -86,9 +91,37 @@ const _getProviderUrl = (providerName: string): string => {
   );
 };
 
+// Get user region preference
+const userRegion = ref<string>('ES'); // Default to ES
+
 // Pre-fetch URLs for async providers
 onMounted(async () => {
   if (!props.mediaTitle) return;
+
+  // Get user region preference
+  try {
+    const { data: { session } } = await getSession();
+    if (session?.access_token) {
+      const prefsResponse = await $fetch<{
+        success: boolean;
+        preferences: { region?: string } | null;
+      }>('/api/users/preferences', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+      if (prefsResponse.success && prefsResponse.preferences?.region) {
+        userRegion.value = prefsResponse.preferences.region;
+      }
+    }
+  } catch (error) {
+    console.error('Error fetching user region:', error);
+    // Keep default 'ES'
+  }
+
+  // Convert MediaTypeEnum to 'movie' | 'tv' for database
+  const mediaTypeForDb: 'movie' | 'tv' =
+    props.mediaType === MediaTypeEnum.movie ? 'movie' : 'tv';
 
   for (const provider of props.mediaProviderPropList) {
     const providerName = provider.provider_name;
@@ -103,7 +136,10 @@ onMounted(async () => {
           props.alternativeTitles.length > 0
             ? props.alternativeTitles
             : undefined,
-          props.mediaType
+          props.mediaType,
+          userRegion.value,
+          props.tmdbId,
+          mediaTypeForDb
         );
         if (url) {
           providerUrls.value[providerName] = url;
@@ -121,7 +157,10 @@ onMounted(async () => {
           props.alternativeTitles.length > 0
             ? props.alternativeTitles
             : undefined,
-          props.mediaType
+          props.mediaType,
+          userRegion.value,
+          props.tmdbId,
+          mediaTypeForDb
         );
         if (url) {
           providerUrls.value[providerName] = url;
