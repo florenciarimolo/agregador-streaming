@@ -23,18 +23,30 @@ export function hasUnexpectedCharacters(
     return false;
   }
 
+  // Define Latin character ranges (including extended Latin with diacritics)
+  // This includes: Basic Latin, Latin-1 Supplement, Latin Extended-A, Latin Extended-B
+  const isLatinChar = (char: string): boolean => {
+    const code = char.charCodeAt(0);
+    return (
+      (code >= 0x0000 && code <= 0x007f) || // Basic Latin
+      (code >= 0x0080 && code <= 0x00ff) || // Latin-1 Supplement (includes à, è, é, í, ò, ó, ú, ç, etc.)
+      (code >= 0x0100 && code <= 0x017f) || // Latin Extended-A
+      (code >= 0x0180 && code <= 0x024f) // Latin Extended-B
+    );
+  };
+
   // Patterns for non-Latin scripts that shouldn't appear in ES region languages
   const nonLatinPatterns = [
-    /[\u3040-\u309F]/g, // Hiragana (Japanese)
-    /[\u30A0-\u30FF]/g, // Katakana (Japanese)
-    /[\u4E00-\u9FAF]/g, // CJK Unified Ideographs (Chinese, Japanese, Korean)
-    /[\u3400-\u4DBF]/g, // CJK Extension A
-    /[\u20000-\u2A6DF]/g, // CJK Extension B
-    /[\u0900-\u097F]/g, // Devanagari (Hindi, Sanskrit)
-    /[\u0600-\u06FF]/g, // Arabic
-    /[\u0590-\u05FF]/g, // Hebrew
-    /[\u0400-\u04FF]/g, // Cyrillic
-    /[\u0370-\u03FF]/g, // Greek
+    /[\u3040-\u309F]/, // Hiragana (Japanese)
+    /[\u30A0-\u30FF]/, // Katakana (Japanese)
+    /[\u4E00-\u9FAF]/, // CJK Unified Ideographs (Chinese, Japanese, Korean)
+    /[\u3400-\u4DBF]/, // CJK Extension A
+    /[\u20000-\u2A6DF]/, // CJK Extension B
+    /[\u0900-\u097F]/, // Devanagari (Hindi, Sanskrit)
+    /[\u0600-\u06FF]/, // Arabic
+    /[\u0590-\u05FF]/, // Hebrew
+    /[\u0400-\u04FF]/, // Cyrillic
+    /[\u0370-\u03FF]/, // Greek
   ];
 
   // Count non-Latin characters
@@ -49,11 +61,15 @@ export function hasUnexpectedCharacters(
     }
     totalChars++;
 
-    // Check if character is non-Latin
-    for (const pattern of nonLatinPatterns) {
-      if (pattern.test(char)) {
-        nonLatinCount++;
-        break;
+    // Check if character is non-Latin by checking if it's NOT in Latin ranges
+    // and matches non-Latin patterns
+    if (!isLatinChar(char)) {
+      // Double-check with non-Latin patterns
+      for (const pattern of nonLatinPatterns) {
+        if (pattern.test(char)) {
+          nonLatinCount++;
+          break;
+        }
       }
     }
   }
@@ -66,6 +82,8 @@ export function hasUnexpectedCharacters(
   // If more than 50% of characters are non-Latin, consider it non-Latin alphabet
   const nonLatinRatio = nonLatinCount / totalChars;
   if (nonLatinRatio > 0.5) {
+    // This is expected behavior when TMDB returns titles in non-Latin scripts (e.g., Japanese, Chinese)
+    // Only log in dev mode for debugging purposes
     if (import.meta.dev) {
       console.log(
         `[LanguageDetection] Found non-Latin alphabet in ${expectedLanguage} text (${Math.round(nonLatinRatio * 100)}% non-Latin):`,

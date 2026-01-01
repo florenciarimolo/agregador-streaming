@@ -74,42 +74,32 @@
               :in-theaters="inTheaters"
             />
             <!-- Actions Menu -->
-            <div class="relative">
-              <button
-                type="button"
-                :aria-label="
-                  $t('media.actionsMenuFor', {
-                    title:
-                      mediaWithProviders.title ||
-                      (mediaWithProviders as any).name,
-                  })
-                "
-                class="menu-button p-2 rounded-full bg-black/50 hover:bg-gray-700/80 backdrop-blur-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-black/50"
-                @click.stop.prevent="showMenu = !showMenu"
-                @mousedown.stop.prevent
-              >
-                <IconMoreVertical icon-class="w-4 h-4 text-white" />
-              </button>
-
-              <!-- Dropdown Menu -->
-              <Transition
-                enter-active-class="transition duration-200 ease-out"
-                enter-from-class="transform scale-95 opacity-0"
-                enter-to-class="transform scale-100 opacity-100"
-                leave-active-class="transition duration-150 ease-in"
-                leave-from-class="transform scale-100 opacity-100"
-                leave-to-class="transform scale-95 opacity-0"
-              >
-                <div
-                  v-if="showMenu"
-                  class="absolute right-0 mt-2 w-48 dark:bg-gray-900/40 bg-gray-100/80 backdrop-blur-xl rounded-lg border border-gray-300/50 dark:border-white/10 z-50"
-                  @click.stop
+            <Dropdown position="right" width="w-48" ref="dropdownRef">
+              <template #trigger>
+                <button
+                  type="button"
+                  :aria-label="
+                    $t('media.actionsMenuFor', {
+                      title:
+                        mediaWithProviders.title ||
+                        (mediaWithProviders as any).name,
+                    })
+                  "
+                  class="menu-button p-2 rounded-full bg-black/50 hover:bg-gray-700/80 backdrop-blur-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-black/50"
+                  @click.stop.prevent
+                  @mousedown.stop.prevent
                 >
-                  <div class="p-4">
+                  <IconMoreVertical icon-class="w-4 h-4 text-white" />
+                </button>
+              </template>
+              <div class="p-4">
                     <button
                       type="button"
                       class="w-full px-4 py-2 text-sm dark:text-gray-300 text-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-left flex items-center gap-2 mb-2"
-                      @click.stop.prevent="handleAction(TitleStatus.SEEN)"
+                      @click.stop.prevent="
+                        dropdownRef?.close();
+                        handleAction(TitleStatus.SEEN);
+                      "
                     >
                       <svg
                         class="w-4 h-4"
@@ -129,7 +119,10 @@
                     <button
                       type="button"
                       class="w-full px-4 py-2 text-sm dark:text-gray-300 text-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-left flex items-center gap-2 mb-2"
-                      @click.stop.prevent="handleAction('liked')"
+                      @click.stop.prevent="
+                        dropdownRef?.close();
+                        handleAction('liked');
+                      "
                     >
                       <svg
                         class="w-4 h-4"
@@ -150,7 +143,8 @@
                       type="button"
                       class="w-full px-4 py-2 text-sm dark:text-gray-300 text-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-left flex items-center gap-2 mb-2"
                       @click.stop.prevent="
-                        handleAction(TitleStatus.NOT_INTERESTED)
+                        dropdownRef?.close();
+                        handleAction(TitleStatus.NOT_INTERESTED);
                       "
                     >
                       <svg
@@ -171,7 +165,10 @@
                     <button
                       type="button"
                       class="w-full px-4 py-2 text-sm dark:text-gray-300 text-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-left flex items-center gap-2"
-                      @click.stop.prevent="handleAction(TitleStatus.WATCHLIST)"
+                      @click.stop.prevent="
+                        dropdownRef?.close();
+                        handleAction(TitleStatus.WATCHLIST);
+                      "
                     >
                       <svg
                         class="w-4 h-4"
@@ -188,10 +185,8 @@
                       </svg>
                       {{ $t('media.watchLater') }}
                     </button>
-                  </div>
-                </div>
-              </Transition>
-            </div>
+              </div>
+            </Dropdown>
           </div>
         </div>
       </div>
@@ -302,6 +297,7 @@ import IconMoreVertical from './icons/IconMoreVertical.vue';
 import { TitleStatus } from '@/types/TitleStatus';
 import { getSession } from '@/composables/database/auth';
 import { useUndoToast } from '@/composables/useUndoToast';
+import Dropdown from '@/components/ui/Dropdown.vue';
 
 const props = defineProps({
   media: {
@@ -350,6 +346,7 @@ const alternativeTitles = computed(() => {
 });
 
 const isMobile = ref(false);
+const dropdownRef = ref<InstanceType<typeof Dropdown> | null>(null);
 
 // Detect mobile/tablet screen size (use mobile style for tablet too)
 const checkMobile = () => {
@@ -361,27 +358,16 @@ const handleResize = () => {
   checkMobile();
 };
 
-const showMenu = ref(false);
 const { showToast } = useUndoToast();
 const { t } = useI18n();
-
-// Close menu when clicking outside
-const handleClickOutside = (event: MouseEvent) => {
-  const target = event.target as HTMLElement;
-  if (!target.closest('.menu-button') && !target.closest('.absolute.right-0')) {
-    showMenu.value = false;
-  }
-};
 
 onMounted(() => {
   checkMobile();
   window.addEventListener('resize', handleResize);
-  document.addEventListener('click', handleClickOutside);
 });
 
 onUnmounted(() => {
   window.removeEventListener('resize', handleResize);
-  document.removeEventListener('click', handleClickOutside);
 });
 
 const backgroundImage = computed(() => {
@@ -398,7 +384,6 @@ const sectionStyle = computed(() => ({
 }));
 
 const handleAction = async (action: TitleStatus | 'liked') => {
-  showMenu.value = false;
 
   try {
     const {

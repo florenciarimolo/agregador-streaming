@@ -46,42 +46,30 @@
           <ThemeSwitcher />
 
           <!-- User Avatar (if logged in) -->
-          <div v-if="currentUser" ref="userMenuContainer" class="relative">
-            <button
-              type="button"
-              class="hover:ring-2 hover:ring-primary/50 transition-all cursor-pointer shadow-md rounded-full border border-primary"
-              :aria-label="
-                $t('navbar.userMenuFor', {
-                  email: currentUser.email || 'usuario',
-                })
-              "
-              @click="toggleUserMenu"
-            >
-              <Avatar
-                :avatar-url="userProfile?.avatar_url"
-                :display-name="userProfile?.display_name"
-                :email="currentUser.email"
-                :user-id="
-                  currentUser.id || (currentUser as { sub?: string })?.sub
-                "
-                size="md"
-              />
-            </button>
-            <!-- User Menu Dropdown -->
-            <Transition
-              enter-active-class="transition duration-200 ease-out"
-              enter-from-class="transform scale-95 opacity-0"
-              enter-to-class="transform scale-100 opacity-100"
-              leave-active-class="transition duration-150 ease-in"
-              leave-from-class="transform scale-100 opacity-100"
-              leave-to-class="transform scale-95 opacity-0"
-            >
-              <div
-                v-if="showUserMenu"
-                class="absolute right-0 mt-2 w-64 dark:bg-gray-900/90 bg-gray-100/90 backdrop-blur-xl rounded-lg border border-gray-300/50 dark:border-white/10 z-50"
-                @click.stop
-              >
-                <div class="p-4">
+          <div v-if="currentUser" class="relative">
+            <Dropdown position="right" width="w-64" ref="userMenuDropdownRef">
+              <template #trigger>
+                <button
+                  type="button"
+                  class="hover:ring-2 hover:ring-primary/50 transition-all cursor-pointer shadow-md rounded-full border border-primary"
+                  :aria-label="
+                    $t('navbar.userMenuFor', {
+                      email: currentUser.email || 'usuario',
+                    })
+                  "
+                >
+                  <Avatar
+                    :avatar-url="userProfile?.avatar_url"
+                    :display-name="userProfile?.display_name"
+                    :email="currentUser.email"
+                    :user-id="
+                      currentUser.id || (currentUser as { sub?: string })?.sub
+                    "
+                    size="md"
+                  />
+                </button>
+              </template>
+              <div class="p-4">
                   <p
                     class="text-sm font-medium dark:text-gray-300 text-gray-800 truncate mb-3"
                   >
@@ -96,7 +84,7 @@
                   <nuxt-link
                     to="/profile"
                     class="block w-full px-4 py-2 text-sm dark:text-gray-300 text-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-left mb-2"
-                    @click="showUserMenu = false"
+                    @click="userMenuDropdownRef?.close()"
                   >
                     {{ $t('navbar.editProfile') }}
                   </nuxt-link>
@@ -106,13 +94,15 @@
                   <button
                     type="button"
                     class="w-full px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors text-left"
-                    @click="handleLogoutClick"
+                    @click="
+                      userMenuDropdownRef?.close();
+                      handleLogoutClick();
+                    "
                   >
                     {{ $t('navbar.logout') }}
                   </button>
-                </div>
               </div>
-            </Transition>
+            </Dropdown>
           </div>
         </div>
       </div>
@@ -365,16 +355,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed, nextTick } from 'vue';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
 import Avatar from './Avatar.vue';
+import Dropdown from '@/components/ui/Dropdown.vue';
 
 // User state
 const user = useSupabaseUser();
 const userStore = useUserStore();
 const { signOut } = useAuth();
 const router = useRouter();
-const showUserMenu = ref(false);
 const showMobileMenu = ref(false);
+const userMenuDropdownRef = ref<InstanceType<typeof Dropdown> | null>(null);
 
 // Use computed to ensure user is available after hydration
 // During hydration, useSupabaseUser() might be null initially, so we also check the store
@@ -389,30 +380,11 @@ const userProfile = computed(() => {
   return userStore.profile;
 });
 
-// Toggle user menu (desktop)
-const toggleUserMenu = async (event?: Event) => {
-  // Prevent the click from immediately triggering handleClickOutside
-  if (event) {
-    event.stopPropagation();
-  }
-
-  const wasOpen = showUserMenu.value;
-  showUserMenu.value = !showUserMenu.value;
-
-  // If we just opened the menu, wait for next tick to ensure DOM is updated
-  // before allowing handleClickOutside to process
-  if (!wasOpen && showUserMenu.value) {
-    await nextTick();
-  }
-};
-
 // Toggle mobile menu
 const toggleMobileMenu = () => {
   showMobileMenu.value = !showMobileMenu.value;
   // Close desktop menu if open
-  if (showUserMenu.value) {
-    showUserMenu.value = false;
-  }
+  userMenuDropdownRef.value?.close();
 };
 
 // Logout confirmation state
@@ -421,7 +393,7 @@ const showLogoutConfirm = ref(false);
 // Handle logout click (show confirmation)
 const handleLogoutClick = () => {
   showLogoutConfirm.value = true;
-  showUserMenu.value = false;
+  userMenuDropdownRef.value?.close();
   showMobileMenu.value = false;
 };
 
@@ -443,38 +415,6 @@ const cancelLogout = () => {
   showLogoutConfirm.value = false;
 };
 
-// Refs for user menu containers
-const userMenuContainer = ref<HTMLElement | null>(null);
-
-// Close user menu when clicking outside
-const handleClickOutside = (event: Event) => {
-  const target = event.target as HTMLElement;
-  if (!target) return;
-
-  // Handle mobile menu (closed by overlay click, handled in template)
-  // Handle desktop menu
-  if (showUserMenu.value) {
-    // Get the active container (desktop)
-    const activeContainer = userMenuContainer.value;
-
-    // If no container found, don't do anything
-    if (!activeContainer) return;
-
-    // Check if the click was inside the container (button or menu)
-    // This includes the button that toggles the menu
-    if (activeContainer.contains(target)) {
-      return; // Click was inside, don't close
-    }
-
-    // Click was outside, close the menu
-    // Use nextTick to ensure this runs after toggleUserMenu has finished
-    nextTick(() => {
-      if (showUserMenu.value) {
-        showUserMenu.value = false;
-      }
-    });
-  }
-};
 
 // Scroll to top state
 const showScrollToTop = ref(false);
@@ -529,14 +469,11 @@ onMounted(() => {
   checkMobile();
   window.addEventListener('scroll', handleScroll);
   window.addEventListener('resize', handleResize);
-  // Use bubbling phase (default) so button handlers run first
-  document.addEventListener('click', handleClickOutside, false);
 });
 
 onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll);
   window.removeEventListener('resize', handleResize);
-  document.removeEventListener('click', handleClickOutside, false);
 });
 </script>
 

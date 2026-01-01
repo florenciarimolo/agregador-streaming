@@ -1,11 +1,17 @@
 <template>
-  <div class="relative">
-    <!-- Selected Value Display -->
-    <button
-      type="button"
-      class="w-full px-4 py-2 dark:bg-gray-800/50 bg-gray-100/80 border border-gray-300 dark:border-gray-700 rounded-lg dark:text-gray-300 text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary backdrop-blur-xs transition-all opacity-90 hover:opacity-100 text-left flex items-center justify-between gap-2"
-      @click="toggleDropdown"
-    >
+  <Dropdown
+    position="left"
+    width="w-full"
+    :close-on-click-outside="true"
+    ref="dropdownRef"
+    @open="handleDropdownOpen"
+  >
+    <template #trigger="{ isOpen }">
+      <!-- Selected Value Display -->
+      <button
+        type="button"
+        class="w-full px-4 py-2 dark:bg-gray-800/50 bg-gray-100/80 border border-gray-300 dark:border-gray-700 rounded-lg dark:text-gray-300 text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary backdrop-blur-xs transition-all opacity-90 hover:opacity-100 text-left flex items-center justify-between gap-2"
+      >
       <div class="flex items-center gap-2 flex-1 min-w-0">
         <img
           v-if="selectedRegion"
@@ -24,36 +30,25 @@
             : t('preferences.content.region.default')
         }}</span>
       </div>
-      <svg
-        class="w-4 h-4 text-gray-400 flex-shrink-0 transition-transform"
-        :class="{ 'rotate-180': isOpen }"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M19 9l-7 7-7-7"
-        />
-      </svg>
-    </button>
-
-    <!-- Dropdown -->
-    <Transition
-      enter-active-class="transition duration-200 ease-out"
-      enter-from-class="transform scale-95 opacity-0"
-      enter-to-class="transform scale-100 opacity-100"
-      leave-active-class="transition duration-150 ease-in"
-      leave-from-class="transform scale-100 opacity-100"
-      leave-to-class="transform scale-95 opacity-0"
+        <svg
+          class="w-4 h-4 text-gray-400 flex-shrink-0 transition-transform"
+          :class="{ 'rotate-180': isOpen }"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M19 9l-7 7-7-7"
+          />
+        </svg>
+      </button>
+    </template>
+    <div
+      class="dark:bg-gray-900/95 bg-white/95 backdrop-blur-sm dark:border-gray-600 border-gray-300 max-h-64 overflow-hidden flex flex-col"
     >
-      <div
-        v-if="isOpen"
-        class="absolute z-[100] w-full mt-2 dark:bg-gray-900/95 bg-white/95 backdrop-blur-sm dark:border-gray-600 border-gray-300 rounded-lg shadow-xl max-h-64 overflow-hidden flex flex-col"
-        @mousedown.stop
-      >
         <!-- Search Input -->
         <div class="p-2 border-b border-gray-300/50 dark:border-white/10">
           <div class="relative">
@@ -123,15 +118,15 @@
             </div>
           </div>
         </div>
-      </div>
-    </Transition>
-  </div>
+    </div>
+  </Dropdown>
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, onUnmounted } from 'vue';
+import { ref, watch, computed } from 'vue';
 import { AVAILABLE_REGIONS } from '@/constants/regions';
 import type { Region } from '@/constants/regions';
+import Dropdown from '@/components/ui/Dropdown.vue';
 
 interface Props {
   modelValue: string | null | undefined;
@@ -144,7 +139,6 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 
-const isOpen = ref(false);
 const selectedRegion = ref<string | null>(props.modelValue || null);
 const searchQuery = ref('');
 const filteredRegions = ref<Region[]>([]);
@@ -152,14 +146,10 @@ const filteredRegions = ref<Region[]>([]);
 // Use regions from constants
 const regions = AVAILABLE_REGIONS;
 
-const toggleDropdown = () => {
-  isOpen.value = !isOpen.value;
-  if (isOpen.value) {
-    // Show all regions when opening
-    filteredRegions.value = regions;
-    searchQuery.value = '';
-  }
-};
+// Initialize filtered regions
+filteredRegions.value = [...regions].sort((a, b) =>
+  a.name.localeCompare(b.name)
+);
 
 const filterRegions = () => {
   if (!searchQuery.value.trim()) {
@@ -179,19 +169,20 @@ const filterRegions = () => {
     .sort((a: Region, b: Region) => a.name.localeCompare(b.name));
 };
 
+const dropdownRef = ref<InstanceType<typeof Dropdown> | null>(null);
+
+const handleDropdownOpen = () => {
+  // Reset search and show all regions when opening
+  searchQuery.value = '';
+  filteredRegions.value = [...regions].sort((a, b) =>
+    a.name.localeCompare(b.name)
+  );
+};
+
 const selectRegion = (code: string | null) => {
   selectedRegion.value = code;
   emit('update:modelValue', code);
-  isOpen.value = false;
-};
-
-// Close dropdown when clicking outside
-const handleClickOutside = (event: MouseEvent) => {
-  const target = event.target as HTMLElement;
-  const component = target.closest('.relative');
-  if (!component) {
-    isOpen.value = false;
-  }
+  dropdownRef.value?.close();
 };
 
 // Watch for external changes
@@ -201,12 +192,4 @@ watch(
     selectedRegion.value = newValue || null;
   }
 );
-
-onMounted(() => {
-  document.addEventListener('click', handleClickOutside);
-});
-
-onUnmounted(() => {
-  document.removeEventListener('click', handleClickOutside);
-});
 </script>
