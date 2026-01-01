@@ -1,10 +1,10 @@
 <template>
-  <div class="container mx-auto max-w-7xl px-4 py-12">
+  <div class="container mx-auto max-w-7xl px-4 py-16">
     <!-- Profile Header -->
     <div class="mb-8">
       <div class="flex flex-col md:flex-row items-start md:items-center gap-6">
         <!-- Avatar -->
-        <div class="flex-shrink-0">
+        <div class="flex-shrink-0 flex items-center">
           <AvatarUpload
             :avatar-url="profile?.avatar_url"
             :display-name="profile?.display_name"

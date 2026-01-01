@@ -77,8 +77,13 @@ CREATE POLICY "Users can update own profile"
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
-  INSERT INTO public.profiles (id, email, onboarding_completed)
-  VALUES (NEW.id, NEW.email, FALSE);
+  INSERT INTO public.profiles (id, email, display_name, onboarding_completed)
+  VALUES (
+    NEW.id,
+    NEW.email,
+    COALESCE((NEW.raw_user_meta_data->>'display_name')::text, NULL),
+    FALSE
+  );
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;

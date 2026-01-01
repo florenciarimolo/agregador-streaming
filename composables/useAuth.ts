@@ -14,7 +14,11 @@ export const useAuth = () => {
    * Sign up with email and password
    * Validates password on server side before sending to Supabase
    */
-  const signUp = async (email: string, password: string) => {
+  const signUp = async (
+    email: string,
+    password: string,
+    displayName?: string | null
+  ) => {
     try {
       // Validate password on server side
       const validation = validatePassword(password);
@@ -38,10 +42,29 @@ export const useAuth = () => {
         password,
         options: {
           emailRedirectTo: redirectUrl,
+          data: {
+            display_name: displayName || null,
+          },
         },
       });
 
       if (error) throw error;
+
+      // If user is created and displayName is provided, update profile
+      if (data.user && displayName) {
+        // Wait a bit for the trigger to create the profile
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
+        // Update profile with display_name
+        const userId = data.user.id || (data.user as { sub?: string }).sub;
+        if (userId) {
+          const { updateProfile } =
+            await import('@/composables/database/profiles');
+          await updateProfile(userId, {
+            display_name: displayName,
+          });
+        }
+      }
 
       return { data, error: null };
     } catch (error: unknown) {

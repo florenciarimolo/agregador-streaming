@@ -173,7 +173,7 @@
           >
             <button
               type="button"
-              class="hover:ring-2 hover:ring-primary/50 transition-all cursor-pointer shadow-md touch-manipulation border border-primary"
+              class="hover:ring-2 hover:ring-primary/50 transition-all cursor-pointer shadow-md touch-manipulation border border-primary rounded-full"
               :aria-label="
                 $t('navbar.userMenuFor', {
                   email: currentUser.email || 'usuario',

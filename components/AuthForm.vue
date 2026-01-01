@@ -32,6 +32,7 @@ const userStore = useUserStore();
 // Form state
 const email = ref('');
 const password = ref('');
+const displayName = ref('');
 const authMethod = ref<'password' | 'magic' | 'forgot'>('password');
 const isSignUp = ref(false);
 const loading = ref(false);
@@ -71,7 +72,11 @@ const handlePasswordAuth = async () => {
   try {
     let result;
     if (isSignUp.value) {
-      result = await signUp(email.value, password.value);
+      result = await signUp(
+        email.value,
+        password.value,
+        displayName.value.trim() || null
+      );
     } else {
       result = await signIn(email.value, password.value);
     }
@@ -87,6 +92,7 @@ const handlePasswordAuth = async () => {
       signUpSuccess.value = true;
       email.value = '';
       password.value = '';
+      displayName.value = '';
       emit('signup');
       return;
     }
@@ -141,6 +147,7 @@ const toggleSignUp = () => {
   signUpSuccess.value = false;
   error.value = '';
   forgotPasswordSent.value = false;
+  displayName.value = '';
   // Reset to password method when switching to sign up
   if (!wasSignUp && isSignUp.value) {
     authMethod.value = 'password';
@@ -297,6 +304,29 @@ const backToLogin = () => {
                 appearance: none;
               "
               :placeholder="t('auth.emailPlaceholderAuth')"
+            />
+          </div>
+
+          <div v-if="isSignUp" class="mb-4">
+            <label
+              for="display-name"
+              class="block text-sm font-medium dark:text-gray-300 text-gray-800 mb-2"
+            >
+              {{ t('auth.displayNameLabel') }}
+            </label>
+            <input
+              id="display-name"
+              v-model="displayName"
+              type="text"
+              class="w-full px-4 py-3 bg-transparent dark:bg-transparent dark:text-gray-300 text-gray-800 border dark:border-gray-700/50 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all"
+              style="
+                background-color: transparent !important;
+                -webkit-appearance: none;
+                -moz-appearance: none;
+                appearance: none;
+              "
+              :placeholder="t('auth.displayNamePlaceholder')"
+              maxlength="50"
             />
           </div>
 
