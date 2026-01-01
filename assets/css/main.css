@@ -191,6 +191,125 @@ button:not([role='switch']):not([aria-label='Toggle menu']):not(
   outline: 4px auto -webkit-focus-ring-color;
 }
 
+/* Custom Scrollbar Styles */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(33, 24, 110, 0.3); /* primary color with opacity */
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(
+    33,
+    24,
+    110,
+    0.5
+  ); /* primary color with more opacity on hover */
+}
+
+/* Dark mode scrollbar */
+.dark .custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(99, 102, 241, 0.3); /* primary-500 with opacity */
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(99, 102, 241, 0.5);
+}
+
+/* Firefox scrollbar */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(33, 24, 110, 0.3) rgba(0, 0, 0, 0.05);
+}
+
+.dark .custom-scrollbar {
+  scrollbar-color: rgba(99, 102, 241, 0.3) rgba(255, 255, 255, 0.05);
+}
+
+/* Custom Select Styles */
+.region-select {
+  background-image: none !important;
+}
+
+.region-select option {
+  background-color: rgba(255, 255, 255, 0.95);
+  color: #1f2937;
+  padding: 0.5rem;
+}
+
+.dark .region-select option {
+  background-color: rgba(17, 24, 39, 0.95);
+  color: #e5e7eb;
+}
+
+/* Select dropdown styling for all browsers */
+select {
+  background-color: rgba(243, 244, 246, 0.8);
+  color: #1f2937;
+  border: 1px solid rgba(209, 213, 219, 0.5);
+}
+
+.dark select {
+  background-color: rgba(31, 41, 55, 0.5);
+  color: #e5e7eb;
+  border: 1px solid rgba(75, 85, 99, 0.7);
+}
+
+select:focus {
+  outline: none;
+  border-color: rgba(33, 24, 110, 0.5);
+  box-shadow: 0 0 0 2px rgba(33, 24, 110, 0.2);
+}
+
+.dark select:focus {
+  border-color: rgba(99, 102, 241, 0.5);
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+}
+
+/* Select option styling */
+select option {
+  background-color: rgba(255, 255, 255, 0.95);
+  color: #1f2937;
+  padding: 0.5rem;
+}
+
+.dark select option {
+  background-color: rgba(17, 24, 39, 0.95);
+  color: #e5e7eb;
+}
+
+select option:checked {
+  background-color: rgba(33, 24, 110, 0.1);
+  color: #21186e;
+}
+
+.dark select option:checked {
+  background-color: rgba(99, 102, 241, 0.2);
+  color: #c7d2fe;
+}
+
+select option:hover {
+  background-color: rgba(33, 24, 110, 0.1);
+}
+
+.dark select option:hover {
+  background-color: rgba(99, 102, 241, 0.2);
+}
+
 /* Explicitly reset styles for switch buttons */
 button[role='switch'] {
   border-radius: 9999px !important;

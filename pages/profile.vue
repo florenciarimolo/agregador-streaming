@@ -2,33 +2,37 @@
   <div class="container mx-auto max-w-7xl px-4 py-16">
     <!-- Profile Header -->
     <div class="mb-8">
-      <div class="flex flex-col md:flex-row items-start md:items-center gap-6">
+      <div class="flex flex-row items-center gap-4 md:gap-6">
         <!-- Avatar -->
         <div class="flex-shrink-0 flex items-center">
-          <AvatarUpload
-            :avatar-url="profile?.avatar_url"
-            :display-name="profile?.display_name"
-            :email="currentUser?.email"
-            :user-id="userId"
-            size="xl"
-            @uploaded="handleAvatarUploaded"
-            @error="handleAvatarError"
-          />
+          <div
+            class="w-12 h-12 md:w-24 md:h-24 [&_.avatar-upload]:!w-full [&_.avatar-upload]:!h-full [&_.avatar-upload>div]:!w-full [&_.avatar-upload>div]:!h-full [&_.avatar-upload>div>div]:!w-full [&_.avatar-upload>div>div]:!h-full [&_.avatar-upload>div>div>img]:!w-full [&_.avatar-upload>div>div>img]:!h-full [&_.avatar-upload>div>div>img]:!object-cover [&_.avatar-upload>div>div>span]:!w-full [&_.avatar-upload>div>div>span]:!h-full"
+          >
+            <AvatarUpload
+              :avatar-url="profile?.avatar_url"
+              :display-name="profile?.display_name"
+              :email="currentUser?.email"
+              :user-id="userId"
+              size="xl"
+              @uploaded="handleAvatarUploaded"
+              @error="handleAvatarError"
+            />
+          </div>
         </div>
 
         <!-- Profile Info -->
-        <div class="flex-1 min-w-0">
+        <div class="flex-1 min-w-0 overflow-hidden">
           <div v-if="!isEditing" class="space-y-2">
             <div class="flex items-center gap-2">
               <h1
-                class="text-3xl md:text-4xl font-bold dark:text-gray-300 text-gray-800 font-heading"
+                class="text-sm font-medium dark:text-gray-300 text-gray-800 font-heading whitespace-nowrap"
               >
                 {{ displayName || currentUser?.email || $t('profile.user') }}
               </h1>
               <button
                 type="button"
                 :aria-label="$t('profile.editProfile')"
-                class="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                class="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors flex-shrink-0"
                 @click="startEdit"
               >
                 <IconEdit
@@ -38,7 +42,7 @@
             </div>
             <p
               v-if="currentUser?.email"
-              class="text-gray-600 dark:text-gray-400"
+              class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap"
             >
               {{ currentUser.email }}
             </p>
@@ -85,16 +89,138 @@
       </div>
     </div>
 
-    <!-- Alert Messages -->
-    <AlertMessage v-if="errorMessage" :message="errorMessage" type="error" />
-    <AlertMessage
-      v-if="successMessage"
-      :message="successMessage"
-      type="success"
-    />
-
     <!-- Undo Toast -->
     <UndoToast />
+
+    <!-- Confirmation Dialog for Delete -->
+    <Transition
+      enter-active-class="transition duration-200 ease-out"
+      enter-from-class="transform scale-95 opacity-0"
+      enter-to-class="transform scale-100 opacity-100"
+      leave-active-class="transition duration-150 ease-in"
+      leave-from-class="transform scale-100 opacity-100"
+      leave-to-class="transform scale-95 opacity-0"
+    >
+      <div
+        v-if="titleToDelete"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+        @click="titleToDelete = null"
+      >
+        <div
+          class="dark:bg-gray-900/40 bg-gray-100/80 backdrop-blur-xl border border-gray-300/50 dark:border-white/10 rounded-3xl shadow-xl p-6 max-w-md mx-4"
+          @click.stop
+        >
+          <h3
+            class="text-lg font-semibold dark:text-gray-300 text-gray-800 mb-2"
+          >
+            {{ $t('preferences.confirmDelete') }}
+          </h3>
+          <p class="text-gray-800 dark:text-gray-300 mb-4">
+            {{
+              $t('preferences.confirmDeleteMessage', {
+                title: titleToDelete.title,
+              })
+            }}
+          </p>
+          <div class="flex gap-3 justify-end">
+            <button
+              type="button"
+              class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              @click="titleToDelete = null"
+            >
+              {{ $t('common.cancel') }}
+            </button>
+            <button
+              type="button"
+              class="px-4 py-2 text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors"
+              @click="confirmRemoveLiked"
+            >
+              {{ $t('common.delete') }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Transition>
+
+    <!-- Language Change Confirmation Modal -->
+    <Transition
+      enter-active-class="transition duration-200 ease-out"
+      enter-from-class="transform scale-95 opacity-0"
+      enter-to-class="transform scale-100 opacity-100"
+      leave-active-class="transition duration-150 ease-in"
+      leave-from-class="transform scale-100 opacity-100"
+      leave-to-class="transform scale-95 opacity-0"
+    >
+      <div
+        v-if="showLanguageChangeModal && pendingLanguageChange"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+        @click="
+          if (!isConfirmingLanguageChange) {
+            showLanguageChangeModal = false;
+            pendingLanguageChange = null;
+          }
+        "
+      >
+        <div
+          class="dark:bg-gray-900/40 bg-gray-100/80 backdrop-blur-xl border border-gray-300/50 dark:border-white/10 rounded-3xl shadow-xl p-6 max-w-md mx-4 relative"
+          @click.stop
+        >
+          <!-- Loading overlay -->
+          <div
+            v-if="isConfirmingLanguageChange"
+            class="absolute inset-0 bg-black/20 dark:bg-black/40 backdrop-blur-sm rounded-3xl flex items-center justify-center z-10"
+          >
+            <div class="flex flex-col items-center gap-3">
+              <div
+                class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 dark:border-primary-400"
+              ></div>
+              <p class="text-sm text-gray-700 dark:text-gray-300">
+                {{ $t('preferences.content.preferredLanguages.saving') }}
+              </p>
+            </div>
+          </div>
+          <h3
+            class="text-lg font-semibold dark:text-gray-300 text-gray-800 mb-2"
+          >
+            {{
+              $t('preferences.content.preferredLanguages.confirmChangeTitle')
+            }}
+          </h3>
+          <p class="text-gray-800 dark:text-gray-300 mb-4">
+            {{
+              $t('preferences.content.preferredLanguages.confirmChangeMessage')
+            }}
+          </p>
+          <div class="flex gap-3 justify-end">
+            <button
+              type="button"
+              :disabled="isConfirmingLanguageChange"
+              class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              @click="
+                if (!isConfirmingLanguageChange) {
+                  showLanguageChangeModal = false;
+                  pendingLanguageChange = null;
+                }
+              "
+            >
+              {{ $t('common.cancel') }}
+            </button>
+            <button
+              type="button"
+              :disabled="isConfirmingLanguageChange"
+              class="px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              @click="confirmLanguageChange"
+            >
+              <span
+                v-if="isConfirmingLanguageChange"
+                class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"
+              ></span>
+              {{ $t('common.confirm') }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Transition>
 
     <!-- Tabs for Lists -->
     <div class="mb-8">
@@ -103,12 +229,12 @@
           v-for="tab in tabs"
           :key="tab.id"
           :class="[
-            'py-2.5 px-4 rounded-full font-medium transition-all text-sm whitespace-nowrap flex items-center gap-2',
+            'py-1.5 md:py-2.5 px-4 rounded-full font-medium transition-all text-xs md:text-sm whitespace-nowrap flex items-center gap-2',
             activeTab === tab.id
               ? 'bg-primary-800 text-white border border-gray-700/50 dark:bg-primary-600/70 dark:border-primary-800'
               : 'dark:bg-gray-800/50 bg-gray-100/50 dark:text-gray-300 text-gray-700 border border-gray-700/30 dark:border-gray-600/30',
           ]"
-          @click="activeTab = tab.id"
+          @click="handleTabChange(tab.id)"
         >
           {{ tab.label }}
           <span
@@ -150,7 +276,7 @@
         <TitleGrid
           v-else-if="likedTitles.length > 0"
           :titles="likedTitles"
-          :on-remove="handleRemoveLiked"
+          :on-remove="handleRemoveLikedClick"
           :remove-label="$t('preferences.removeFromList')"
         />
 
@@ -203,32 +329,544 @@
         <EmptyState v-else :message="$t('notInterested.empty')" icon="x" />
       </div>
 
-      <!-- Watchlist Tab -->
-      <div v-if="activeTab === 'watchlist'">
-        <div v-if="isLoading" class="text-center py-12">
+      <!-- Content Preferences Tab -->
+      <div v-if="activeTab === 'content-preferences'">
+        <div class="space-y-8">
+          <!-- Preferred Languages -->
           <div
-            class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"
-          ></div>
-          <p class="text-gray-800 dark:text-gray-300">
-            {{ $t('watchlist.loading') }}
-          </p>
+            class="dark:bg-gray-900/40 bg-gray-100/80 backdrop-blur-xl rounded-lg border border-gray-300/50 dark:border-white/10 p-6 relative"
+          >
+            <h2
+              class="text-xl font-semibold dark:text-gray-300 text-gray-800 mb-2"
+            >
+              {{ $t('preferences.content.preferredLanguages.title') }}
+            </h2>
+            <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              {{ $t('preferences.content.preferredLanguages.description') }}
+            </p>
+
+            <!-- Language Search -->
+            <div class="relative mb-4">
+              <div class="relative">
+                <input
+                  ref="languageInputRef"
+                  v-model="languageSearchQuery"
+                  type="text"
+                  :placeholder="
+                    $t(
+                      'preferences.content.preferredLanguages.searchPlaceholder'
+                    )
+                  "
+                  class="w-full px-4 py-2 pl-10 pr-4 text-sm dark:text-gray-300 text-gray-800 dark:bg-gray-800/50 bg-white/80 dark:border-gray-600 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-transparent focus:border-transparent backdrop-blur-xs transition-all opacity-90 hover:opacity-100"
+                  @input="filterLanguages"
+                  @focus="handleLanguageFocus"
+                  @blur="handleLanguageBlur"
+                  @keydown.escape="showLanguageResults = false"
+                />
+                <!-- Search Icon -->
+                <div
+                  class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none"
+                >
+                  <svg
+                    class="w-4 h-4 text-gray-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            <!-- Language Search Results Dropdown (Teleported) -->
+            <Teleport to="body">
+              <Transition
+                enter-active-class="transition duration-200 ease-out"
+                enter-from-class="transform scale-95 opacity-0"
+                enter-to-class="transform scale-100 opacity-100"
+                leave-active-class="transition duration-150 ease-in"
+                leave-from-class="transform scale-100 opacity-100"
+                leave-to-class="transform scale-95 opacity-0"
+              >
+                <div
+                  v-if="showLanguageResults && languageDropdownPosition"
+                  class="fixed z-[9999] dark:bg-gray-900/95 bg-white/95 backdrop-blur-sm dark:border-gray-600 border-gray-300 rounded-lg shadow-xl max-h-64 overflow-y-auto custom-scrollbar"
+                  :style="{
+                    top: `${languageDropdownPosition.top}px`,
+                    left: `${languageDropdownPosition.left}px`,
+                    width: `${languageDropdownPosition.width}px`,
+                  }"
+                  @mousedown.prevent
+                >
+                  <div class="py-2">
+                    <div
+                      v-if="displayedLanguages.length === 0"
+                      class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400 text-center"
+                    >
+                      {{
+                        $t('preferences.content.preferredLanguages.noResults')
+                      }}
+                    </div>
+                    <div
+                      v-for="lang in displayedLanguages"
+                      :key="lang.code"
+                      class="flex items-center gap-3 px-4 py-3 cursor-pointer dark:hover:bg-gray-800/50 hover:bg-gray-100/50 transition-colors duration-150"
+                      :class="{
+                        'dark:bg-gray-800/30 bg-gray-100/50':
+                          selectedLanguages.some((l) => l.code === lang.code),
+                      }"
+                      @mousedown.prevent="addLanguage(lang)"
+                      @click="addLanguage(lang)"
+                    >
+                      <span class="text-sm dark:text-gray-300 text-gray-800">{{
+                        `${lang.name} (${lang.code.toUpperCase()})`
+                      }}</span>
+                    </div>
+                  </div>
+                </div>
+              </Transition>
+            </Teleport>
+
+            <!-- Selected Languages List -->
+            <div v-if="selectedLanguages.length > 0" class="mb-4">
+              <p
+                class="text-sm font-medium dark:text-gray-300 text-gray-800 mb-2"
+              >
+                {{ $t('preferences.content.preferredLanguages.selected') }}
+                ({{ selectedLanguages.length }})
+              </p>
+              <div class="flex flex-wrap gap-2">
+                <div
+                  v-for="lang in selectedLanguages"
+                  :key="lang.code"
+                  class="flex items-center gap-2 py-1.5 md:py-2.5 px-4 dark:bg-gray-900/40 bg-gray-100/80 backdrop-blur-xl rounded-full border border-gray-300/50 dark:border-white/10"
+                >
+                  <span
+                    class="text-xs md:text-sm font-medium dark:text-gray-300 text-gray-800"
+                    >{{ `${lang.name} (${lang.code.toUpperCase()})` }}</span
+                  >
+                  <button
+                    v-if="selectedLanguages.length > 1"
+                    type="button"
+                    class="ml-1 p-1.5 rounded-full bg-black/50 hover:bg-red-600/80 backdrop-blur-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                    :aria-label="
+                      $t('preferences.content.preferredLanguages.remove', {
+                        name: lang.name,
+                      })
+                    "
+                    @click="removeLanguage(lang.code)"
+                  >
+                    <svg
+                      class="w-3 h-3 text-white"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Info Message -->
+            <p
+              v-if="selectedLanguages.length === 0"
+              class="text-sm text-gray-600 dark:text-gray-400 italic"
+            >
+              {{ $t('preferences.content.preferredLanguages.noneSelected') }}
+            </p>
+          </div>
+
+          <!-- Content Types -->
+          <div
+            class="dark:bg-gray-900/40 bg-gray-100/80 backdrop-blur-xl rounded-lg border border-gray-300/50 dark:border-white/10 p-6"
+          >
+            <h2
+              class="text-xl font-semibold dark:text-gray-300 text-gray-800 mb-2"
+            >
+              {{ $t('preferences.content.contentTypes.title') }}
+            </h2>
+            <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              {{ $t('preferences.content.contentTypes.description') }}
+            </p>
+            <div class="flex flex-wrap gap-4">
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input
+                  v-model="contentPreferences.content_types"
+                  type="checkbox"
+                  value="movie"
+                  class="w-4 h-4 text-primary focus:ring-primary rounded"
+                  @change="saveContentPreferences"
+                />
+                <span class="text-sm dark:text-gray-300 text-gray-800">{{
+                  $t('preferences.content.contentTypes.movie')
+                }}</span>
+              </label>
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input
+                  v-model="contentPreferences.content_types"
+                  type="checkbox"
+                  value="tv"
+                  class="w-4 h-4 text-primary focus:ring-primary rounded"
+                  @change="saveContentPreferences"
+                />
+                <span class="text-sm dark:text-gray-300 text-gray-800">{{
+                  $t('preferences.content.contentTypes.tv')
+                }}</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Favorite Genres -->
+          <div
+            class="dark:bg-gray-900/40 bg-gray-100/80 backdrop-blur-xl rounded-lg border border-gray-300/50 dark:border-white/10 p-6 relative"
+          >
+            <h2
+              class="text-xl font-semibold dark:text-gray-300 text-gray-800 mb-2"
+            >
+              {{ $t('preferences.content.favoriteGenres.title') }}
+            </h2>
+            <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              {{ $t('preferences.content.favoriteGenres.description') }}
+            </p>
+
+            <!-- Genre Search -->
+            <div class="relative mb-4">
+              <div class="relative">
+                <input
+                  ref="genreInputRef"
+                  v-model="genreSearchQuery"
+                  type="text"
+                  :placeholder="
+                    $t('preferences.content.favoriteGenres.searchPlaceholder')
+                  "
+                  class="w-full px-4 py-2 pl-10 pr-4 text-sm dark:text-gray-300 text-gray-800 dark:bg-gray-800/50 bg-white/80 dark:border-gray-600 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-transparent focus:border-transparent backdrop-blur-xs transition-all opacity-90 hover:opacity-100"
+                  @input="filterGenres"
+                  @focus="handleGenreFocus"
+                  @blur="handleGenreBlur"
+                />
+                <!-- Search Icon -->
+                <div
+                  class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none"
+                >
+                  <svg
+                    class="w-4 h-4 text-gray-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            <!-- Genre Search Results Dropdown (Teleported) -->
+            <Teleport to="body">
+              <Transition
+                enter-active-class="transition duration-200 ease-out"
+                enter-from-class="transform scale-95 opacity-0"
+                enter-to-class="transform scale-100 opacity-100"
+                leave-active-class="transition duration-150 ease-in"
+                leave-from-class="transform scale-100 opacity-100"
+                leave-to-class="transform scale-95 opacity-0"
+              >
+                <div
+                  v-if="
+                    showGenreResults &&
+                    filteredGenres.length > 0 &&
+                    genreDropdownPosition
+                  "
+                  class="fixed z-[9999] dark:bg-gray-900/95 bg-white/95 backdrop-blur-sm dark:border-gray-600 border-gray-300 rounded-lg shadow-xl max-h-64 overflow-y-auto custom-scrollbar"
+                  :style="{
+                    top: `${genreDropdownPosition.top}px`,
+                    left: `${genreDropdownPosition.left}px`,
+                    width: `${genreDropdownPosition.width}px`,
+                  }"
+                  @mousedown.prevent
+                >
+                  <div class="py-2">
+                    <div
+                      v-for="genre in filteredGenres"
+                      :key="genre.id"
+                      class="flex items-center gap-3 px-4 py-3 cursor-pointer dark:hover:bg-gray-800/50 hover:bg-gray-100/50 transition-colors duration-150"
+                      @mousedown.prevent="addGenre(genre)"
+                      @click="addGenre(genre)"
+                    >
+                      <span class="text-sm dark:text-gray-300 text-gray-800">{{
+                        genre.name
+                      }}</span>
+                    </div>
+                  </div>
+                </div>
+              </Transition>
+            </Teleport>
+
+            <!-- Selected Genres List -->
+            <div v-if="selectedGenres.length > 0" class="mb-4">
+              <p
+                class="text-sm font-medium dark:text-gray-300 text-gray-800 mb-2"
+              >
+                {{ $t('preferences.content.favoriteGenres.selected') }}
+                ({{ selectedGenres.length }})
+              </p>
+              <div class="flex flex-wrap gap-2">
+                <div
+                  v-for="genre in selectedGenres"
+                  :key="genre.id"
+                  class="flex items-center gap-2 py-1.5 md:py-2.5 px-4 dark:bg-gray-900/40 bg-gray-100/80 backdrop-blur-xl rounded-full border border-gray-300/50 dark:border-white/10"
+                >
+                  <span
+                    class="text-xs md:text-sm font-medium dark:text-gray-300 text-gray-800"
+                    >{{ genre.name }}</span
+                  >
+                  <button
+                    type="button"
+                    class="ml-1 p-1.5 rounded-full bg-black/50 hover:bg-red-600/80 backdrop-blur-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                    :aria-label="
+                      $t('preferences.content.favoriteGenres.remove', {
+                        name: genre.name,
+                      })
+                    "
+                    @click="removeGenre(genre.id)"
+                  >
+                    <svg
+                      class="w-3 h-3 text-white"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Info Message -->
+            <p
+              v-if="selectedGenres.length === 0"
+              class="text-sm text-gray-600 dark:text-gray-400 italic"
+            >
+              {{ $t('preferences.content.favoriteGenres.noneSelected') }}
+            </p>
+          </div>
+
+          <!-- Included Providers -->
+          <div
+            class="dark:bg-gray-900/40 bg-gray-100/80 backdrop-blur-xl rounded-lg border border-gray-300/50 dark:border-white/10 p-6 relative"
+          >
+            <h2
+              class="text-xl font-semibold dark:text-gray-300 text-gray-800 mb-2"
+            >
+              {{ $t('preferences.content.includedProviders.title') }}
+            </h2>
+            <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              {{ $t('preferences.content.includedProviders.description') }}
+            </p>
+
+            <!-- Provider Search -->
+            <div class="relative mb-4">
+              <div class="relative">
+                <input
+                  ref="providerInputRef"
+                  v-model="providerSearchQuery"
+                  type="text"
+                  :placeholder="
+                    $t(
+                      'preferences.content.includedProviders.searchPlaceholder'
+                    )
+                  "
+                  class="w-full px-4 py-2 pl-10 pr-4 text-sm dark:text-gray-300 text-gray-800 dark:bg-gray-800/50 bg-white/80 dark:border-gray-600 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-transparent focus:border-transparent backdrop-blur-xs transition-all opacity-90 hover:opacity-100"
+                  @input="filterProviders"
+                  @focus="handleProviderFocus"
+                  @blur="handleProviderBlur"
+                />
+                <!-- Search Icon -->
+                <div
+                  class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none"
+                >
+                  <svg
+                    class="w-4 h-4 text-gray-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            <!-- Provider Search Results Dropdown (Teleported) -->
+            <Teleport to="body">
+              <Transition
+                enter-active-class="transition duration-200 ease-out"
+                enter-from-class="transform scale-95 opacity-0"
+                enter-to-class="transform scale-100 opacity-100"
+                leave-active-class="transition duration-150 ease-in"
+                leave-from-class="transform scale-100 opacity-100"
+                leave-to-class="transform scale-95 opacity-0"
+              >
+                <div
+                  v-if="
+                    showProviderResults &&
+                    filteredProviders.length > 0 &&
+                    providerDropdownPosition
+                  "
+                  class="fixed z-[9999] dark:bg-gray-900/95 bg-white/95 backdrop-blur-sm dark:border-gray-600 border-gray-300 rounded-lg shadow-xl max-h-64 overflow-y-auto custom-scrollbar"
+                  :style="{
+                    top: `${providerDropdownPosition.top}px`,
+                    left: `${providerDropdownPosition.left}px`,
+                    width: `${providerDropdownPosition.width}px`,
+                  }"
+                  @mousedown.prevent
+                >
+                  <div class="py-2">
+                    <div
+                      v-for="provider in filteredProviders"
+                      :key="provider.provider_id"
+                      class="flex items-center gap-3 px-4 py-3 cursor-pointer dark:hover:bg-gray-800/50 hover:bg-gray-100/50 transition-colors duration-150"
+                      @mousedown.prevent="addProvider(provider)"
+                      @click="addProvider(provider)"
+                    >
+                      <img
+                        v-if="provider.logo_path"
+                        :src="`https://image.tmdb.org/t/p/w45${provider.logo_path}`"
+                        :alt="provider.provider_name"
+                        class="h-8 w-auto object-contain flex-shrink-0"
+                      />
+                      <div
+                        v-else
+                        class="h-8 w-8 flex items-center justify-center bg-gray-200 dark:bg-gray-700 rounded flex-shrink-0"
+                      >
+                        <span
+                          class="text-xs text-gray-600 dark:text-gray-300"
+                          >{{ provider.provider_name.charAt(0) }}</span
+                        >
+                      </div>
+                      <span class="text-sm dark:text-gray-300 text-gray-800">{{
+                        provider.provider_name
+                      }}</span>
+                    </div>
+                  </div>
+                </div>
+              </Transition>
+            </Teleport>
+
+            <!-- Selected Providers List -->
+            <div v-if="selectedProviders.length > 0" class="mb-4">
+              <p
+                class="text-sm font-medium dark:text-gray-300 text-gray-800 mb-2"
+              >
+                {{ $t('preferences.content.includedProviders.selected') }}
+                ({{ selectedProviders.length }})
+              </p>
+              <div class="flex flex-wrap gap-2">
+                <div
+                  v-for="provider in selectedProviders"
+                  :key="provider.provider_id"
+                  class="flex items-center gap-2 py-1.5 md:py-2.5 px-4 dark:bg-gray-900/40 bg-gray-100/80 backdrop-blur-xl rounded-full border border-gray-300/50 dark:border-white/10"
+                >
+                  <img
+                    v-if="provider.logo_path"
+                    :src="`https://image.tmdb.org/t/p/w45${provider.logo_path}`"
+                    :alt="provider.provider_name"
+                    class="h-5 w-auto object-contain"
+                  />
+                  <span
+                    class="text-xs md:text-sm font-medium dark:text-gray-300 text-gray-800"
+                    >{{ provider.provider_name }}</span
+                  >
+                  <button
+                    type="button"
+                    class="ml-1 p-1.5 rounded-full bg-black/50 hover:bg-red-600/80 backdrop-blur-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                    :aria-label="
+                      $t('preferences.content.includedProviders.remove', {
+                        name: provider.provider_name,
+                      })
+                    "
+                    @click="removeProvider(provider.provider_id)"
+                  >
+                    <svg
+                      class="w-3 h-3 text-white"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Info Message -->
+            <p
+              v-if="selectedProviders.length === 0"
+              class="text-sm text-gray-600 dark:text-gray-400 italic"
+            >
+              {{ $t('preferences.content.includedProviders.allIncluded') }}
+            </p>
+          </div>
+
+          <!-- Region -->
+          <div
+            class="dark:bg-gray-900/40 bg-gray-100/80 backdrop-blur-xl rounded-lg border border-gray-300/50 dark:border-white/10 p-6"
+          >
+            <h2
+              class="text-xl font-semibold dark:text-gray-300 text-gray-800 mb-2"
+            >
+              {{ $t('preferences.content.region.title') }}
+            </h2>
+            <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              {{ $t('preferences.content.region.description') }}
+            </p>
+            <RegionSelector
+              v-model="contentPreferences.region"
+              @update:model-value="handleRegionChange"
+            />
+          </div>
         </div>
-
-        <TitleGrid
-          v-else-if="watchlistTitles.length > 0"
-          :titles="watchlistTitles"
-          :on-remove="handleRemoveWatchlist"
-          :remove-label="$t('watchlist.removeTooltip')"
-        />
-
-        <EmptyState v-else :message="$t('watchlist.empty')" icon="bookmark" />
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch, nextTick, onUnmounted } from 'vue';
 import { useUserStore } from '@/stores/user';
 import { TitleStatus } from '@/types/TitleStatus';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
@@ -254,7 +892,6 @@ import {
 import { getProfile } from '@/composables/database/profiles';
 import { getSession } from '@/composables/database/auth';
 import SearchBar from '@/components/SearchBar.vue';
-import AlertMessage from '@/components/AlertMessage.vue';
 import AvatarUpload from '@/components/AvatarUpload.vue';
 import TitleGrid from '@/components/TitleGrid.vue';
 import EmptyState from '@/components/EmptyState.vue';
@@ -278,11 +915,17 @@ const profile = ref<{
 const isLoading = ref(true);
 const isEditing = ref(false);
 const editDisplayName = ref('');
-const errorMessage = ref<string | null>(null);
-const successMessage = ref<string | null>(null);
-const activeTab = ref<'liked' | 'seen' | 'not-interested' | 'watchlist'>(
-  'liked'
-);
+const activeTab = ref<
+  'liked' | 'seen' | 'not-interested' | 'content-preferences'
+>('liked');
+const titleToDelete = ref<{ id: string; title: string } | null>(null);
+const showLanguageChangeModal = ref(false);
+const isConfirmingLanguageChange = ref(false);
+const pendingLanguageChange = ref<{
+  action: 'add' | 'remove';
+  language: { code: string; name: string } | null;
+  newLanguages: Array<{ code: string; name: string }>;
+} | null>(null);
 
 const likedTitles = ref<
   Array<{
@@ -346,27 +989,35 @@ const tabs = computed(() => [
     count: notInterestedTitles.value.length,
   },
   {
-    id: 'watchlist' as const,
-    label: t('profile.tabs.watchlist'),
-    count: watchlistTitles.value.length,
+    id: 'content-preferences' as const,
+    label: t('preferences.tabs.content'),
+    count: null,
   },
 ]);
 
 // Helper functions
 const showError = (message: string) => {
-  errorMessage.value = message;
-  successMessage.value = null;
-  setTimeout(() => {
-    errorMessage.value = null;
-  }, 5000);
+  showToast(message, null, 5000);
 };
 
 const showSuccess = (message: string) => {
-  successMessage.value = message;
-  errorMessage.value = null;
-  setTimeout(() => {
-    successMessage.value = null;
-  }, 5000);
+  showToast(message, null, 5000);
+};
+
+// Handle tab change and update URL
+const handleTabChange = (
+  tabId: 'liked' | 'seen' | 'not-interested' | 'content-preferences'
+) => {
+  activeTab.value = tabId;
+  // Update URL query param without page reload
+  const route = useRoute();
+  navigateTo(
+    {
+      path: route.path,
+      query: { ...route.query, tab: tabId },
+    },
+    { replace: true }
+  );
 };
 
 // Fetch profile
@@ -721,11 +1372,21 @@ const handleTitleSelected = async (result: TMDBSearchResult) => {
   }
 };
 
-const handleRemoveLiked = async (title: {
+const handleRemoveLikedClick = (title: {
   id: string;
   title: string;
   tmdb_id: number;
 }) => {
+  titleToDelete.value = { id: title.id, title: title.title };
+};
+
+const confirmRemoveLiked = async () => {
+  if (!titleToDelete.value) return;
+
+  const title = titleToDelete.value;
+  const titleToRestore = likedTitles.value.find((t) => t.id === title.id);
+  titleToDelete.value = null;
+
   try {
     const { error } = await deleteUserTitleStatus(title.id);
     if (error) throw error;
@@ -739,20 +1400,21 @@ const handleRemoveLiked = async (title: {
         label: t('undo.undo'),
         action: async () => {
           // Re-add the like
-          const titleData = await getTitleByTmdbId(
-            title.tmdb_id,
-            likedTitles.value.find((t) => t.tmdb_id === title.tmdb_id)?.type ||
-              'movie'
-          );
-          if (titleData?.data) {
-            await upsertUserTitleStatus({
-              user_id: userId.value!,
-              tmdb_id: title.tmdb_id,
-              type: titleData.data.type,
-              status: TitleStatus.SEEN,
-              liked: true,
-            });
-            await fetchLikedTitles();
+          if (titleToRestore) {
+            const titleData = await getTitleByTmdbId(
+              titleToRestore.tmdb_id,
+              titleToRestore.type
+            );
+            if (titleData?.data) {
+              await upsertUserTitleStatus({
+                user_id: userId.value!,
+                tmdb_id: titleData.data.tmdb_id,
+                type: titleData.data.type,
+                status: TitleStatus.SEEN,
+                liked: true,
+              });
+              await fetchLikedTitles();
+            }
           }
         },
       },
@@ -825,29 +1487,999 @@ const handleRemoveNotInterested = async (title: {
   }
 };
 
-const handleRemoveWatchlist = async (title: {
-  id: string;
-  title: string;
-  tmdb_id: number;
-}) => {
-  try {
-    const { error } = await deleteUserTitleStatus(title.id);
-    if (error) throw error;
+// Content Preferences State
+const contentPreferences = ref<{
+  preferred_languages?: string[];
+  content_types?: ('movie' | 'tv')[];
+  favorite_genres?: number[];
+  included_providers?: number[];
+  region?: string;
+}>({
+  preferred_languages: [],
+  content_types: [],
+  favorite_genres: [],
+  included_providers: [],
+  region: undefined,
+});
 
-    watchlistTitles.value = watchlistTitles.value.filter(
-      (t) => t.id !== title.id
-    );
-    showSuccess(t('watchlist.titleRemoved'));
+const availableLanguages = [
+  { code: 'es', name: 'Español' },
+  { code: 'ca', name: 'Català' },
+  { code: 'eu', name: 'Euskera' },
+  { code: 'gl', name: 'Galego' },
+  { code: 'en', name: 'Inglés' },
+].sort((a, b) => a.name.localeCompare(b.name));
+
+// Language selector state
+const languageSearchQuery = ref('');
+const showLanguageResults = ref(false);
+const filteredLanguages = ref<
+  Array<{
+    code: string;
+    name: string;
+  }>
+>([]);
+const selectedLanguages = ref<
+  Array<{
+    code: string;
+    name: string;
+  }>
+>([]);
+const languageInputRef = ref<HTMLInputElement | null>(null);
+const languageDropdownPosition = ref<{
+  top: number;
+  left: number;
+  width: number;
+} | null>(null);
+
+// Preload genres using useAsyncData (runs during setup, before mount)
+const { data: genresData } = useAsyncData(
+  'genres',
+  async () => {
+    // Fetch both movie and TV genres
+    const [movieResponse, tvResponse] = await Promise.all([
+      $fetch<{ genres: Array<{ id: number; name: string }> }>(
+        '/api/tmdb/genres?type=movie'
+      ),
+      $fetch<{ genres: Array<{ id: number; name: string }> }>(
+        '/api/tmdb/genres?type=tv'
+      ),
+    ]);
+    return { movie: movieResponse, tv: tvResponse };
+  },
+  {
+    server: false, // Only fetch on client
+    default: () => ({ movie: { genres: [] }, tv: { genres: [] } }),
+  }
+);
+
+const availableGenres = computed(() => {
+  if (!genresData.value) return [];
+
+  // Merge and deduplicate by ID
+  const genreMap = new Map<number, string>();
+  genresData.value.movie.genres.forEach((g: { id: number; name: string }) =>
+    genreMap.set(g.id, g.name)
+  );
+  genresData.value.tv.genres.forEach((g: { id: number; name: string }) =>
+    genreMap.set(g.id, g.name)
+  );
+
+  return Array.from(genreMap.entries())
+    .map(([id, name]) => ({ id, name }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+});
+
+// Genre selector state
+const genreSearchQuery = ref('');
+const showGenreResults = ref(false);
+const filteredGenres = ref<
+  Array<{
+    id: number;
+    name: string;
+  }>
+>([]);
+const selectedGenres = ref<
+  Array<{
+    id: number;
+    name: string;
+  }>
+>([]);
+const genreInputRef = ref<HTMLInputElement | null>(null);
+const genreDropdownPosition = ref<{
+  top: number;
+  left: number;
+  width: number;
+} | null>(null);
+
+// Preload providers using useLazyFetch (runs during setup, before mount)
+const { data: providersData } = useLazyFetch<{
+  results: Array<{
+    provider_id: number;
+    provider_name: string;
+    logo_path: string | null;
+  }>;
+}>('/api/tmdb/watch-providers', {
+  server: false, // Only fetch on client
+  default: () => ({ results: [] }),
+});
+
+const availableProviders = computed(() => {
+  if (!providersData.value) return [];
+
+  return providersData.value.results
+    .map((p) => ({
+      provider_id: p.provider_id,
+      provider_name: p.provider_name,
+      logo_path: p.logo_path,
+    }))
+    .sort((a, b) => a.provider_name.localeCompare(b.provider_name));
+});
+
+// Provider selector state
+const providerSearchQuery = ref('');
+const showProviderResults = ref(false);
+const filteredProviders = ref<
+  Array<{
+    provider_id: number;
+    provider_name: string;
+    logo_path: string | null;
+  }>
+>([]);
+const selectedProviders = ref<
+  Array<{
+    provider_id: number;
+    provider_name: string;
+    logo_path: string | null;
+  }>
+>([]);
+const providerInputRef = ref<HTMLInputElement | null>(null);
+const providerDropdownPosition = ref<{
+  top: number;
+  left: number;
+  width: number;
+} | null>(null);
+
+// Fetch content preferences
+const fetchContentPreferences = async () => {
+  const id = userId.value;
+  if (!id) return;
+
+  try {
+    const {
+      data: { session },
+    } = await getSession();
+
+    if (!session?.access_token) {
+      return;
+    }
+
+    const response = await $fetch<{
+      success: boolean;
+      preferences: {
+        preferred_languages?: string[];
+        content_types?: ('movie' | 'tv')[];
+        favorite_genres?: number[];
+        included_providers?: number[];
+        region?: string;
+      } | null;
+    }>('/api/users/preferences', {
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+    });
+
+    if (response.success && response.preferences) {
+      contentPreferences.value = {
+        preferred_languages: response.preferences.preferred_languages || [],
+        content_types: response.preferences.content_types || [],
+        favorite_genres: response.preferences.favorite_genres || [],
+        included_providers: response.preferences.included_providers || [],
+        region: response.preferences.region || undefined,
+      };
+
+      // Load selected languages from codes
+      if (
+        contentPreferences.value.preferred_languages &&
+        contentPreferences.value.preferred_languages.length > 0
+      ) {
+        // Ensure availableLanguages is available and filter
+        const languagesToSelect = availableLanguages.filter((l) =>
+          contentPreferences.value.preferred_languages?.includes(l.code)
+        );
+
+        if (languagesToSelect.length > 0) {
+          selectedLanguages.value = languagesToSelect.sort((a, b) =>
+            a.name.localeCompare(b.name)
+          );
+        } else {
+          // If no languages found in available list, set to empty
+          selectedLanguages.value = [];
+        }
+      } else {
+        // No languages in DB, set to empty
+        selectedLanguages.value = [];
+      }
+
+      // Map genres if they're already loaded
+      if (
+        availableGenres.value.length > 0 &&
+        contentPreferences.value.favorite_genres &&
+        contentPreferences.value.favorite_genres.length > 0
+      ) {
+        selectedGenres.value = availableGenres.value.filter((g) =>
+          contentPreferences.value.favorite_genres?.includes(g.id)
+        );
+      } else {
+        selectedGenres.value = [];
+      }
+
+      // Map providers if they're already loaded
+      if (
+        availableProviders.value.length > 0 &&
+        contentPreferences.value.included_providers &&
+        contentPreferences.value.included_providers.length > 0
+      ) {
+        selectedProviders.value = availableProviders.value.filter((p) =>
+          contentPreferences.value.included_providers?.includes(p.provider_id)
+        );
+      } else {
+        selectedProviders.value = [];
+      }
+    } else {
+      // No preferences found, reset to empty
+      selectedLanguages.value = [];
+      selectedGenres.value = [];
+      selectedProviders.value = [];
+      contentPreferences.value = {
+        preferred_languages: [],
+        content_types: [],
+        favorite_genres: [],
+        included_providers: [],
+        region: undefined,
+      };
+    }
   } catch (error) {
-    console.error('Error removing title:', error);
-    showError(t('watchlist.errorRemoving'));
-    await fetchWatchlistTitles();
+    console.error('Error fetching content preferences:', error);
   }
 };
 
+// Genres and providers are now preloaded using useLazyFetch above
+
+// Filter providers based on search query
+const filterProviders = () => {
+  if (!providerSearchQuery.value.trim()) {
+    filteredProviders.value = [];
+    return;
+  }
+
+  const query = providerSearchQuery.value.toLowerCase().trim();
+  filteredProviders.value = availableProviders.value
+    .filter(
+      (provider) =>
+        provider.provider_name.toLowerCase().includes(query) &&
+        !selectedProviders.value.some(
+          (p) => p.provider_id === provider.provider_id
+        )
+    )
+    .sort((a, b) => a.provider_name.localeCompare(b.provider_name))
+    .slice(0, 10); // Limit to 10 results
+};
+
+// Add provider to selected list
+const addProvider = (provider: {
+  provider_id: number;
+  provider_name: string;
+  logo_path: string | null;
+}) => {
+  // Check if already selected
+  if (
+    selectedProviders.value.some((p) => p.provider_id === provider.provider_id)
+  ) {
+    return;
+  }
+
+  selectedProviders.value.push(provider);
+  contentPreferences.value.included_providers = selectedProviders.value.map(
+    (p) => p.provider_id
+  );
+  providerSearchQuery.value = '';
+  showProviderResults.value = false;
+  saveContentPreferences();
+};
+
+// Remove provider from selected list
+const removeProvider = (providerId: number) => {
+  selectedProviders.value = selectedProviders.value.filter(
+    (p) => p.provider_id !== providerId
+  );
+  contentPreferences.value.included_providers = selectedProviders.value.map(
+    (p) => p.provider_id
+  );
+  saveContentPreferences();
+};
+
+// Calculate dropdown position for providers
+const updateProviderDropdownPosition = () => {
+  if (providerInputRef.value) {
+    const rect = providerInputRef.value.getBoundingClientRect();
+    providerDropdownPosition.value = {
+      top: rect.bottom + window.scrollY + 8, // 8px for mt-2
+      left: rect.left + window.scrollX,
+      width: rect.width,
+    };
+  }
+};
+
+// Handle provider search focus
+const handleProviderFocus = () => {
+  showProviderResults.value = true;
+  nextTick(() => {
+    updateProviderDropdownPosition();
+  });
+};
+
+// Handle provider search blur
+const handleProviderBlur = () => {
+  setTimeout(() => {
+    showProviderResults.value = false;
+    providerDropdownPosition.value = null;
+  }, 200);
+};
+
+// Computed: Display all languages when search is empty, filtered when searching
+const displayedLanguages = computed(() => {
+  let languages;
+  if (!languageSearchQuery.value.trim()) {
+    // Show all languages that are not selected
+    languages = availableLanguages.filter(
+      (lang) => !selectedLanguages.value.some((l) => l.code === lang.code)
+    );
+  } else {
+    languages = filteredLanguages.value;
+  }
+  // Sort alphabetically
+  return languages.sort((a, b) => a.name.localeCompare(b.name));
+});
+
+// Filter languages based on search query
+const filterLanguages = () => {
+  if (!languageSearchQuery.value.trim()) {
+    filteredLanguages.value = [];
+    return;
+  }
+
+  const query = languageSearchQuery.value.toLowerCase().trim();
+  filteredLanguages.value = availableLanguages.filter(
+    (lang) =>
+      (lang.name.toLowerCase().includes(query) ||
+        lang.code.toLowerCase().includes(query)) &&
+      !selectedLanguages.value.some((l) => l.code === lang.code)
+  );
+};
+
+// Add language to selected list
+const addLanguage = (lang: { code: string; name: string }) => {
+  // Check if already selected
+  if (selectedLanguages.value.some((l) => l.code === lang.code)) {
+    return;
+  }
+
+  // Close dropdown first before showing modal
+  showLanguageResults.value = false;
+  languageDropdownPosition.value = null;
+  languageSearchQuery.value = '';
+
+  // Use nextTick to ensure dropdown is closed before showing modal
+  nextTick(() => {
+    // Show confirmation modal
+    const newLanguages = [...selectedLanguages.value, lang];
+    pendingLanguageChange.value = {
+      action: 'add',
+      language: lang,
+      newLanguages,
+    };
+    showLanguageChangeModal.value = true;
+  });
+};
+
+// Remove language from selected list
+const removeLanguage = (langCode: string) => {
+  const langToRemove = selectedLanguages.value.find((l) => l.code === langCode);
+  if (!langToRemove) return;
+
+  // Show confirmation modal
+  const newLanguages = selectedLanguages.value.filter(
+    (l) => l.code !== langCode
+  );
+  pendingLanguageChange.value = {
+    action: 'remove',
+    language: langToRemove,
+    newLanguages,
+  };
+  showLanguageChangeModal.value = true;
+};
+
+// Calculate dropdown position for languages
+const updateLanguageDropdownPosition = () => {
+  if (languageInputRef.value) {
+    const rect = languageInputRef.value.getBoundingClientRect();
+    languageDropdownPosition.value = {
+      top: rect.bottom + 8, // 8px for mt-2, fixed position is relative to viewport
+      left: rect.left,
+      width: rect.width,
+    };
+  }
+};
+
+// Handle language search focus
+const handleLanguageFocus = () => {
+  showLanguageResults.value = true;
+  filterLanguages();
+  nextTick(() => {
+    updateLanguageDropdownPosition();
+  });
+};
+
+// Handle language search blur
+const handleLanguageBlur = () => {
+  setTimeout(() => {
+    showLanguageResults.value = false;
+    languageDropdownPosition.value = null;
+  }, 200);
+};
+
+// Confirm language change and regenerate pool
+const confirmLanguageChange = async () => {
+  if (!pendingLanguageChange.value || isConfirmingLanguageChange.value) return;
+
+  // Set loading state
+  isConfirmingLanguageChange.value = true;
+
+  // Store original state for potential rollback
+  const originalLanguages = [...selectedLanguages.value];
+  const originalPreferences = [
+    ...(contentPreferences.value.preferred_languages || []),
+  ];
+
+  try {
+    // Update selected languages
+    selectedLanguages.value = [...pendingLanguageChange.value.newLanguages];
+
+    // Map to language codes - ensure at least one language (default to Spanish)
+    const languageCodes =
+      selectedLanguages.value.length > 0
+        ? selectedLanguages.value.map((l) => l.code)
+        : ['es'];
+
+    contentPreferences.value.preferred_languages = languageCodes;
+
+    // Save preferences - wait for it to complete
+    const id = userId.value;
+    if (!id) {
+      throw new Error('User ID not found');
+    }
+
+    const {
+      data: { session },
+    } = await getSession();
+
+    if (!session?.access_token) {
+      throw new Error(t('profile.notAuthenticated'));
+    }
+
+    // Build preferences to save
+    const preferencesToSave = {
+      preferred_languages: languageCodes,
+      favorite_genres:
+        selectedGenres.value.length > 0
+          ? selectedGenres.value.map((g) => g.id)
+          : [],
+      included_providers:
+        selectedProviders.value.length > 0
+          ? selectedProviders.value.map((p) => p.provider_id)
+          : [],
+      content_types: contentPreferences.value.content_types || [],
+      region: contentPreferences.value.region || null,
+    };
+
+    // Save to Supabase
+    const saveResponse = await $fetch<{
+      success: boolean;
+      preferences: unknown;
+    }>('/api/users/preferences', {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: preferencesToSave,
+    });
+
+    if (!saveResponse.success) {
+      throw new Error('Failed to save preferences');
+    }
+
+    // Verify the save was successful by checking the response
+    console.log(
+      '[LanguageChange] Preferences saved successfully:',
+      saveResponse
+    );
+    console.log(
+      '[LanguageChange] Saved preferred_languages:',
+      saveResponse.preferences &&
+        typeof saveResponse.preferences === 'object' &&
+        'preferred_languages' in saveResponse.preferences
+        ? (saveResponse.preferences as { preferred_languages?: string[] })
+            .preferred_languages
+        : 'not found'
+    );
+
+    // Refresh preferences from server to ensure UI is in sync
+    await fetchContentPreferences();
+
+    // Delete and regenerate recommendation pool
+    try {
+      const poolResponse = await $fetch<{
+        success: boolean;
+        message?: string;
+      }>('/api/recommendations/regenerate-pool', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (poolResponse.success) {
+        // Show success toast
+        showSuccess(
+          t('preferences.content.preferredLanguages.poolRegenerated')
+        );
+
+        // Close modal only after showing success toast
+        // Use nextTick to ensure toast is rendered before closing modal
+        await nextTick();
+        showLanguageChangeModal.value = false;
+        pendingLanguageChange.value = null;
+      } else {
+        showError(
+          t('preferences.content.preferredLanguages.errorRegenerating')
+        );
+        // Don't close modal on error, let user try again
+      }
+    } catch (poolError) {
+      console.error('Error regenerating pool:', poolError);
+      // Don't fail the whole operation if pool regeneration fails
+      showError(t('preferences.content.preferredLanguages.errorRegenerating'));
+      // Don't close modal on error, let user try again
+    } finally {
+      isConfirmingLanguageChange.value = false;
+    }
+  } catch (error) {
+    console.error('Error confirming language change:', error);
+
+    // Revert language change on error
+    selectedLanguages.value = originalLanguages;
+    contentPreferences.value.preferred_languages = originalPreferences;
+
+    showError(t('preferences.content.errorSaving'));
+
+    // Keep modal open so user can try again
+    // Don't close it here - let user decide
+    isConfirmingLanguageChange.value = false;
+  }
+};
+
+// Filter genres based on search query
+const filterGenres = () => {
+  if (!genreSearchQuery.value.trim()) {
+    filteredGenres.value = [];
+    return;
+  }
+
+  const query = genreSearchQuery.value.toLowerCase().trim();
+  filteredGenres.value = availableGenres.value
+    .filter(
+      (genre) =>
+        genre.name.toLowerCase().includes(query) &&
+        !selectedGenres.value.some((g) => g.id === genre.id)
+    )
+    .slice(0, 10); // Limit to 10 results
+};
+
+// Add genre to selected list
+const addGenre = (genre: { id: number; name: string }) => {
+  // Check if already selected
+  if (selectedGenres.value.some((g) => g.id === genre.id)) {
+    return;
+  }
+
+  selectedGenres.value.push(genre);
+  contentPreferences.value.favorite_genres = selectedGenres.value.map(
+    (g) => g.id
+  );
+  genreSearchQuery.value = '';
+  showGenreResults.value = false;
+  saveContentPreferences();
+};
+
+// Remove genre from selected list
+const removeGenre = (genreId: number) => {
+  selectedGenres.value = selectedGenres.value.filter((g) => g.id !== genreId);
+  contentPreferences.value.favorite_genres = selectedGenres.value.map(
+    (g) => g.id
+  );
+  saveContentPreferences();
+};
+
+// Calculate dropdown position for genres
+const updateGenreDropdownPosition = () => {
+  if (genreInputRef.value) {
+    const rect = genreInputRef.value.getBoundingClientRect();
+    genreDropdownPosition.value = {
+      top: rect.bottom + 8, // 8px for mt-2, fixed position is relative to viewport
+      left: rect.left,
+      width: rect.width,
+    };
+  }
+};
+
+// Handle genre search focus
+const handleGenreFocus = () => {
+  showGenreResults.value = true;
+  nextTick(() => {
+    updateGenreDropdownPosition();
+  });
+};
+
+// Handle genre search blur
+const handleGenreBlur = () => {
+  setTimeout(() => {
+    showGenreResults.value = false;
+    genreDropdownPosition.value = null;
+  }, 200);
+};
+
+// Handle region change
+const handleRegionChange = () => {
+  saveContentPreferences();
+};
+
+// Save content preferences
+const saveContentPreferences = async () => {
+  const id = userId.value;
+  if (!id) return;
+
+  try {
+    const {
+      data: { session },
+    } = await getSession();
+
+    if (!session?.access_token) {
+      throw new Error(t('profile.notAuthenticated'));
+    }
+
+    // Logic: Ensure at least one language (default to Spanish if empty)
+    // If selection exists, include only selected items
+    const preferencesToSave = {
+      preferred_languages:
+        selectedLanguages.value.length > 0
+          ? selectedLanguages.value.map((l) => l.code)
+          : ['es'], // Default to Spanish if no languages selected
+      favorite_genres:
+        selectedGenres.value.length > 0
+          ? selectedGenres.value.map((g) => g.id)
+          : [], // Empty = all genres
+      included_providers:
+        selectedProviders.value.length > 0
+          ? selectedProviders.value.map((p) => p.provider_id)
+          : [], // Empty = all providers
+      content_types: contentPreferences.value.content_types || [],
+      region: contentPreferences.value.region || null,
+    };
+
+    const response = await $fetch<{
+      success: boolean;
+      preferences: unknown;
+    }>('/api/users/preferences', {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: preferencesToSave,
+    });
+
+    if (response.success) {
+      showSuccess(t('preferences.content.saved'));
+    } else {
+      throw new Error('Failed to save preferences');
+    }
+  } catch (error: unknown) {
+    // Always log the full error to console
+    console.error('Error saving content preferences:', error);
+
+    // In development, show the actual error message (but filter out technical Nitro errors)
+    // In production, show a generic error message
+    let errorMessage = t('preferences.content.errorSaving');
+
+    if (import.meta.dev) {
+      // Helper function to check if a message is a technical Nitro/Vite error
+      const isTechnicalError = (msg: string): boolean => {
+        return (
+          msg.includes('node_modules') ||
+          msg.includes('nitropack') ||
+          msg.includes('nitro-dev.mjs') ||
+          msg.includes('Expected') ||
+          msg.includes('Note that you need plugins')
+        );
+      };
+
+      // Try to extract error message from fetch error
+      // Prefer statusMessage (user-friendly) over message (may be technical)
+      if (
+        error &&
+        typeof error === 'object' &&
+        'statusMessage' in error &&
+        typeof error.statusMessage === 'string' &&
+        !isTechnicalError(error.statusMessage)
+      ) {
+        errorMessage = error.statusMessage;
+      } else if (
+        error &&
+        typeof error === 'object' &&
+        'data' in error &&
+        error.data &&
+        typeof error.data === 'object' &&
+        'statusMessage' in error.data &&
+        typeof error.data.statusMessage === 'string' &&
+        !isTechnicalError(error.data.statusMessage)
+      ) {
+        errorMessage = error.data.statusMessage;
+      } else if (
+        error &&
+        typeof error === 'object' &&
+        'data' in error &&
+        error.data &&
+        typeof error.data === 'object' &&
+        'message' in error.data &&
+        typeof error.data.message === 'string' &&
+        !isTechnicalError(error.data.message)
+      ) {
+        errorMessage = error.data.message;
+      } else if (
+        error instanceof Error &&
+        error.message &&
+        !isTechnicalError(error.message)
+      ) {
+        errorMessage = error.message;
+      }
+    }
+
+    showError(errorMessage);
+  }
+};
+
+// Watch for dropdown visibility changes to update positions
+watch(showLanguageResults, (isVisible) => {
+  if (isVisible) {
+    nextTick(() => {
+      updateLanguageDropdownPosition();
+    });
+  }
+});
+
+watch(showGenreResults, (isVisible) => {
+  if (isVisible) {
+    nextTick(() => {
+      updateGenreDropdownPosition();
+    });
+  }
+});
+
+watch(showProviderResults, (isVisible) => {
+  if (isVisible) {
+    nextTick(() => {
+      updateProviderDropdownPosition();
+    });
+  }
+});
+
+// Update positions on scroll and resize
+const updateAllDropdownPositions = () => {
+  if (showLanguageResults.value) {
+    updateLanguageDropdownPosition();
+  }
+  if (showGenreResults.value) {
+    updateGenreDropdownPosition();
+  }
+  if (showProviderResults.value) {
+    updateProviderDropdownPosition();
+  }
+};
+
+// Watch for when genres and providers are loaded to map selected items
+// This handles the case where genres/providers load before preferences
+watch(
+  [availableGenres, availableProviders],
+  ([genres, providers]) => {
+    // Map selected genres when genres are loaded and preferences exist
+    if (
+      genres.length > 0 &&
+      contentPreferences.value.favorite_genres &&
+      contentPreferences.value.favorite_genres.length > 0
+    ) {
+      // Only update if not already set or if preferences changed
+      const currentGenreIds = selectedGenres.value.map((g) => g.id).sort();
+      const prefGenreIds = [...contentPreferences.value.favorite_genres].sort();
+      const idsMatch =
+        currentGenreIds.length === prefGenreIds.length &&
+        currentGenreIds.every((id, i) => id === prefGenreIds[i]);
+
+      if (!idsMatch) {
+        selectedGenres.value = genres.filter((g) =>
+          contentPreferences.value.favorite_genres?.includes(g.id)
+        );
+      }
+    }
+
+    // Map selected providers when providers are loaded and preferences exist
+    if (
+      providers.length > 0 &&
+      contentPreferences.value.included_providers &&
+      contentPreferences.value.included_providers.length > 0
+    ) {
+      // Only update if not already set or if preferences changed
+      const currentProviderIds = selectedProviders.value
+        .map((p) => p.provider_id)
+        .sort();
+      const prefProviderIds = [
+        ...contentPreferences.value.included_providers,
+      ].sort();
+      const idsMatch =
+        currentProviderIds.length === prefProviderIds.length &&
+        currentProviderIds.every((id, i) => id === prefProviderIds[i]);
+
+      if (!idsMatch) {
+        selectedProviders.value = providers.filter((p) =>
+          contentPreferences.value.included_providers?.includes(p.provider_id)
+        );
+      }
+    }
+  },
+  { immediate: true }
+);
+
+// Watch for when preferences are loaded to map genres and providers
+// This handles the case where preferences load after genres/providers
+watch(
+  () => contentPreferences.value.favorite_genres,
+  (genreIds) => {
+    if (genreIds && genreIds.length > 0 && availableGenres.value.length > 0) {
+      const currentGenreIds = selectedGenres.value.map((g) => g.id).sort();
+      const prefGenreIds = [...genreIds].sort();
+      const idsMatch =
+        currentGenreIds.length === prefGenreIds.length &&
+        currentGenreIds.every((id, i) => id === prefGenreIds[i]);
+
+      if (!idsMatch) {
+        selectedGenres.value = availableGenres.value.filter((g) =>
+          genreIds.includes(g.id)
+        );
+      }
+    } else if (!genreIds || genreIds.length === 0) {
+      selectedGenres.value = [];
+    }
+  },
+  { immediate: true }
+);
+
+watch(
+  () => contentPreferences.value.included_providers,
+  (providerIds) => {
+    if (
+      providerIds &&
+      providerIds.length > 0 &&
+      availableProviders.value.length > 0
+    ) {
+      const currentProviderIds = selectedProviders.value
+        .map((p) => p.provider_id)
+        .sort();
+      const prefProviderIds = [...providerIds].sort();
+      const idsMatch =
+        currentProviderIds.length === prefProviderIds.length &&
+        currentProviderIds.every((id, i) => id === prefProviderIds[i]);
+
+      if (!idsMatch) {
+        selectedProviders.value = availableProviders.value.filter((p) =>
+          providerIds.includes(p.provider_id)
+        );
+      }
+    } else if (!providerIds || providerIds.length === 0) {
+      selectedProviders.value = [];
+    }
+  },
+  { immediate: true }
+);
+
+// Watch for when preferred_languages change to map selected languages
+watch(
+  () => contentPreferences.value.preferred_languages,
+  (languageCodes) => {
+    if (
+      languageCodes &&
+      languageCodes.length > 0 &&
+      availableLanguages.length > 0
+    ) {
+      const currentLanguageCodes = selectedLanguages.value
+        .map((l) => l.code)
+        .sort();
+      const prefLanguageCodes = [...languageCodes].sort();
+      const codesMatch =
+        currentLanguageCodes.length === prefLanguageCodes.length &&
+        currentLanguageCodes.every((code, i) => code === prefLanguageCodes[i]);
+
+      if (!codesMatch) {
+        const languagesToSelect = availableLanguages.filter((l) =>
+          languageCodes.includes(l.code)
+        );
+
+        if (languagesToSelect.length > 0) {
+          selectedLanguages.value = languagesToSelect.sort((a, b) =>
+            a.name.localeCompare(b.name)
+          );
+        } else if (import.meta.dev) {
+          console.warn(
+            'Could not find languages for codes:',
+            languageCodes,
+            'Available languages:',
+            availableLanguages.map((l) => l.code)
+          );
+        }
+      }
+    } else if (!languageCodes || languageCodes.length === 0) {
+      // No languages - set to empty
+      selectedLanguages.value = [];
+    }
+  },
+  { immediate: true }
+);
+
 // Lifecycle
 onMounted(async () => {
-  await Promise.all([fetchProfile(), fetchAllLists()]);
+  // Check if we should open a specific tab from query params
+  const route = useRoute();
+  const tabFromQuery = route.query.tab as string;
+  if (tabFromQuery) {
+    const validTabs: Array<
+      'liked' | 'seen' | 'not-interested' | 'content-preferences'
+    > = ['liked', 'seen', 'not-interested', 'content-preferences'];
+    if (
+      validTabs.includes(
+        tabFromQuery as
+          | 'liked'
+          | 'seen'
+          | 'not-interested'
+          | 'content-preferences'
+      )
+    ) {
+      activeTab.value = tabFromQuery as typeof activeTab.value;
+    }
+  }
+
+  // Fetch preferences and other data
+  await Promise.all([
+    fetchProfile(),
+    fetchAllLists(),
+    fetchContentPreferences(),
+  ]);
+
+  // Add scroll and resize listeners
+  window.addEventListener('scroll', updateAllDropdownPositions, true);
+  window.addEventListener('resize', updateAllDropdownPositions);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('scroll', updateAllDropdownPositions, true);
+  window.removeEventListener('resize', updateAllDropdownPositions);
 });
 
 // Page meta

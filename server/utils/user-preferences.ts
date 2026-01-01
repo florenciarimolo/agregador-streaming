@@ -1,7 +1,65 @@
 import { serverSupabaseUser } from '#supabase/server';
+import { createClient } from '@supabase/supabase-js';
 import type { H3Event } from 'h3';
-import { getUserPreferences } from '@/composables/database/preferences';
-import { getSettings } from '@/composables/database/profiles';
+import { TABLES, PROFILES_FIELDS } from '@/composables/database/constants';
+
+/**
+ * Get user preferences from server-side (using createClient)
+ */
+async function getUserPreferencesServer(userId: string) {
+  const config = useRuntimeConfig();
+  const supabaseKey =
+    process.env.SUPABASE_SERVICE_ROLE_KEY || config.public.supabaseAnonKey;
+
+  const supabase = createClient(config.public.supabaseUrl, supabaseKey, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+      detectSessionInUrl: false,
+    },
+  });
+
+  const { data, error } = await supabase
+    .from('user_preferences')
+    .select('*')
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  return { data, error };
+}
+
+/**
+ * Get user settings from server-side (using createClient)
+ */
+async function getSettingsServer(userId: string) {
+  const config = useRuntimeConfig();
+  const supabaseKey =
+    process.env.SUPABASE_SERVICE_ROLE_KEY || config.public.supabaseAnonKey;
+
+  const supabase = createClient(config.public.supabaseUrl, supabaseKey, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+      detectSessionInUrl: false,
+    },
+  });
+
+  const { data: profile, error: profileError } = await supabase
+    .from(TABLES.PROFILES)
+    .select(`${PROFILES_FIELDS.SETTINGS}`)
+    .eq(PROFILES_FIELDS.ID, userId)
+    .single();
+
+  if (profileError || !profile) {
+    return { data: null, error: profileError };
+  }
+
+  return {
+    data:
+      (profile[PROFILES_FIELDS.SETTINGS] as Record<string, unknown>) || null,
+    error: null,
+  };
+}
 
 /**
  * Get user's language and region preferences for TMDB API calls by userId
@@ -19,18 +77,21 @@ export async function getUserTMDBParamsByUserId(userId: string): Promise<{
   try {
     // Get preferences (for content language) and settings (for app language/region)
     const [preferencesResult, settingsResult] = await Promise.all([
-      getUserPreferences(userId),
-      getSettings(userId),
+      getUserPreferencesServer(userId),
+      getSettingsServer(userId),
     ]);
 
     // Priority: preferences.preferred_languages > settings.language > default
     let language = defaults.language;
     if (preferencesResult.data?.preferred_languages?.length > 0) {
       // Use first preferred language, convert to TMDB format (e.g., 'es' -> 'es-ES')
-      const lang = preferencesResult.data.preferred_languages[0];
+      const lang = String(preferencesResult.data.preferred_languages[0]);
       // Map common language codes to TMDB format
       const langMap: Record<string, string> = {
         es: 'es-ES',
+        ca: 'ca-ES', // Catalan (Spain)
+        eu: 'eu-ES', // Basque (Spain)
+        gl: 'gl-ES', // Galician (Spain)
         en: 'en-US',
         fr: 'fr-FR',
         de: 'de-DE',
@@ -43,9 +104,12 @@ export async function getUserTMDBParamsByUserId(userId: string): Promise<{
       language = langMap[lang] || `${lang}-${lang.toUpperCase()}`;
     } else if (settingsResult.data?.language) {
       // Fallback to app language setting
-      const lang = settingsResult.data.language;
+      const lang = String(settingsResult.data.language);
       const langMap: Record<string, string> = {
         es: 'es-ES',
+        ca: 'ca-ES', // Catalan (Spain)
+        eu: 'eu-ES', // Basque (Spain)
+        gl: 'gl-ES', // Galician (Spain)
         en: 'en-US',
         fr: 'fr-FR',
         de: 'de-DE',
@@ -61,7 +125,7 @@ export async function getUserTMDBParamsByUserId(userId: string): Promise<{
     // Priority: settings.region > default
     let region = defaults.region;
     if (settingsResult.data?.region) {
-      region = settingsResult.data.region;
+      region = String(settingsResult.data.region);
     }
 
     return {

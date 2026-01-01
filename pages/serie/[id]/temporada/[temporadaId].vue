@@ -18,18 +18,18 @@
   <div v-else>
     <!-- Header de temporada -->
     <section
-      class="relative flex flex-col items-center justify-between gap-16 pb-8 dark:text-gray-300 text-gray-800 w-full min-w-full flex-shrink-0 min-h-[400px] md:flex-row md:items-stretch md:p-16 md:bg-gray-100/80 dark:md:bg-gray-900/40 md:backdrop-blur-xl md:border md:gap-7 rounded-3xl md:border-gray-300/50 md:dark:border-primary-800 md:shadow-lg md:shadow-primary/20 py-16"
+      class="relative flex flex-col items-center justify-between gap-16 pb-8 dark:text-gray-300 text-gray-800 w-full min-w-full flex-shrink-0 min-h-[400px] lg:flex-row lg:items-stretch lg:p-16 lg:bg-gray-100/80 dark:lg:bg-gray-900/40 lg:backdrop-blur-xl lg:border lg:gap-7 rounded-3xl lg:border-gray-300/50 lg:dark:border-primary-800 lg:shadow-lg lg:shadow-primary/20 py-16"
     >
       <div
-        class="absolute inset-0 z-0 hidden md:block rounded-3xl"
+        class="absolute inset-0 z-0 hidden lg:block rounded-3xl"
         :style="sectionStyle"
       ></div>
       <div
-        class="absolute z-0 hidden md:block rounded-3xl bg-gray-100/90 dark:bg-gray-900/90"
+        class="absolute z-0 hidden lg:block rounded-3xl bg-gray-100/90 dark:bg-gray-900/90"
         style="top: 0px; right: 0px; bottom: 0px; left: 0px"
       ></div>
       <div
-        class="relative overflow-hidden rounded-xl w-full max-w-80 md:w-80 flex-shrink-0 aspect-[2/3]"
+        class="relative overflow-hidden rounded-xl w-full max-w-80 lg:w-80 flex-shrink-0 aspect-[2/3]"
         style="
           filter: drop-shadow(0 10px 15px -3px rgb(0 0 0 / 0.1))
             drop-shadow(0 4px 6px -4px rgb(0 0 0 / 0.1))
@@ -45,7 +45,7 @@
         />
       </div>
       <div
-        class="z-10 relative flex flex-col flex-1 gap-6 rounded-lg md:p-6 md:ml-8 w-full min-w-[300px] flex-shrink-0 min-h-[300px]"
+        class="z-10 relative flex flex-col flex-1 gap-6 rounded-lg lg:p-6 lg:ml-8 w-full min-w-[300px] flex-shrink-0 min-h-[300px]"
       >
         <div class="text-left relative flex-row">
           <nuxt-link
@@ -55,14 +55,32 @@
             <IconArrowLeft icon-class="w-4 h-4" />
             {{ $t('media.backToSeries') }}
           </nuxt-link>
-          <div class="flex items-center gap-3">
-            <h1 class="text-2xl font-bold dark:text-gray-300 text-gray-800">{{
-              seasonWithProviders?.name
-            }}</h1>
-            <RatingBadge
-              v-if="seasonWithProviders?.vote_average"
-              :rating="seasonWithProviders.vote_average"
-            />
+          <div
+            class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2 w-full"
+          >
+            <!-- Title with Rating inline on desktop large -->
+            <div
+              class="flex items-center gap-3 flex-wrap xl:flex-nowrap xl:flex-1 xl:min-w-0"
+            >
+              <h1
+                class="text-2xl font-bold dark:text-gray-300 text-gray-800 break-words xl:flex-1 xl:min-w-0"
+                >{{ seasonWithProviders?.name }}</h1
+              >
+              <!-- Rating inline with title on desktop large, hidden on mobile/tablet (shown below) -->
+              <div class="hidden xl:block xl:flex-shrink-0">
+                <RatingBadge
+                  v-if="seasonWithProviders?.vote_average"
+                  :rating="seasonWithProviders.vote_average"
+                />
+              </div>
+            </div>
+            <!-- Rating row (mobile/tablet only, hidden on desktop large) -->
+            <div class="flex items-center gap-3 flex-shrink-0 xl:hidden">
+              <RatingBadge
+                v-if="seasonWithProviders?.vote_average"
+                :rating="seasonWithProviders.vote_average"
+              />
+            </div>
           </div>
         </div>
 
@@ -132,7 +150,7 @@
 
       <div
         v-if="seasonWithProviders?.episodes?.length"
-        class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3"
+        class="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-3"
       >
         <article
           v-for="(episode, index) in seasonWithProviders.episodes"
@@ -275,9 +293,9 @@ const hasAvailableProviders = computed(() => {
 
 const isMobile = ref(false);
 
-// Detect mobile screen size
+// Detect mobile/tablet screen size (use mobile style for tablet too)
 const checkMobile = () => {
-  isMobile.value = window.innerWidth < 768;
+  isMobile.value = window.innerWidth < 1024; // lg breakpoint
 };
 
 // Handle resize

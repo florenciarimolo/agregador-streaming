@@ -1,27 +1,50 @@
-import { updateUserPreferences } from '@/composables/database/preferences';
-import { getSession } from '@/composables/database/auth';
+import { serverSupabaseUser } from '#supabase/server';
+import { createClient } from '@supabase/supabase-js';
 import type { UserPreferences } from '@/composables/database/preferences';
 
 export default defineEventHandler(async (event) => {
   try {
-    const {
-      data: { session },
-    } = await getSession();
+    const config = useRuntimeConfig();
+    let userId: string | null = null;
 
-    if (!session?.access_token) {
-      throw createError({
-        statusCode: 401,
-        statusMessage: 'Unauthorized',
-      });
+    // Try to get user from cookies first
+    const userFromCookies = await serverSupabaseUser(event);
+
+    if (userFromCookies) {
+      userId =
+        userFromCookies.id || (userFromCookies as { sub?: string }).sub || null;
+    } else {
+      // Try Authorization header
+      const authHeader = event.node.req.headers.authorization;
+
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.substring(7);
+
+        try {
+          const parts = token.split('.');
+          if (parts.length === 3) {
+            const payload = JSON.parse(
+              Buffer.from(
+                parts[1].replace(/-/g, '+').replace(/_/g, '/'),
+                'base64'
+              ).toString()
+            );
+
+            userId = payload.sub;
+          }
+        } catch (err) {
+          // Error decoding token
+          if (import.meta.dev) {
+            console.error('Error decoding token:', err);
+          }
+        }
+      }
     }
-
-    const userId =
-      session.user.id || (session.user as { sub?: string }).sub;
 
     if (!userId) {
       throw createError({
         statusCode: 401,
-        statusMessage: 'User ID not found',
+        statusMessage: 'Unauthorized',
       });
     }
 
@@ -43,10 +66,14 @@ export default defineEventHandler(async (event) => {
       );
     }
 
+    // Always set preferred_languages (even if empty array)
     if (Array.isArray(body.preferred_languages)) {
       preferences.preferred_languages = body.preferred_languages.filter(
         (l: unknown) => typeof l === 'string'
       );
+    } else if (body.preferred_languages === null || body.preferred_languages === undefined) {
+      // Explicitly set to empty array if null/undefined
+      preferences.preferred_languages = [];
     }
 
     if (Array.isArray(body.content_types)) {
@@ -57,15 +84,15 @@ export default defineEventHandler(async (event) => {
     }
 
     if (Array.isArray(body.included_providers)) {
-      preferences.included_providers = body.included_providers.filter((p: unknown) =>
-        Number.isInteger(p)
+      preferences.included_providers = body.included_providers.filter(
+        (p: unknown) => Number.isInteger(p)
       );
     }
 
-    if (Array.isArray(body.excluded_providers)) {
-      preferences.excluded_providers = body.excluded_providers.filter((p: unknown) =>
-        Number.isInteger(p)
-      );
+    if (body.region === null || body.region === undefined) {
+      preferences.region = null;
+    } else if (typeof body.region === 'string' && body.region.length === 2) {
+      preferences.region = body.region.toUpperCase();
     }
 
     if (['similar', 'balanced', 'surprise'].includes(body.exploration_mode)) {
@@ -83,12 +110,79 @@ export default defineEventHandler(async (event) => {
       ) as ('reality' | 'anime' | 'documentary')[];
     }
 
-    const { data, error } = await updateUserPreferences(userId, preferences);
+    // Create Supabase client for server-side operations
+    // Use service role key to bypass RLS (we've already validated userId)
+    const supabaseKey =
+      process.env.SUPABASE_SERVICE_ROLE_KEY || config.public.supabaseAnonKey;
+
+    const supabase = createClient(config.public.supabaseUrl, supabaseKey, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+      },
+    });
+
+    // Get current preferences
+    const { data: current, error: fetchError } = await supabase
+      .from('user_preferences')
+      .select('*')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (fetchError && fetchError.code !== 'PGRST116') {
+      // PGRST116 is "not found" - we'll create it
+      throw createError({
+        statusCode: 500,
+        statusMessage: 'Failed to fetch preferences',
+      });
+    }
+
+    // Merge with existing or create new
+    // Important: Explicitly set all fields to ensure they're updated
+    // If preferred_languages is explicitly provided (even if empty), use it
+    const mergedPreferences = current
+      ? {
+          ...current,
+          ...preferences,
+          // Explicitly set preferred_languages if provided in body (even if empty array)
+          preferred_languages:
+            body.preferred_languages !== undefined
+              ? preferences.preferred_languages
+              : current.preferred_languages,
+        }
+      : { user_id: userId, ...preferences };
+
+    // Log for debugging
+    if (import.meta.dev) {
+      console.log('[Preferences PUT] Saving preferences:', {
+        userId,
+        preferred_languages: mergedPreferences.preferred_languages,
+        allPreferences: mergedPreferences,
+      });
+    }
+
+    const { data, error } = await supabase
+      .from('user_preferences')
+      .upsert(mergedPreferences, {
+        onConflict: 'user_id',
+        ignoreDuplicates: false,
+      })
+      .select()
+      .single();
 
     if (error) {
+      console.error('[Preferences PUT] Error updating preferences:', error);
       throw createError({
         statusCode: 500,
         statusMessage: 'Failed to update preferences',
+      });
+    }
+
+    // Log for debugging
+    if (import.meta.dev) {
+      console.log('[Preferences PUT] Successfully saved:', {
+        preferred_languages: data?.preferred_languages,
       });
     }
 
@@ -97,7 +191,7 @@ export default defineEventHandler(async (event) => {
       preferences: data,
     };
   } catch (error) {
-    if (error.statusCode) {
+    if (error && typeof error === 'object' && 'statusCode' in error) {
       throw error;
     }
     throw createError({
@@ -106,4 +200,3 @@ export default defineEventHandler(async (event) => {
     });
   }
 });
-

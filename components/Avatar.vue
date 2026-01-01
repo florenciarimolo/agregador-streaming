@@ -16,7 +16,11 @@
       :alt="alt"
       class="w-full h-full object-cover rounded-full"
     />
-    <span v-else class="select-none">{{ initials }}</span>
+    <span
+      v-else
+      class="select-none flex items-center justify-center w-full h-full leading-none"
+      >{{ initials }}</span
+    >
 
     <!-- Edit icon overlay on hover (only when editable) -->
     <div

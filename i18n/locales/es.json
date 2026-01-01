@@ -19,7 +19,7 @@
   },
   "navbar": {
     "home": "Inicio",
-    "watchlist": "Para ver",
+    "watchlist": "Mi Watchlist",
     "userMenu": "Menú de usuario para {email}",
     "userMenuFor": "Menú de usuario para {email}",
     "editProfile": "Editar perfil",
@@ -29,7 +29,9 @@
     "logout": "Cerrar sesión",
     "logoutConfirm": "Confirmar cierre de sesión",
     "logoutConfirmMessage": "¿Estás seguro de que quieres cerrar sesión?",
-    "scrollToTop": "Ir arriba"
+    "scrollToTop": "Ir arriba",
+    "mobileMenu": "Menú móvil",
+    "theme": "Tema"
   },
   "auth": {
     "login": "Iniciar sesión",
@@ -130,6 +132,9 @@
     "noRecommendations": "Aún no hay recomendaciones",
     "generatingDescription": "Estamos preparando recomendaciones personalizadas basadas en tus gustos. Esto puede tardar unos momentos.",
     "noRecommendationsDescription": "Para recibir recomendaciones personalizadas, primero necesitas agregar películas y series que te gusten. Esto nos ayuda a conocerte mejor y sugerirte contenido que realmente disfrutarás.",
+    "noPreferredLanguages": "Configura tus idiomas preferidos",
+    "noPreferredLanguagesDescription": "Para generar recomendaciones, necesitas configurar al menos un idioma preferido. Esto nos ayuda a mostrarte contenido en los idiomas que prefieres.",
+    "setPreferredLanguages": "Configurar idiomas preferidos",
     "generateButton": "Generar recomendaciones",
     "generatingButton": "Generando recomendaciones...",
     "loadingRecommendations": "Cargando recomendaciones...",
@@ -281,7 +286,69 @@
     "alreadyInPreferences": "Este título ya está en tus preferencias.",
     "invalidMediaType": "Tipo de medio no válido.",
     "removeFromList": "Eliminar de la lista",
-    "removeTitle": "Eliminar {title}"
+    "removeTitle": "Eliminar {title}",
+    "tabs": {
+      "favorites": "Me gusta",
+      "content": "Preferencias de contenido"
+    },
+    "content": {
+      "title": "Preferencias de contenido",
+      "description": "Personaliza qué tipo de contenido quieres ver y de dónde.",
+      "preferredLanguages": {
+        "title": "Idiomas preferidos",
+        "description": "Selecciona los idiomas en los que prefieres ver contenido.",
+        "searchPlaceholder": "Buscar idiomas...",
+        "selected": "Idiomas seleccionados",
+        "noneSelected": "No has seleccionado idiomas todavía.",
+        "remove": "Eliminar {name}"
+      },
+      "contentTypes": {
+        "title": "Tipo de contenido",
+        "description": "Selecciona qué tipo de contenido quieres ver.",
+        "movie": "Películas",
+        "tv": "Series",
+        "both": "Ambos"
+      },
+      "favoriteGenres": {
+        "title": "Géneros favoritos",
+        "description": "Selecciona tus géneros favoritos para mejorar las recomendaciones.",
+        "searchPlaceholder": "Buscar géneros...",
+        "selected": "Géneros seleccionados",
+        "noneSelected": "No has seleccionado géneros todavía.",
+        "remove": "Eliminar {name}"
+      },
+      "includedProviders": {
+        "title": "Plataformas incluidas",
+        "description": "Solo muestra contenido disponible en estas plataformas. Si no seleccionas ninguna, se mostrará contenido de todas las plataformas.",
+        "searchPlaceholder": "Buscar plataformas...",
+        "selected": "Plataformas seleccionadas",
+        "allIncluded": "Todas las plataformas están incluidas. Busca y selecciona plataformas para limitar el contenido.",
+        "remove": "Eliminar {name}"
+      },
+      "region": {
+        "title": "Región",
+        "description": "Selecciona tu región para mostrar contenido y proveedores disponibles en tu área.",
+        "default": "Seleccionar región...",
+        "searchPlaceholder": "Buscar región..."
+      },
+      "preferredLanguages": {
+        "title": "Idiomas preferidos",
+        "description": "Selecciona los idiomas en los que prefieres ver contenido.",
+        "searchPlaceholder": "Buscar idiomas...",
+        "selected": "Idiomas seleccionados",
+        "noneSelected": "No has seleccionado idiomas todavía.",
+        "noResults": "No se encontraron idiomas.",
+        "remove": "Eliminar {name}",
+        "confirmChangeTitle": "Cambiar idiomas preferidos",
+        "confirmChangeMessage": "Al cambiar los idiomas preferidos, se eliminarán todas las recomendaciones actuales y se generarán nuevas recomendaciones basadas en los idiomas seleccionados. ¿Estás seguro de que quieres continuar?",
+        "poolRegenerated": "Recomendaciones regeneradas correctamente.",
+        "errorRegenerating": "Error al regenerar las recomendaciones. Inténtalo de nuevo más tarde.",
+        "saving": "Guardando cambios..."
+      },
+      "saved": "Preferencias guardadas exitosamente.",
+      "errorSaving": "Inténtalo de nuevo más tarde.",
+      "loading": "Cargando preferencias..."
+    }
   },
   "history": {
     "title": "Historial",

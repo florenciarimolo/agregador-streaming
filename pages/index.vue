@@ -66,6 +66,7 @@ const populatingPool = ref(false);
 const recommendations = ref<Recommendation[]>([]);
 const lastFetchedMood = ref<string | null>(null);
 const lastFetchedAttention = ref<string | null>(null);
+const hasPreferredLanguages = ref<boolean | null>(null); // null = not checked yet, true/false = checked
 
 // Fetch recommendations function
 const fetchRecommendations = async (): Promise<Recommendation[]> => {
@@ -237,9 +238,52 @@ watch(
         return;
       }
 
-      // Fetch recommendations
-      const fetched = await fetchRecommendations();
-      recommendations.value = fetched;
+      // Check if user has preferred languages
+      try {
+        const {
+          data: { session },
+        } = await getSession();
+        if (session?.access_token) {
+          const prefsResponse = await $fetch<{
+            success: boolean;
+            preferences: {
+              preferred_languages?: string[];
+            } | null;
+          }>('/api/users/preferences', {
+            headers: {
+              Authorization: `Bearer ${session.access_token}`,
+            },
+          });
+          hasPreferredLanguages.value = !!(
+            prefsResponse.success &&
+            prefsResponse.preferences?.preferred_languages &&
+            prefsResponse.preferences.preferred_languages.length > 0
+          );
+        } else {
+          hasPreferredLanguages.value = false;
+        }
+      } catch (error) {
+        console.error('[index.vue] Error checking preferred languages:', error);
+        hasPreferredLanguages.value = false;
+      }
+
+      // Only fetch recommendations if user has preferred languages
+      if (hasPreferredLanguages.value) {
+        const fetched = await fetchRecommendations();
+        recommendations.value = fetched;
+
+        // If pool is empty and we haven't already started populating, do it automatically
+        if (
+          fetched.length === 0 &&
+          !populatingPool.value &&
+          !sessionStorage.getItem('generatingRecommendations')
+        ) {
+          // Automatically populate pool (it will set the sessionStorage flag internally)
+          await populatePool();
+        }
+      } else {
+        recommendations.value = [];
+      }
       lastFetchedUserId.value = effectiveUserId;
       lastFetchedMood.value = (route.query.mood as string) || null;
       lastFetchedAttention.value = (route.query.attention as string) || null;
@@ -478,9 +522,18 @@ const handleGetStarted = async () => {
 
 // Populate recommendation pool manually
 const populatePool = async () => {
-  if (populatingPool.value) return;
+  // Check if already populating or if there's a flag in sessionStorage
+  if (
+    populatingPool.value ||
+    sessionStorage.getItem('generatingRecommendations')
+  ) {
+    return;
+  }
 
+  // Set flag in sessionStorage to prevent duplicate requests on refresh
+  sessionStorage.setItem('generatingRecommendations', 'true');
   populatingPool.value = true;
+
   try {
     const {
       data: { session },
@@ -488,6 +541,7 @@ const populatePool = async () => {
 
     if (!session?.access_token) {
       showToast(t('home.sessionError'), null, 3000);
+      sessionStorage.removeItem('generatingRecommendations');
       return;
     }
 
@@ -499,15 +553,12 @@ const populatePool = async () => {
       credentials: 'include',
     });
 
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[PopulatePool] Result:', result);
+    if (import.meta.dev) {
+      console.log('[PopulatePool] Pool populated successfully:', {
+        inserted: result.inserted,
+        result,
+      });
     }
-
-    showToast(
-      t('home.poolPopulated', { inserted: result.inserted }),
-      null,
-      3000
-    );
 
     // Refresh recommendations after populating pool
     await fetchRecommendations();
@@ -516,6 +567,10 @@ const populatePool = async () => {
     showToast(t('home.generateError'), null, 3000);
   } finally {
     populatingPool.value = false;
+    // Clear the flag after a delay to allow for refresh scenarios
+    setTimeout(() => {
+      sessionStorage.removeItem('generatingRecommendations');
+    }, 5000); // 5 seconds after completion
   }
 };
 
@@ -592,14 +647,55 @@ onMounted(() => {
             "
           />
 
-          <!-- Empty State -->
-          <!-- Only show "no recommendations" message if we've attempted to load and there are none -->
-          <!-- Don't show empty state if we're populating the pool -->
+          <!-- No Preferred Languages State -->
           <div
             v-else-if="
               !populatingPool &&
               hasAttemptedLoad &&
-              recommendations.length === 0
+              hasPreferredLanguages === false
+            "
+            class="text-center py-12"
+          >
+            <div class="max-w-md mx-auto">
+              <svg
+                class="w-16 h-16 text-gray-400 mx-auto mb-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"
+                />
+              </svg>
+              <h3
+                class="text-xl font-semibold dark:text-gray-300 text-gray-800 mb-2 font-heading"
+              >
+                {{ $t('home.noPreferredLanguages') }}
+              </h3>
+              <p class="text-gray-800 dark:text-gray-300 mb-6">
+                {{ $t('home.noPreferredLanguagesDescription') }}
+              </p>
+              <nuxt-link
+                to="/profile?tab=content-preferences"
+                class="inline-block px-6 py-3 bg-primary-800 dark:bg-primary hover:bg-primary-900 dark:hover:bg-primary-600 text-white rounded-lg font-medium text-base transition-all duration-300 shadow-lg backdrop-blur-sm border border-primary-600/50"
+              >
+                {{ $t('home.setPreferredLanguages') }}
+              </nuxt-link>
+            </div>
+          </div>
+
+          <!-- Empty State (only show if not populating and user has no likes) -->
+          <!-- When pool is empty and user has likes, we automatically generate, so we don't show this -->
+          <div
+            v-else-if="
+              !populatingPool &&
+              hasAttemptedLoad &&
+              recommendations.length === 0 &&
+              hasPreferredLanguages !== false &&
+              !userStore.hasLikes
             "
             class="text-center py-12"
           >
@@ -620,37 +716,12 @@ onMounted(() => {
               <h3
                 class="text-xl font-semibold dark:text-gray-300 text-gray-800 mb-2 font-heading"
               >
-                {{
-                  userStore.hasLikes
-                    ? $t('home.generatingRecommendations')
-                    : $t('home.noRecommendations')
-                }}
+                {{ $t('home.noRecommendations') }}
               </h3>
               <p class="text-gray-800 dark:text-gray-300 mb-6">
-                {{
-                  userStore.hasLikes
-                    ? $t('home.generatingDescription')
-                    : $t('home.noRecommendationsDescription')
-                }}
+                {{ $t('home.noRecommendationsDescription') }}
               </p>
-              <div v-if="userStore.hasLikes" class="space-y-3">
-                <button
-                  :disabled="populatingPool"
-                  class="inline-block px-6 py-3 bg-primary-800 dark:bg-primary hover:bg-primary-900 dark:hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-medium text-base transition-all duration-300 shadow-lg backdrop-blur-sm border border-primary-600/50"
-                  @click="populatePool"
-                >
-                  {{
-                    populatingPool
-                      ? $t('home.generatingButton')
-                      : $t('home.generateButton')
-                  }}
-                </button>
-                <p class="text-sm text-gray-600 dark:text-gray-400">
-                  {{ $t('home.manualGenerateHint') }}
-                </p>
-              </div>
               <nuxt-link
-                v-else
                 to="/onboarding"
                 class="inline-block px-6 py-3 bg-primary-800 dark:bg-primary hover:bg-primary-900 dark:hover:bg-primary-600 text-white rounded-lg font-medium text-base transition-all duration-300 shadow-lg backdrop-blur-sm border border-primary-600/50"
               >

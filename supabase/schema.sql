@@ -214,8 +214,8 @@ CREATE TABLE IF NOT EXISTS public.user_preferences (
   favorite_genres INTEGER[], -- TMDB genre IDs
   preferred_languages TEXT[], -- ISO 639-1 codes (e.g., 'es', 'en')
   content_types TEXT[] CHECK (content_types <@ ARRAY['movie', 'tv']), -- 'movie', 'tv', or both
-  included_providers INTEGER[], -- TMDB provider IDs
-  excluded_providers INTEGER[], -- TMDB provider IDs
+  included_providers INTEGER[], -- TMDB provider IDs (if empty, all providers are included)
+  region TEXT, -- ISO 3166-1 alpha-2 country code (e.g., 'ES', 'US', 'MX')
   exploration_mode TEXT CHECK (exploration_mode IN ('similar', 'balanced', 'surprise')) DEFAULT 'balanced',
   prioritize_content TEXT CHECK (prioritize_content IN ('new', 'classics', 'top_rated')) DEFAULT 'new',
   excluded_types TEXT[] CHECK (excluded_types <@ ARRAY['reality', 'anime', 'documentary']) DEFAULT ARRAY[]::TEXT[],

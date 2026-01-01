@@ -1,12 +1,11 @@
 // useSupabaseClient is auto-imported by Nuxt
-import { TABLES } from './constants';
 
 export interface UserPreferences {
   favorite_genres?: number[];
   preferred_languages?: string[];
   content_types?: ('movie' | 'tv')[];
   included_providers?: number[];
-  excluded_providers?: number[];
+  region?: string; // ISO 3166-1 alpha-2 country code
   exploration_mode?: 'similar' | 'balanced' | 'surprise';
   prioritize_content?: 'new' | 'classics' | 'top_rated';
   excluded_types?: ('reality' | 'anime' | 'documentary')[];
@@ -79,4 +78,3 @@ export async function updateUserPreferences(
     .select()
     .single();
 }
-
