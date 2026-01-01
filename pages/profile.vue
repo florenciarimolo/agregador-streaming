@@ -1541,17 +1541,6 @@ const { data: providersData } = useAsyncData(
       credentials: 'include', // Include cookies for authentication
     });
 
-    if (import.meta.dev) {
-      console.log('[AvailableProviders] Raw response from API:', {
-        hasResponse: !!response,
-        hasResults: !!response?.results,
-        resultsType: typeof response?.results,
-        resultsIsArray: Array.isArray(response?.results),
-        resultsLength: response?.results?.length || 0,
-        sample: response?.results?.slice(0, 3),
-      });
-    }
-
     return response;
   },
   {
@@ -1562,30 +1551,14 @@ const { data: providersData } = useAsyncData(
 
 const availableProviders = computed(() => {
   if (!providersData.value) {
-    if (import.meta.dev) {
-      console.log('[AvailableProviders] providersData.value is null/undefined');
-    }
     return [];
   }
 
   if (!providersData.value.results) {
-    if (import.meta.dev) {
-      console.log(
-        '[AvailableProviders] No results in providersData:',
-        providersData.value
-      );
-    }
     return [];
   }
 
   if (!Array.isArray(providersData.value.results)) {
-    if (import.meta.dev) {
-      console.log(
-        '[AvailableProviders] results is not an array:',
-        typeof providersData.value.results,
-        providersData.value.results
-      );
-    }
     return [];
   }
 
@@ -1597,14 +1570,6 @@ const availableProviders = computed(() => {
     }))
     .filter((p) => p.provider_id && p.provider_name) // Filter out invalid entries
     .sort((a, b) => a.provider_name.localeCompare(b.provider_name));
-
-  if (import.meta.dev) {
-    console.log('[AvailableProviders] Loaded providers:', providers.length);
-    console.log(
-      '[AvailableProviders] Sample providers:',
-      providers.slice(0, 5).map((p) => p.provider_name)
-    );
-  }
 
   return providers;
 });
