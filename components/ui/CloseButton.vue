@@ -2,10 +2,10 @@
   <button
     type="button"
     :class="[
-      'rounded-full backdrop-blur-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-black/50',
+      'flex items-center justify-center rounded-full backdrop-blur-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-black/50',
       size === 'small' ? 'p-1.5' : size === 'large' ? 'p-2 w-7 h-7' : 'p-1.5',
-      variant === 'red' 
-        ? 'bg-red-500 hover:bg-red-600 text-white shadow-lg hover:scale-110 focus:ring-offset-transparent' 
+      variant === 'red'
+        ? 'bg-red-500 hover:bg-red-600 text-white shadow-lg hover:scale-110 focus:ring-offset-transparent'
         : 'bg-black/50 hover:bg-red-600/80',
       customClass,
     ]"
@@ -47,4 +47,3 @@ defineEmits<{
   click: [event: MouseEvent];
 }>();
 </script>
-

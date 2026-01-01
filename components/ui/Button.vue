@@ -3,7 +3,7 @@
     type="button"
     :class="[
       // Base classes
-      'rounded-lg font-semibold transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 flex items-center justify-center',
+      'rounded-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 flex items-center justify-center',
       // Size classes
       sizeClasses,
       // Variant classes
@@ -35,14 +35,14 @@
 import { computed, useSlots } from 'vue';
 
 type ButtonSize = 'small' | 'medium' | 'large';
-type ButtonVariant = 'primary' | 'outline' | 'danger';
+type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'danger';
 type IconPosition = 'left' | 'right';
 
 const props = withDefaults(
   defineProps<{
     size?: ButtonSize;
     variant?: ButtonVariant;
-    icon?: any;
+    icon?: unknown;
     iconPosition?: IconPosition;
     disabled?: boolean;
     ariaLabel?: string;
@@ -51,8 +51,11 @@ const props = withDefaults(
   {
     size: 'small',
     variant: 'primary',
+    icon: undefined,
     iconPosition: 'left',
     disabled: false,
+    ariaLabel: undefined,
+    customClass: undefined,
   }
 );
 
@@ -68,7 +71,7 @@ const hasIcon = computed(() => !!props.icon);
 const sizeClasses = computed(() => {
   const classes: Record<ButtonSize, string> = {
     small: 'h-8 px-4 py-1.5 text-xs',
-    medium: 'h-10 px-4 py-2 text-sm',
+    medium: 'px-6 py-3 text-base font-medium',
     large: 'h-[52px] px-6 py-[28px] text-base',
   };
   return classes[props.size];
@@ -77,7 +80,9 @@ const sizeClasses = computed(() => {
 const variantClasses = computed(() => {
   const classes: Record<ButtonVariant, string> = {
     primary:
-      'bg-primary-800 dark:bg-primary hover:bg-primary-900 dark:hover:bg-primary-600 text-white focus:ring-primary',
+      'bg-primary-800 dark:bg-primary hover:bg-primary-900 dark:hover:bg-primary-600 text-white shadow-lg backdrop-blur-sm border border-primary-600/50 focus:ring-primary',
+    secondary:
+      'border border-primary-800 dark:border-primary-600/50 text-gray-800 dark:text-gray-300 hover:bg-primary-800 dark:hover:bg-primary hover:text-white backdrop-blur-sm focus:ring-primary',
     outline:
       'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-300 dark:border-gray-600 focus:ring-gray-500',
     danger: 'text-white bg-red-500 hover:bg-red-600 focus:ring-red-500',
@@ -98,4 +103,3 @@ const iconSizeClass = computed(() => {
   return 'w-5 h-5';
 });
 </script>
-

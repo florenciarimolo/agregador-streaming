@@ -1,6 +1,6 @@
 <template>
   <div
-    class="min-h-screen mx-auto w-full md:w-[85%] xl:w-[1400px] relative overflow-hidden"
+    class="min-h-screen mx-auto xl:w-[1400px] relative overflow-hidden"
   >
     <!-- Simple Background -->
 
@@ -8,12 +8,12 @@
     <TheNavbar />
 
     <!-- Contenido principal -->
-    <main class="pb-4 pt-0 relative z-0 w-full">
+    <main class="pb-[54px] pt-[104px] relative z-0 md:w-[80%] lg:w-full mx-auto">
       <slot />
     </main>
 
     <!-- Footer -->
-    <footer class="w-full mt-12">
+    <footer class="w-full">
       <div
         class="border-t border-gray-300/50 dark:border-white/10 py-6 px-6 text-center"
       >

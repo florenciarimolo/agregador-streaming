@@ -5,12 +5,13 @@ import { getTitleByTmdbId, insertTitle } from '@/composables/database/titles';
 import { upsertUserTitleStatus } from '@/composables/database/userTitleStatus';
 import { getSession } from '@/composables/database/auth';
 import { isUniqueViolationError } from '@/composables/database/errorCodes';
-import { AVAILABLE_LANGUAGES, LanguageCode } from '@/constants/languages';
+import { AVAILABLE_LANGUAGES } from '@/constants/languages';
 import type { Language } from '@/constants/languages';
 import RegionSelector from '@/components/RegionSelector.vue';
 import CloseButton from '@/components/ui/CloseButton.vue';
 import Card from '@/components/ui/Card.vue';
 import Spinner from '@/components/Spinner.vue';
+import Button from '@/components/ui/Button.vue';
 
 definePageMeta({
   middleware: 'auth',
@@ -39,6 +40,7 @@ interface TitleResult {
   media_type: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv;
   genre_ids?: number[];
   vote_average?: number;
+  popularity?: number;
 }
 
 const supabase = useSupabaseClient();
@@ -51,9 +53,7 @@ const currentStep = ref<'preferences' | 'titles'>('preferences');
 const preferencesSaved = ref(false);
 
 // Preferences state
-const selectedLanguage = ref<Language | null>(
-  AVAILABLE_LANGUAGES.find((l) => l.code === LanguageCode.SPANISH) || null
-);
+const selectedLanguage = ref<Language | null>(null);
 const selectedRegion = ref<string | null>(null);
 const savingPreferences = ref(false);
 
@@ -87,13 +87,14 @@ const handleSearch = () => {
         }
       );
 
-      // Filter to only movies and TV shows, limit to 20
+      // Filter to only movies and TV shows, sort by popularity (descending), limit to 20
       searchResults.value = response.data.results
         .filter(
           (r) =>
             r.media_type === MediaTypeEnum.movie ||
             r.media_type === MediaTypeEnum.tv
         )
+        .sort((a, b) => (b.popularity || 0) - (a.popularity || 0))
         .slice(0, 20);
     } catch (error) {
       console.error('Search error:', error);
@@ -193,10 +194,6 @@ const savePreferences = async () => {
 
     preferencesSaved.value = true;
     currentStep.value = 'titles';
-    success.value = t('onboarding.preferencesSaved');
-    setTimeout(() => {
-      success.value = null;
-    }, 3000);
   } catch (err: unknown) {
     console.error('Error saving preferences:', err);
     const errorMessage =
@@ -332,8 +329,8 @@ const saveSelections = async () => {
 };
 </script>
 <template>
-  <div class="min-h-screen py-6 px-4">
-    <div class="max-w-4xl mx-auto">
+  <div class="pt-6 pb-6 md:pt-12 md:pb-12 w-[80%] mx-auto">
+    <div class="w-full px-4 md:px-0">
       <!-- Header -->
       <div class="text-center mb-6">
         <h1 class="text-3xl font-bold dark:text-gray-300 text-gray-800 mb-2">
@@ -413,12 +410,13 @@ const saveSelections = async () => {
         </Card>
 
         <!-- Continue Button -->
-        <div class="mt-6 text-center">
+        <div class="mt-6 flex justify-center">
           <Button
             size="medium"
             variant="primary"
-            :disabled="!selectedLanguage || savingPreferences"
-            custom-class="shadow-lg backdrop-blur-sm border border-primary-600/50"
+            :disabled="
+              !selectedLanguage || !selectedRegion || savingPreferences
+            "
             @click="savePreferences"
           >
             {{
@@ -488,7 +486,6 @@ const saveSelections = async () => {
                 </div>
                 <CloseButton
                   size="large"
-                  variant="red"
                   custom-class="absolute top-1 right-1 z-10 cursor-pointer"
                   :aria-label="
                     $t('onboarding.removeTitle', {
@@ -596,12 +593,11 @@ const saveSelections = async () => {
         </div>
 
         <!-- Continue Button -->
-        <div class="mt-6 text-center">
+        <div class="mt-6 flex justify-center">
           <Button
             size="medium"
             variant="primary"
             :disabled="selectedTitles.length === 0 || saving"
-            custom-class="shadow-lg backdrop-blur-sm border border-primary-600/50"
             @click="saveSelections"
           >
             {{ saving ? $t('onboarding.saving') : $t('onboarding.continue') }}

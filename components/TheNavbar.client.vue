@@ -120,7 +120,7 @@
     :style="{ transform: `translateY(${isNavbarVisible ? '0' : '-10px'})` }"
   >
     <nav
-      class="dark:bg-gray-900/40 bg-gray-100/90 backdrop-blur-xl rounded-3xl border border-gray-300/50 dark:border-white/10"
+      class="dark:bg-gray-900/40 bg-gray-100/90 backdrop-blur-xl rounded-3xl border border-gray-300/50 dark:border-white/10 mx-4"
     >
       <div class="flex items-center justify-between px-6 py-3">
         <!-- Logo -->

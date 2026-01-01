@@ -21,9 +21,9 @@ function getUserId(
   return user?.id || user?.sub;
 }
 
-// Homepage is public - no auth required
+// Homepage is public - no auth required, but we need to check onboarding status
 definePageMeta({
-  middleware: [],
+  middleware: ['auth'],
 });
 
 const { t } = useI18n();
@@ -479,12 +479,71 @@ const scrollToHowItWorks = () => {
 };
 
 const handleAuthSuccess = async () => {
-  // User will be updated by useSupabaseUser() and watch will trigger recommendations fetch
-  // Just navigate based on current state
-  if (userStore.hasLikes) {
-    await navigateTo('/');
+  console.log('[handleAuthSuccess] Starting...');
+
+  // Wait for user to be available from useSupabaseUser
+  let attempts = 0;
+  while (!user.value && attempts < 30) {
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    attempts++;
+  }
+
+  console.log('[handleAuthSuccess] User available:', {
+    hasUser: !!user.value,
+    hasStoreUser: !!userStore.user,
+    attempts,
+  });
+
+  // Ensure user is set in store
+  const currentUser = user.value || userStore.user;
+  if (currentUser) {
+    const userId = getUserId(currentUser);
+    const currentUserId = getUserId(userStore.user);
+
+    if (!userStore.user || currentUserId !== userId) {
+      console.log('[handleAuthSuccess] Setting user in store');
+      userStore.setUser(currentUser);
+    }
+
+    // Ensure profile is loaded
+    console.log('[handleAuthSuccess] Ensuring profile is loaded...');
+    await userStore.ensureProfile();
+
+    // Wait a bit more to ensure profile is fully loaded
+    if (!userStore.profile) {
+      console.log('[handleAuthSuccess] Profile still not loaded, waiting...');
+      let retryAttempts = 0;
+      while (!userStore.profile && retryAttempts < 20) {
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        await userStore.ensureProfile();
+        retryAttempts++;
+      }
+    }
+
+    console.log('[handleAuthSuccess] Profile loaded:', {
+      hasProfile: !!userStore.profile,
+      onboarding_completed: userStore.profile?.onboarding_completed,
+      hasCompletedOnboarding: userStore.hasCompletedOnboarding,
+    });
+
+    // Navigate based on onboarding status - use replace: true to trigger middleware
+    if (userStore.hasCompletedOnboarding) {
+      console.log(
+        '[handleAuthSuccess] User completed onboarding, navigating to /'
+      );
+      await navigateTo('/', { replace: true });
+    } else {
+      console.log(
+        '[handleAuthSuccess] User not completed onboarding, navigating to /onboarding'
+      );
+      await navigateTo('/onboarding', { replace: true });
+    }
   } else {
-    await navigateTo('/onboarding');
+    // Fallback: redirect to home and let middleware handle it
+    console.log(
+      '[handleAuthSuccess] No user found, redirecting to / and letting middleware handle it'
+    );
+    await navigateTo('/', { replace: true });
   }
 };
 

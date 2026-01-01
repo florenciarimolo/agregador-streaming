@@ -85,8 +85,13 @@ const redirectAfterAuth = async () => {
 
     if (!userStore.user || currentUserId !== userId) {
       userStore.setUser(user);
-      // Ensure profile is loaded
-      await userStore.ensureProfile();
+      // CRITICAL: Fetch profile to ensure it's loaded before navigation
+      await userStore.fetchProfile();
+
+      console.log('[Callback] Profile fetched:', {
+        hasProfile: !!userStore.profile,
+        onboarding_completed: userStore.profile?.onboarding_completed,
+      });
     }
 
     // Check if user has completed onboarding

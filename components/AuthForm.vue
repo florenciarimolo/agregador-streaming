@@ -101,17 +101,59 @@ const handlePasswordAuth = async () => {
 
     // Handle signin success
     if (!isSignUp.value) {
-      // Wait for Supabase to update the session
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      // Refresh user state
-      const currentUser = useSupabaseUser();
+      console.log(
+        '[AuthForm] Signin success, loading profile and navigating...'
+      );
+
+      // Wait for Supabase to update the session and useSupabaseUser to be available
+      let attempts = 0;
+      let currentUser = useSupabaseUser();
+
+      // Wait up to 3 seconds for user to be available
+      while (!currentUser.value && attempts < 30) {
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        currentUser = useSupabaseUser();
+        attempts++;
+      }
+
       const userId = getUserId(currentUser.value);
+      console.log('[AuthForm] User check:', {
+        hasUser: !!currentUser.value,
+        userId,
+        attempts,
+      });
+
       if (currentUser.value && userId) {
+        console.log(
+          '[AuthForm] User available, setting in store and fetching profile...'
+        );
         userStore.setUser(currentUser.value);
+
+        // CRITICAL: Fetch profile to ensure it's loaded before navigation
         await userStore.fetchProfile();
-        emit('success');
+
+        console.log('[AuthForm] Profile fetched:', {
+          hasProfile: !!userStore.profile,
+          onboarding_completed: userStore.profile?.onboarding_completed,
+        });
+
+        // Navigate based on onboarding status
+        // This ensures the middleware sees the correct state
+        const hasCompletedOnboarding = userStore.hasCompletedOnboarding;
+        if (hasCompletedOnboarding) {
+          console.log('[AuthForm] User completed onboarding, navigating to /');
+          await navigateTo('/', { replace: true });
+        } else {
+          console.log(
+            '[AuthForm] User not completed onboarding, navigating to /onboarding'
+          );
+          await navigateTo('/onboarding', { replace: true });
+        }
       } else {
         // Fallback: reload to trigger auth state update
+        console.log(
+          '[AuthForm] User not available after waiting, reloading page'
+        );
         window.location.href = '/';
       }
     }

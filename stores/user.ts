@@ -39,8 +39,15 @@ export const useUserStore = defineStore('user', {
     // hasLikes is calculated based on whether user has records in user_title_status with liked=true
     hasLikes: (state) => (state.likesCount ?? 0) > 0,
     // hasCompletedOnboarding checks the onboarding_completed flag in profiles table
-    hasCompletedOnboarding: (state) =>
-      state.profile?.onboarding_completed ?? false,
+    hasCompletedOnboarding: (state: UserState) => {
+      const result = state.profile?.onboarding_completed ?? false;
+      console.log('[UserStore] hasCompletedOnboarding getter:', {
+        hasProfile: !!state.profile,
+        onboarding_completed: state.profile?.onboarding_completed,
+        result,
+      });
+      return result;
+    },
   },
 
   actions: {
@@ -128,7 +135,23 @@ export const useUserStore = defineStore('user', {
     async ensureProfile() {
       // Only fetch if profile is missing
       if (!this.profile && this.user) {
+        console.log('[UserStore] ensureProfile: Profile missing, fetching...');
         await this.fetchProfile();
+        const onboardingStatus = this.profile
+          ? (this.profile as Profile).onboarding_completed
+          : undefined;
+        console.log(
+          '[UserStore] ensureProfile: Profile fetched, onboarding_completed:',
+          onboardingStatus
+        );
+      } else {
+        const onboardingStatus = this.profile
+          ? (this.profile as Profile).onboarding_completed
+          : undefined;
+        console.log(
+          '[UserStore] ensureProfile: Profile already exists, onboarding_completed:',
+          onboardingStatus
+        );
       }
     },
 

@@ -4,8 +4,12 @@
  *
  * NOTE: Recovery detection runs FIRST (00-recovery-detection.ts)
  * This middleware should never see recovery sessions, but we check as a safety measure
+ *
+ * IMPORTANT: This middleware is DETERMINISTIC - it only reads already-resolved state.
+ * It does NOT fetch profiles, wait, or retry. Profile loading happens in post-login flows.
  */
 export default defineNuxtRouteMiddleware(async (to) => {
+  console.log('[Auth Middleware] Starting, path:', to.path);
   const user = useSupabaseUser();
   const userStore = useUserStore();
 
@@ -24,7 +28,6 @@ export default defineNuxtRouteMiddleware(async (to) => {
 
   // If user is on reset-password page, don't redirect them away
   // They need to complete the password reset flow first
-  // Also, don't load profile or trigger any auth-related actions
   if (to.path === '/auth/reset-password') {
     return; // Allow access to reset-password page regardless of auth state
   }
@@ -49,23 +52,28 @@ export default defineNuxtRouteMiddleware(async (to) => {
     }
   }
 
-  // If user is authenticated, ensure user is set in store
-  // Profile is already fetched by the supabase.client.ts plugin, so we just ensure it's loaded
-  // BUT NOT on reset-password page (handled above)
+  // If user is authenticated, check onboarding status
+  // Profile should already be loaded by post-login flows (AuthForm, callback, etc.)
+  // We only read the state, we don't fetch or wait
   if (user.value) {
-    // Only set user if different (avoid unnecessary updates)
-    const userId = user.value.id || (user.value as { sub?: string })?.sub;
-    const currentUserId =
-      userStore.user?.id || (userStore.user as { sub?: string })?.sub;
+    console.log('[Auth Middleware] User authenticated:', {
+      userId: user.value.id || (user.value as { sub?: string })?.sub,
+      path: to.path,
+      hasProfile: !!userStore.profile,
+      profileOnboarding: userStore.profile?.onboarding_completed,
+    });
 
-    if (!userStore.user || currentUserId !== userId) {
-      userStore.setUser(user.value);
-      // Only fetch profile if not already loaded (plugin may have already done it)
-      await userStore.ensureProfile();
-    }
-
-    // Check if user has completed onboarding
+    // Read onboarding status from store (already loaded by post-login flows)
     const hasCompletedOnboarding = userStore.hasCompletedOnboarding;
+
+    console.log('[Auth Middleware] Onboarding check:', {
+      hasCompletedOnboarding,
+      path: to.path,
+      shouldRedirect:
+        !hasCompletedOnboarding &&
+        to.path !== '/onboarding' &&
+        to.path !== '/auth/callback',
+    });
 
     // Only redirect to onboarding if user hasn't completed onboarding AND not already on onboarding page
     // AND not on auth callback (which handles its own flow)
@@ -75,13 +83,19 @@ export default defineNuxtRouteMiddleware(async (to) => {
       to.path !== '/onboarding' &&
       to.path !== '/auth/callback'
     ) {
-      return navigateTo('/onboarding');
+      console.log('[Auth Middleware] Redirecting to /onboarding');
+      return navigateTo('/onboarding', { replace: true });
     }
 
     // Redirect away from onboarding if user already completed onboarding
     // This ensures users with completed onboarding see their recommendations on homepage
     if (hasCompletedOnboarding && to.path === '/onboarding') {
-      return navigateTo('/');
+      console.log(
+        '[Auth Middleware] User completed onboarding, redirecting to /'
+      );
+      return navigateTo('/', { replace: true });
     }
+  } else {
+    console.log('[Auth Middleware] No user authenticated, path:', to.path);
   }
 });
