@@ -16,7 +16,6 @@ export default defineEventHandler(async (event) => {
     // IMPORTANT: If region is ES, always use 'es' regardless of preferred language
     const languageCode =
       config.region === 'ES' ? 'es' : config.language.split('-')[0] || 'es';
-    console.log('languageCode', languageCode);
 
     const url = `${config.baseUrl}/genre/${type}/list`;
     const queryParams = {

@@ -16,6 +16,7 @@ export default defineEventHandler(async (event) => {
         provider_name: string;
         logo_path: string | null;
         display_priority: number;
+        display_priorities?: Record<string, number>;
       }>;
     }>(`${config.baseUrl}/watch/providers/movie`, {
       query: {
@@ -25,6 +26,23 @@ export default defineEventHandler(async (event) => {
       },
     });
 
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[WatchProviders] Raw TMDB response:', {
+        hasResponse: !!response,
+        hasResults: !!response?.results,
+        resultsLength: response?.results?.length || 0,
+        sample: response?.results?.slice(0, 3),
+      });
+    }
+
+    // Check if response has results
+    if (!response || !response.results || !Array.isArray(response.results)) {
+      if (process.env.NODE_ENV === 'development') {
+        console.error('[WatchProviders] Invalid response structure:', response);
+      }
+      return { results: [] };
+    }
+
     // Return unique providers sorted by name
     const uniqueProviders = new Map<number, (typeof response.results)[0]>();
     response.results.forEach((provider) => {
@@ -33,10 +51,22 @@ export default defineEventHandler(async (event) => {
       }
     });
 
+    const processedResults = Array.from(uniqueProviders.values()).sort((a, b) =>
+      a.provider_name.localeCompare(b.provider_name)
+    );
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[WatchProviders] Processed results:', {
+        count: processedResults.length,
+        sample: processedResults.slice(0, 3).map((p) => ({
+          id: p.provider_id,
+          name: p.provider_name,
+        })),
+      });
+    }
+
     return {
-      results: Array.from(uniqueProviders.values()).sort((a, b) =>
-        a.provider_name.localeCompare(b.provider_name)
-      ),
+      results: processedResults,
     };
   } catch (error) {
     throw createError({

@@ -531,11 +531,10 @@
                   <div
                     v-if="
                       showProviderResults &&
-                      providerSearchQuery.trim() &&
                       filteredProviders.length > 0 &&
                       providerDropdownPosition
                     "
-                    class="fixed z-[9999] dark:bg-gray-900/95 bg-white/95 backdrop-blur-sm dark:border-gray-600 border-gray-300 rounded-lg shadow-xl max-h-64 overflow-y-auto custom-scrollbar"
+                    class="fixed z-[9999] dark:bg-gray-900/95 bg-white/95 backdrop-blur-sm dark:border-gray-600 border-gray-300 rounded-3xl shadow-xl max-h-64 overflow-y-auto custom-scrollbar"
                     :style="{
                       top: `${providerDropdownPosition.top}px`,
                       left: `${providerDropdownPosition.left}px`,
@@ -544,42 +543,32 @@
                     @mousedown.prevent
                   >
                     <div class="py-2">
-                      <div v-if="filteredProviders.length > 0">
+                      <div
+                        v-for="provider in filteredProviders"
+                        :key="provider.provider_id"
+                        class="flex items-center gap-3 px-4 py-3 cursor-pointer dark:hover:bg-gray-800/50 hover:bg-gray-100/50 transition-colors duration-150"
+                        @mousedown.prevent="addProvider(provider)"
+                        @click="addProvider(provider)"
+                      >
+                        <img
+                          v-if="provider.logo_path"
+                          :src="`https://image.tmdb.org/t/p/w45${provider.logo_path}`"
+                          :alt="provider.provider_name"
+                          class="h-8 w-auto object-contain flex-shrink-0"
+                        />
                         <div
-                          v-for="provider in filteredProviders"
-                          :key="provider.provider_id"
-                          class="flex items-center gap-3 px-4 py-3 cursor-pointer dark:hover:bg-gray-800/50 hover:bg-gray-100/50 transition-colors duration-150"
-                          @mousedown.prevent="addProvider(provider)"
-                          @click="addProvider(provider)"
+                          v-else
+                          class="h-8 w-8 flex items-center justify-center bg-gray-200 dark:bg-gray-700 rounded flex-shrink-0"
                         >
-                          <img
-                            v-if="provider.logo_path"
-                            :src="`https://image.tmdb.org/t/p/w45${provider.logo_path}`"
-                            :alt="provider.provider_name"
-                            class="h-8 w-auto object-contain flex-shrink-0"
-                          />
-                          <div
-                            v-else
-                            class="h-8 w-8 flex items-center justify-center bg-gray-200 dark:bg-gray-700 rounded flex-shrink-0"
-                          >
-                            <span
-                              class="text-xs text-gray-600 dark:text-gray-300"
-                              >{{ provider.provider_name.charAt(0) }}</span
-                            >
-                          </div>
                           <span
-                            class="text-sm dark:text-gray-300 text-gray-800"
-                            >{{ provider.provider_name }}</span
+                            class="text-xs text-gray-600 dark:text-gray-300"
+                            >{{ provider.provider_name.charAt(0) }}</span
                           >
                         </div>
-                      </div>
-                      <div
-                        v-else
-                        class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400 text-center"
-                      >
-                        {{
-                          $t('preferences.content.includedProviders.noResults')
-                        }}
+                        <span
+                          class="text-sm dark:text-gray-300 text-gray-800"
+                          >{{ provider.provider_name }}</span
+                        >
                       </div>
                     </div>
                   </div>
@@ -1537,19 +1526,39 @@ const genreDropdownPosition = ref<{
   width: number;
 } | null>(null);
 
-// Preload providers using useLazyFetch (runs during setup, before mount)
+// Preload providers using useAsyncData (runs during setup, before mount)
 // Include credentials to ensure user session is sent for region detection
-const { data: providersData } = useLazyFetch<{
-  results: Array<{
-    provider_id: number;
-    provider_name: string;
-    logo_path: string | null;
-  }>;
-}>('/api/tmdb/watch-providers', {
-  server: false, // Only fetch on client
-  credentials: 'include', // Include cookies for authentication
-  default: () => ({ results: [] }),
-});
+const { data: providersData } = useAsyncData(
+  'watch-providers',
+  async () => {
+    const response = await $fetch<{
+      results: Array<{
+        provider_id: number;
+        provider_name: string;
+        logo_path: string | null;
+      }>;
+    }>('/api/tmdb/watch-providers', {
+      credentials: 'include', // Include cookies for authentication
+    });
+
+    if (import.meta.dev) {
+      console.log('[AvailableProviders] Raw response from API:', {
+        hasResponse: !!response,
+        hasResults: !!response?.results,
+        resultsType: typeof response?.results,
+        resultsIsArray: Array.isArray(response?.results),
+        resultsLength: response?.results?.length || 0,
+        sample: response?.results?.slice(0, 3),
+      });
+    }
+
+    return response;
+  },
+  {
+    server: false, // Only fetch on client
+    default: () => ({ results: [] }),
+  }
+);
 
 const availableProviders = computed(() => {
   if (!providersData.value) {
@@ -1760,24 +1769,10 @@ const fetchContentPreferences = async () => {
 const filterProviders = () => {
   if (!providerSearchQuery.value.trim()) {
     filteredProviders.value = [];
-    showProviderResults.value = false;
-    providerDropdownPosition.value = null;
     return;
   }
 
-  // Always show dropdown when user types
-  showProviderResults.value = true;
-
   const query = providerSearchQuery.value.toLowerCase().trim();
-
-  // Debug: log available providers count
-  if (import.meta.dev) {
-    console.log(
-      '[FilterProviders] Available providers:',
-      availableProviders.value.length
-    );
-    console.log('[FilterProviders] Search query:', query);
-  }
 
   filteredProviders.value = availableProviders.value
     .filter(
@@ -1787,51 +1782,42 @@ const filterProviders = () => {
           (p) => p.provider_id === provider.provider_id
         )
     )
-    .sort((a, b) => a.provider_name.localeCompare(b.provider_name))
-    .slice(0, 10); // Limit to 10 results
-
-  // Debug: log filtered results
-  if (import.meta.dev) {
-    console.log(
-      '[FilterProviders] Filtered providers:',
-      filteredProviders.value.length
-    );
-    console.log(
-      '[FilterProviders] Results:',
-      filteredProviders.value.map((p) => p.provider_name)
-    );
-  }
-
-  // Ensure dropdown position is calculated after filtering
-  // Use multiple attempts to ensure position is set
-  const attemptUpdatePosition = (attempt = 0) => {
-    if (attempt > 5) {
-      if (import.meta.dev) {
-        console.error(
-          '[FilterProviders] Failed to set dropdown position after 5 attempts'
-        );
-      }
-      return;
-    }
-
-    updateProviderDropdownPosition();
-
-    if (!providerDropdownPosition.value && providerInputRef.value) {
-      // Try again after a short delay
-      setTimeout(() => {
-        attemptUpdatePosition(attempt + 1);
-      }, 50);
-    } else if (providerDropdownPosition.value && import.meta.dev) {
-      console.log(
-        '[FilterProviders] Dropdown position successfully set on attempt',
-        attempt + 1
-      );
-    }
-  };
+    .slice(0, 10);
 
   nextTick(() => {
-    attemptUpdatePosition();
+    updateProviderDropdownPosition();
   });
+};
+
+// Calculate dropdown position for providers
+const updateProviderDropdownPosition = () => {
+  if (providerInputRef.value) {
+    const rect = providerInputRef.value.getBoundingClientRect();
+    providerDropdownPosition.value = {
+      top: rect.bottom + 8,
+      left: rect.left,
+      width: rect.width,
+    };
+  }
+};
+
+// Handle provider search focus
+const handleProviderFocus = () => {
+  showProviderResults.value = true;
+  if (providerSearchQuery.value.trim()) {
+    filterProviders();
+  }
+  nextTick(() => {
+    updateProviderDropdownPosition();
+  });
+};
+
+// Handle provider search blur
+const handleProviderBlur = () => {
+  setTimeout(() => {
+    showProviderResults.value = false;
+    providerDropdownPosition.value = null;
+  }, 200);
 };
 
 // Add provider to selected list
@@ -1852,7 +1838,7 @@ const addProvider = (provider: {
     (p) => p.provider_id
   );
   providerSearchQuery.value = '';
-  showProviderResults.value = false;
+  filteredProviders.value = [];
   saveContentPreferences();
 };
 
@@ -1865,62 +1851,6 @@ const removeProvider = (providerId: number) => {
     (p) => p.provider_id
   );
   saveContentPreferences();
-};
-
-// Calculate dropdown position for providers
-const updateProviderDropdownPosition = () => {
-  if (providerInputRef.value) {
-    const rect = providerInputRef.value.getBoundingClientRect();
-    providerDropdownPosition.value = {
-      top: rect.bottom + window.scrollY + 8, // 8px for mt-2
-      left: rect.left + window.scrollX,
-      width: rect.width,
-    };
-    if (import.meta.dev) {
-      console.log(
-        '[FilterProviders] Dropdown position set:',
-        providerDropdownPosition.value
-      );
-    }
-  } else {
-    if (import.meta.dev) {
-      console.warn('[FilterProviders] providerInputRef is not available');
-    }
-  }
-};
-
-// Handle provider search focus
-const handleProviderFocus = () => {
-  // Clear any pending blur timeout
-  if (blurTimeout) {
-    clearTimeout(blurTimeout);
-    blurTimeout = null;
-  }
-  showProviderResults.value = true;
-  // If there's already a search query, filter immediately
-  if (providerSearchQuery.value.trim()) {
-    filterProviders();
-  } else {
-    // Even without query, ensure position is set
-    nextTick(() => {
-      updateProviderDropdownPosition();
-    });
-  }
-};
-
-// Handle provider search blur
-let blurTimeout: ReturnType<typeof setTimeout> | null = null;
-const handleProviderBlur = () => {
-  // Clear any existing timeout
-  if (blurTimeout) {
-    clearTimeout(blurTimeout);
-  }
-  // Delay closing to allow clicks on dropdown items
-  blurTimeout = setTimeout(() => {
-    showProviderResults.value = false;
-    providerDropdownPosition.value = null;
-    blurTimeout = null;
-  }, 300);
 };
 
 // Change selected language (single selection)
@@ -2285,14 +2215,6 @@ watch(showGenreResults, (isVisible) => {
   }
 });
 
-watch(showProviderResults, (isVisible) => {
-  if (isVisible) {
-    nextTick(() => {
-      updateProviderDropdownPosition();
-    });
-  }
-});
-
 // Update positions on scroll and resize
 const updateAllDropdownPositions = () => {
   if (showGenreResults.value) {
@@ -2411,13 +2333,6 @@ watch(
 watch(
   () => contentPreferences.value.preferred_language,
   (languageCode) => {
-    if (import.meta.dev) {
-      console.log(
-        '[Profile Watch] preferred_language changed to:',
-        languageCode
-      );
-    }
-
     if (languageCode && availableLanguages.length > 0) {
       const languageToSelect = availableLanguages.find(
         (l: Language) => l.code === languageCode
@@ -2426,21 +2341,8 @@ watch(
       if (languageToSelect) {
         // Only update if it's different to avoid unnecessary updates
         if (selectedLanguage.value?.code !== languageCode) {
-          if (import.meta.dev) {
-            console.log(
-              '[Profile Watch] Setting selected language to:',
-              languageToSelect
-            );
-          }
           selectedLanguage.value = languageToSelect;
         }
-      } else if (import.meta.dev) {
-        console.warn(
-          '[Profile Watch] Could not find language for code:',
-          languageCode,
-          'Available languages:',
-          availableLanguages.map((l: Language) => l.code)
-        );
         // Only default to Spanish if the code is truly invalid
         // Don't default if languageCode is a valid code that just isn't in availableLanguages
         const validCodes = Object.values(LanguageCode);
