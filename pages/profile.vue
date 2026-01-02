@@ -2293,9 +2293,9 @@ const confirmSaveContentPreferences = async () => {
     // Logic: Ensure at least one language (default to Spanish if empty)
     // If selection exists, include only selected items
     const preferencesToSave = {
-      preferred_languages: selectedLanguage.value
+      preferred_language: selectedLanguage.value
         ? selectedLanguage.value.code
-        : ['es'], // Default to Spanish if no languages selected
+        : LanguageCode.SPANISH, // Default to Spanish if no languages selected
       favorite_genres:
         selectedGenres.value.length > 0
           ? selectedGenres.value.map((g) => g.id)
@@ -2320,12 +2320,30 @@ const confirmSaveContentPreferences = async () => {
     });
 
     if (response.success) {
+      // Get the saved language code from the response (may be converted to TMDB format)
+      const savedLanguageCode =
+        (response.preferences as { preferred_language?: string })
+          ?.preferred_language ||
+        selectedLanguage.value?.code ||
+        LanguageCode.SPANISH;
+
+      // Update contentPreferences with the saved value to keep everything in sync
+      contentPreferences.value.preferred_language = savedLanguageCode;
+
+      // Explicitly update selectedLanguage to match the saved value (don't rely on watcher)
+      const languageToSelect = availableLanguages.find(
+        (l: Language) => l.code === savedLanguageCode
+      );
+      if (languageToSelect) {
+        selectedLanguage.value = languageToSelect;
+      }
+
       // Show toast with regeneration message
       showToast(t('preferences.content.savedAndRegenerating'), null, 5000);
 
-      // Regenerate recommendation pool in background
+      // Regenerate recommendation pool in background (clear existing pool first)
       try {
-        await $fetch('/api/recommendations/populate-pool', {
+        await $fetch('/api/recommendations/populate-pool?clearPool=true', {
           method: 'POST',
           headers: {
             Authorization: `Bearer ${session.access_token}`,
@@ -2337,9 +2355,9 @@ const confirmSaveContentPreferences = async () => {
       }
 
       hasUnsavedContentChanges.value = false;
-      // Update saved state
+      // Update saved state with the actual saved value from the response
       savedContentPreferences.value = {
-        preferred_language: selectedLanguage.value?.code,
+        preferred_language: savedLanguageCode,
         content_types: [...(contentPreferences.value.content_types || [])],
         favorite_genres: [...selectedGenres.value.map((g) => g.id)],
         included_providers: [

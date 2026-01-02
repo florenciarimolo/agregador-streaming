@@ -6,6 +6,7 @@ import { devLog, devError, safeError } from '../../utils/logger';
 import {
   getPoolCount,
   deleteLowestScoreEntries,
+  deleteAllPoolEntries,
   insertPoolEntries,
   type RecommendationPoolSource,
   type TitleData,
@@ -106,16 +107,25 @@ export default defineEventHandler(async (event) => {
       includedProviders
     );
 
-    // Check current pool size
-    const currentPoolCount = await getPoolCount(userId, supabase);
-    devLog('[PopulatePool] Current pool count:', currentPoolCount);
+    // Check if we should clear the entire pool (e.g., when preferences change)
+    const query = getQuery(event);
+    const clearPool = query.clearPool === 'true' || query.clearPool === true;
 
-    // If pool is at or near max, delete lowest scores first
-    if (currentPoolCount >= TARGET_POOL_SIZE) {
-      const toDelete = currentPoolCount - TARGET_POOL_SIZE + 50; // Delete enough to make room
-      if (toDelete > 0) {
-        devLog('[PopulatePool] Deleting lowest score entries:', toDelete);
-        await deleteLowestScoreEntries(userId, toDelete, supabase);
+    if (clearPool) {
+      devLog('[PopulatePool] Clearing entire pool before regeneration');
+      await deleteAllPoolEntries(userId, supabase);
+    } else {
+      // Check current pool size
+      const currentPoolCount = await getPoolCount(userId, supabase);
+      devLog('[PopulatePool] Current pool count:', currentPoolCount);
+
+      // If pool is at or near max, delete lowest scores first
+      if (currentPoolCount >= TARGET_POOL_SIZE) {
+        const toDelete = currentPoolCount - TARGET_POOL_SIZE + 50; // Delete enough to make room
+        if (toDelete > 0) {
+          devLog('[PopulatePool] Deleting lowest score entries:', toDelete);
+          await deleteLowestScoreEntries(userId, toDelete, supabase);
+        }
       }
     }
 

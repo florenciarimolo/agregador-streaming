@@ -238,6 +238,30 @@ export async function removeFromPool(
 }
 
 /**
+ * Delete all pool entries for a user
+ * Used when preferences change and pool needs to be completely regenerated
+ */
+export async function deleteAllPoolEntries(
+  userId: string,
+  supabaseClient?: SupabaseClient
+): Promise<void> {
+  const supabase = supabaseClient || useSupabaseClient();
+
+  const { error } = await supabase
+    .from(TABLES.RECOMMENDATION_POOL)
+    .delete()
+    .eq(RECOMMENDATION_POOL_FIELDS.USER_ID, userId);
+
+  if (error) {
+    console.error(
+      '[RecommendationPool] Error deleting all pool entries:',
+      error
+    );
+    throw error;
+  }
+}
+
+/**
  * Update last_shown_at timestamp for pool entries
  * Used to track when recommendations are displayed
  */
