@@ -184,6 +184,10 @@
             >
               {{ $t('media.episodeNumber', { number: index + 1 }) }}
             </div>
+            <!-- RatingBadge in image (mobile only) -->
+            <div class="absolute top-2 right-2 md:hidden">
+              <RatingBadge :rating="episode.vote_average" />
+            </div>
           </div>
           <div class="p-4">
             <div class="flex items-center gap-3 mb-2">
@@ -191,7 +195,10 @@
                 class="font-semibold dark:text-gray-300 text-gray-800 line-clamp-1"
                 >{{ episode.name }}</h4
               >
-              <RatingBadge :rating="episode.vote_average" />
+              <!-- RatingBadge in content (desktop only) -->
+              <div class="hidden md:block">
+                <RatingBadge :rating="episode.vote_average" />
+              </div>
             </div>
             <p class="mb-2 text-sm dark:text-gray-300 text-gray-800">{{
               formatDateToSpanish(episode.air_date)

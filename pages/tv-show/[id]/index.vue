@@ -40,6 +40,13 @@
               :alt="season.name"
               class="w-full h-full object-cover"
             />
+            <!-- RatingBadge in image (mobile only) -->
+            <div class="absolute top-2 right-2 md:hidden">
+              <RatingBadge
+                v-if="season.vote_average"
+                :rating="season.vote_average"
+              />
+            </div>
             <div
               class="absolute bottom-0 left-0 flex flex-col items-center justify-center w-full h-full px-4 transition-all duration-300 rounded opacity-0 group-hover:opacity-100 backdrop-blur-md w-inherit dark:bg-black/80 bg-white/80"
             >
@@ -50,24 +57,27 @@
           </div>
         </nuxt-link>
 
-        <div class="flex flex-col justify-around py-5 px-6 min-h-[120px]">
-          <div class="flex items-center gap-3">
+        <div class="flex flex-col justify-around py-3 px-3 md:py-5 md:px-6 min-h-[120px]">
+          <div class="flex flex-col gap-2 md:flex-row md:items-center md:gap-3">
             <p
-              class="text-lg font-semibold uppercase dark:text-gray-300 text-gray-800"
+              class="text-sm md:text-lg font-semibold uppercase dark:text-gray-300 text-gray-800 line-clamp-2 md:line-clamp-1"
               >{{ season.name }}</p
             >
-            <RatingBadge
-              v-if="season.vote_average"
-              :rating="season.vote_average"
-            />
+            <!-- RatingBadge in content (desktop only) -->
+            <div class="hidden md:block flex-shrink-0">
+              <RatingBadge
+                v-if="season.vote_average"
+                :rating="season.vote_average"
+              />
+            </div>
           </div>
-          <div class="flex items-center gap-2 dark:text-gray-300 text-gray-800">
-            <IconCalendar icon-class="w-4 h-4" />
-            <span>{{ formatDateToSpanish(season.air_date) }}</span>
+          <div class="flex items-center gap-2 dark:text-gray-300 text-gray-800 text-xs md:text-sm">
+            <IconCalendar icon-class="w-3 h-3 md:w-4 md:h-4" />
+            <span class="truncate">{{ formatDateToSpanish(season.air_date) }}</span>
           </div>
-          <div class="flex items-center gap-2 dark:text-gray-300 text-gray-800">
-            <IconEpisodes icon-class="w-4 h-4" />
-            <span>{{ season.episode_count || 0 }} episodios</span>
+          <div class="flex items-center gap-2 dark:text-gray-300 text-gray-800 text-xs md:text-sm">
+            <IconEpisodes icon-class="w-3 h-3 md:w-4 md:h-4" />
+            <span class="truncate">{{ season.episode_count || 0 }} episodios</span>
           </div>
         </div>
       </article>
