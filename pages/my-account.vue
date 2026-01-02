@@ -263,15 +263,15 @@ const handleAvatarUploaded = async (avatarUrl: string) => {
     });
 
     await userStore.fetchProfile();
-    showToast(t('profile.avatarUpdated'), 'success');
+    showToast(t('profile.avatarUpdated'), null);
   } catch (error) {
     console.error('Error updating avatar:', error);
-    showToast(t('profile.errorUpdating'), 'error');
+    showToast(t('profile.errorUpdating'), null);
   }
 };
 
 const handleAvatarError = (message: string) => {
-  showToast(message, 'error');
+  showToast(message, null);
 };
 
 const handleUpdateDisplayName = async () => {
@@ -306,14 +306,14 @@ const handleUpdateDisplayName = async () => {
 
     if (response.success) {
       await userStore.fetchProfile();
-      showToast(t('myAccount.displayName.updated'), 'success');
+      showToast(t('myAccount.displayName.updated'), null);
     } else {
       throw new Error('Failed to update display name');
     }
   } catch (error) {
     console.error('Error updating display name:', error);
     displayNameError.value = t('myAccount.displayName.error');
-    showToast(t('myAccount.displayName.error'), 'error');
+    showToast(t('myAccount.displayName.error'), null);
   } finally {
     loadingDisplayName.value = false;
   }
@@ -368,11 +368,11 @@ const handleUpdatePassword = async () => {
     newPassword.value = '';
     confirmPassword.value = '';
 
-    showToast(t('myAccount.password.updated'), 'success');
+    showToast(t('myAccount.password.updated'), null);
   } catch (error) {
     console.error('Error updating password:', error);
     passwordError.value = t('myAccount.password.error');
-    showToast(t('myAccount.password.error'), 'error');
+    showToast(t('myAccount.password.error'), null);
   } finally {
     loadingPassword.value = false;
   }
@@ -399,7 +399,7 @@ const handleDeleteAccount = async () => {
       },
     });
 
-    showToast(t('myAccount.deleteAccount.deleted'), 'success');
+    showToast(t('myAccount.deleteAccount.deleted'), null);
 
     // Sign out and redirect to home
     const { signOut } = useAuth();
@@ -407,7 +407,7 @@ const handleDeleteAccount = async () => {
     await router.push('/');
   } catch (error) {
     console.error('Error deleting account:', error);
-    showToast(t('myAccount.deleteAccount.error'), 'error');
+    showToast(t('myAccount.deleteAccount.error'), null);
   } finally {
     loadingDeleteAccount.value = false;
     showDeleteAccountModal.value = false;

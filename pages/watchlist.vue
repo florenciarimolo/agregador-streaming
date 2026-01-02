@@ -166,9 +166,8 @@ type WatchlistTitle = {
 
 type WatchlistResponseItem = {
   tmdb_id: number;
-  title?: string;
-  name?: string;
-  type: string;
+  title: string;
+  type: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv;
   poster_path: string | null;
   created_at: string;
 };
@@ -192,21 +191,22 @@ const fetchWatchlist = async () => {
       return;
     }
 
-    const response = await $fetch('/api/users/watchlist', {
-      headers: {
-        Authorization: `Bearer ${session.access_token}`,
-      },
-    });
-
-    watchlistTitles.value = (response.watchlist || []).map(
-      (item: WatchlistResponseItem) => ({
-        tmdb_id: item.tmdb_id,
-        title: item.title || item.name || t('watchlist.noTitle'),
-        type: item.type as typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv,
-        poster_path: item.poster_path,
-        created_at: item.created_at,
-      })
+    const response = await $fetch<{ watchlist: WatchlistResponseItem[] }>(
+      '/api/users/watchlist',
+      {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      }
     );
+
+    watchlistTitles.value = (response.watchlist || []).map((item) => ({
+      tmdb_id: item.tmdb_id,
+      title: item.title || t('watchlist.noTitle'),
+      type: item.type,
+      poster_path: item.poster_path,
+      created_at: item.created_at,
+    }));
   } catch (error) {
     if (process.env.NODE_ENV === 'development') {
       console.error('Error fetching watchlist:', error);

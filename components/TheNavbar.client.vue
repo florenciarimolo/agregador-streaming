@@ -242,6 +242,14 @@
             {{ $t('navbar.home') }}
           </nuxt-link>
           <nuxt-link
+            to="/watchlist"
+            class="flex items-center px-4 py-3 text-sm font-medium text-gray-800 rounded-lg transition-colors dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+            active-class="bg-gray-100 dark:bg-gray-700 text-primary dark:text-primary-400"
+            @click="showMobileMenu = false"
+          >
+            {{ $t('navbar.watchlist') }}
+          </nuxt-link>
+          <nuxt-link
             to="/profile"
             class="flex items-center px-4 py-3 text-sm font-medium text-gray-800 rounded-lg transition-colors dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
             active-class="bg-gray-100 dark:bg-gray-700 text-primary dark:text-primary-400"
@@ -256,14 +264,6 @@
             @click="showMobileMenu = false"
           >
             {{ $t('navbar.myAccount') }}
-          </nuxt-link>
-          <nuxt-link
-            to="/watchlist"
-            class="flex items-center px-4 py-3 text-sm font-medium text-gray-800 rounded-lg transition-colors dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-            active-class="bg-gray-100 dark:bg-gray-700 text-primary dark:text-primary-400"
-            @click="showMobileMenu = false"
-          >
-            {{ $t('navbar.watchlist') }}
           </nuxt-link>
           <!-- Theme Switcher -->
           <div class="flex justify-between items-center px-4 py-3">

@@ -1,14 +1,19 @@
 import { serverSupabaseUser } from '#supabase/server';
 import { createClient } from '@supabase/supabase-js';
-import { getTMDBConfig } from '../../utils/config';
 import { getUserTMDBParams } from '../../utils/user-preferences';
 import { devLog, devError, devWarn, safeError } from '../../utils/logger';
 import { TitleStatus } from '@/types/TitleStatus';
-import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 import {
   TABLES,
   USER_TITLE_STATUS_FIELDS,
+  TITLES_FIELDS,
 } from '@/composables/database/constants';
+import {
+  getTitleInLanguage,
+  type MultiLanguageText,
+} from '@/composables/database/titles';
+import { getTMDBConfig } from '../../utils/config';
+import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 
 /**
  * Get user watchlist (watchlist status)
@@ -127,71 +132,135 @@ export default defineEventHandler(async (event) => {
 
     // Get user preferences for language and region
     const { language, region } = await getUserTMDBParams(event);
-    const tmdbConfig = getTMDBConfig(language, region);
 
-    // Fetch TMDB details for each title
-    type TMDBTitle = {
-      id: number;
-      title?: string;
-      name?: string;
-      poster_path: string | null;
-      [key: string]: unknown;
-    };
+    // Extract tmdb_ids and create a map of tmdb_id to type and created_at
+    const tmdbIds: number[] = statuses.map((s) => s.tmdb_id);
+    const titleTypesMap = new Map<number, 'movie' | 'tv'>(
+      statuses.map((s) => [s.tmdb_id, s.type as 'movie' | 'tv'])
+    );
+    const createdAtMap = new Map<number, string>(
+      statuses.map((s) => [s.tmdb_id, s.created_at])
+    );
 
-    const watchlistPromises: Promise<
-      | (TMDBTitle & {
-          type: string;
-          tmdb_id: number;
-          created_at: string;
-        })
-      | null
-    >[] = [];
-
-    for (const status of statuses) {
-      // Use the type stored in the database to fetch from the correct endpoint
-      const endpoint =
-        status.type === MediaTypeEnum.movie ? MediaTypeEnum.movie : MediaTypeEnum.tv;
-      const fetchPromise = $fetch<TMDBTitle>(
-        `${tmdbConfig.baseUrl}/${endpoint}/${status.tmdb_id}`,
-        {
-          query: {
-            api_key: tmdbConfig.apiKey,
-            language: tmdbConfig.language,
-            region: tmdbConfig.region,
-            include_adult: tmdbConfig.includeAdult,
-          },
-        }
+    // Fetch titles from database
+    const { data: titlesData, error: titlesError } = await supabase
+      .from(TABLES.TITLES)
+      .select(
+        `${TITLES_FIELDS.ID}, ${TITLES_FIELDS.TITLE}, ${TITLES_FIELDS.TYPE}, ${TITLES_FIELDS.POSTER_PATH}, ${TITLES_FIELDS.TMDB_ID}, ${TITLES_FIELDS.OVERVIEW}, ${TITLES_FIELDS.GENRES}`
       )
-        .then((result) => {
-          if (result?.id) {
-            return {
-              ...result,
-              type: status.type,
-              tmdb_id: status.tmdb_id,
-              created_at: status.created_at,
-            };
-          }
-          return null;
-        })
-        .catch(() => {
-          // If fetch fails, return null
-          return null;
-        });
+      .in(TITLES_FIELDS.TMDB_ID, tmdbIds);
 
-      watchlistPromises.push(fetchPromise);
+    if (titlesError) {
+      safeError(
+        '[User Watchlist] Error fetching titles from database',
+        titlesError,
+        {
+          userId,
+          tmdbIds,
+        }
+      );
+      throw createError({
+        statusCode: 500,
+        message: 'Error al obtener los títulos',
+      });
     }
 
-    // Wait for all promises
-    const watchlistResults = await Promise.all(watchlistPromises);
+    if (!titlesData || titlesData.length === 0) {
+      devLog('[User Watchlist] No titles found in database');
+      return {
+        watchlist: [],
+      };
+    }
 
-    // Filter out null results and format
-    const watchlist = watchlistResults
-      .filter((result) => result !== null)
-      .map((result) => ({
-        ...result,
-        title: result.title || result.name,
-        release_date: result.release_date || result.first_air_date,
-      }));
+    // Fetch missing titles from TMDB if needed
+    const foundTmdbIds = new Set<number>(titlesData.map((t) => t.tmdb_id));
+    const missingTmdbIds: number[] = tmdbIds.filter(
+      (id: number) => !foundTmdbIds.has(id)
+    );
+
+    if (missingTmdbIds.length > 0) {
+      devLog(
+        '[User Watchlist] Missing titles, fetching from TMDB:',
+        missingTmdbIds
+      );
+
+      const tmdbConfig = getTMDBConfig(language, region);
+      const fetchPromises = missingTmdbIds.map(async (tmdbId: number) => {
+        const type = titleTypesMap.get(tmdbId);
+        if (!type) return null;
+
+        try {
+          const endpoint =
+            type === 'movie' ? MediaTypeEnum.movie : MediaTypeEnum.tv;
+          await $fetch(`${tmdbConfig.baseUrl}/${endpoint}/${tmdbId}`, {
+            query: {
+              api_key: tmdbConfig.apiKey,
+              language: tmdbConfig.language,
+              region: tmdbConfig.region,
+            },
+          });
+          // The TMDB endpoint will insert into database
+          return tmdbId;
+        } catch (err) {
+          safeError(
+            `[User Watchlist] Error fetching title ${tmdbId} from TMDB`,
+            err
+          );
+          return null;
+        }
+      });
+
+      await Promise.all(fetchPromises);
+
+      // Reload titles from database
+      const { data: reloadedData } = await supabase
+        .from(TABLES.TITLES)
+        .select(
+          `${TITLES_FIELDS.ID}, ${TITLES_FIELDS.TITLE}, ${TITLES_FIELDS.TYPE}, ${TITLES_FIELDS.POSTER_PATH}, ${TITLES_FIELDS.TMDB_ID}, ${TITLES_FIELDS.OVERVIEW}, ${TITLES_FIELDS.GENRES}`
+        )
+        .in(TITLES_FIELDS.TMDB_ID, tmdbIds);
+
+      if (reloadedData) {
+        titlesData.length = 0;
+        titlesData.push(...reloadedData);
+      }
+    }
+
+    // Extract titles with alphabet detection
+    const watchlist = titlesData.map(
+      (title: {
+        tmdb_id: number;
+        title: unknown;
+        type: string;
+        poster_path: unknown;
+      }) => {
+        const titleJsonb = title.title as MultiLanguageText;
+        const posterPathJsonb = title.poster_path as MultiLanguageText | null;
+
+        // Use getTitleInLanguage which includes alphabet detection
+        const extractedTitle = getTitleInLanguage(
+          titleJsonb,
+          language,
+          region,
+          false
+        );
+        const extractedPosterPath = getTitleInLanguage(
+          posterPathJsonb,
+          language,
+          region,
+          true // isImagePath = true
+        );
+
+        return {
+          tmdb_id: title.tmdb_id,
+          title: extractedTitle || '',
+          type: title.type,
+          poster_path: extractedPosterPath || null,
+          created_at:
+            createdAtMap.get(title.tmdb_id) || new Date().toISOString(),
+        };
+      }
+    );
 
     return {
       watchlist,
