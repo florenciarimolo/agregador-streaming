@@ -1044,7 +1044,7 @@ onMounted(() => {
                   ]"
                   :key="typeOption.value"
                   :class="[
-                    'px-4 py-2 rounded-full font-medium transition-all text-sm',
+                    'px-3 py-1.5 rounded-full font-medium transition-all text-xs',
                     selectedContentType === typeOption.value
                       ? 'bg-primary-800 text-white border border-gray-700/50 dark:border-gray-600/50'
                       : 'bg-gray-100/50 dark:bg-gray-800/50 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700/50 hover:bg-gray-200 dark:hover:bg-gray-700/50 hover:border-primary/50 dark:hover:border-purple-500/30',

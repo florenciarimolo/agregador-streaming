@@ -98,7 +98,7 @@
               ref="dropdownRef"
               position="right"
               width="w-48"
-              custom-class="backdrop-blur-xl dark:bg-gray-900/40 bg-gray-100/80 border-gray-300/50 dark:border-white/10"
+              custom-class="backdrop-blur-xl dark:bg-gray-900/40 bg-gray-100/80 border-gray-300/50 dark:border-white/10 md:right-0 right-auto left-0 md:left-auto"
             >
               <template #trigger>
                 <IconButton

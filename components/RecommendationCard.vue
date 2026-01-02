@@ -1,6 +1,6 @@
 <template>
   <article
-    class="relative rounded-lg border backdrop-blur-xl transition-all duration-300 group dark:bg-gray-900/40 bg-gray-100/80 border-gray-300/50 dark:border-white/10 hover:border-gray-400/50 dark:hover:border-white/20 hover:shadow-lg hover:shadow-gray-900/20"
+    class="relative rounded-lg border backdrop-blur-xl transition-all duration-300 group dark:bg-gray-900/40 bg-gray-100/80 border-gray-300/50 dark:border-white/10 hover:border-gray-400/50 dark:hover:border-white/20 hover:shadow-lg hover:shadow-gray-900/20 overflow-visible"
     :aria-label="$t('media.recommendationLabel', { title: props.title.title })"
   >
     <!-- Poster -->
@@ -50,14 +50,14 @@
       </div>
 
       <!-- Actions Menu (top-right) -->
-      <div class="absolute top-2 right-2 z-20">
+      <div class="absolute top-2 right-2 z-20" :data-dropdown-id="dropdownId">
         <IconButton
           :icon="IconMoreVertical"
           :aria-label="$t('media.actionsMenuFor', { title: props.title.title })"
           size="small"
           variant="default"
           custom-class="menu-button p-2 rounded-full bg-black/50 hover:bg-gray-700/80 backdrop-blur-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-black/50 [&>svg]:text-white"
-          @click.stop.prevent="showMenu = !showMenu"
+          @click.stop.prevent="toggle()"
         />
 
         <!-- Dropdown Menu -->
@@ -70,8 +70,9 @@
           leave-to-class="opacity-0 transform scale-95"
         >
           <div
-            v-if="showMenu"
-            class="absolute right-0 z-50 mt-2 w-48 rounded-lg border backdrop-blur-xl dark:bg-gray-900/40 bg-gray-100/80 border-gray-300/50 dark:border-white/10"
+            v-if="isOpen"
+            :data-dropdown-id="dropdownId"
+            class="absolute left-0 z-[100] mt-2 w-48 max-w-[calc(100vw-2rem)] md:right-0 md:left-auto rounded-lg border backdrop-blur-xl dark:bg-gray-900/40 bg-gray-100/80 border-gray-300/50 dark:border-white/10"
             @click.stop
           >
             <div class="p-4">
@@ -186,7 +187,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
+import { onMounted, onUnmounted, computed } from 'vue';
 import RatingBadge from './RatingBadge.vue';
 import IconMoreVertical from './icons/IconMoreVertical.vue';
 import IconClock from './icons/IconClock.vue';
@@ -199,6 +200,7 @@ import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 import type { Recommendation } from '@/types/Recommendation';
 import IconButton from '@/components/ui/IconButton.vue';
 import Button from '@/components/ui/Button.vue';
+import { useDropdownManager } from '@/composables/useDropdownManager';
 
 interface Props {
   title: Recommendation;
@@ -206,7 +208,10 @@ interface Props {
 
 const props = defineProps<Props>();
 
-const showMenu = ref(false);
+// Generate unique ID for this dropdown
+const dropdownId = `recommendation-${props.title.tmdb_id}-${props.title.type}`;
+const { isOpen, toggle, close, handleClickOutside } =
+  useDropdownManager(dropdownId);
 
 const emit = defineEmits<{
   'mark-seen': [title: Recommendation];
@@ -216,7 +221,7 @@ const emit = defineEmits<{
 }>();
 
 const handleAction = (action: TitleStatus | 'liked') => {
-  showMenu.value = false;
+  close();
   if (action === TitleStatus.SEEN) {
     emit('mark-seen', props.title);
   } else if (action === 'liked') {
@@ -225,14 +230,6 @@ const handleAction = (action: TitleStatus | 'liked') => {
     emit('mark-not-interested', props.title);
   } else if (action === TitleStatus.WATCHLIST) {
     emit('mark-watchlist', props.title);
-  }
-};
-
-// Close menu when clicking outside
-const handleClickOutside = (event: MouseEvent) => {
-  const target = event.target as HTMLElement;
-  if (!target.closest('.menu-button') && !target.closest('.absolute.right-0')) {
-    showMenu.value = false;
   }
 };
 

@@ -13,7 +13,7 @@
         {{ description }}
       </p>
     </div>
-    <div class="grid grid-cols-2 gap-4 md:grid-cols-4">
+    <div class="grid grid-cols-2 gap-4 md:grid-cols-4 overflow-visible">
       <RecommendationCard
         v-for="recommendation in recommendations"
         :key="recommendation.id"

@@ -129,11 +129,11 @@
 
   <!-- Mobile Navbar -->
   <header
-    class="fixed left-0 top-4 z-50 px-4 w-full transition-transform duration-300 md:hidden"
+    class="fixed left-0 top-4 z-50 container px-4 w-full transition-transform duration-300 md:hidden"
     :style="{ transform: `translateY(${isNavbarVisible ? '0' : '-10px'})` }"
   >
     <nav
-      class="mx-4 rounded-3xl border backdrop-blur-xl dark:bg-gray-900/40 bg-gray-100/90 border-gray-300/50 dark:border-white/10"
+      class="rounded-3xl border backdrop-blur-xl dark:bg-gray-900/40 bg-gray-100/90 border-gray-300/50 dark:border-white/10"
     >
       <div class="flex justify-between items-center px-6 py-3">
         <!-- Logo -->
