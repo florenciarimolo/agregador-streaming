@@ -3,6 +3,8 @@
  * Handles operations on the recommendation_pool table
  */
 
+import type { SupabaseClient } from '@supabase/supabase-js';
+
 export const TABLES = {
   RECOMMENDATION_POOL: 'recommendation_pool',
 } as const;
@@ -59,7 +61,7 @@ export type RecommendationPoolEntry = {
  */
 export async function getPoolCount(
   userId: string,
-  supabaseClient?: ReturnType<typeof useSupabaseClient>
+  supabaseClient?: SupabaseClient
 ): Promise<number> {
   const supabase = supabaseClient || useSupabaseClient();
 
@@ -83,7 +85,7 @@ export async function getPoolCount(
 export async function deleteLowestScoreEntries(
   userId: string,
   count: number,
-  supabaseClient?: ReturnType<typeof useSupabaseClient>
+  supabaseClient?: SupabaseClient
 ): Promise<void> {
   const supabase = supabaseClient || useSupabaseClient();
 
@@ -108,7 +110,7 @@ export async function deleteLowestScoreEntries(
     return;
   }
 
-  const idsToDelete = entriesToDelete.map((entry) => entry.id);
+  const idsToDelete = entriesToDelete.map((entry: { id: string }) => entry.id);
 
   const { error: deleteError } = await supabase
     .from(TABLES.RECOMMENDATION_POOL)
@@ -135,7 +137,7 @@ export async function insertPoolEntries(
     explanation_code?: string | null;
     title_data?: TitleData | null;
   }>,
-  supabaseClient?: ReturnType<typeof useSupabaseClient>
+  supabaseClient?: SupabaseClient
 ): Promise<number> {
   const supabase = supabaseClient || useSupabaseClient();
 
@@ -178,7 +180,7 @@ export async function updatePoolScore(
   userId: string,
   tmdbId: number,
   delta: number,
-  supabaseClient?: ReturnType<typeof useSupabaseClient>
+  supabaseClient?: SupabaseClient
 ): Promise<void> {
   const supabase = supabaseClient || useSupabaseClient();
 
@@ -219,7 +221,7 @@ export async function updatePoolScore(
 export async function removeFromPool(
   userId: string,
   tmdbId: number,
-  supabaseClient?: ReturnType<typeof useSupabaseClient>
+  supabaseClient?: SupabaseClient
 ): Promise<void> {
   const supabase = supabaseClient || useSupabaseClient();
 
@@ -242,7 +244,7 @@ export async function removeFromPool(
 export async function updateLastShownAt(
   userId: string,
   tmdbIds: number[],
-  supabaseClient?: ReturnType<typeof useSupabaseClient>
+  supabaseClient?: SupabaseClient
 ): Promise<void> {
   if (tmdbIds.length === 0) return;
 
@@ -269,7 +271,7 @@ export async function updateLastShownAt(
 export async function getPoolEntries(
   userId: string,
   limit?: number,
-  supabaseClient?: ReturnType<typeof useSupabaseClient>
+  supabaseClient?: SupabaseClient
 ): Promise<RecommendationPoolEntry[]> {
   const supabase = supabaseClient || useSupabaseClient();
 
@@ -300,15 +302,17 @@ export async function getPoolEntries(
  */
 export async function updateTitleDataLanguage(
   userId: string,
-  newLanguage: string,
-  supabaseClient?: ReturnType<typeof useSupabaseClient>
+  _newLanguage: string,
+  supabaseClient?: SupabaseClient
 ): Promise<void> {
   const supabase = supabaseClient || useSupabaseClient();
 
   // Get all pool entries for the user
   const { data: poolEntries, error: selectError } = await supabase
     .from(TABLES.RECOMMENDATION_POOL)
-    .select(`${RECOMMENDATION_POOL_FIELDS.TMDB_ID}, ${RECOMMENDATION_POOL_FIELDS.TYPE}, ${RECOMMENDATION_POOL_FIELDS.TITLE_DATA}`)
+    .select(
+      `${RECOMMENDATION_POOL_FIELDS.TMDB_ID}, ${RECOMMENDATION_POOL_FIELDS.TYPE}, ${RECOMMENDATION_POOL_FIELDS.TITLE_DATA}`
+    )
     .eq(RECOMMENDATION_POOL_FIELDS.USER_ID, userId);
 
   if (selectError) {

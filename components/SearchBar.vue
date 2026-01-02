@@ -184,7 +184,7 @@
 import { ref, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
-import type { TMDBSearchResult } from '@/types/TMDBSearch';
+import type { TMDBSearchResult } from '@/types/tmdb/Search';
 
 const router = useRouter();
 

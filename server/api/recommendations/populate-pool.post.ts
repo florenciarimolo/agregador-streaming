@@ -8,40 +8,21 @@ import {
   deleteLowestScoreEntries,
   insertPoolEntries,
   type RecommendationPoolSource,
-  RECOMMENDATION_POOL_FIELDS,
-  TABLES as POOL_TABLES,
   type TitleData,
 } from '@/composables/database/recommendationPool';
-import { TABLES, TITLES_FIELDS } from '@/composables/database/constants';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 import { TitleStatus } from '@/types/TitleStatus';
-
-/**
- * TMDB API response types
- */
-type TMDBResult = {
-  id: number;
-  title?: string; // movies
-  name?: string; // tv shows
-  overview: string;
-  poster_path: string | null;
-  backdrop_path: string | null;
-  release_date?: string; // movies
-  first_air_date?: string; // tv shows
-  vote_average: number;
-  vote_count: number;
-  genre_ids: number[];
-  popularity: number;
-  runtime?: number; // movies
-  episode_run_time?: number[]; // tv shows
-};
-
-type TMDBResponse = {
-  page: number;
-  results: TMDBResult[];
-  total_pages: number;
-  total_results: number;
-};
+import type {
+  TMDBResponse,
+  TMDBTitleDetails,
+  TMDBWatchProvidersResponse,
+} from '@/types/tmdb/Responses';
+import {
+  TABLES,
+  TITLES_FIELDS,
+  USER_TITLE_STATUS_FIELDS,
+  USER_PREFERENCES_FIELDS,
+} from '@/composables/database/constants';
 
 /**
  * Minimum quality criteria (less strict than recommendations endpoint)
@@ -100,6 +81,31 @@ export default defineEventHandler(async (event) => {
     const tmdbConfig = getTMDBConfig(language, region);
     devLog('[PopulatePool] Using language:', language, 'region:', region);
 
+    // Get user preferences for genres and providers
+    const { data: userPreferences } = await supabase
+      .from(TABLES.USER_PREFERENCES)
+      .select(
+        `${USER_PREFERENCES_FIELDS.FAVORITE_GENRES}, ${USER_PREFERENCES_FIELDS.INCLUDED_PROVIDERS}`
+      )
+      .eq(USER_PREFERENCES_FIELDS.USER_ID, userId)
+      .maybeSingle();
+
+    const favoriteGenres =
+      (userPreferences?.[
+        USER_PREFERENCES_FIELDS.FAVORITE_GENRES
+      ] as number[]) || [];
+    const includedProviders =
+      (userPreferences?.[
+        USER_PREFERENCES_FIELDS.INCLUDED_PROVIDERS
+      ] as number[]) || [];
+
+    devLog(
+      '[PopulatePool] User preferences - genres:',
+      favoriteGenres,
+      'providers:',
+      includedProviders
+    );
+
     // Check current pool size
     const currentPoolCount = await getPoolCount(userId, supabase);
     devLog('[PopulatePool] Current pool count:', currentPoolCount);
@@ -113,37 +119,42 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    // Get excluded titles (seen + not_interested)
-    const { data: excludedStatuses } = await supabase
-      .from('user_title_status')
-      .select('tmdb_id')
-      .eq('user_id', userId)
-      .in('status', [TitleStatus.SEEN, TitleStatus.NOT_INTERESTED]);
+    // Get all user title statuses in a single query and filter in memory
+    const { data: allUserStatuses } = await supabase
+      .from(TABLES.USER_TITLE_STATUS)
+      .select(
+        `${USER_TITLE_STATUS_FIELDS.TMDB_ID}, ${USER_TITLE_STATUS_FIELDS.TYPE}, ${USER_TITLE_STATUS_FIELDS.STATUS}, ${USER_TITLE_STATUS_FIELDS.LIKED}`
+      )
+      .eq(USER_TITLE_STATUS_FIELDS.USER_ID, userId);
 
     const excludedTmdbIds = new Set<number>();
-    if (excludedStatuses) {
-      excludedStatuses.forEach((status) => {
-        excludedTmdbIds.add(status.tmdb_id);
-      });
-    }
-
-    // Get user's liked titles
-    const { data: userLikedStatuses } = await supabase
-      .from('user_title_status')
-      .select('tmdb_id, type')
-      .eq('user_id', userId)
-      .eq('liked', true);
-
     const likedTmdbIds = new Set<number>();
-    if (userLikedStatuses) {
-      userLikedStatuses.forEach((status) => {
-        likedTmdbIds.add(status.tmdb_id);
+    const userLikedStatuses: Array<{ tmdb_id: number; type: string }> = [];
+
+    if (allUserStatuses) {
+      allUserStatuses.forEach((status) => {
+        // Build excluded set (seen + not_interested)
+        if (
+          status.status === TitleStatus.SEEN ||
+          status.status === TitleStatus.NOT_INTERESTED
+        ) {
+          excludedTmdbIds.add(status.tmdb_id);
+        }
+
+        // Build liked set
+        if (status.liked === true) {
+          likedTmdbIds.add(status.tmdb_id);
+          userLikedStatuses.push({
+            tmdb_id: status.tmdb_id,
+            type: status.type,
+          });
+        }
       });
     }
 
     const entriesToInsert: Array<{
       tmdb_id: number;
-      type: 'movie' | 'tv';
+      type: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv;
       source: RecommendationPoolSource;
       score: number;
       explanation_code: string | null;
@@ -153,17 +164,21 @@ export default defineEventHandler(async (event) => {
     // Helper to fetch full title details from TMDB (including full genre objects)
     const fetchTitleDetails = async (
       tmdbId: number,
-      type: 'movie' | 'tv'
+      type: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv
     ): Promise<TitleData | null> => {
       try {
-        const endpoint = type === 'movie' ? `/movie/${tmdbId}` : `/tv/${tmdbId}`;
-        const fullResponse = await $fetch(`${tmdbConfig.baseUrl}${endpoint}`, {
-          query: {
-            api_key: tmdbConfig.apiKey,
-            language: tmdbConfig.language,
-            region: tmdbConfig.region,
-          },
-        });
+        const endpoint =
+          type === MediaTypeEnum.movie ? `/movie/${tmdbId}` : `/tv/${tmdbId}`;
+        const fullResponse = await $fetch<TMDBTitleDetails>(
+          `${tmdbConfig.baseUrl}${endpoint}`,
+          {
+            query: {
+              api_key: tmdbConfig.apiKey,
+              language: tmdbConfig.language,
+              region: tmdbConfig.region,
+            },
+          }
+        );
 
         if (!fullResponse) return null;
 
@@ -184,8 +199,68 @@ export default defineEventHandler(async (event) => {
           first_air_date: fullResponse.first_air_date || null,
         };
       } catch (error) {
-        safeError(`[PopulatePool] Error fetching title details for ${tmdbId}`, error);
+        safeError(
+          `[PopulatePool] Error fetching title details for ${tmdbId}`,
+          error
+        );
         return null;
+      }
+    };
+
+    // Helper to fetch watch providers for a title
+    const fetchWatchProviders = async (
+      tmdbId: number,
+      type: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv
+    ): Promise<number[]> => {
+      try {
+        const endpoint =
+          type === MediaTypeEnum.movie
+            ? `/movie/${tmdbId}/watch/providers`
+            : `/tv/${tmdbId}/watch/providers`;
+        const response = await $fetch<TMDBWatchProvidersResponse>(
+          `${tmdbConfig.baseUrl}${endpoint}`,
+          {
+            query: {
+              api_key: tmdbConfig.apiKey,
+            },
+          }
+        );
+
+        if (!response) return [];
+
+        // Get providers from the region (flatrate, buy, rent)
+        const regionData =
+          response.results?.[tmdbConfig.region.toLowerCase()] || {};
+        const providers: number[] = [];
+
+        // Combine all provider types
+        if (regionData.flatrate) {
+          providers.push(
+            ...regionData.flatrate.map(
+              (p: { provider_id: number }) => p.provider_id
+            )
+          );
+        }
+        if (regionData.buy) {
+          providers.push(
+            ...regionData.buy.map((p: { provider_id: number }) => p.provider_id)
+          );
+        }
+        if (regionData.rent) {
+          providers.push(
+            ...regionData.rent.map(
+              (p: { provider_id: number }) => p.provider_id
+            )
+          );
+        }
+
+        return providers;
+      } catch (error) {
+        safeError(
+          `[PopulatePool] Error fetching providers for ${tmdbId}`,
+          error
+        );
+        return [];
       }
     };
 
@@ -195,7 +270,7 @@ export default defineEventHandler(async (event) => {
       queryParams: Record<string, unknown>,
       source: RecommendationPoolSource,
       explanationCode: string,
-      type: 'movie' | 'tv',
+      type: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv,
       maxPages: number = 5
     ) => {
       let page = 1;
@@ -216,19 +291,29 @@ export default defineEventHandler(async (event) => {
           if (!response.results || response.results.length === 0) break;
 
           // Filter by minimum quality (less strict)
-          const filtered = response.results.filter((result) => {
+          let filtered = response.results.filter((result) => {
             if (processed.has(result.id)) return false;
             if (excludedTmdbIds.has(result.id)) return false;
             if (likedTmdbIds.has(result.id)) return false;
 
             const meetsQuality =
               result.vote_average >= MIN_VOTE_AVERAGE_POOL &&
-              (type === 'movie'
+              (type === MediaTypeEnum.movie
                 ? result.vote_count >= MIN_VOTE_COUNT_MOVIE
                 : result.vote_count >= MIN_VOTE_COUNT_TV);
 
             return meetsQuality;
           });
+
+          // Filter by favorite genres if user has preferences
+          if (favoriteGenres.length > 0) {
+            filtered = filtered.filter((result) => {
+              // Check if any of the result's genres match user's favorite genres
+              return result.genre_ids.some((genreId: number) =>
+                favoriteGenres.includes(genreId)
+              );
+            });
+          }
 
           // Process filtered results
           for (const result of filtered) {
@@ -236,6 +321,20 @@ export default defineEventHandler(async (event) => {
             if (processed.has(result.id)) continue;
 
             processed.add(result.id);
+
+            // Filter by providers if user has preferences
+            if (includedProviders.length > 0) {
+              const titleProviders = await fetchWatchProviders(result.id, type);
+              // Check if any of the title's providers match user's included providers
+              const hasMatchingProvider = titleProviders.some((providerId) =>
+                includedProviders.includes(providerId)
+              );
+
+              if (!hasMatchingProvider) {
+                // Skip this title if it doesn't have any of the user's preferred providers
+                continue;
+              }
+            }
 
             // Fetch full title details including complete genre objects
             const titleData = await fetchTitleDetails(result.id, type);
@@ -263,20 +362,22 @@ export default defineEventHandler(async (event) => {
     if (userLikedStatuses && userLikedStatuses.length > 0) {
       // Get top 2 liked titles by vote_average
       const { data: likedTitlesData } = await supabase
-        .from('titles')
-        .select('tmdb_id, type, vote_average')
+        .from(TABLES.TITLES)
+        .select(
+          `${TITLES_FIELDS.TMDB_ID}, ${TITLES_FIELDS.TYPE}, ${TITLES_FIELDS.VOTE_AVERAGE}`
+        )
         .in(
-          'tmdb_id',
+          TITLES_FIELDS.TMDB_ID,
           userLikedStatuses.map((s) => s.tmdb_id)
         )
-        .not('vote_average', 'is', null)
-        .order('vote_average', { ascending: false })
+        .not(TITLES_FIELDS.VOTE_AVERAGE, 'is', null)
+        .order(TITLES_FIELDS.VOTE_AVERAGE, { ascending: false })
         .limit(2);
 
       if (likedTitlesData) {
         for (const likedTitle of likedTitlesData) {
           const recommendationPath =
-            likedTitle.type === 'movie'
+            likedTitle.type === MediaTypeEnum.movie
               ? `/movie/${likedTitle.tmdb_id}/recommendations`
               : `/tv/${likedTitle.tmdb_id}/recommendations`;
 
@@ -285,7 +386,9 @@ export default defineEventHandler(async (event) => {
             {},
             'based_on_like',
             'BASED_ON_LIKE',
-            likedTitle.type as 'movie' | 'tv',
+            likedTitle.type as
+              | typeof MediaTypeEnum.movie
+              | typeof MediaTypeEnum.tv,
             3
           );
         }
@@ -298,7 +401,7 @@ export default defineEventHandler(async (event) => {
       {},
       'trending',
       'TRENDING',
-      'movie',
+      MediaTypeEnum.movie,
       3
     );
 
@@ -307,51 +410,65 @@ export default defineEventHandler(async (event) => {
       {},
       'trending',
       'TRENDING',
-      'tv',
+      MediaTypeEnum.tv,
       3
     );
 
-    // 3. Fetch discover by top genres (discover)
-    // Get user's top genres from liked titles
-    const { data: likedTitlesForGenres } = await supabase
-      .from('titles')
-      .select('genres')
-      .in('tmdb_id', userLikedStatuses?.map((s) => s.tmdb_id) || [])
-      .not('genres', 'is', null);
+    // 3. Fetch discover by genres (discover)
+    // Use user's favorite genres if available, otherwise use top genres from liked titles
+    let genresToUse: number[] = [];
 
-    const genreFrequency = new Map<number, number>();
-    if (likedTitlesForGenres) {
-      likedTitlesForGenres.forEach((title) => {
-        if (title.genres && Array.isArray(title.genres)) {
-          title.genres.forEach((genre: number | { id?: number }) => {
-            const genreId = typeof genre === 'number' ? genre : genre?.id;
-            if (genreId) {
-              genreFrequency.set(
-                genreId,
-                (genreFrequency.get(genreId) || 0) + 1
-              );
-            }
-          });
-        }
-      });
+    if (favoriteGenres.length > 0) {
+      // Use user's favorite genres
+      genresToUse = favoriteGenres.slice(0, 3);
+      devLog('[PopulatePool] Using user favorite genres:', genresToUse);
+    } else {
+      // Fallback: Get user's top genres from liked titles
+      const { data: likedTitlesForGenres } = await supabase
+        .from(TABLES.TITLES)
+        .select(TITLES_FIELDS.GENRES)
+        .in(
+          TITLES_FIELDS.TMDB_ID,
+          userLikedStatuses?.map((s) => s.tmdb_id) || []
+        )
+        .not(TITLES_FIELDS.GENRES, 'is', null);
+
+      const genreFrequency = new Map<number, number>();
+      if (likedTitlesForGenres) {
+        likedTitlesForGenres.forEach((title) => {
+          if (title.genres && Array.isArray(title.genres)) {
+            title.genres.forEach((genre: number | { id?: number }) => {
+              const genreId = typeof genre === 'number' ? genre : genre?.id;
+              if (genreId) {
+                genreFrequency.set(
+                  genreId,
+                  (genreFrequency.get(genreId) || 0) + 1
+                );
+              }
+            });
+          }
+        });
+      }
+
+      genresToUse = Array.from(genreFrequency.entries())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 3)
+        .map(([genreId]) => genreId);
+
+      devLog('[PopulatePool] Using top genres from liked titles:', genresToUse);
     }
 
-    const topGenres = Array.from(genreFrequency.entries())
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 3)
-      .map(([genreId]) => genreId);
-
-    if (topGenres.length > 0) {
+    if (genresToUse.length > 0) {
       // Discover movies
       await fetchAndProcess(
         `${tmdbConfig.baseUrl}/discover/movie`,
         {
-          with_genres: topGenres.join(','),
+          with_genres: genresToUse.join(','),
           sort_by: 'popularity.desc',
         },
         'discover',
         'DISCOVER',
-        'movie',
+        MediaTypeEnum.movie,
         3
       );
 
@@ -359,12 +476,12 @@ export default defineEventHandler(async (event) => {
       await fetchAndProcess(
         `${tmdbConfig.baseUrl}/discover/tv`,
         {
-          with_genres: topGenres.join(','),
+          with_genres: genresToUse.join(','),
           sort_by: 'popularity.desc',
         },
         'discover',
         'DISCOVER',
-        'tv',
+        MediaTypeEnum.tv,
         3
       );
     }
@@ -378,7 +495,7 @@ export default defineEventHandler(async (event) => {
       },
       'easy',
       'EASY_TO_WATCH',
-      'movie',
+      MediaTypeEnum.movie,
       2
     );
 
@@ -390,7 +507,7 @@ export default defineEventHandler(async (event) => {
       },
       'easy',
       'EASY_TO_WATCH',
-      'tv',
+      MediaTypeEnum.tv,
       2
     );
 

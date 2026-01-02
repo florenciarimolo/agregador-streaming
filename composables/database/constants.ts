@@ -5,6 +5,7 @@ export const TABLES = {
   PROFILES: 'profiles',
   TITLES: 'titles',
   USER_TITLE_STATUS: 'user_title_status',
+  USER_PREFERENCES: 'user_preferences',
   RECOMMENDATION_POOL: 'recommendation_pool',
 } as const;
 
@@ -53,4 +54,22 @@ export const USER_TITLE_STATUS_FIELDS = {
   STATUS: 'status',
   LIKED: 'liked',
   CREATED_AT: 'created_at',
+} as const;
+
+/**
+ * Field names for user_preferences table
+ */
+export const USER_PREFERENCES_FIELDS = {
+  ID: 'id',
+  USER_ID: 'user_id',
+  FAVORITE_GENRES: 'favorite_genres',
+  PREFERRED_LANGUAGE: 'preferred_language',
+  CONTENT_TYPES: 'content_types',
+  INCLUDED_PROVIDERS: 'included_providers',
+  REGION: 'region',
+  EXPLORATION_MODE: 'exploration_mode',
+  PRIORITIZE_CONTENT: 'prioritize_content',
+  EXCLUDED_TYPES: 'excluded_types',
+  CREATED_AT: 'created_at',
+  UPDATED_AT: 'updated_at',
 } as const;

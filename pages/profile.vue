@@ -746,7 +746,7 @@ import IconEdit from '@/components/icons/IconEdit.vue';
 import IconSearch from '@/components/icons/IconSearch.vue';
 import IconButton from '@/components/ui/IconButton.vue';
 import { useUndoToast } from '@/composables/useUndoToast';
-import type { TMDBSearchResult } from '@/types/TMDBSearch';
+import type { TMDBSearchResult } from '@/types/tmdb/Search';
 import { AVAILABLE_LANGUAGES, LanguageCode } from '@/constants/languages';
 import type { Language } from '@/constants/languages';
 

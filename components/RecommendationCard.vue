@@ -95,7 +95,7 @@
                 @click.stop.prevent="handleAction('liked')"
               >
                 <template #icon>
-                  <IconHeartFilled icon-class="w-4 h-4" />
+                  <IconHeart icon-class="w-4 h-4" />
                 </template>
                 {{ $t('media.liked') }}
               </Button>
@@ -192,7 +192,7 @@ import IconMoreVertical from './icons/IconMoreVertical.vue';
 import IconClock from './icons/IconClock.vue';
 import IconImage from './icons/IconImage.vue';
 import IconCheck from './icons/IconCheck.vue';
-import IconHeartFilled from './icons/IconHeartFilled.vue';
+import IconHeart from './icons/IconHeart.vue';
 import IconX from './icons/IconX.vue';
 import { TitleStatus } from '@/types/TitleStatus';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';

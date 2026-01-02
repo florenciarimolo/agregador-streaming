@@ -55,16 +55,6 @@ export default defineEventHandler(async (event) => {
       a.provider_name.localeCompare(b.provider_name)
     );
 
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[WatchProviders] Processed results:', {
-        count: processedResults.length,
-        sample: processedResults.slice(0, 3).map((p) => ({
-          id: p.provider_id,
-          name: p.provider_name,
-        })),
-      });
-    }
-
     return {
       results: processedResults,
     };
