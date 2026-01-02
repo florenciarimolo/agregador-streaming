@@ -1,56 +1,75 @@
 <template>
   <article
-    class="relative rounded-lg border backdrop-blur-xl transition-all duration-300 group dark:bg-gray-900/40 bg-gray-100/80 border-gray-300/50 dark:border-white/10 hover:border-gray-400/50 dark:hover:border-white/20 hover:shadow-lg hover:shadow-gray-900/20 overflow-visible"
+    class="overflow-visible relative rounded-lg border backdrop-blur-xl transition-all duration-300 group dark:bg-gray-900/40 bg-gray-100/80 border-gray-300/50 dark:border-white/10 hover:border-gray-400/50 dark:hover:border-white/20 hover:shadow-lg hover:shadow-gray-900/20"
+    :class="{ 'z-50': isOpen, 'z-10': !isOpen }"
     :aria-label="$t('media.recommendationLabel', { title: props.title.title })"
   >
-    <!-- Poster -->
-    <nuxt-link
-      :to="`/${mediaType}/${props.title.tmdb_id}`"
-      :aria-label="$t('media.viewDetailsOf', { title: props.title.title })"
-      class="block aspect-[2/3] relative bg-gray-800 rounded-t-lg focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+    <!-- Poster Container -->
+    <div
+      class="relative aspect-[2/3] bg-gray-800 rounded-t-lg overflow-visible"
     >
-      <div
-        v-if="props.title.poster_path"
-        class="overflow-hidden w-full h-full rounded-t-lg"
+      <nuxt-link
+        :to="`/${mediaType}/${props.title.tmdb_id}`"
+        :aria-label="$t('media.viewDetailsOf', { title: props.title.title })"
+        class="block overflow-hidden relative w-full h-full rounded-t-lg focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+        :class="{ 'pointer-events-none': isOpen }"
       >
-        <img
-          :src="`https://image.tmdb.org/t/p/w500${props.title.poster_path}`"
-          :alt="$t('media.posterOf', { title: props.title.title })"
-          class="object-cover w-full h-full transition-transform duration-300 group-hover:scale-105"
-          loading="lazy"
-          decoding="async"
+        <div
+          v-if="props.title.poster_path"
+          class="overflow-hidden w-full h-full rounded-t-lg"
+        >
+          <img
+            :src="`https://image.tmdb.org/t/p/w500${props.title.poster_path}`"
+            :alt="$t('media.posterOf', { title: props.title.title })"
+            class="object-cover w-full h-full transition-transform duration-300 group-hover:scale-105"
+            loading="lazy"
+            decoding="async"
+          />
+        </div>
+        <div
+          v-else
+          class="flex overflow-hidden justify-center items-center w-full h-full text-gray-600 rounded-t-lg dark:text-gray-500"
+          role="img"
+          :aria-label="
+            $t('media.noPosterAvailableFor', { title: props.title.title })
+          "
+        >
+          <IconImage icon-class="w-12 h-12" />
+        </div>
+
+        <!-- Rating Badge (top-left) -->
+        <RatingBadge
+          v-if="props.title.vote_average"
+          :rating="props.title.vote_average"
+          class="absolute top-2 left-2 z-10"
         />
-      </div>
+
+        <!-- Watchlist Badge (top-left, below rating if rating exists) -->
+        <div
+          v-if="props.title.in_watchlist"
+          class="absolute left-2 z-10 p-2 rounded-full backdrop-blur-sm bg-primary/80"
+          :class="props.title.vote_average ? 'top-12' : 'top-2'"
+          :title="$t('media.savedWatchlist')"
+        >
+          <IconClock icon-class="w-4 h-4 text-white" />
+        </div>
+
+        <!-- Hover Overlay (same as MediaCarousel) -->
+        <div
+          class="flex absolute bottom-0 left-0 flex-col justify-center items-center px-4 w-full h-full opacity-0 backdrop-blur-md transition-all duration-300 pointer-events-none group-hover:opacity-100 dark:bg-black/80 bg-white/80"
+        >
+          <p class="font-semibold text-gray-800 dark:text-gray-300">
+            {{ $t('media.viewDetails') }}
+          </p>
+        </div>
+      </nuxt-link>
+
+      <!-- Actions Menu (top-right) - Outside the link to prevent hover activation -->
       <div
-        v-else
-        class="flex overflow-hidden justify-center items-center w-full h-full text-gray-600 rounded-t-lg dark:text-gray-500"
-        role="img"
-        :aria-label="
-          $t('media.noPosterAvailableFor', { title: props.title.title })
-        "
+        ref="menuButtonRef"
+        class="overflow-visible absolute top-2 right-2 z-30"
+        :data-dropdown-id="dropdownId"
       >
-        <IconImage icon-class="w-12 h-12" />
-      </div>
-
-      <!-- Rating Badge (top-left) -->
-      <RatingBadge
-        v-if="props.title.vote_average"
-        :rating="props.title.vote_average"
-        class="absolute top-2 left-2 z-10"
-      />
-
-      <!-- Watchlist Badge (top-left, below rating if rating exists) -->
-      <div
-        v-if="props.title.in_watchlist"
-        class="absolute left-2 z-10 p-2 rounded-full backdrop-blur-sm bg-primary/80"
-        :class="props.title.vote_average ? 'top-12' : 'top-2'"
-        :title="$t('media.savedWatchlist')"
-      >
-        <IconClock icon-class="w-4 h-4 text-white" />
-      </div>
-
-      <!-- Actions Menu (top-right) -->
-      <div class="absolute top-2 right-2 z-20" :data-dropdown-id="dropdownId">
         <IconButton
           :icon="IconMoreVertical"
           :aria-label="$t('media.actionsMenuFor', { title: props.title.title })"
@@ -72,7 +91,12 @@
           <div
             v-if="isOpen"
             :data-dropdown-id="dropdownId"
-            class="absolute left-0 z-[100] mt-2 w-48 max-w-[calc(100vw-2rem)] md:right-0 md:left-auto rounded-lg border backdrop-blur-xl dark:bg-gray-900/40 bg-gray-100/80 border-gray-300/50 dark:border-white/10"
+            class="absolute z-[100] mt-2 w-48 max-w-[calc(100vw-2rem)] rounded-lg border backdrop-blur-xl dark:bg-gray-900/40 bg-gray-100/80 border-gray-300/50 dark:border-white/10 shadow-xl"
+            :class="
+              dropdownAnchor === 'right'
+                ? 'right-0 left-auto'
+                : 'left-0 right-auto'
+            "
             @click.stop
           >
             <div class="p-4">
@@ -128,16 +152,7 @@
           </div>
         </Transition>
       </div>
-
-      <!-- Hover Overlay (same as MediaCarousel) -->
-      <div
-        class="flex absolute bottom-0 left-0 flex-col justify-center items-center px-4 w-full h-full opacity-0 backdrop-blur-md transition-all duration-300 group-hover:opacity-100 dark:bg-black/80 bg-white/80"
-      >
-        <p class="font-semibold text-gray-800 dark:text-gray-300">
-          {{ $t('media.viewDetails') }}
-        </p>
-      </div>
-    </nuxt-link>
+    </div>
 
     <!-- Content -->
     <div class="p-4">
@@ -187,7 +202,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, computed } from 'vue';
+import { onMounted, onUnmounted, computed, ref, watch, nextTick } from 'vue';
 import RatingBadge from './RatingBadge.vue';
 import IconMoreVertical from './icons/IconMoreVertical.vue';
 import IconClock from './icons/IconClock.vue';
@@ -212,6 +227,43 @@ const props = defineProps<Props>();
 const dropdownId = `recommendation-${props.title.tmdb_id}-${props.title.type}`;
 const { isOpen, toggle, close, handleClickOutside } =
   useDropdownManager(dropdownId);
+
+// Dropdown anchor state
+const dropdownAnchor = ref<'left' | 'right'>('right');
+const menuButtonRef = ref<HTMLElement | null>(null);
+
+// Calculate dropdown alignment based on overflow detection
+const calculateDropdownAlignment = () => {
+  if (!menuButtonRef.value || typeof window === 'undefined') {
+    return;
+  }
+
+  nextTick(() => {
+    const rect = menuButtonRef.value?.getBoundingClientRect();
+    if (!rect) return;
+
+    const dropdownWidth = 192; // w-48 = 12rem = 192px
+    const viewportWidth = window.innerWidth;
+
+    const overflowRight = rect.right + dropdownWidth > viewportWidth;
+    const overflowLeft = rect.left - dropdownWidth < 0;
+
+    // If there's overflow on the right but not on the left, anchor to the right
+    // Otherwise, anchor to the left
+    if (overflowRight && !overflowLeft) {
+      dropdownAnchor.value = 'right';
+    } else {
+      dropdownAnchor.value = 'left';
+    }
+  });
+};
+
+// Watch for dropdown opening to calculate alignment
+watch(isOpen, (newValue) => {
+  if (newValue) {
+    calculateDropdownAlignment();
+  }
+});
 
 const emit = defineEmits<{
   'mark-seen': [title: Recommendation];
@@ -309,39 +361,34 @@ const providersWithLogos = computed(() => {
   transform: translateX(-50%) translateY(0);
 }
 
-/* Ensure article allows tooltip overflow while maintaining rounded corners */
+/* Ensure article allows dropdown overflow while maintaining rounded corners */
 article {
   overflow: visible;
+  position: relative;
 }
 
-/* Poster link - no overflow-hidden here to allow tooltips to escape */
-article > a {
-  border-radius: 0.5rem 0.5rem 0 0;
+/* Poster container - allows dropdown to escape */
+article > div:first-child {
   position: relative;
   overflow: visible;
 }
 
-/* Image container needs overflow-hidden to contain scaled image */
-article > a > div:first-of-type {
-  overflow: hidden;
+/* Poster link - overflow-hidden to contain image but allow dropdown to escape */
+article > div:first-child > a {
   border-radius: 0.5rem 0.5rem 0 0;
+  position: relative;
+  overflow: hidden;
 }
 
-/* Buttons container needs to escape overflow for tooltips */
-article > a > div[role='group'] {
-  overflow: visible;
-  position: absolute;
-  z-index: 30;
+/* Image container needs overflow-hidden to contain scaled image */
+article > div:first-child > a > div:first-of-type {
+  overflow: hidden;
+  border-radius: 0.5rem 0.5rem 0 0;
 }
 
 /* Ensure content area also has proper overflow and rounded corners */
 article > div:last-child {
   overflow: hidden;
   border-radius: 0 0 0.5rem 0.5rem;
-}
-
-/* Ensure buttons container can show tooltips outside overflow */
-article > a > div[role='group'] {
-  overflow: visible;
 }
 </style>

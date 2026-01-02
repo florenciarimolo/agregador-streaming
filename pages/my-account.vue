@@ -46,29 +46,29 @@
           {{ $t('myAccount.displayName.description') }}
         </p>
       </div>
-      <div class="flex gap-4 items-end">
-        <div class="flex-1">
-          <Input
-            id="display-name"
-            v-model="displayName"
-            type="text"
-            :label="$t('myAccount.displayName.title')"
-            :placeholder="$t('myAccount.displayName.placeholder')"
-            :maxlength="50"
-            :error="displayNameError"
-          />
+      <div class="space-y-4">
+        <Input
+          id="display-name"
+          v-model="displayName"
+          type="text"
+          :label="$t('myAccount.displayName.title')"
+          :placeholder="$t('myAccount.displayName.placeholder')"
+          :maxlength="50"
+          :error="displayNameError"
+        />
+        <div class="flex justify-end">
+          <Button
+            variant="primary"
+            size="small"
+            :disabled="
+              loadingDisplayName ||
+              displayName === (userProfile?.display_name || '')
+            "
+            @click="handleUpdateDisplayName"
+          >
+            {{ $t('common.save') }}
+          </Button>
         </div>
-        <Button
-          variant="primary"
-          size="medium"
-          :disabled="
-            loadingDisplayName ||
-            displayName === (userProfile?.display_name || '')
-          "
-          @click="handleUpdateDisplayName"
-        >
-          {{ $t('common.save') }}
-        </Button>
       </div>
     </section>
 
@@ -113,7 +113,7 @@
         <div class="flex justify-end">
           <Button
             variant="primary"
-            size="medium"
+            size="small"
             :disabled="loadingPassword || !canUpdatePassword"
             @click="handleUpdatePassword"
           >
@@ -137,7 +137,7 @@
       </div>
       <Button
         variant="danger"
-        size="medium"
+        size="small"
         :disabled="loadingDeleteAccount"
         @click="showDeleteAccountModal = true"
       >

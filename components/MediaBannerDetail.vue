@@ -26,7 +26,7 @@
             `https://image.tmdb.org/t/p/w780` + mediaWithProviders.poster_path
           "
           :alt="mediaWithProviders.title"
-          class="object-contain w-full h-full rounded-3xl"
+          class="w-full h-full rounded-3xl object-contain lg:object-cover"
         />
         <!-- Informative icons overlay -->
         <div class="flex absolute top-2 right-2 gap-2">
@@ -98,7 +98,7 @@
               ref="dropdownRef"
               position="right"
               width="w-48"
-              custom-class="backdrop-blur-xl dark:bg-gray-900/40 bg-gray-100/80 border-gray-300/50 dark:border-white/10 md:right-0 right-auto left-0 md:left-auto"
+              custom-class="left-0 right-auto backdrop-blur-xl dark:bg-gray-900/40 bg-gray-100/80 border-gray-300/50 dark:border-white/10 md:right-0 md:left-auto"
             >
               <template #trigger>
                 <IconButton
