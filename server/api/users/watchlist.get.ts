@@ -5,6 +5,10 @@ import { getUserTMDBParams } from '../../utils/user-preferences';
 import { devLog, devError, devWarn, safeError } from '../../utils/logger';
 import { TitleStatus } from '@/types/TitleStatus';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
+import {
+  TABLES,
+  USER_TITLE_STATUS_FIELDS,
+} from '@/composables/database/constants';
 
 /**
  * Get user watchlist (watchlist status)
@@ -89,11 +93,13 @@ export default defineEventHandler(async (event) => {
   try {
     // Fetch user title statuses with watchlist status (include type)
     const { data: statuses, error: statusError } = await supabase
-      .from('user_title_status')
-      .select('tmdb_id, type, created_at')
-      .eq('user_id', userId)
-      .eq('status', TitleStatus.WATCHLIST)
-      .order('created_at', { ascending: false });
+      .from(TABLES.USER_TITLE_STATUS)
+      .select(
+        `${USER_TITLE_STATUS_FIELDS.TMDB_ID}, ${USER_TITLE_STATUS_FIELDS.TYPE}, ${USER_TITLE_STATUS_FIELDS.CREATED_AT}`
+      )
+      .eq(USER_TITLE_STATUS_FIELDS.USER_ID, userId)
+      .eq(USER_TITLE_STATUS_FIELDS.STATUS, TitleStatus.WATCHLIST)
+      .order(USER_TITLE_STATUS_FIELDS.CREATED_AT, { ascending: false });
 
     if (statusError) {
       safeError(
@@ -143,7 +149,8 @@ export default defineEventHandler(async (event) => {
 
     for (const status of statuses) {
       // Use the type stored in the database to fetch from the correct endpoint
-      const endpoint = status.type === MediaTypeEnum.movie ? 'movie' : 'tv';
+      const endpoint =
+        status.type === MediaTypeEnum.movie ? MediaTypeEnum.movie : MediaTypeEnum.tv;
       const fetchPromise = $fetch<TMDBTitle>(
         `${tmdbConfig.baseUrl}/${endpoint}/${status.tmdb_id}`,
         {

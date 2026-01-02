@@ -4,6 +4,7 @@ import { getTMDBConfig } from '../../utils/config';
 import { getUserTMDBParams } from '../../utils/user-preferences';
 import { devLog, devError, safeError } from '../../utils/logger';
 import { TitleStatus } from '@/types/TitleStatus';
+import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 import {
   getPoolCount,
   deleteLowestScoreEntries,
@@ -109,7 +110,10 @@ export default defineEventHandler(async (event) => {
     for (const entry of poolEntries) {
       try {
         const { tmdb_id, type, title_data } = entry;
-        const endpoint = type === 'movie' ? `/movie/${tmdb_id}` : `/tv/${tmdb_id}`;
+        const endpoint =
+          type === MediaTypeEnum.movie
+            ? `/movie/${tmdb_id}`
+            : `/tv/${tmdb_id}`;
 
         // Fetch title and overview from TMDB with new language
         const tmdbResponse = await $fetch(`${tmdbConfig.baseUrl}${endpoint}`, {

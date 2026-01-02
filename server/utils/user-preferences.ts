@@ -1,7 +1,11 @@
 import { serverSupabaseUser } from '#supabase/server';
 import { createClient } from '@supabase/supabase-js';
 import type { H3Event } from 'h3';
-import { TABLES, PROFILES_FIELDS } from '@/composables/database/constants';
+import {
+  TABLES,
+  PROFILES_FIELDS,
+  USER_PREFERENCES_FIELDS,
+} from '@/composables/database/constants';
 
 /**
  * Get user preferences from server-side (using createClient)
@@ -20,9 +24,9 @@ async function getUserPreferencesServer(userId: string) {
   });
 
   const { data, error } = await supabase
-    .from('user_preferences')
+    .from(TABLES.USER_PREFERENCES)
     .select('*')
-    .eq('user_id', userId)
+    .eq(USER_PREFERENCES_FIELDS.USER_ID, userId)
     .maybeSingle();
 
   return { data, error };

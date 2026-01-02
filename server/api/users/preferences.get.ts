@@ -1,5 +1,9 @@
 import { serverSupabaseUser } from '#supabase/server';
 import { createClient } from '@supabase/supabase-js';
+import {
+  TABLES,
+  USER_PREFERENCES_FIELDS,
+} from '@/composables/database/constants';
 
 export default defineEventHandler(async (event) => {
   try {
@@ -61,9 +65,9 @@ export default defineEventHandler(async (event) => {
     });
 
     const { data, error } = await supabase
-      .from('user_preferences')
+      .from(TABLES.USER_PREFERENCES)
       .select('*')
-      .eq('user_id', userId)
+      .eq(USER_PREFERENCES_FIELDS.USER_ID, userId)
       .maybeSingle();
 
     if (error && error.code !== 'PGRST116') {
@@ -88,9 +92,9 @@ export default defineEventHandler(async (event) => {
         
         // Update the database to migrate the field
         await supabase
-          .from('user_preferences')
+          .from(TABLES.USER_PREFERENCES)
           .update({ preferred_language: data.preferred_language })
-          .eq('user_id', userId);
+          .eq(USER_PREFERENCES_FIELDS.USER_ID, userId);
       } else if (data.preferred_language) {
         // Convert legacy simple codes to TMDB format if needed
         const tmdbCode = toTMDBLanguageCode(data.preferred_language);
@@ -98,9 +102,9 @@ export default defineEventHandler(async (event) => {
           // Update the database if conversion was needed
           data.preferred_language = tmdbCode;
           await supabase
-            .from('user_preferences')
+            .from(TABLES.USER_PREFERENCES)
             .update({ preferred_language: data.preferred_language })
-            .eq('user_id', userId);
+            .eq(USER_PREFERENCES_FIELDS.USER_ID, userId);
         }
       } else if (!data.preferred_language) {
         // If neither exists, set default

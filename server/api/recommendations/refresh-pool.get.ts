@@ -10,6 +10,12 @@ import {
 import { getTMDBConfig } from '../../utils/config';
 import { getUserTMDBParamsByUserId } from '../../utils/user-preferences';
 import { TitleStatus } from '@/types/TitleStatus';
+import {
+  TABLES,
+  PROFILES_FIELDS,
+  USER_TITLE_STATUS_FIELDS,
+} from '@/composables/database/constants';
+import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 
 /**
  * TMDB API response types
@@ -85,8 +91,8 @@ export default defineEventHandler(async (event) => {
   try {
     // Get all users with pool count < MIN_POOL_SIZE
     const { data: usersWithLowPool, error: usersError } = await supabase
-      .from('profiles')
-      .select('id')
+      .from(TABLES.PROFILES)
+      .select(PROFILES_FIELDS.ID)
       .limit(100); // Limit to 100 users per run to avoid timeout
 
     if (usersError) {
@@ -128,10 +134,13 @@ export default defineEventHandler(async (event) => {
 
         // Get excluded titles (seen + not_interested)
         const { data: excludedStatuses } = await supabase
-          .from('user_title_status')
-          .select('tmdb_id')
-          .eq('user_id', userId)
-          .in('status', [TitleStatus.SEEN, TitleStatus.NOT_INTERESTED]);
+          .from(TABLES.USER_TITLE_STATUS)
+          .select(USER_TITLE_STATUS_FIELDS.TMDB_ID)
+          .eq(USER_TITLE_STATUS_FIELDS.USER_ID, userId)
+          .in(USER_TITLE_STATUS_FIELDS.STATUS, [
+            TitleStatus.SEEN,
+            TitleStatus.NOT_INTERESTED,
+          ]);
 
         const excludedTmdbIds = new Set<number>();
         if (excludedStatuses) {
@@ -142,10 +151,12 @@ export default defineEventHandler(async (event) => {
 
         // Get user's liked titles
         const { data: userLikedStatuses } = await supabase
-          .from('user_title_status')
-          .select('tmdb_id, type')
-          .eq('user_id', userId)
-          .eq('liked', true);
+          .from(TABLES.USER_TITLE_STATUS)
+          .select(
+            `${USER_TITLE_STATUS_FIELDS.TMDB_ID}, ${USER_TITLE_STATUS_FIELDS.TYPE}`
+          )
+          .eq(USER_TITLE_STATUS_FIELDS.USER_ID, userId)
+          .eq(USER_TITLE_STATUS_FIELDS.LIKED, true);
 
         const likedTmdbIds = new Set<number>();
         if (userLikedStatuses) {
@@ -163,7 +174,7 @@ export default defineEventHandler(async (event) => {
 
         const entriesToInsert: Array<{
           tmdb_id: number;
-          type: 'movie' | 'tv';
+          type: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv;
           source: RecommendationPoolSource;
           score: number;
           explanation_code: string | null;
@@ -176,7 +187,10 @@ export default defineEventHandler(async (event) => {
           type: 'movie' | 'tv'
         ): Promise<TitleData | null> => {
           try {
-            const endpoint = type === 'movie' ? `/movie/${tmdbId}` : `/tv/${tmdbId}`;
+            const endpoint =
+              type === MediaTypeEnum.movie
+                ? `/movie/${tmdbId}`
+                : `/tv/${tmdbId}`;
             const fullResponse = await $fetch(`${tmdbConfig.baseUrl}${endpoint}`, {
               query: {
                 api_key: tmdbConfig.apiKey,
@@ -215,7 +229,7 @@ export default defineEventHandler(async (event) => {
           queryParams: Record<string, unknown>,
           source: RecommendationPoolSource,
           explanationCode: string,
-          type: 'movie' | 'tv',
+          type: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv,
           maxPages: number = 2
         ) => {
           let page = 1;
@@ -243,7 +257,7 @@ export default defineEventHandler(async (event) => {
 
                 const meetsQuality =
                   result.vote_average >= MIN_VOTE_AVERAGE_POOL &&
-                  (type === 'movie'
+                  (type === MediaTypeEnum.movie
                     ? result.vote_count >= MIN_VOTE_COUNT_MOVIE
                     : result.vote_count >= MIN_VOTE_COUNT_TV);
 
@@ -288,7 +302,7 @@ export default defineEventHandler(async (event) => {
           {},
           'trending',
           'TRENDING',
-          'movie',
+          MediaTypeEnum.movie,
           2
         );
 
@@ -297,7 +311,7 @@ export default defineEventHandler(async (event) => {
           {},
           'trending',
           'TRENDING',
-          'tv',
+          MediaTypeEnum.tv,
           2
         );
 

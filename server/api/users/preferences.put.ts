@@ -1,6 +1,20 @@
 import { serverSupabaseUser } from '#supabase/server';
 import { createClient } from '@supabase/supabase-js';
 import type { UserPreferences } from '@/composables/database/preferences';
+import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
+import {
+  ExplorationModeEnum,
+} from '@/types/enums/ExplorationModeEnum';
+import {
+  PrioritizeContentEnum,
+} from '@/types/enums/PrioritizeContentEnum';
+import {
+  ExcludedTypesEnum,
+} from '@/types/enums/ExcludedTypesEnum';
+import {
+  TABLES,
+  USER_PREFERENCES_FIELDS,
+} from '@/composables/database/constants';
 
 export default defineEventHandler(async (event) => {
   try {
@@ -80,10 +94,10 @@ export default defineEventHandler(async (event) => {
     }
 
     if (Array.isArray(body.content_types)) {
-      const validTypes = ['movie', 'tv'];
+      const validTypes = [MediaTypeEnum.movie, MediaTypeEnum.tv];
       preferences.content_types = body.content_types.filter((t: unknown) =>
         validTypes.includes(t as string)
-      ) as ('movie' | 'tv')[];
+      ) as (typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv)[];
     }
 
     if (Array.isArray(body.included_providers)) {
@@ -98,19 +112,39 @@ export default defineEventHandler(async (event) => {
       preferences.region = body.region.toUpperCase();
     }
 
-    if (['similar', 'balanced', 'surprise'].includes(body.exploration_mode)) {
+    if (
+      [
+        ExplorationModeEnum.similar,
+        ExplorationModeEnum.balanced,
+        ExplorationModeEnum.surprise,
+      ].includes(body.exploration_mode)
+    ) {
       preferences.exploration_mode = body.exploration_mode;
     }
 
-    if (['new', 'classics', 'top_rated'].includes(body.prioritize_content)) {
+    if (
+      [
+        PrioritizeContentEnum.new,
+        PrioritizeContentEnum.classics,
+        PrioritizeContentEnum.topRated,
+      ].includes(body.prioritize_content)
+    ) {
       preferences.prioritize_content = body.prioritize_content;
     }
 
     if (Array.isArray(body.excluded_types)) {
-      const validTypes = ['reality', 'anime', 'documentary'];
+      const validTypes = [
+        ExcludedTypesEnum.reality,
+        ExcludedTypesEnum.anime,
+        ExcludedTypesEnum.documentary,
+      ];
       preferences.excluded_types = body.excluded_types.filter((t: unknown) =>
         validTypes.includes(t as string)
-      ) as ('reality' | 'anime' | 'documentary')[];
+      ) as (
+        | typeof ExcludedTypesEnum.reality
+        | typeof ExcludedTypesEnum.anime
+        | typeof ExcludedTypesEnum.documentary
+      )[];
     }
 
     // Create Supabase client for server-side operations
@@ -128,9 +162,9 @@ export default defineEventHandler(async (event) => {
 
     // Get current preferences
     const { data: current, error: fetchError } = await supabase
-      .from('user_preferences')
+      .from(TABLES.USER_PREFERENCES)
       .select('*')
-      .eq('user_id', userId)
+      .eq(USER_PREFERENCES_FIELDS.USER_ID, userId)
       .maybeSingle();
 
     if (fetchError && fetchError.code !== 'PGRST116') {
@@ -166,9 +200,9 @@ export default defineEventHandler(async (event) => {
     }
 
     const { data, error } = await supabase
-      .from('user_preferences')
+      .from(TABLES.USER_PREFERENCES)
       .upsert(mergedPreferences, {
-        onConflict: 'user_id',
+        onConflict: USER_PREFERENCES_FIELDS.USER_ID,
         ignoreDuplicates: false,
       })
       .select()

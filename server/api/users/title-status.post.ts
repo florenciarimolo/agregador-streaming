@@ -1,6 +1,11 @@
 import { serverSupabaseUser } from '#supabase/server';
 import { createClient } from '@supabase/supabase-js';
 import { TitleStatus } from '@/types/TitleStatus';
+import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
+import {
+  TABLES,
+  USER_TITLE_STATUS_FIELDS,
+} from '@/composables/database/constants';
 import {
   updatePoolScore,
   removeFromPool,
@@ -76,10 +81,10 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  if (type !== 'movie' && type !== 'tv') {
+  if (type !== MediaTypeEnum.movie && type !== MediaTypeEnum.tv) {
     throw createError({
       statusCode: 400,
-      message: "type must be 'movie' or 'tv'",
+      message: `type must be '${MediaTypeEnum.movie}' or '${MediaTypeEnum.tv}'`,
     });
   }
 
@@ -107,8 +112,6 @@ export default defineEventHandler(async (event) => {
   });
 
   try {
-
-
     // Upsert user title status (insert or update)
     const upsertData: {
       user_id: string;
@@ -130,19 +133,19 @@ export default defineEventHandler(async (event) => {
 
     // Get previous status to detect changes
     const { data: previousStatus } = await supabase
-      .from('user_title_status')
-      .select('status, liked')
-      .eq('user_id', userId)
-      .eq('tmdb_id', tmdb_id)
+      .from(TABLES.USER_TITLE_STATUS)
+      .select(
+        `${USER_TITLE_STATUS_FIELDS.STATUS}, ${USER_TITLE_STATUS_FIELDS.LIKED}`
+      )
+      .eq(USER_TITLE_STATUS_FIELDS.USER_ID, userId)
+      .eq(USER_TITLE_STATUS_FIELDS.TMDB_ID, tmdb_id)
       .maybeSingle();
 
-
     const { error } = await supabase
-      .from('user_title_status')
+      .from(TABLES.USER_TITLE_STATUS)
       .upsert(upsertData, {
-        onConflict: 'user_id,tmdb_id',
+        onConflict: `${USER_TITLE_STATUS_FIELDS.USER_ID},${USER_TITLE_STATUS_FIELDS.TMDB_ID}`,
       });
-
 
     if (error) {
       if (process.env.NODE_ENV === 'development') {

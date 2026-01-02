@@ -19,6 +19,11 @@ import {
   type TitleData,
 } from '@/composables/database/recommendationPool';
 import { updateLastShownAt } from '@/composables/database/recommendationPool';
+import {
+  TABLES,
+  USER_TITLE_STATUS_FIELDS,
+} from '@/composables/database/constants';
+import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 
 /**
  * Maximum number of recommendations to return
@@ -299,10 +304,13 @@ export default defineEventHandler(async (event) => {
   try {
     // Get excluded titles (seen + not_interested)
     const { data: excludedStatuses, error: statusError } = await supabase
-      .from('user_title_status')
-      .select('tmdb_id')
-      .eq('user_id', userId)
-      .in('status', [TitleStatus.SEEN, TitleStatus.NOT_INTERESTED]);
+      .from(TABLES.USER_TITLE_STATUS)
+      .select(USER_TITLE_STATUS_FIELDS.TMDB_ID)
+      .eq(USER_TITLE_STATUS_FIELDS.USER_ID, userId)
+      .in(USER_TITLE_STATUS_FIELDS.STATUS, [
+        TitleStatus.SEEN,
+        TitleStatus.NOT_INTERESTED,
+      ]);
 
     if (statusError) {
       safeError('Error fetching user_title_status', statusError);
@@ -319,10 +327,10 @@ export default defineEventHandler(async (event) => {
 
     // Get watchlist titles to mark them in recommendations
     const { data: watchlistStatuses, error: watchlistError } = await supabase
-      .from('user_title_status')
-      .select('tmdb_id')
-      .eq('user_id', userId)
-      .eq('status', TitleStatus.WATCHLIST);
+      .from(TABLES.USER_TITLE_STATUS)
+      .select(USER_TITLE_STATUS_FIELDS.TMDB_ID)
+      .eq(USER_TITLE_STATUS_FIELDS.USER_ID, userId)
+      .eq(USER_TITLE_STATUS_FIELDS.STATUS, TitleStatus.WATCHLIST);
 
     if (watchlistError) {
       safeError('Error fetching watchlist statuses', watchlistError);
@@ -436,7 +444,7 @@ export default defineEventHandler(async (event) => {
         // Otherwise, fetch from TMDB and update the pool entry
         try {
           const endpoint =
-            entry.type === 'movie'
+            entry.type === MediaTypeEnum.movie
               ? `/movie/${entry.tmdb_id}`
               : `/tv/${entry.tmdb_id}`;
           const tmdbResponse = await $fetch<{
@@ -570,7 +578,7 @@ export default defineEventHandler(async (event) => {
         let providers: Provider[] = [];
         try {
           const providerPath =
-            entry.type === 'movie'
+            entry.type === MediaTypeEnum.movie
               ? `/movie/${entry.tmdb_id}/watch/providers`
               : `/tv/${entry.tmdb_id}/watch/providers`;
           const providerResponse = await $fetch<{
@@ -627,7 +635,7 @@ export default defineEventHandler(async (event) => {
           id: `pool-${entry.tmdb_id}`,
           tmdb_id: entry.tmdb_id,
           title: titleData.title || '',
-          type: entry.type as 'movie' | 'tv',
+          type: entry.type as typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv,
           poster_path: titleData.poster_path,
           overview: titleData.overview || null,
           vote_average: titleData.vote_average,

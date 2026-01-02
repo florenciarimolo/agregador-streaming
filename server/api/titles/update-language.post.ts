@@ -3,6 +3,7 @@ import { getTMDBConfig } from '../../utils/config';
 import { getUserTMDBParams } from '../../utils/user-preferences';
 import { TABLES, TITLES_FIELDS } from '@/composables/database/constants';
 import type { MultiLanguageText } from '@/composables/database/titles';
+import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 
 /**
  * Update title and overview JSONB with missing language from TMDB
@@ -79,7 +80,8 @@ export default defineEventHandler(async (event) => {
 
     // Fetch missing language from TMDB
     const tmdbConfig = getTMDBConfig(userLanguage, region);
-    const endpoint = type === 'movie' ? 'movie' : 'tv';
+    const endpoint =
+      type === MediaTypeEnum.movie ? MediaTypeEnum.movie : MediaTypeEnum.tv;
     const tmdbResponse = await $fetch<{
       title?: string;
       name?: string;

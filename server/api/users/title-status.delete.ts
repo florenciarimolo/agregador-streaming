@@ -1,6 +1,10 @@
 import { serverSupabaseUser } from '#supabase/server';
 import { createClient } from '@supabase/supabase-js';
 import { TitleStatus } from '@/types/TitleStatus';
+import {
+  TABLES,
+  USER_TITLE_STATUS_FIELDS,
+} from '@/composables/database/constants';
 import { updatePoolScore } from '@/composables/database/recommendationPool';
 
 /**
@@ -95,18 +99,20 @@ export default defineEventHandler(async (event) => {
   try {
     // Get previous status before deleting
     const { data: previousStatus } = await supabase
-      .from('user_title_status')
-      .select('status, liked')
-      .eq('user_id', userId)
-      .eq('tmdb_id', tmdbIdNumber)
+      .from(TABLES.USER_TITLE_STATUS)
+      .select(
+        `${USER_TITLE_STATUS_FIELDS.STATUS}, ${USER_TITLE_STATUS_FIELDS.LIKED}`
+      )
+      .eq(USER_TITLE_STATUS_FIELDS.USER_ID, userId)
+      .eq(USER_TITLE_STATUS_FIELDS.TMDB_ID, tmdbIdNumber)
       .maybeSingle();
 
     // Delete user title status
     const { error } = await supabase
-      .from('user_title_status')
+      .from(TABLES.USER_TITLE_STATUS)
       .delete()
-      .eq('user_id', userId)
-      .eq('tmdb_id', tmdbIdNumber);
+      .eq(USER_TITLE_STATUS_FIELDS.USER_ID, userId)
+      .eq(USER_TITLE_STATUS_FIELDS.TMDB_ID, tmdbIdNumber);
 
     if (error) {
       if (process.env.NODE_ENV === 'development') {

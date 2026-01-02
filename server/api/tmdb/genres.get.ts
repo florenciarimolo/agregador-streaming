@@ -1,6 +1,7 @@
 import { getTMDBConfig } from '../../utils/config';
 import { getUserTMDBParams } from '../../utils/user-preferences';
 import { createError, defineEventHandler, getQuery } from 'h3';
+import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 
 export default defineEventHandler(async (event) => {
   try {
@@ -9,7 +10,7 @@ export default defineEventHandler(async (event) => {
     const config = getTMDBConfig(params.language, params.region);
 
     const query = getQuery(event);
-    const type = (query.type as string) || 'movie'; // 'movie' or 'tv'
+    const type = (query.type as string) || MediaTypeEnum.movie; // 'movie' or 'tv'
 
     // Extract language code only (e.g., 'es-ES' -> 'es')
     // TMDB genres API only accepts ISO 639-1 language code, not the full locale

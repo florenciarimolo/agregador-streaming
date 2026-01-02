@@ -4,6 +4,7 @@ import { createError, defineEventHandler } from 'h3';
 import { createClient } from '@supabase/supabase-js';
 import { TABLES, TITLES_FIELDS } from '@/composables/database/constants';
 import { getTitleInLanguage, type MultiLanguageText } from '@/composables/database/titles';
+import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 
 export default defineEventHandler(async (event) => {
   try {
@@ -39,7 +40,7 @@ export default defineEventHandler(async (event) => {
       .from(TABLES.TITLES)
       .select('*')
       .eq(TITLES_FIELDS.TMDB_ID, tmdbId)
-      .eq(TITLES_FIELDS.TYPE, 'tv')
+      .eq(TITLES_FIELDS.TYPE, MediaTypeEnum.tv)
       .maybeSingle();
 
     // If found in DB, check if we have the required language
@@ -104,7 +105,7 @@ export default defineEventHandler(async (event) => {
             poster_path: Object.keys(updatedPosterPath).length > 0 ? updatedPosterPath : null,
           })
           .eq(TITLES_FIELDS.TMDB_ID, tmdbId)
-          .eq(TITLES_FIELDS.TYPE, 'tv');
+          .eq(TITLES_FIELDS.TYPE, MediaTypeEnum.tv);
         
         // Update local references to use the updated JSONB
         titleJsonb = updatedTitle;
@@ -228,7 +229,7 @@ export default defineEventHandler(async (event) => {
         .from(TABLES.TITLES)
         .upsert({
           tmdb_id: tmdbId,
-          type: 'tv',
+          type: MediaTypeEnum.tv,
           title: titleMultiLang,
           overview: overviewMultiLang,
           poster_path: Object.keys(posterPathMultiLang).length > 0 ? posterPathMultiLang : null,
