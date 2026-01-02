@@ -5,5 +5,6 @@
 </template>
 
 <script setup lang="ts">
-// Este es el layout padre para todas las rutas de /serie/[id]/*
+// Este es el layout padre para todas las rutas de /tv-show/[id]/*
 </script>
+

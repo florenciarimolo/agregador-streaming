@@ -233,9 +233,9 @@ const navigateToDetail = (result: TMDBSearchResult) => {
     emit('title-selected', result);
   } else {
     if (result.media_type === MediaTypeEnum.movie) {
-      router.push(`/pelicula/${result.id}`);
+      router.push(`/movie/${result.id}`);
     } else if (result.media_type === MediaTypeEnum.tv) {
-      router.push(`/serie/${result.id}`);
+      router.push(`/tv-show/${result.id}`);
     }
   }
 };

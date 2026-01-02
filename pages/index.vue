@@ -476,7 +476,7 @@ const handleTitleStatus = async (
         {
           label: t('home.viewSeen'),
           action: async () => {
-            await navigateTo('/profile?tab=seen');
+            await navigateTo('/preferences?tab=seen');
           },
         },
         5000
@@ -607,7 +607,7 @@ const handleMarkLiked = async (title: Recommendation) => {
       {
         label: t('home.viewFavorites'),
         action: async () => {
-          await navigateTo('/profile');
+          await navigateTo('/preferences');
         },
       },
       5000
@@ -1105,7 +1105,7 @@ onMounted(() => {
                 {{ $t('home.noPreferredLanguageDescription') }}
               </p>
               <nuxt-link
-                to="/profile?tab=content-preferences"
+                to="/preferences?tab=content-preferences"
                 class="inline-block px-6 py-3 text-base font-medium text-white rounded-lg border shadow-lg backdrop-blur-sm transition-all duration-300 bg-primary-800 dark:bg-primary hover:bg-primary-900 dark:hover:bg-primary-600 border-primary-600/50"
               >
                 {{ $t('home.setPreferredLanguage') }}

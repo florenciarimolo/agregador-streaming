@@ -240,7 +240,7 @@ const router = useRouter();
 
 // Necesitamos obtener el seriesId desde la URL padre y el seasonId de los parámetros actuales
 const seriesId = route.params.id;
-const seasonId = route.params.temporadaId;
+const seasonId = route.params.seasonId;
 
 const {
   data: seasonData,
@@ -325,7 +325,7 @@ const handleBack = () => {
     router.push(previousRoute);
   } else {
     // Default: go back to the series page
-    router.push(`/serie/${seriesId}`);
+    router.push(`/tv-show/${seriesId}`);
   }
 };
 
@@ -343,7 +343,7 @@ onMounted(() => {
       try {
         const referrerPath = new URL(referrer).pathname;
         // Don't save if we're coming from another season page (to avoid loops)
-        if (!referrerPath.includes('/temporada/')) {
+        if (!referrerPath.includes('/season/')) {
           sessionStorage.setItem('previousRoute', referrerPath);
         }
       } catch (e) {
@@ -388,3 +388,4 @@ const sectionStyle = computed(() => ({
   line-clamp: 3;
 }
 </style>
+

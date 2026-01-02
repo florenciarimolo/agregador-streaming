@@ -565,7 +565,7 @@ const handleAction = async (action: TitleStatus | 'liked') => {
         {
           label: t('home.viewFavorites'),
           action: async () => {
-            await navigateTo('/profile');
+            await navigateTo('/preferences');
           },
         },
         5000
@@ -613,7 +613,7 @@ const handleAction = async (action: TitleStatus | 'liked') => {
           {
             label: t('home.viewSeen'),
             action: async () => {
-              await navigateTo('/profile?tab=seen');
+              await navigateTo('/preferences?tab=seen');
             },
           },
           5000

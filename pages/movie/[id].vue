@@ -113,7 +113,7 @@ onMounted(() => {
       try {
         const referrerPath = new URL(referrer).pathname;
         // Don't save if we're coming from another detail page (to avoid loops)
-        if (!referrerPath.startsWith('/pelicula/') && !referrerPath.startsWith('/serie/')) {
+        if (!referrerPath.startsWith('/movie/') && !referrerPath.startsWith('/tv-show/')) {
           sessionStorage.setItem('previousRoute', referrerPath);
         }
       } catch (e) {
@@ -178,7 +178,7 @@ useSeoMeta({
   ogType: 'video.movie',
   ogUrl: computed(() => {
     if (import.meta.client) {
-      return `${window.location.origin}/pelicula/${movieId}`;
+      return `${window.location.origin}/movie/${movieId}`;
     }
     return '';
   }),
@@ -189,3 +189,4 @@ useSeoMeta({
 });
 </script>
 <style scoped></style>
+

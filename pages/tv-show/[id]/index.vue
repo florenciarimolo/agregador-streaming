@@ -30,7 +30,7 @@
         class="rounded-3xl relative flex flex-col text-sm overflow-hidden bg-white/60 dark:bg-gray-900/40 backdrop-blur-xl border border-gray-300/50 dark:border-white/10 w-full cursor-pointer group hover:border-primary/50 dark:hover:border-purple-500/30 transition-colors shadow-lg"
       >
         <nuxt-link
-          :to="`/serie/${tvShowId}/temporada/${season.season_number}`"
+          :to="`/tv-show/${tvShowId}/season/${season.season_number}`"
           class="block"
         >
           <div class="aspect-[2/3] overflow-hidden relative">
@@ -164,7 +164,7 @@ useSeoMeta({
   ogType: 'video.tv_show',
   ogUrl: computed(() => {
     if (import.meta.client) {
-      return `${window.location.origin}/serie/${tvShowId}`;
+      return `${window.location.origin}/tv-show/${tvShowId}`;
     }
     return '';
   }),
@@ -186,8 +186,8 @@ onMounted(() => {
         const referrerPath = new URL(referrer).pathname;
         // Don't save if we're coming from another detail page or season page (to avoid loops)
         if (
-          !referrerPath.startsWith('/pelicula/') &&
-          !referrerPath.startsWith('/serie/')
+          !referrerPath.startsWith('/movie/') &&
+          !referrerPath.startsWith('/tv-show/')
         ) {
           sessionStorage.setItem('previousRoute', referrerPath);
         }
@@ -216,3 +216,4 @@ onMounted(() => {
   line-clamp: 3;
 }
 </style>
+

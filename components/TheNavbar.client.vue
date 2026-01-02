@@ -87,7 +87,7 @@
                     {{ currentUser.email }}
                   </p>
                   <nuxt-link
-                    to="/profile"
+                    to="/preferences"
                     class="block px-4 py-2 mb-2 w-full text-sm text-left text-gray-800 rounded-lg transition-colors dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                     @click="userMenuDropdownRef?.close()"
                   >
@@ -250,7 +250,7 @@
             {{ $t('navbar.watchlist') }}
           </nuxt-link>
           <nuxt-link
-            to="/profile"
+            to="/preferences"
             class="flex items-center px-4 py-3 text-sm font-medium text-gray-800 rounded-lg transition-colors dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
             active-class="bg-gray-100 dark:bg-gray-700 text-primary dark:text-primary-400"
             @click="showMobileMenu = false"

@@ -9,7 +9,7 @@
     >
       <!-- Poster -->
       <nuxt-link
-        :to="`/${title.type === MediaTypeEnum.movie ? 'pelicula' : 'serie'}/${title.tmdb_id}`"
+        :to="`/${title.type === MediaTypeEnum.movie ? 'movie' : 'tv-show'}/${title.tmdb_id}`"
         :aria-label="$t('media.viewDetailsOf', { title: title.title })"
         class="block aspect-[2/3] relative bg-gray-800 rounded-t-lg focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
       >

@@ -294,7 +294,7 @@ onUnmounted(() => {
 });
 
 const mediaType = computed(() =>
-  props.title.type === MediaTypeEnum.movie ? 'pelicula' : 'serie'
+  props.title.type === MediaTypeEnum.movie ? 'movie' : 'tv-show'
 );
 
 // Filter providers that have logos

@@ -13,7 +13,7 @@
               :display-name="profile?.display_name"
               :email="currentUser?.email"
               :user-id="userId"
-              size="xl"
+              :size="avatarSize"
             />
           </div>
         </div>
@@ -779,6 +779,16 @@ const userId = computed(() => {
 const displayName = computed(() => {
   return profile.value?.display_name || currentUser.value?.email || null;
 });
+
+// Avatar size: smaller on mobile
+const isMobile = ref(false);
+const avatarSize = computed(() => {
+  return isMobile.value ? 'lg' : 'xl';
+});
+
+const checkMobile = () => {
+  isMobile.value = window.innerWidth < 768; // md breakpoint
+};
 
 const tabs = computed(() => [
   {
@@ -2471,6 +2481,9 @@ watch(
 
 // Lifecycle
 onMounted(async () => {
+  checkMobile();
+  window.addEventListener('resize', checkMobile);
+  
   // Check if we should open a specific tab from query params
   const route = useRoute();
   const tabFromQuery = route.query.tab as string;
@@ -2512,6 +2525,7 @@ onBeforeRouteLeave((_to, _from, next) => {
 });
 
 onUnmounted(() => {
+  window.removeEventListener('resize', checkMobile);
   window.removeEventListener('scroll', updateAllDropdownPositions, true);
   window.removeEventListener('resize', updateAllDropdownPositions);
 });
@@ -2522,6 +2536,6 @@ definePageMeta({
 });
 
 useHead({
-  title: t('profile.title') + ' - UpNext',
+  title: t('preferences.title') + ' - UpNext',
 });
 </script>
