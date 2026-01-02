@@ -1,20 +1,24 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center px-4">
+  <div class="flex justify-center items-center px-4 min-h-screen">
     <div class="w-full max-w-md">
-      <div class="text-center mb-8">
+      <div class="mb-8 text-center">
         <!-- Light mode -->
-        <img
-          src="/logo-light.png"
-          :alt="$t('common.appName')"
-          class="h-12 w-12 mx-auto mb-4 object-contain dark:hidden"
-        />
+        <nuxt-link to="/" class="inline-block">
+          <img
+            src="/logo-light.png"
+            :alt="$t('common.appName')"
+            class="object-contain mx-auto mb-4 w-16 h-16 transition-opacity dark:hidden hover:opacity-80"
+          />
+        </nuxt-link>
         <!-- Dark mode -->
-        <img
-          src="/logo-dark.png"
-          :alt="$t('common.appName')"
-          class="h-12 w-12 mx-auto mb-4 object-contain hidden dark:block"
-        />
-        <h1 class="text-3xl font-bold dark:text-gray-300 text-gray-800 mb-2">
+        <nuxt-link to="/" class="inline-block">
+          <img
+            src="/logo-dark.png"
+            :alt="$t('common.appName')"
+            class="hidden object-contain mx-auto mb-4 w-16 h-16 transition-opacity dark:block hover:opacity-80"
+          />
+        </nuxt-link>
+        <h1 class="mb-2 text-3xl font-bold text-gray-800 dark:text-gray-300">
           {{ $t('auth.newPasswordTitle') }}
         </h1>
         <p class="text-gray-800 dark:text-gray-300">
@@ -23,11 +27,11 @@
       </div>
 
       <div
-        class="dark:bg-gray-800/70 bg-gray-100/90 backdrop-blur-xs rounded-xl p-6 md:p-8 border border-primary/20 shadow-lg"
+        class="p-6 rounded-xl border shadow-lg dark:bg-gray-800/70 bg-gray-100/90 backdrop-blur-xs md:p-8 border-primary/20"
       >
-        <div class="text-center mb-6">
+        <div class="mb-6 text-center">
           <h2
-            class="text-2xl font-bold dark:text-gray-300 text-gray-800 mb-2 font-heading"
+            class="mb-2 text-2xl font-bold text-gray-800 dark:text-gray-300 font-heading"
           >
             {{ $t('auth.newPasswordSubtitle') }}
           </h2>
@@ -61,7 +65,7 @@
           <div class="mb-4">
             <label
               for="new-password"
-              class="block text-sm font-medium dark:text-gray-300 text-gray-700 mb-2"
+              class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300"
             >
               {{ $t('auth.newPassword') }}
             </label>
@@ -82,58 +86,18 @@
                 ]"
                 placeholder="••••••••"
               />
-              <button
-                type="button"
-                data-icon-only="true"
+              <IconButton
+                :icon="showPassword ? IconEye : IconEyeSlash"
                 :aria-label="
                   showPassword
                     ? $t('auth.hidePassword')
                     : $t('auth.showPassword')
                 "
-                class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 focus:outline-none transition-colors"
+                size="medium"
+                variant="default"
+                custom-class="absolute right-3 top-1/2 -translate-y-1/2"
                 @click="showPassword = !showPassword"
-                @keydown.enter.prevent="showPassword = !showPassword"
-                @keydown.space.prevent="showPassword = !showPassword"
-              >
-                <!-- Eye icon (visible) -->
-                <svg
-                  v-if="showPassword"
-                  class="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                  />
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                  />
-                </svg>
-                <!-- Eye slash icon (hidden) -->
-                <svg
-                  v-else
-                  class="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.29 3.29m0 0A9.97 9.97 0 015.12 5.12m3.29 3.29L3 3m14.29 14.29L21 21M14.88 14.88a3 3 0 11-4.243-4.243m4.242 4.242L21 21"
-                  />
-                </svg>
-              </button>
+              />
             </div>
             <!-- Helper text -->
             <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
@@ -168,7 +132,7 @@
                   },
                 ]"
                 :key="check.key"
-                class="flex items-center gap-2 text-xs"
+                class="flex gap-2 items-center text-xs"
               >
                 <svg
                   v-if="
@@ -176,7 +140,7 @@
                       check.key as keyof typeof passwordValidation.checks
                     ]
                   "
-                  class="w-4 h-4 text-green-500 flex-shrink-0"
+                  class="flex-shrink-0 w-4 h-4 text-green-500"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -190,7 +154,7 @@
                 </svg>
                 <svg
                   v-else
-                  class="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0"
+                  class="flex-shrink-0 w-4 h-4 text-gray-400 dark:text-gray-500"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -220,7 +184,7 @@
           <div class="mb-4">
             <label
               for="confirm-password"
-              class="block text-sm font-medium dark:text-gray-300 text-gray-700 mb-2"
+              class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300"
             >
               {{ $t('auth.confirmPassword') }}
             </label>
@@ -239,62 +203,18 @@
                 ]"
                 placeholder="••••••••"
               />
-              <button
-                type="button"
-                data-icon-only="true"
-                :aria-label="
+              <IconButton
+                :icon="showConfirmPassword ? IconEye : IconEyeSlash"
+                aria-label="
                   showConfirmPassword
                     ? $t('auth.hidePassword')
                     : $t('auth.showPassword')
                 "
-                class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 focus:outline-none transition-colors"
+                size="medium"
+                variant="default"
+                custom-class="absolute right-3 top-1/2 -translate-y-1/2"
                 @click="showConfirmPassword = !showConfirmPassword"
-                @keydown.enter.prevent="
-                  showConfirmPassword = !showConfirmPassword
-                "
-                @keydown.space.prevent="
-                  showConfirmPassword = !showConfirmPassword
-                "
-              >
-                <!-- Eye icon (visible) -->
-                <svg
-                  v-if="showConfirmPassword"
-                  class="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                  />
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                  />
-                </svg>
-                <!-- Eye slash icon (hidden) -->
-                <svg
-                  v-else
-                  class="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.29 3.29m0 0A9.97 9.97 0 015.12 5.12m3.29 3.29L3 3m14.29 14.29L21 21M14.88 14.88a3 3 0 11-4.243-4.243m4.242 4.242L21 21"
-                  />
-                </svg>
-              </button>
+              />
             </div>
             <p
               v-if="
@@ -306,26 +226,30 @@
             </p>
           </div>
 
-          <button
-            type="submit"
-            :disabled="loading || !passwordsMatch || !isPasswordValid"
-            class="w-full py-3 px-6 dark:bg-gray-900/90 bg-gray-800/90 hover:dark:bg-gray-800/80 hover:bg-gray-900/90 text-white rounded-lg font-medium transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg border border-gray-700/50 dark:border-gray-600/50"
-          >
-            {{
-              loading
-                ? $t('media.updatingPassword')
-                : $t('media.updatePassword')
-            }}
-          </button>
+          <div class="flex justify-center">
+            <Button
+              type="submit"
+              variant="primary"
+              size="medium"
+              custom-class="w-full"
+              :disabled="loading || !passwordsMatch || !isPasswordValid"
+            >
+              {{
+                loading
+                  ? $t('media.updatingPassword')
+                  : $t('media.updatePassword')
+              }}
+            </Button>
+          </div>
         </form>
 
         <!-- Loading state while validating code -->
         <div
           v-if="!codeValidated && !error && !errorMessage"
-          class="text-center py-8"
+          class="py-8 text-center"
         >
           <div
-            class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"
+            class="mx-auto mb-4 w-8 h-8 rounded-full border-b-2 animate-spin border-primary"
           ></div>
           <p class="text-sm text-gray-800 dark:text-gray-300">
             {{ $t('media.validatingRecovery') }}
@@ -335,15 +259,11 @@
         <!-- Back to login -->
         <div
           v-if="codeValidated || error || errorMessage"
-          class="mt-4 text-center"
+          class="flex justify-center items-center mt-4"
         >
-          <a
-            href="#"
-            class="text-sm text-primary hover:text-secondary transition-colors underline hover:no-underline inline-block"
-            @click.prevent="router.push('/')"
-          >
+          <Button variant="outline" size="medium" @click="router.push('/')">
             {{ $t('media.backToHome') }}
-          </a>
+          </Button>
         </div>
       </div>
     </div>
@@ -356,6 +276,9 @@ import {
   validatePassword,
   getPasswordHelperText,
 } from '@/utils/passwordValidation';
+import IconButton from '@/components/ui/IconButton.vue';
+import IconEye from '@/components/icons/IconEye.vue';
+import IconEyeSlash from '@/components/icons/IconEyeSlash.vue';
 
 definePageMeta({
   layout: false,

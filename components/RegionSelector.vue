@@ -1,37 +1,39 @@
 <template>
   <Dropdown
+    ref="dropdownRef"
     position="left"
     width="w-full"
     :close-on-click-outside="true"
-    ref="dropdownRef"
     @open="handleDropdownOpen"
   >
     <template #trigger="{ isOpen }">
       <!-- Selected Value Display -->
-      <button
+      <Button
         type="button"
-        class="w-full px-4 py-2 dark:bg-gray-800/50 bg-white/80 border border-gray-300 dark:border-gray-600 rounded-lg dark:text-gray-300 text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-transparent focus:border-transparent backdrop-blur-xs transition-all opacity-90 hover:opacity-100 text-left flex items-center justify-between gap-2"
+        variant="outline"
+        size="medium"
+        custom-class="flex gap-2 justify-between items-center px-4 py-2 w-full text-left text-gray-800 rounded-lg border border-gray-300 opacity-90 dark:bg-gray-800/50 bg-white/80 dark:border-gray-600 dark:text-gray-300 backdrop-blur-xs hover:opacity-100"
       >
-      <div class="flex items-center gap-2 flex-1 min-w-0">
-        <img
-          v-if="selectedRegion"
-          :src="`/icons/flags/${selectedRegion.toLowerCase()}.svg`"
-          :alt="selectedRegion"
-          class="w-5 h-4 object-contain flex-shrink-0"
-          loading="lazy"
-          @error="
-            (e) => ((e.target as HTMLImageElement).style.display = 'none')
-          "
-        />
-        <span class="truncate text-sm">{{
-          selectedRegion
-            ? regions.find((r: Region) => r.code === selectedRegion)?.name ||
-              selectedRegion
-            : t('preferences.content.region.default')
-        }}</span>
-      </div>
+        <div class="flex flex-1 gap-2 items-center min-w-0">
+          <img
+            v-if="selectedRegion"
+            :src="`/icons/flags/${selectedRegion.toLowerCase()}.svg`"
+            :alt="selectedRegion"
+            class="object-contain flex-shrink-0 w-5 h-4"
+            loading="lazy"
+            @error="
+              (e) => ((e.target as HTMLImageElement).style.display = 'none')
+            "
+          />
+          <span class="text-sm truncate">{{
+            selectedRegion
+              ? regions.find((r: Region) => r.code === selectedRegion)?.name ||
+                selectedRegion
+              : t('preferences.content.region.default')
+          }}</span>
+        </div>
         <svg
-          class="w-4 h-4 text-gray-400 flex-shrink-0 transition-transform"
+          class="flex-shrink-0 w-4 h-4 text-gray-400 transition-transform"
           :class="{ 'rotate-180': isOpen }"
           fill="none"
           stroke="currentColor"
@@ -44,80 +46,80 @@
             d="M19 9l-7 7-7-7"
           />
         </svg>
-      </button>
+      </Button>
     </template>
     <div
-      class="dark:bg-gray-900/95 bg-white/95 backdrop-blur-sm dark:border-gray-600 border-gray-300 max-h-64 overflow-hidden flex flex-col"
+      class="flex overflow-hidden flex-col max-h-64 border-gray-300 backdrop-blur-sm dark:bg-gray-900/95 bg-white/95 dark:border-gray-600"
     >
-        <!-- Search Input -->
-        <div class="p-2 border-b border-gray-300/50 dark:border-white/10">
-          <div class="relative">
-            <input
-              v-model="searchQuery"
-              type="text"
-              :placeholder="t('preferences.content.region.searchPlaceholder')"
-              class="w-full px-4 py-2 pl-10 pr-4 text-sm dark:text-gray-300 text-gray-800 dark:bg-gray-800/50 bg-white/80 dark:border-gray-600 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-transparent focus:border-transparent backdrop-blur-xs transition-all opacity-90 hover:opacity-100"
-              @input="filterRegions"
-            />
-            <!-- Search Icon -->
-            <div class="absolute inset-y-0 left-0 flex items-center pl-3">
-              <svg
-                class="w-4 h-4 text-gray-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
-            </div>
-          </div>
-        </div>
-        <!-- Options List -->
-        <div class="overflow-y-auto custom-scrollbar flex-1">
-          <div class="py-2">
-            <!-- Default Option -->
-            <div
-              class="flex items-center gap-3 px-4 py-3 cursor-pointer dark:hover:bg-gray-800/50 hover:bg-gray-100/50 transition-colors duration-150"
-              :class="{
-                'dark:bg-gray-800/30 bg-gray-100/50': !selectedRegion,
-              }"
-              @click="selectRegion(null)"
+      <!-- Search Input -->
+      <div class="p-2 border-b border-gray-300/50 dark:border-white/10">
+        <div class="relative">
+          <input
+            v-model="searchQuery"
+            type="text"
+            :placeholder="t('preferences.content.region.searchPlaceholder')"
+            class="px-4 py-2 pr-4 pl-10 w-full text-sm text-gray-800 rounded-lg border-gray-300 opacity-90 transition-all dark:text-gray-300 dark:bg-gray-800/50 bg-white/80 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-transparent focus:border-transparent backdrop-blur-xs hover:opacity-100"
+            @input="filterRegions"
+          />
+          <!-- Search Icon -->
+          <div class="flex absolute inset-y-0 left-0 items-center pl-3">
+            <svg
+              class="w-4 h-4 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
             >
-              <span class="text-sm dark:text-gray-300 text-gray-800">{{
-                t('preferences.content.region.default')
-              }}</span>
-            </div>
-            <!-- Region Options -->
-            <div
-              v-for="region in filteredRegions"
-              :key="region.code"
-              class="flex items-center gap-3 px-4 py-3 cursor-pointer dark:hover:bg-gray-800/50 hover:bg-gray-100/50 transition-colors duration-150"
-              :class="{
-                'dark:bg-gray-800/30 bg-gray-100/50':
-                  selectedRegion === region.code,
-              }"
-              @click="selectRegion(region.code)"
-            >
-              <img
-                :src="`/icons/flags/${region.code.toLowerCase()}.svg`"
-                :alt="region.code"
-                class="w-5 h-4 object-contain flex-shrink-0"
-                loading="lazy"
-                @error="
-                  (e) => ((e.target as HTMLImageElement).style.display = 'none')
-                "
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
               />
-              <span class="text-sm dark:text-gray-300 text-gray-800">{{
-                region.name
-              }}</span>
-            </div>
+            </svg>
           </div>
         </div>
+      </div>
+      <!-- Options List -->
+      <div class="overflow-y-auto flex-1 custom-scrollbar">
+        <div class="py-2">
+          <!-- Default Option -->
+          <div
+            class="flex gap-3 items-center px-4 py-3 transition-colors duration-150 cursor-pointer dark:hover:bg-gray-800/50 hover:bg-gray-100/50"
+            :class="{
+              'dark:bg-gray-800/30 bg-gray-100/50': !selectedRegion,
+            }"
+            @click="selectRegion(null)"
+          >
+            <span class="text-sm text-gray-800 dark:text-gray-300">{{
+              t('preferences.content.region.default')
+            }}</span>
+          </div>
+          <!-- Region Options -->
+          <div
+            v-for="region in filteredRegions"
+            :key="region.code"
+            class="flex gap-3 items-center px-4 py-3 transition-colors duration-150 cursor-pointer dark:hover:bg-gray-800/50 hover:bg-gray-100/50"
+            :class="{
+              'dark:bg-gray-800/30 bg-gray-100/50':
+                selectedRegion === region.code,
+            }"
+            @click="selectRegion(region.code)"
+          >
+            <img
+              :src="`/icons/flags/${region.code.toLowerCase()}.svg`"
+              :alt="region.code"
+              class="object-contain flex-shrink-0 w-5 h-4"
+              loading="lazy"
+              @error="
+                (e) => ((e.target as HTMLImageElement).style.display = 'none')
+              "
+            />
+            <span class="text-sm text-gray-800 dark:text-gray-300">{{
+              region.name
+            }}</span>
+          </div>
+        </div>
+      </div>
     </div>
   </Dropdown>
 </template>
@@ -127,6 +129,7 @@ import { ref, watch, computed } from 'vue';
 import { AVAILABLE_REGIONS } from '@/constants/regions';
 import type { Region } from '@/constants/regions';
 import Dropdown from '@/components/ui/Dropdown.vue';
+import Button from '@/components/ui/Button.vue';
 
 interface Props {
   modelValue: string | null | undefined;

@@ -1,11 +1,11 @@
 <template>
   <div
-    class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4"
+    class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
   >
     <div
       v-for="title in titles"
       :key="title.id"
-      class="group relative dark:bg-gray-900/40 bg-gray-100/80 backdrop-blur-xl rounded-lg border border-gray-300/50 dark:border-white/10 hover:border-gray-400/50 dark:hover:border-white/20 transition-all duration-300 hover:shadow-lg hover:shadow-gray-900/20"
+      class="relative rounded-lg border backdrop-blur-xl transition-all duration-300 group dark:bg-gray-900/40 bg-gray-100/80 border-gray-300/50 dark:border-white/10 hover:border-gray-400/50 dark:hover:border-white/20 hover:shadow-lg hover:shadow-gray-900/20"
     >
       <!-- Poster -->
       <nuxt-link
@@ -15,19 +15,19 @@
       >
         <div
           v-if="title.poster_path"
-          class="w-full h-full overflow-hidden rounded-t-lg"
+          class="overflow-hidden w-full h-full rounded-t-lg"
         >
           <img
             :src="`https://image.tmdb.org/t/p/w500${title.poster_path}`"
             :alt="$t('media.posterOf', { title: title.title })"
-            class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+            class="object-cover w-full h-full transition-transform duration-300 group-hover:scale-105"
             loading="lazy"
             decoding="async"
           />
         </div>
         <div
           v-else
-          class="w-full h-full flex items-center justify-center text-gray-400 overflow-hidden rounded-t-lg"
+          class="flex overflow-hidden justify-center items-center w-full h-full text-gray-400 rounded-t-lg"
           role="img"
           :aria-label="$t('media.noPosterAvailableFor', { title: title.title })"
         >
@@ -48,19 +48,17 @@
         </div>
 
         <!-- Like Button (top-left) -->
-        <button
+        <IconButton
           v-if="onLike"
-          type="button"
-          :class="[
-            'tooltip-container absolute top-2 left-2 z-20 p-2 rounded-full backdrop-blur-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-black/50 pointer-events-auto',
-            title.liked === true
-              ? 'bg-primary-800 text-white border border-gray-700/50 dark:bg-primary-600/70 dark:border-primary-800 hover:bg-primary-900 dark:hover:bg-primary-600 focus:ring-primary'
-              : 'bg-black/50 hover:bg-red-500/80 focus:ring-red-500',
-          ]"
           :aria-label="likeLabel || $t('media.liked')"
-          :title="likeLabel || $t('media.liked')"
+          size="small"
+          variant="default"
+          :custom-class="`tooltip-container absolute top-2 left-2 z-20 p-2 rounded-full backdrop-blur-sm pointer-events-auto ${
+            title.liked === true
+              ? 'bg-primary-800 text-white border border-gray-700/50 dark:bg-primary-600/70 dark:border-primary-800 hover:bg-primary-900 dark:hover:bg-primary-600'
+              : 'bg-black/50 hover:bg-red-500/80'
+          }`"
           @click.stop.prevent="onLike(title)"
-          @mousedown.stop.prevent
         >
           <svg
             class="w-4 h-4 text-white"
@@ -72,17 +70,16 @@
             />
           </svg>
           <span class="tooltip">{{ likeLabel || $t('media.liked') }}</span>
-        </button>
+        </IconButton>
 
         <!-- Remove Button (top-right) -->
-        <button
+        <IconButton
           v-if="onRemove"
-          type="button"
-          class="tooltip-container absolute top-2 right-2 z-20 p-2 rounded-full bg-black/50 hover:bg-red-600/80 backdrop-blur-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-black/50 pointer-events-auto"
           :aria-label="removeLabel || $t('common.delete')"
-          :title="removeLabel || $t('common.delete')"
+          size="small"
+          variant="default"
+          custom-class="absolute top-2 right-2 z-20 p-2 rounded-full backdrop-blur-sm pointer-events-auto tooltip-container bg-black/50 hover:bg-red-600/80"
           @click.stop.prevent="onRemove(title)"
-          @mousedown.stop.prevent
         >
           <svg
             class="w-4 h-4 text-white"
@@ -98,13 +95,13 @@
             />
           </svg>
           <span class="tooltip">{{ removeLabel || $t('common.delete') }}</span>
-        </button>
+        </IconButton>
 
         <!-- Hover Overlay (same as RecommendationCard) -->
         <div
-          class="absolute bottom-0 left-0 flex flex-col items-center justify-center w-full h-full px-4 transition-all duration-300 opacity-0 group-hover:opacity-100 backdrop-blur-md dark:bg-black/80 bg-white/80"
+          class="flex absolute bottom-0 left-0 flex-col justify-center items-center px-4 w-full h-full opacity-0 backdrop-blur-md transition-all duration-300 group-hover:opacity-100 dark:bg-black/80 bg-white/80"
         >
-          <p class="dark:text-gray-300 text-gray-800 font-semibold">
+          <p class="font-semibold text-gray-800 dark:text-gray-300">
             {{ $t('media.viewDetails') }}
           </p>
         </div>
@@ -113,11 +110,11 @@
       <!-- Title -->
       <div class="p-4">
         <h3
-          class="text-sm font-semibold dark:text-gray-300 text-gray-800 truncate mb-1"
+          class="mb-1 text-sm font-semibold text-gray-800 truncate dark:text-gray-300"
         >
           {{ title.title }}
         </h3>
-        <p class="text-xs dark:text-gray-300 text-gray-500 mb-2">
+        <p class="mb-2 text-xs text-gray-500 dark:text-gray-300">
           {{
             title.type === MediaTypeEnum.movie
               ? $t('media.movie')
@@ -132,6 +129,7 @@
 <script setup lang="ts">
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 import { watch } from 'vue';
+import IconButton from '@/components/ui/IconButton.vue';
 
 interface Title {
   id: string;

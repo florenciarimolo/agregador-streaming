@@ -1,10 +1,10 @@
 <template>
-  <div class="container mx-auto max-w-7xl px-4 pb-6 pt-6">
+  <div class="container px-4 pt-6 pb-6 mx-auto max-w-7xl">
     <!-- Profile Header -->
     <div class="mb-6">
-      <div class="flex flex-row items-center gap-4 md:gap-6">
+      <div class="flex flex-row gap-4 items-center md:gap-6">
         <!-- Avatar -->
-        <div class="flex-shrink-0 flex items-center">
+        <div class="flex flex-shrink-0 items-center">
           <div
             class="w-12 h-12 md:w-24 md:h-24 [&_.avatar-upload]:!w-full [&_.avatar-upload]:!h-full [&_.avatar-upload>div]:!w-full [&_.avatar-upload>div]:!h-full [&_.avatar-upload>div>div]:!w-full [&_.avatar-upload>div>div]:!h-full [&_.avatar-upload>div>div>img]:!w-full [&_.avatar-upload>div>div>img]:!h-full [&_.avatar-upload>div>div>img]:!object-cover [&_.avatar-upload>div>div>span]:!w-full [&_.avatar-upload>div>div>span]:!h-full"
           >
@@ -21,28 +21,26 @@
         </div>
 
         <!-- Profile Info -->
-        <div class="flex-1 min-w-0 overflow-hidden">
+        <div class="overflow-hidden flex-1 min-w-0">
           <div v-if="!isEditing" class="space-y-2">
-            <div class="flex items-center gap-2">
+            <div class="flex gap-2 items-center">
               <h1
-                class="text-sm font-medium dark:text-gray-300 text-gray-800 font-heading whitespace-nowrap"
+                class="text-sm font-medium text-gray-800 whitespace-nowrap dark:text-gray-300 font-heading"
               >
                 {{ displayName || currentUser?.email || $t('profile.user') }}
               </h1>
-              <button
-                type="button"
+              <IconButton
+                :icon="IconEdit"
                 :aria-label="$t('profile.editProfile')"
-                class="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors flex-shrink-0"
+                size="medium"
+                variant="ghost"
+                custom-class="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg flex-shrink-0 [&_svg]:text-gray-600 dark:[&_svg]:text-gray-400"
                 @click="startEdit"
-              >
-                <IconEdit
-                  icon-class="w-5 h-5 text-gray-600 dark:text-gray-400"
-                />
-              </button>
+              />
             </div>
             <p
               v-if="currentUser?.email"
-              class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap"
+              class="text-xs text-gray-500 whitespace-nowrap dark:text-gray-400"
             >
               {{ currentUser.email }}
             </p>
@@ -53,7 +51,7 @@
             <div>
               <label
                 for="display-name"
-                class="block text-sm font-medium dark:text-gray-300 text-gray-800 mb-2"
+                class="block mb-2 text-sm font-medium text-gray-800 dark:text-gray-300"
               >
                 {{ $t('profile.displayName') }}
               </label>
@@ -61,7 +59,7 @@
                 id="display-name"
                 v-model="editDisplayName"
                 type="text"
-                class="w-full px-4 py-2 dark:bg-gray-800 bg-gray-100 border border-gray-300 dark:border-gray-700 rounded-lg dark:text-gray-300 text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary"
+                class="px-4 py-2 w-full text-gray-800 bg-gray-100 rounded-lg border border-gray-300 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
                 :placeholder="$t('profile.displayNamePlaceholder')"
                 maxlength="50"
                 @keydown.enter="saveProfile"
@@ -86,10 +84,10 @@
 
     <!-- Confirmation Dialog for Delete -->
     <Modal :is-open="!!titleToDelete" @close="titleToDelete = null">
-      <h3 class="text-lg font-semibold dark:text-gray-300 text-gray-800 mb-2">
+      <h3 class="mb-2 text-lg font-semibold text-gray-800 dark:text-gray-300">
         {{ $t('preferences.confirmDelete') }}
       </h3>
-      <p class="text-gray-800 dark:text-gray-300 mb-4">
+      <p class="mb-4 text-gray-800 dark:text-gray-300">
         {{
           $t('preferences.confirmDeleteMessage', {
             title: titleToDelete?.title,
@@ -121,21 +119,21 @@
       <!-- Loading overlay -->
       <div
         v-if="isConfirmingLanguageChange"
-        class="absolute inset-0 bg-black/20 dark:bg-black/40 backdrop-blur-sm rounded-3xl flex items-center justify-center z-10 -m-6"
+        class="flex absolute inset-0 z-10 justify-center items-center -m-6 rounded-3xl backdrop-blur-sm bg-black/20 dark:bg-black/40"
       >
-        <div class="flex flex-col items-center gap-3">
+        <div class="flex flex-col gap-3 items-center">
           <div
-            class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 dark:border-primary-400"
+            class="w-8 h-8 rounded-full border-b-2 animate-spin border-primary-600 dark:border-primary-400"
           ></div>
           <p class="text-sm text-gray-700 dark:text-gray-300">
             {{ $t('preferences.content.preferredLanguage.saving') }}
           </p>
         </div>
       </div>
-      <h3 class="text-lg font-semibold dark:text-gray-300 text-gray-800 mb-2">
+      <h3 class="mb-2 text-lg font-semibold text-gray-800 dark:text-gray-300">
         {{ $t('preferences.content.preferredLanguage.confirmChangeTitle') }}
       </h3>
-      <p class="text-gray-800 dark:text-gray-300 mb-4">
+      <p class="mb-4 text-gray-800 dark:text-gray-300">
         {{ $t('preferences.content.preferredLanguage.confirmChangeMessage') }}
       </p>
       <div class="flex gap-3 justify-end">
@@ -160,7 +158,7 @@
         >
           <template v-if="isConfirmingLanguageChange">
             <span
-              class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"
+              class="w-4 h-4 rounded-full border-b-2 border-white animate-spin"
             ></span>
           </template>
           <template v-else>
@@ -263,11 +261,11 @@
             <!-- Preferred Languages -->
             <Card padding="lg" custom-class="relative">
               <h2
-                class="text-xl font-semibold dark:text-gray-300 text-gray-800 mb-2"
+                class="mb-2 text-xl font-semibold text-gray-800 dark:text-gray-300"
               >
                 {{ $t('preferences.content.preferredLanguage.title') }}
               </h2>
-              <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              <p class="mb-4 text-sm text-gray-600 dark:text-gray-400">
                 {{ $t('preferences.content.preferredLanguage.description') }}
               </p>
 
@@ -276,7 +274,7 @@
                 <label
                   v-for="lang in availableLanguages"
                   :key="lang.code"
-                  class="flex items-center gap-3 p-3 rounded-lg dark:hover:bg-gray-800/50 hover:bg-gray-100/50 transition-colors duration-150 cursor-pointer custom-radio-label"
+                  class="flex gap-3 items-center p-3 rounded-lg transition-colors duration-150 cursor-pointer dark:hover:bg-gray-800/50 hover:bg-gray-100/50 custom-radio-label"
                   :class="{
                     'dark:bg-gray-800/30 bg-gray-100/50':
                       selectedLanguage?.code === lang.code,
@@ -291,7 +289,7 @@
                     class="custom-radio"
                     @change="changeLanguage(lang)"
                   />
-                  <span class="text-sm dark:text-gray-300 text-gray-800 flex-1">
+                  <span class="flex-1 text-sm text-gray-800 dark:text-gray-300">
                     {{ `${lang.name} (${lang.code})` }}
                   </span>
                 </label>
@@ -301,16 +299,16 @@
             <!-- Content Types -->
             <Card padding="lg">
               <h2
-                class="text-xl font-semibold dark:text-gray-300 text-gray-800 mb-2"
+                class="mb-2 text-xl font-semibold text-gray-800 dark:text-gray-300"
               >
                 {{ $t('preferences.content.contentTypes.title') }}
               </h2>
-              <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              <p class="mb-4 text-sm text-gray-600 dark:text-gray-400">
                 {{ $t('preferences.content.contentTypes.description') }}
               </p>
               <div class="flex flex-wrap gap-4">
                 <label
-                  class="flex items-center gap-2 cursor-pointer custom-checkbox-label"
+                  class="flex gap-2 items-center cursor-pointer custom-checkbox-label"
                 >
                   <input
                     v-model="contentPreferences.content_types"
@@ -319,12 +317,12 @@
                     class="custom-checkbox"
                     @change="saveContentPreferences"
                   />
-                  <span class="text-sm dark:text-gray-300 text-gray-800">{{
+                  <span class="text-sm text-gray-800 dark:text-gray-300">{{
                     $t('preferences.content.contentTypes.movie')
                   }}</span>
                 </label>
                 <label
-                  class="flex items-center gap-2 cursor-pointer custom-checkbox-label"
+                  class="flex gap-2 items-center cursor-pointer custom-checkbox-label"
                 >
                   <input
                     v-model="contentPreferences.content_types"
@@ -333,7 +331,7 @@
                     class="custom-checkbox"
                     @change="saveContentPreferences"
                   />
-                  <span class="text-sm dark:text-gray-300 text-gray-800">{{
+                  <span class="text-sm text-gray-800 dark:text-gray-300">{{
                     $t('preferences.content.contentTypes.tv')
                   }}</span>
                 </label>
@@ -343,11 +341,11 @@
             <!-- Favorite Genres -->
             <Card padding="lg" custom-class="relative">
               <h2
-                class="text-xl font-semibold dark:text-gray-300 text-gray-800 mb-2"
+                class="mb-2 text-xl font-semibold text-gray-800 dark:text-gray-300"
               >
                 {{ $t('preferences.content.favoriteGenres.title') }}
               </h2>
-              <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              <p class="mb-4 text-sm text-gray-600 dark:text-gray-400">
                 {{ $t('preferences.content.favoriteGenres.description') }}
               </p>
 
@@ -361,14 +359,14 @@
                     :placeholder="
                       $t('preferences.content.favoriteGenres.searchPlaceholder')
                     "
-                    class="w-full px-4 py-2 pl-10 pr-4 text-sm dark:text-gray-300 text-gray-800 dark:bg-gray-800/50 bg-white/80 dark:border-gray-600 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-transparent focus:border-transparent backdrop-blur-xs transition-all opacity-90 hover:opacity-100"
+                    class="px-4 py-2 pr-4 pl-10 w-full text-sm text-gray-800 rounded-lg border-gray-300 opacity-90 transition-all dark:text-gray-300 dark:bg-gray-800/50 bg-white/80 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-transparent focus:border-transparent backdrop-blur-xs hover:opacity-100"
                     @input="filterGenres"
                     @focus="handleGenreFocus"
                     @blur="handleGenreBlur"
                   />
                   <!-- Search Icon -->
                   <div
-                    class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none"
+                    class="flex absolute inset-y-0 left-0 items-center pl-3 pointer-events-none"
                   >
                     <svg
                       class="w-4 h-4 text-gray-400"
@@ -391,11 +389,11 @@
               <Teleport to="body">
                 <Transition
                   enter-active-class="transition duration-200 ease-out"
-                  enter-from-class="transform scale-95 opacity-0"
-                  enter-to-class="transform scale-100 opacity-100"
+                  enter-from-class="opacity-0 transform scale-95"
+                  enter-to-class="opacity-100 transform scale-100"
                   leave-active-class="transition duration-150 ease-in"
-                  leave-from-class="transform scale-100 opacity-100"
-                  leave-to-class="transform scale-95 opacity-0"
+                  leave-from-class="opacity-100 transform scale-100"
+                  leave-to-class="opacity-0 transform scale-95"
                 >
                   <div
                     v-if="
@@ -415,12 +413,12 @@
                       <div
                         v-for="genre in filteredGenres"
                         :key="genre.id"
-                        class="flex items-center gap-3 px-4 py-3 cursor-pointer dark:hover:bg-gray-800/50 hover:bg-gray-100/50 transition-colors duration-150"
+                        class="flex gap-3 items-center px-4 py-3 transition-colors duration-150 cursor-pointer dark:hover:bg-gray-800/50 hover:bg-gray-100/50"
                         @mousedown.prevent="addGenre(genre)"
                         @click="addGenre(genre)"
                       >
                         <span
-                          class="text-sm dark:text-gray-300 text-gray-800"
+                          class="text-sm text-gray-800 dark:text-gray-300"
                           >{{ genre.name }}</span
                         >
                       </div>
@@ -432,7 +430,7 @@
               <!-- Selected Genres List -->
               <div v-if="selectedGenres.length > 0" class="mb-4">
                 <p
-                  class="text-sm font-medium dark:text-gray-300 text-gray-800 mb-2"
+                  class="mb-2 text-sm font-medium text-gray-800 dark:text-gray-300"
                 >
                   {{ $t('preferences.content.favoriteGenres.selected') }}
                   ({{ selectedGenres.length }})
@@ -441,10 +439,10 @@
                   <div
                     v-for="genre in selectedGenres"
                     :key="genre.id"
-                    class="flex items-center gap-2 py-1.5 md:py-2.5 px-4 dark:bg-gray-900/40 bg-gray-100/80 backdrop-blur-xl rounded-full border border-gray-300/50 dark:border-white/10"
+                    class="flex gap-2 items-center px-4 py-1.5 rounded-full border backdrop-blur-xl md:py-2.5 dark:bg-gray-900/40 bg-gray-100/80 border-gray-300/50 dark:border-white/10"
                   >
                     <span
-                      class="text-xs md:text-sm font-medium dark:text-gray-300 text-gray-800"
+                      class="text-xs font-medium text-gray-800 md:text-sm dark:text-gray-300"
                       >{{ genre.name }}</span
                     >
                     <CloseButton
@@ -463,7 +461,7 @@
               <!-- Info Message -->
               <p
                 v-if="selectedGenres.length === 0"
-                class="text-sm text-gray-600 dark:text-gray-400 italic"
+                class="text-sm italic text-gray-600 dark:text-gray-400"
               >
                 {{ $t('preferences.content.favoriteGenres.noneSelected') }}
               </p>
@@ -472,11 +470,11 @@
             <!-- Included Providers -->
             <Card padding="lg" custom-class="relative">
               <h2
-                class="text-xl font-semibold dark:text-gray-300 text-gray-800 mb-2"
+                class="mb-2 text-xl font-semibold text-gray-800 dark:text-gray-300"
               >
                 {{ $t('preferences.content.includedProviders.title') }}
               </h2>
-              <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              <p class="mb-4 text-sm text-gray-600 dark:text-gray-400">
                 {{ $t('preferences.content.includedProviders.description') }}
               </p>
 
@@ -492,14 +490,14 @@
                         'preferences.content.includedProviders.searchPlaceholder'
                       )
                     "
-                    class="w-full px-4 py-2 pl-10 pr-4 text-sm dark:text-gray-300 text-gray-800 dark:bg-gray-800/50 bg-white/80 dark:border-gray-600 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-transparent focus:border-transparent backdrop-blur-xs transition-all opacity-90 hover:opacity-100"
+                    class="px-4 py-2 pr-4 pl-10 w-full text-sm text-gray-800 rounded-lg border-gray-300 opacity-90 transition-all dark:text-gray-300 dark:bg-gray-800/50 bg-white/80 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-transparent focus:border-transparent backdrop-blur-xs hover:opacity-100"
                     @input="filterProviders"
                     @focus="handleProviderFocus"
                     @blur="handleProviderBlur"
                   />
                   <!-- Search Icon -->
                   <div
-                    class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none"
+                    class="flex absolute inset-y-0 left-0 items-center pl-3 pointer-events-none"
                   >
                     <svg
                       class="w-4 h-4 text-gray-400"
@@ -522,11 +520,11 @@
               <Teleport to="body">
                 <Transition
                   enter-active-class="transition duration-200 ease-out"
-                  enter-from-class="transform scale-95 opacity-0"
-                  enter-to-class="transform scale-100 opacity-100"
+                  enter-from-class="opacity-0 transform scale-95"
+                  enter-to-class="opacity-100 transform scale-100"
                   leave-active-class="transition duration-150 ease-in"
-                  leave-from-class="transform scale-100 opacity-100"
-                  leave-to-class="transform scale-95 opacity-0"
+                  leave-from-class="opacity-100 transform scale-100"
+                  leave-to-class="opacity-0 transform scale-95"
                 >
                   <div
                     v-if="
@@ -546,7 +544,7 @@
                       <div
                         v-for="provider in filteredProviders"
                         :key="provider.provider_id"
-                        class="flex items-center gap-3 px-4 py-3 cursor-pointer dark:hover:bg-gray-800/50 hover:bg-gray-100/50 transition-colors duration-150"
+                        class="flex gap-3 items-center px-4 py-3 transition-colors duration-150 cursor-pointer dark:hover:bg-gray-800/50 hover:bg-gray-100/50"
                         @mousedown.prevent="addProvider(provider)"
                         @click="addProvider(provider)"
                       >
@@ -554,11 +552,11 @@
                           v-if="provider.logo_path"
                           :src="`https://image.tmdb.org/t/p/w45${provider.logo_path}`"
                           :alt="provider.provider_name"
-                          class="h-8 w-auto object-contain flex-shrink-0"
+                          class="object-contain flex-shrink-0 w-auto h-8"
                         />
                         <div
                           v-else
-                          class="h-8 w-8 flex items-center justify-center bg-gray-200 dark:bg-gray-700 rounded flex-shrink-0"
+                          class="flex flex-shrink-0 justify-center items-center w-8 h-8 bg-gray-200 rounded dark:bg-gray-700"
                         >
                           <span
                             class="text-xs text-gray-600 dark:text-gray-300"
@@ -566,7 +564,7 @@
                           >
                         </div>
                         <span
-                          class="text-sm dark:text-gray-300 text-gray-800"
+                          class="text-sm text-gray-800 dark:text-gray-300"
                           >{{ provider.provider_name }}</span
                         >
                       </div>
@@ -578,7 +576,7 @@
               <!-- Selected Providers List -->
               <div v-if="selectedProviders.length > 0" class="mb-4">
                 <p
-                  class="text-sm font-medium dark:text-gray-300 text-gray-800 mb-2"
+                  class="mb-2 text-sm font-medium text-gray-800 dark:text-gray-300"
                 >
                   {{ $t('preferences.content.includedProviders.selected') }}
                   ({{ selectedProviders.length }})
@@ -587,16 +585,16 @@
                   <div
                     v-for="provider in selectedProviders"
                     :key="provider.provider_id"
-                    class="flex items-center gap-2 py-1.5 md:py-2.5 px-4 dark:bg-gray-900/40 bg-gray-100/80 backdrop-blur-xl rounded-full border border-gray-300/50 dark:border-white/10"
+                    class="flex gap-2 items-center px-4 py-1.5 rounded-full border backdrop-blur-xl md:py-2.5 dark:bg-gray-900/40 bg-gray-100/80 border-gray-300/50 dark:border-white/10"
                   >
                     <img
                       v-if="provider.logo_path"
                       :src="`https://image.tmdb.org/t/p/w45${provider.logo_path}`"
                       :alt="provider.provider_name"
-                      class="h-5 w-auto object-contain"
+                      class="object-contain w-auto h-5"
                     />
                     <span
-                      class="text-xs md:text-sm font-medium dark:text-gray-300 text-gray-800"
+                      class="text-xs font-medium text-gray-800 md:text-sm dark:text-gray-300"
                       >{{ provider.provider_name }}</span
                     >
                     <CloseButton
@@ -615,7 +613,7 @@
               <!-- Info Message -->
               <p
                 v-if="selectedProviders.length === 0"
-                class="text-sm text-gray-600 dark:text-gray-400 italic"
+                class="text-sm italic text-gray-600 dark:text-gray-400"
               >
                 {{ $t('preferences.content.includedProviders.allIncluded') }}
               </p>
@@ -624,11 +622,11 @@
             <!-- Region -->
             <Card padding="lg">
               <h2
-                class="text-xl font-semibold dark:text-gray-300 text-gray-800 mb-2"
+                class="mb-2 text-xl font-semibold text-gray-800 dark:text-gray-300"
               >
                 {{ $t('preferences.content.region.title') }}
               </h2>
-              <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              <p class="mb-4 text-sm text-gray-600 dark:text-gray-400">
                 {{ $t('preferences.content.region.description') }}
               </p>
               <RegionSelector
@@ -683,6 +681,7 @@ import EmptyState from '@/components/EmptyState.vue';
 import Spinner from '@/components/Spinner.vue';
 import Toast from '@/components/ui/Toast.vue';
 import IconEdit from '@/components/icons/IconEdit.vue';
+import IconButton from '@/components/ui/IconButton.vue';
 import { useUndoToast } from '@/composables/useUndoToast';
 import type { TMDBSearchResult } from '@/types/TMDBSearch';
 import { AVAILABLE_LANGUAGES, LanguageCode } from '@/constants/languages';

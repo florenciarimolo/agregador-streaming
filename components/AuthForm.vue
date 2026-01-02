@@ -5,6 +5,9 @@ import {
 } from '../utils/passwordValidation';
 import Input from '@/components/ui/Input.vue';
 import TabButton from '@/components/ui/TabButton.vue';
+import IconButton from '@/components/ui/IconButton.vue';
+import IconEye from '@/components/icons/IconEye.vue';
+import IconEyeSlash from '@/components/icons/IconEyeSlash.vue';
 
 // Type for Supabase user that may have either 'id' or 'sub' as identifier
 type SupabaseUserWithSub = {
@@ -199,12 +202,19 @@ const toggleSignUp = () => {
 };
 
 const handleForgotPassword = async () => {
+  console.log('[AUTH TRACE] authform.vue handleForgotPassword called', {
+    email: email.value,
+  });
   loading.value = true;
   error.value = '';
   forgotPasswordSent.value = false;
 
   try {
     const result = await resetPassword(email.value);
+    console.log('[AUTH TRACE] authform.vue resetPassword result', {
+      hasError: !!result.error,
+      error: result.error?.message,
+    });
 
     if (result.error) {
       // Translate common error messages to Spanish
@@ -236,8 +246,11 @@ const handleForgotPassword = async () => {
     }
 
     forgotPasswordSent.value = true;
+    console.log(
+      '[AUTH TRACE] authform.vue forgot password email sent successfully'
+    );
   } catch (err: unknown) {
-    console.error('[Client] Forgot password error:', err);
+    console.error('[AUTH TRACE] authform.vue forgot password error', err);
     error.value = t('auth.requestError');
   } finally {
     loading.value = false;
@@ -382,24 +395,18 @@ const backToLogin = () => {
               custom-class="pr-10"
             >
               <template #icon>
-                <button
-                  type="button"
-                  data-icon-only="true"
+                <IconButton
+                  :icon="showPassword ? IconEye : IconEyeSlash"
                   :aria-label="
                     showPassword
                       ? t('auth.hidePassword')
                       : t('auth.showPassword')
                   "
-                  class="text-gray-500 transition-colors pointer-events-auto dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 focus:outline-none"
+                  size="medium"
+                  variant="default"
+                  custom-class="pointer-events-auto"
                   @click="showPassword = !showPassword"
-                  @keydown.enter.prevent="showPassword = !showPassword"
-                  @keydown.space.prevent="showPassword = !showPassword"
-                >
-                  <!-- Eye icon (visible) -->
-                  <IconEye v-if="showPassword" icon-class="w-5 h-5" />
-                  <!-- Eye slash icon (hidden) -->
-                  <IconEyeSlash v-else icon-class="w-5 h-5" />
-                </button>
+                />
               </template>
             </Input>
             <!-- Helper text (only show for signup) -->
@@ -583,7 +590,7 @@ const backToLogin = () => {
         >
           <a
             href="#"
-            class="hidden text-sm text-gray-800 no-underline transition-colors dark:text-gray-300 hover:text-primary dark:hover:text-primary-400"
+            class="text-sm text-gray-800 no-underline transition-colors dark:text-gray-300 hover:text-primary dark:hover:text-primary-400"
             @click.prevent="showForgotPassword"
           >
             {{ t('auth.forgotPasswordLink') }}

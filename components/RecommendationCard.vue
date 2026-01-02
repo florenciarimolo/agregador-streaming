@@ -1,6 +1,6 @@
 <template>
   <article
-    class="group relative dark:bg-gray-900/40 bg-gray-100/80 backdrop-blur-xl rounded-lg border border-gray-300/50 dark:border-white/10 hover:border-gray-400/50 dark:hover:border-white/20 transition-all duration-300 hover:shadow-lg hover:shadow-gray-900/20"
+    class="relative rounded-lg border backdrop-blur-xl transition-all duration-300 group dark:bg-gray-900/40 bg-gray-100/80 border-gray-300/50 dark:border-white/10 hover:border-gray-400/50 dark:hover:border-white/20 hover:shadow-lg hover:shadow-gray-900/20"
     :aria-label="$t('media.recommendationLabel', { title: props.title.title })"
   >
     <!-- Poster -->
@@ -11,19 +11,19 @@
     >
       <div
         v-if="props.title.poster_path"
-        class="w-full h-full overflow-hidden rounded-t-lg"
+        class="overflow-hidden w-full h-full rounded-t-lg"
       >
         <img
           :src="`https://image.tmdb.org/t/p/w500${props.title.poster_path}`"
           :alt="$t('media.posterOf', { title: props.title.title })"
-          class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+          class="object-cover w-full h-full transition-transform duration-300 group-hover:scale-105"
           loading="lazy"
           decoding="async"
         />
       </div>
       <div
         v-else
-        class="w-full h-full flex items-center justify-center text-gray-600 dark:text-gray-500 overflow-hidden rounded-t-lg"
+        class="flex overflow-hidden justify-center items-center w-full h-full text-gray-600 rounded-t-lg dark:text-gray-500"
         role="img"
         :aria-label="
           $t('media.noPosterAvailableFor', { title: props.title.title })
@@ -55,7 +55,7 @@
       <!-- Watchlist Badge (top-left, below rating if rating exists) -->
       <div
         v-if="props.title.in_watchlist"
-        class="absolute left-2 z-10 p-2 rounded-full bg-primary/80 backdrop-blur-sm"
+        class="absolute left-2 z-10 p-2 rounded-full backdrop-blur-sm bg-primary/80"
         :class="props.title.vote_average ? 'top-12' : 'top-2'"
         :title="$t('media.savedWatchlist')"
       >
@@ -64,111 +64,126 @@
 
       <!-- Actions Menu (top-right) -->
       <div class="absolute top-2 right-2 z-20">
-        <button
-          type="button"
+        <IconButton
+          :icon="IconMoreVertical"
           :aria-label="$t('media.actionsMenuFor', { title: props.title.title })"
-          class="menu-button p-2 rounded-full bg-black/50 hover:bg-gray-700/80 backdrop-blur-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-black/50"
+          size="small"
+          variant="default"
+          custom-class="menu-button p-2 rounded-full bg-black/50 hover:bg-gray-700/80 backdrop-blur-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-black/50 [&>svg]:text-white"
           @click.stop.prevent="showMenu = !showMenu"
-          @mousedown.stop.prevent
-        >
-          <IconMoreVertical icon-class="w-4 h-4 text-white" />
-        </button>
+        />
 
         <!-- Dropdown Menu -->
         <Transition
           enter-active-class="transition duration-200 ease-out"
-          enter-from-class="transform scale-95 opacity-0"
-          enter-to-class="transform scale-100 opacity-100"
+          enter-from-class="opacity-0 transform scale-95"
+          enter-to-class="opacity-100 transform scale-100"
           leave-active-class="transition duration-150 ease-in"
-          leave-from-class="transform scale-100 opacity-100"
-          leave-to-class="transform scale-95 opacity-0"
+          leave-from-class="opacity-100 transform scale-100"
+          leave-to-class="opacity-0 transform scale-95"
         >
           <div
             v-if="showMenu"
-            class="absolute right-0 mt-2 w-48 dark:bg-gray-900/40 bg-gray-100/80 backdrop-blur-xl rounded-lg border border-gray-300/50 dark:border-white/10 z-50"
+            class="absolute right-0 z-50 mt-2 w-48 rounded-lg border backdrop-blur-xl dark:bg-gray-900/40 bg-gray-100/80 border-gray-300/50 dark:border-white/10"
             @click.stop
           >
             <div class="p-4">
-              <button
+              <Button
                 type="button"
-                class="w-full px-4 py-2 text-sm dark:text-gray-300 text-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-left flex items-center gap-2 mb-2"
+                variant="ghost"
+                size="small"
+                custom-class="justify-start mb-2 w-full text-left"
                 @click.stop.prevent="handleAction(TitleStatus.SEEN)"
               >
-                <svg
-                  class="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
+                <template #icon>
+                  <svg
+                    class="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                </template>
                 {{ $t('media.seen') }}
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
-                class="w-full px-4 py-2 text-sm dark:text-gray-300 text-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-left flex items-center gap-2 mb-2"
+                variant="ghost"
+                size="small"
+                custom-class="justify-start mb-2 w-full text-left"
                 @click.stop.prevent="handleAction('liked')"
               >
-                <svg
-                  class="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                  />
-                </svg>
+                <template #icon>
+                  <svg
+                    class="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                    />
+                  </svg>
+                </template>
                 {{ $t('media.liked') }}
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
-                class="w-full px-4 py-2 text-sm dark:text-gray-300 text-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-left flex items-center gap-2 mb-2"
+                variant="ghost"
+                size="small"
+                custom-class="justify-start mb-2 w-full text-left"
                 @click.stop.prevent="handleAction(TitleStatus.NOT_INTERESTED)"
               >
-                <svg
-                  class="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
+                <template #icon>
+                  <svg
+                    class="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </template>
                 {{ $t('media.notInterested') }}
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
-                class="w-full px-4 py-2 text-sm dark:text-gray-300 text-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-left flex items-center gap-2"
+                variant="ghost"
+                size="small"
+                custom-class="justify-start w-full text-left"
                 @click.stop.prevent="handleAction(TitleStatus.WATCHLIST)"
               >
-                <svg
-                  class="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
+                <template #icon>
+                  <svg
+                    class="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                </template>
                 {{ $t('media.watchLater') }}
-              </button>
+              </Button>
             </div>
           </div>
         </Transition>
@@ -176,9 +191,9 @@
 
       <!-- Hover Overlay (same as MediaCarousel) -->
       <div
-        class="absolute bottom-0 left-0 flex flex-col items-center justify-center w-full h-full px-4 transition-all duration-300 opacity-0 group-hover:opacity-100 backdrop-blur-md dark:bg-black/80 bg-white/80"
+        class="flex absolute bottom-0 left-0 flex-col justify-center items-center px-4 w-full h-full opacity-0 backdrop-blur-md transition-all duration-300 group-hover:opacity-100 dark:bg-black/80 bg-white/80"
       >
-        <p class="dark:text-gray-300 text-gray-800 font-semibold">
+        <p class="font-semibold text-gray-800 dark:text-gray-300">
           {{ $t('media.viewDetails') }}
         </p>
       </div>
@@ -187,11 +202,11 @@
     <!-- Content -->
     <div class="p-4">
       <h3
-        class="text-sm font-semibold dark:text-gray-300 text-gray-800 truncate mb-1"
+        class="mb-1 text-sm font-semibold text-gray-800 truncate dark:text-gray-300"
       >
         {{ props.title.title }}
       </h3>
-      <p class="text-xs dark:text-gray-300 text-gray-700 mb-2">
+      <p class="mb-2 text-xs text-gray-700 dark:text-gray-300">
         {{
           props.title.type === MediaTypeEnum.movie
             ? $t('media.movie')
@@ -202,11 +217,11 @@
       <!-- Overview (instead of explanation) -->
       <p
         v-if="props.title.overview"
-        class="text-xs dark:text-gray-300 text-gray-800 mb-3 line-clamp-3"
+        class="mb-3 text-xs text-gray-800 dark:text-gray-300 line-clamp-3"
       >
         {{ props.title.overview }}
       </p>
-      <p v-else class="text-xs dark:text-gray-300 text-gray-700 mb-3 italic">
+      <p v-else class="mb-3 text-xs italic text-gray-700 dark:text-gray-300">
         {{ $t('media.noDescriptionAvailable') }}
       </p>
 
@@ -220,11 +235,11 @@
           :key="provider.provider_id"
           :src="`https://image.tmdb.org/t/p/w45${provider.logo_path}`"
           :alt="provider.provider_name"
-          class="w-8 h-8 object-contain rounded"
+          class="object-contain w-8 h-8 rounded"
           :title="provider.provider_name"
         />
       </div>
-      <div v-else class="text-xs dark:text-gray-300 text-gray-700 italic">
+      <div v-else class="text-xs italic text-gray-700 dark:text-gray-300">
         {{ $t('media.noPlatforms') }}
       </div>
     </div>
@@ -239,6 +254,8 @@ import IconClock from './icons/IconClock.vue';
 import { TitleStatus } from '@/types/TitleStatus';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 import type { Recommendation } from '@/types/Recommendation';
+import IconButton from '@/components/ui/IconButton.vue';
+import Button from '@/components/ui/Button.vue';
 
 interface Props {
   title: Recommendation;

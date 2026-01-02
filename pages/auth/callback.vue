@@ -2,22 +2,24 @@
   <div
     class="min-h-screen flex items-center justify-center dark:bg-[#011627] bg-white px-4"
   >
-    <div class="text-center max-w-md w-full">
+    <div class="w-full max-w-md text-center">
       <div
         v-if="loading"
-        class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"
+        class="mx-auto mb-4 w-12 h-12 rounded-full border-b-2 animate-spin border-primary"
       ></div>
       <p v-if="loading" class="text-gray-800 dark:text-gray-300">
         {{ $t('auth.callbackCompleting') }}
       </p>
       <AlertMessage v-if="error" :message="error" type="error" />
       <div v-if="error" class="mt-4">
-        <nuxt-link
-          to="/"
-          class="inline-block px-6 py-3 dark:bg-gray-900/90 bg-gray-800/90 hover:dark:bg-gray-800/80 hover:bg-gray-900/90 text-white rounded-lg font-medium transition-all duration-300 shadow-lg border border-gray-700/50 dark:border-gray-600/50"
+        <Button
+          variant="primary"
+          size="medium"
+          custom-class="inline-block"
+          @click="router.push('/')"
         >
           {{ $t('auth.callbackBackToHome') }}
-        </nuxt-link>
+        </Button>
       </div>
     </div>
   </div>
@@ -51,6 +53,16 @@ const userStore = useUserStore();
 const error = ref<string | null>(null);
 const loading = ref(true);
 
+// Store auth state change subscription for cleanup
+let authStateSubscription: { unsubscribe: () => void } | null = null;
+
+// Cleanup subscription on unmount
+onUnmounted(() => {
+  if (authStateSubscription) {
+    authStateSubscription.unsubscribe();
+  }
+});
+
 // Helper function to parse hash params
 const parseHashParams = (): Record<string, string> => {
   const params: Record<string, string> = {};
@@ -68,13 +80,31 @@ const parseHashParams = (): Record<string, string> => {
   return params;
 };
 
-// Helper function to redirect based on onboarding status
-const redirectAfterAuth = async () => {
+// Helper function to redirect based on onboarding status or next parameter
+const redirectAfterAuth = async (next?: string) => {
+  console.log('[AUTH TRACE] callback.vue redirectAfterAuth called', { next });
+
+  // Check if we have a next parameter for recovery flow
+  if (next === '/auth/reset-password') {
+    // Recovery flow: redirect immediately to reset-password
+    console.log(
+      '[AUTH TRACE] callback.vue redirecting to /auth/reset-password (next param)'
+    );
+    router.replace('/auth/reset-password');
+    return;
+  }
+
   // Wait a bit for the session to be fully established
   await new Promise((resolve) => setTimeout(resolve, 500));
 
   // Get the current session and user
   const { data: sessionData } = await supabase.auth.getSession();
+  const currentUser = useSupabaseUser();
+  console.log('[AUTH TRACE] callback.vue redirectAfterAuth session check', {
+    hasSession: !!sessionData?.session,
+    hasUser: !!currentUser.value,
+    userId: currentUser.value?.id || currentUser.value?.sub,
+  });
 
   if (sessionData?.session?.user) {
     const user = sessionData.session.user;
@@ -97,26 +127,100 @@ const redirectAfterAuth = async () => {
 
     // Check if user has completed onboarding
     const hasCompletedOnboarding = userStore.hasCompletedOnboarding;
+    console.log(
+      '[AUTH TRACE] callback.vue redirectAfterAuth onboarding check',
+      {
+        hasCompletedOnboarding,
+      }
+    );
 
     // Redirect to onboarding if not completed, otherwise to home
     if (!hasCompletedOnboarding) {
+      console.log('[AUTH TRACE] callback.vue redirecting to /onboarding');
       router.replace('/onboarding');
     } else {
+      console.log('[AUTH TRACE] callback.vue redirecting to /');
       router.replace('/');
     }
   } else {
     // No user, redirect to home
+    console.log('[AUTH TRACE] callback.vue redirecting to / (no user)');
     router.replace('/');
   }
 };
 
 onMounted(async () => {
+  console.log('[AUTH TRACE] callback.vue mounted', {
+    fullPath: route.fullPath,
+    path: route.path,
+    query: route.query,
+    hash: typeof window !== 'undefined' ? window.location.hash : 'N/A',
+  });
+
+  // Check for recovery flow flag before any redirect logic
+  if (typeof window !== 'undefined') {
+    const isRecoveryFlow = localStorage.getItem('auth:recovery') === '1';
+
+    if (isRecoveryFlow) {
+      console.log(
+        '[AUTH TRACE] callback.vue recovery flow detected via localStorage flag, redirecting to /auth/reset-password'
+      );
+      localStorage.removeItem('auth:recovery');
+      router.replace('/auth/reset-password');
+      return;
+    }
+  }
+
+  // Check initial session state
+  const initialSession = await supabase.auth.getSession();
+  const initialUser = useSupabaseUser();
+  console.log('[AUTH TRACE] callback.vue initial state', {
+    hasSession: !!initialSession.data?.session,
+    hasUser: !!initialUser.value,
+    userId:
+      initialUser.value?.id || (initialUser.value as { sub?: string })?.sub,
+  });
+
+  // Listen for PASSWORD_RECOVERY event (Supabase emits this when recovery flow completes)
+  // This is the ONLY reliable way to detect recovery since Supabase ignores redirectTo
+  // and always uses Site URL from dashboard, so query params never arrive
+  const {
+    data: { subscription },
+  } = supabase.auth.onAuthStateChange((event, session) => {
+    console.log('[AUTH TRACE] callback.vue auth state change event', {
+      event,
+      hasSession: !!session,
+      userId: session?.user?.id || (session?.user as { sub?: string })?.sub,
+      timestamp: new Date().toISOString(),
+    });
+
+    if (event === 'PASSWORD_RECOVERY') {
+      console.log('[AUTH TRACE] PASSWORD_RECOVERY fired');
+      console.log(
+        '[AUTH TRACE] callback.vue PASSWORD_RECOVERY detected, redirecting to /auth/reset-password'
+      );
+      router.replace('/auth/reset-password');
+    }
+  });
+
+  // Store subscription for cleanup
+  authStateSubscription = subscription;
+  console.log('[AUTH TRACE] callback.vue auth state listener registered');
+
   try {
     // Get hash params (Supabase sometimes puts params in hash)
     const hashParams = parseHashParams();
+    console.log('[AUTH TRACE] callback.vue parsed hash params', hashParams);
 
     // Merge query params and hash params (query params take precedence)
     const allParams = { ...hashParams, ...route.query };
+    console.log('[AUTH TRACE] callback.vue all params (merged)', allParams);
+
+    // Read next parameter for recovery flow
+    const next =
+      (allParams.next as string | undefined) ||
+      (route.query.next as string | undefined);
+    console.log('[AUTH TRACE] callback.vue next parameter', next);
 
     // Handle errors first
     const supabaseError = allParams.error as string;
@@ -163,32 +267,39 @@ onMounted(async () => {
 
     // If we have access_token and refresh_token, set session directly
     if (accessToken && refreshToken) {
+      console.log('[AUTH TRACE] callback.vue setting session with tokens');
       const { error: sessionError } = await supabase.auth.setSession({
         access_token: accessToken,
         refresh_token: refreshToken,
       });
 
       if (sessionError) {
-        console.error('[Callback] Session error:', sessionError);
+        console.error('[AUTH TRACE] callback.vue session error', sessionError);
         error.value = t('auth.callbackSessionError');
         loading.value = false;
         setTimeout(() => {
+          console.log(
+            '[AUTH TRACE] callback.vue redirecting to / (session error)'
+          );
           router.replace('/');
         }, 3000);
         return;
       }
 
-      // Session set successfully, check onboarding and redirect
-      await redirectAfterAuth();
+      console.log('[AUTH TRACE] callback.vue session set successfully');
+      // Session set successfully, check next parameter or onboarding and redirect
+      await redirectAfterAuth(next);
       return;
     }
 
     // If we have a code, exchange it for a session
     if (code) {
+      console.log('[AUTH TRACE] callback.vue exchanging code for session');
       const { error: codeError } =
         await supabase.auth.exchangeCodeForSession(code);
 
       if (codeError) {
+        console.log('[AUTH TRACE] callback.vue code exchange error', codeError);
         // Check if it's a PKCE code verifier missing error
         const isPKCEError =
           codeError.message?.includes('PKCE') ||
@@ -197,6 +308,7 @@ onMounted(async () => {
 
         if (isPKCEError) {
           // For PKCE errors, wait and check if session was established
+          // In recovery flow, Supabase may establish session even with PKCE error
           let attempts = 0;
           const maxAttempts = 6; // Check for up to 3 seconds (6 * 500ms)
           let sessionFound = false;
@@ -206,8 +318,11 @@ onMounted(async () => {
             const { data: sessionData } = await supabase.auth.getSession();
             if (sessionData?.session) {
               sessionFound = true;
-              // Session was established, check onboarding and redirect
-              await redirectAfterAuth();
+              console.log(
+                '[AUTH TRACE] callback.vue session found after PKCE error wait'
+              );
+              // Session was established, check next parameter or onboarding and redirect
+              await redirectAfterAuth(next);
               return;
             }
             attempts++;
@@ -234,8 +349,11 @@ onMounted(async () => {
           const { data: sessionData } = await supabase.auth.getSession();
 
           if (sessionData?.session) {
-            // Session was established, check onboarding and redirect
-            await redirectAfterAuth();
+            console.log(
+              '[AUTH TRACE] callback.vue session found after error wait'
+            );
+            // Session was established, check next parameter or onboarding and redirect
+            await redirectAfterAuth(next);
             return;
           }
 
@@ -251,32 +369,41 @@ onMounted(async () => {
           return;
         }
       } else {
-        // Code exchanged successfully, check onboarding and redirect
-        await redirectAfterAuth();
+        console.log('[AUTH TRACE] callback.vue code exchanged successfully');
+        // Code exchanged successfully, check next parameter or onboarding and redirect
+        await redirectAfterAuth(next);
         return;
       }
     }
 
     // If no code or tokens, try to get existing session
     if (!code) {
+      console.log(
+        '[AUTH TRACE] callback.vue no code, checking existing session'
+      );
       const { data: sessionData, error: sessionError } =
         await supabase.auth.getSession();
 
       if (sessionError) {
-        if (process.env.NODE_ENV === 'development') {
-          console.error('[Callback] Get session error:', sessionError);
-        }
+        console.log(
+          '[AUTH TRACE] callback.vue get session error',
+          sessionError
+        );
         error.value = t('auth.callbackGetSessionError');
         loading.value = false;
         setTimeout(() => {
+          console.log(
+            '[AUTH TRACE] callback.vue redirecting to / (get session error)'
+          );
           router.replace('/');
         }, 3000);
         return;
       }
 
       if (sessionData.session) {
-        // Session exists, check onboarding and redirect
-        await redirectAfterAuth();
+        console.log('[AUTH TRACE] callback.vue existing session found');
+        // Session exists, check next parameter or onboarding and redirect
+        await redirectAfterAuth(next);
         return;
       }
     }

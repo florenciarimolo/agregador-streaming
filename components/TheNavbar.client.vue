@@ -56,9 +56,7 @@
                 custom-class="backdrop-blur-3xl"
               >
                 <template #trigger>
-                  <button
-                    type="button"
-                    class="rounded-full border shadow-md transition-all cursor-pointer hover:ring-2 hover:ring-primary/50 border-primary"
+                  <AvatarButton
                     :aria-label="
                       $t('navbar.userMenuFor', {
                         email: currentUser.email || 'usuario',
@@ -74,7 +72,7 @@
                       "
                       size="md"
                     />
-                  </button>
+                  </AvatarButton>
                 </template>
                 <div class="p-4 backdrop-blur-3xl">
                   <p
@@ -98,16 +96,18 @@
                   <div
                     class="my-2 border-t border-gray-300/50 dark:border-white/10"
                   ></div>
-                  <button
+                  <Button
                     type="button"
-                    class="px-4 py-2 w-full text-sm text-left text-red-600 rounded-lg transition-colors dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                    variant="ghost"
+                    size="small"
+                    custom-class="w-full text-left text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
                     @click="
                       userMenuDropdownRef?.close();
                       handleLogoutClick();
                     "
                   >
                     {{ $t('navbar.logout') }}
-                  </button>
+                  </Button>
                 </div>
               </Dropdown>
             </div>
@@ -145,22 +145,15 @@
 
         <!-- Right side: Hamburger Menu (if logged in) or Theme Switcher (if not logged in) -->
         <div class="flex items-center">
-          <button
+          <IconButton
             v-if="currentUser"
-            type="button"
-            class="p-2 rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
+            :icon="showMobileMenu ? IconClose : IconMenu"
             :aria-label="$t('navbar.mobileMenu')"
+            size="large"
+            variant="ghost"
+            custom-class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 [&_svg]:text-gray-800 dark:[&_svg]:text-gray-300"
             @click.stop="toggleMobileMenu"
-          >
-            <IconMenu
-              v-if="!showMobileMenu"
-              icon-class="w-6 h-6 text-gray-800 dark:text-gray-300"
-            />
-            <IconClose
-              v-else
-              icon-class="w-6 h-6 text-gray-800 dark:text-gray-300"
-            />
-          </button>
+          />
           <ThemeSwitcher v-else />
         </div>
       </div>
@@ -267,13 +260,15 @@
           <div
             class="my-2 border-t border-gray-300/50 dark:border-white/10"
           ></div>
-          <button
+          <Button
             type="button"
-            class="flex items-center px-4 py-3 w-full text-sm font-medium text-left text-red-600 rounded-lg transition-colors dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+            variant="ghost"
+            size="small"
+            custom-class="w-full text-left text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
             @click="handleLogoutClick"
           >
             {{ $t('navbar.logout') }}
-          </button>
+          </Button>
         </nav>
       </div>
     </div>
@@ -288,14 +283,15 @@
     leave-from-class="opacity-100 translate-y-0"
     leave-to-class="opacity-0 translate-y-full"
   >
-    <button
+    <IconButton
       v-show="showScrollToTop && isMobile"
-      class="fixed right-6 bottom-6 z-40 p-3 text-white bg-gradient-to-br rounded-full shadow-lg transition-all duration-300 from-primary via-accent to-secondary hover:from-secondary hover:via-pink-500 hover:to-primary hover:shadow-xl md:hidden"
+      :icon="IconArrowUp"
       :aria-label="$t('navbar.scrollToTop')"
+      size="large"
+      variant="default"
+      custom-class="fixed right-6 bottom-6 z-40 p-3 text-white bg-gradient-to-br rounded-full shadow-lg transition-all duration-300 from-primary via-accent to-secondary hover:from-secondary hover:via-pink-500 hover:to-primary hover:shadow-xl md:hidden"
       @click="scrollToTop"
-    >
-      <IconArrowUp icon-class="w-6 h-6" />
-    </button>
+    />
   </Transition>
 
   <!-- Logout Confirmation Dialog -->
@@ -323,6 +319,11 @@ import Avatar from './Avatar.vue';
 import Dropdown from '@/components/ui/Dropdown.vue';
 import Modal from '@/components/ui/Modal.vue';
 import Button from '@/components/ui/Button.vue';
+import IconButton from '@/components/ui/IconButton.vue';
+import AvatarButton from '@/components/ui/AvatarButton.vue';
+import IconMenu from '@/components/icons/IconMenu.vue';
+import IconClose from '@/components/icons/IconClose.vue';
+import IconArrowUp from '@/components/icons/IconArrowUp.vue';
 
 // User state
 const user = useSupabaseUser();

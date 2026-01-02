@@ -3,11 +3,11 @@
     class="relative flex flex-col items-center justify-between gap-16 dark:text-gray-300 text-gray-800 w-full min-w-full flex-shrink-0 min-h-[400px] lg:flex-row lg:items-stretch lg:p-16 lg:bg-gray-100/80 dark:lg:bg-gray-900/40 lg:backdrop-blur-xl lg:border lg:gap-7 rounded-3xl lg:border-gray-300/50 lg:dark:border-primary-800 lg:shadow-lg lg:shadow-primary/20 py-8"
   >
     <div
-      class="absolute inset-0 z-0 hidden lg:block rounded-3xl"
+      class="hidden absolute inset-0 z-0 rounded-3xl lg:block"
       :style="sectionStyle"
     ></div>
     <div
-      class="absolute z-0 hidden lg:block rounded-3xl bg-gray-100/90 dark:bg-gray-900/90"
+      class="hidden absolute z-0 rounded-3xl lg:block bg-gray-100/90 dark:bg-gray-900/90"
       style="top: 0px; right: 0px; bottom: 0px; left: 0px"
     ></div>
     <div
@@ -30,23 +30,23 @@
     <div
       class="z-10 relative flex flex-col flex-1 gap-6 rounded-lg lg:p-6 lg:ml-8 w-full min-w-[300px] flex-shrink-0 min-h-[300px]"
     >
-      <div class="text-left relative flex-row">
+      <div class="relative flex-row text-left">
         <nuxt-link
           to="/"
-          class="inline-flex items-center gap-2 mb-4 text-sm font-medium dark:text-gray-300 text-gray-700 hover:dark:text-white hover:text-gray-900 transition-colors"
+          class="inline-flex gap-2 items-center mb-4 text-sm font-medium text-gray-700 transition-colors dark:text-gray-300 hover:dark:text-white hover:text-gray-900"
         >
           <IconArrowLeft icon-class="w-4 h-4" />
           {{ $t('media.back') }}
         </nuxt-link>
         <div
-          class="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-2 w-full"
+          class="flex flex-col gap-2 w-full xl:flex-row xl:items-center xl:justify-between"
         >
           <!-- Title with Rating inline on desktop large -->
           <div
-            class="flex items-center gap-3 flex-wrap xl:flex-nowrap xl:flex-1 xl:min-w-0"
+            class="flex flex-wrap gap-3 items-center xl:flex-nowrap xl:flex-1 xl:min-w-0"
           >
             <h1
-              class="text-2xl font-bold dark:text-gray-300 text-gray-800 break-words xl:flex-1 xl:min-w-0"
+              class="text-2xl font-bold text-gray-800 break-words dark:text-gray-300 xl:flex-1 xl:min-w-0"
               >{{
                 mediaWithProviders.title || (mediaWithProviders as any).name
               }}</h1
@@ -60,7 +60,7 @@
             </div>
           </div>
           <!-- Rating, Status, Menu row (mobile/tablet) or Status, Menu (desktop large) -->
-          <div class="flex items-center gap-3 xl:gap-2 flex-shrink-0">
+          <div class="flex flex-shrink-0 gap-3 items-center xl:gap-2">
             <!-- Rating only on mobile/tablet (hidden on desktop large, already shown above) -->
             <RatingBadge
               v-if="mediaWithProviders.vote_average"
@@ -74,10 +74,15 @@
               :in-theaters="inTheaters"
             />
             <!-- Actions Menu -->
-            <Dropdown ref="dropdownRef" position="right" width="w-48">
+            <Dropdown
+              ref="dropdownRef"
+              position="right"
+              width="w-48"
+              custom-class="backdrop-blur-xl dark:bg-gray-900/40 bg-gray-100/80 border-gray-300/50 dark:border-white/10"
+            >
               <template #trigger>
-                <button
-                  type="button"
+                <IconButton
+                  :icon="IconMoreVertical"
                   :aria-label="
                     $t('media.actionsMenuFor', {
                       title:
@@ -85,106 +90,120 @@
                         (mediaWithProviders as any).name,
                     })
                   "
-                  class="menu-button p-2 rounded-full bg-black/50 hover:bg-gray-700/80 backdrop-blur-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-black/50"
-                  @click.stop.prevent
-                  @mousedown.stop.prevent
-                >
-                  <IconMoreVertical icon-class="w-4 h-4 text-white" />
-                </button>
+                  size="small"
+                  variant="default"
+                  custom-class="menu-button p-2 rounded-full bg-black/50 hover:bg-gray-700/80 backdrop-blur-sm [&>svg]:text-white"
+                />
               </template>
               <div class="p-4">
-                <button
+                <Button
                   type="button"
-                  class="w-full px-4 py-2 text-sm dark:text-gray-300 text-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-left flex items-center gap-2 mb-2"
+                  variant="ghost"
+                  size="small"
+                  custom-class="justify-start mb-2 w-full text-left"
                   @click.stop.prevent="
                     dropdownRef?.close();
                     handleAction(TitleStatus.SEEN);
                   "
                 >
-                  <svg
-                    class="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
+                  <template #icon>
+                    <svg
+                      class="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M5 13l4 4L19 7"
+                      />
+                    </svg>
+                  </template>
                   {{ $t('media.seen') }}
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
-                  class="w-full px-4 py-2 text-sm dark:text-gray-300 text-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-left flex items-center gap-2 mb-2"
+                  variant="ghost"
+                  size="small"
+                  custom-class="justify-start mb-2 w-full text-left"
                   @click.stop.prevent="
                     dropdownRef?.close();
                     handleAction('liked');
                   "
                 >
-                  <svg
-                    class="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                    />
-                  </svg>
+                  <template #icon>
+                    <svg
+                      class="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                      />
+                    </svg>
+                  </template>
                   {{ $t('media.liked') }}
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
-                  class="w-full px-4 py-2 text-sm dark:text-gray-300 text-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-left flex items-center gap-2 mb-2"
+                  variant="ghost"
+                  size="small"
+                  custom-class="justify-start mb-2 w-full text-left"
                   @click.stop.prevent="
                     dropdownRef?.close();
                     handleAction(TitleStatus.NOT_INTERESTED);
                   "
                 >
-                  <svg
-                    class="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
+                  <template #icon>
+                    <svg
+                      class="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </template>
                   {{ $t('media.notInterested') }}
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
-                  class="w-full px-4 py-2 text-sm dark:text-gray-300 text-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-left flex items-center gap-2"
+                  variant="ghost"
+                  size="small"
+                  custom-class="justify-start w-full text-left"
                   @click.stop.prevent="
                     dropdownRef?.close();
                     handleAction(TitleStatus.WATCHLIST);
                   "
                 >
-                  <svg
-                    class="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
+                  <template #icon>
+                    <svg
+                      class="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                  </template>
                   {{ $t('media.watchLater') }}
-                </button>
+                </Button>
               </div>
             </Dropdown>
           </div>
@@ -199,7 +218,7 @@
         >{{ mediaWithProviders.overview || $t('media.noDescription') }}</p
       >
       <div
-        class="mt-2 flex items-center gap-2 dark:text-gray-300 text-gray-800"
+        class="flex gap-2 items-center mt-2 text-gray-800 dark:text-gray-300"
       >
         <IconCalendar icon-class="w-5 h-5" />
         <span>{{
@@ -210,7 +229,7 @@
           )
         }}</span>
       </div>
-      <div class="flex items-center gap-2 dark:text-gray-300 text-gray-800">
+      <div class="flex gap-2 items-center text-gray-800 dark:text-gray-300">
         <IconTag icon-class="w-5 h-5" />
         <span>{{
           mediaWithProviders?.genres
@@ -271,7 +290,7 @@
             :tmdb-id="mediaWithProviders.id"
           />
         </section>
-        <section v-else class="dark:text-gray-400 text-gray-600">
+        <section v-else class="text-gray-600 dark:text-gray-400">
           <p class="italic">{{ $t('media.noPlatforms') }}</p>
         </section>
       </section>
@@ -298,6 +317,8 @@ import { TitleStatus } from '@/types/TitleStatus';
 import { getSession } from '@/composables/database/auth';
 import { useUndoToast } from '@/composables/useUndoToast';
 import Dropdown from '@/components/ui/Dropdown.vue';
+import IconButton from '@/components/ui/IconButton.vue';
+import Button from '@/components/ui/Button.vue';
 
 const props = defineProps({
   media: {

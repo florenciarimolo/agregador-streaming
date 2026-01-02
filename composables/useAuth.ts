@@ -138,7 +138,8 @@ export const useAuth = () => {
     // Ensure baseUrl doesn't have trailing slash
     // Uses NUXT_PUBLIC_BASE_URL environment variable
     const baseUrl = config.public.baseUrl.replace(/\/$/, '');
-    const redirectUrl = `${baseUrl}/auth/reset-password`;
+    // Redirect to callback with next parameter so callback can handle recovery flow
+    const redirectUrl = `${baseUrl}/auth/callback?next=/auth/reset-password`;
 
     if (process.env.NODE_ENV === 'development') {
       console.log('[useAuth] ResetPassword redirectTo:', redirectUrl);
@@ -148,6 +149,11 @@ export const useAuth = () => {
       const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: redirectUrl,
       });
+
+      // Set recovery flag in localStorage to detect recovery flow in callback
+      if (!error && typeof window !== 'undefined') {
+        localStorage.setItem('auth:recovery', '1');
+      }
 
       if (error) {
         console.error('[Server] Reset password error:', error);

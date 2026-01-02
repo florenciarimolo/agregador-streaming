@@ -1,15 +1,15 @@
 <template>
   <button
-    type="button"
+    :type="type"
     :class="[
       // Base classes
-      'rounded-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 flex items-center justify-center',
+      'cursor-pointer rounded-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 flex items-center',
       // Size classes
       sizeClasses,
       // Variant classes
       variantClasses,
       // Icon spacing
-      hasIcon && hasText ? iconSpacing : '',
+      (hasIcon || hasIconSlot) && hasText ? iconSpacing : '',
       // Disabled state
       disabled ? 'opacity-50 cursor-not-allowed' : '',
       // Custom classes
@@ -19,15 +19,31 @@
     :aria-label="ariaLabel"
     @click="$emit('click', $event)"
   >
-    <span v-if="hasIcon && iconPosition === 'left'" class="flex items-center">
-      <component :is="icon" :class="iconSizeClass" />
-    </span>
-    <span v-if="hasText">
-      <slot />
-    </span>
-    <span v-if="hasIcon && iconPosition === 'right'" class="flex items-center">
-      <component :is="icon" :class="iconSizeClass" />
-    </span>
+    <template v-if="hasIconSlot">
+      <span v-if="iconPosition === 'left'" class="flex items-center">
+        <slot name="icon" />
+      </span>
+      <span v-if="hasText">
+        <slot />
+      </span>
+      <span v-if="iconPosition === 'right'" class="flex items-center">
+        <slot name="icon" />
+      </span>
+    </template>
+    <template v-else>
+      <span v-if="hasIcon && iconPosition === 'left'" class="flex items-center">
+        <component :is="icon" :class="iconSizeClass" />
+      </span>
+      <span v-if="hasText">
+        <slot />
+      </span>
+      <span
+        v-if="hasIcon && iconPosition === 'right'"
+        class="flex items-center"
+      >
+        <component :is="icon" :class="iconSizeClass" />
+      </span>
+    </template>
   </button>
 </template>
 
@@ -47,6 +63,7 @@ const props = withDefaults(
     disabled?: boolean;
     ariaLabel?: string;
     customClass?: string;
+    type?: 'button' | 'submit' | 'reset';
   }>(),
   {
     size: 'small',
@@ -56,6 +73,7 @@ const props = withDefaults(
     disabled: false,
     ariaLabel: undefined,
     customClass: undefined,
+    type: 'button',
   }
 );
 
@@ -67,6 +85,7 @@ const slots = useSlots();
 
 const hasText = computed(() => !!slots.default);
 const hasIcon = computed(() => !!props.icon);
+const hasIconSlot = computed(() => !!slots.icon);
 
 const sizeClasses = computed(() => {
   const classes: Record<ButtonSize, string> = {
@@ -87,7 +106,7 @@ const variantClasses = computed(() => {
       'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-300 dark:border-gray-600 focus:ring-gray-500',
     danger: 'text-white bg-red-500 hover:bg-red-600 focus:ring-red-500',
     ghost:
-      'text-primary dark:text-primary-300 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary/10 dark:hover:bg-primary-400/20 focus:ring-primary',
+      'text-gray-800 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary/10 dark:hover:bg-primary-400/20 focus:ring-primary',
   };
   return classes[props.variant];
 });

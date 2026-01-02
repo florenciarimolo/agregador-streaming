@@ -1,8 +1,8 @@
 <template>
-  <div class="container mx-auto max-w-7xl px-4 pb-6 pt-6">
+  <div class="container px-4 pt-6 pb-6 mx-auto max-w-7xl">
     <div class="mb-8">
       <h1
-        class="text-3xl md:text-4xl font-bold dark:text-gray-300 text-gray-800 mb-2 font-heading"
+        class="mb-2 text-3xl font-bold text-gray-800 md:text-4xl dark:text-gray-300 font-heading"
       >
         {{ $t('watchlist.title') }}
       </h1>
@@ -20,9 +20,9 @@
     />
 
     <!-- Loading State -->
-    <div v-if="isLoading" class="text-center py-12">
+    <div v-if="isLoading" class="py-12 text-center">
       <div
-        class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"
+        class="mx-auto mb-4 w-12 h-12 rounded-full border-b-2 animate-spin border-primary"
       ></div>
       <p class="text-gray-800 dark:text-gray-300">
         {{ $t('watchlist.loading') }}
@@ -31,7 +31,7 @@
 
     <!-- Content -->
     <div v-else>
-      <div v-if="watchlistTitles.length === 0" class="text-center py-12">
+      <div v-if="watchlistTitles.length === 0" class="py-12 text-center">
         <p class="text-gray-500 dark:text-gray-400">
           {{ $t('watchlist.empty') }}
         </p>
@@ -39,12 +39,12 @@
 
       <div
         v-else
-        class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4"
+        class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
       >
         <div
           v-for="title in watchlistTitles"
           :key="`watchlist-${title.tmdb_id}`"
-          class="group relative dark:bg-gray-900/40 bg-gray-100/80 backdrop-blur-xl rounded-lg border border-gray-300/50 dark:border-white/10 hover:border-gray-400/50 dark:hover:border-white/20 transition-all duration-300 hover:shadow-lg hover:shadow-gray-900/20"
+          class="relative rounded-lg border backdrop-blur-xl transition-all duration-300 group dark:bg-gray-900/40 bg-gray-100/80 border-gray-300/50 dark:border-white/10 hover:border-gray-400/50 dark:hover:border-white/20 hover:shadow-lg hover:shadow-gray-900/20"
         >
           <!-- Poster -->
           <nuxt-link
@@ -54,19 +54,19 @@
           >
             <div
               v-if="title.poster_path"
-              class="w-full h-full overflow-hidden rounded-t-lg"
+              class="overflow-hidden w-full h-full rounded-t-lg"
             >
               <img
                 :src="`https://image.tmdb.org/t/p/w500${title.poster_path}`"
                 :alt="title.title"
-                class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                class="object-cover w-full h-full transition-transform duration-300 group-hover:scale-105"
                 loading="lazy"
                 decoding="async"
               />
             </div>
             <div
               v-else
-              class="w-full h-full flex items-center justify-center text-gray-400 overflow-hidden rounded-t-lg"
+              class="flex overflow-hidden justify-center items-center w-full h-full text-gray-400 rounded-t-lg"
             >
               <svg
                 class="w-12 h-12"
@@ -84,13 +84,12 @@
             </div>
 
             <!-- Remove Button -->
-            <button
-              type="button"
-              class="tooltip-container absolute top-2 right-2 z-20 p-2 rounded-full bg-black/50 hover:bg-red-600/80 backdrop-blur-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-black/50 pointer-events-auto"
+            <IconButton
               :aria-label="$t('watchlist.removeTitle', { title: title.title })"
-              :title="$t('watchlist.removeTooltip')"
+              size="small"
+              variant="default"
+              custom-class="absolute top-2 right-2 z-20 p-2 rounded-full backdrop-blur-sm pointer-events-auto tooltip-container bg-black/50 hover:bg-red-600/80"
               @click.stop.prevent="handleRemoveTitle(title)"
-              @mousedown.stop.prevent
             >
               <svg
                 class="w-4 h-4 text-white"
@@ -106,13 +105,13 @@
                 />
               </svg>
               <span class="tooltip">{{ $t('watchlist.removeTooltip') }}</span>
-            </button>
+            </IconButton>
 
             <!-- Hover Overlay (same as RecommendationCard) -->
             <div
-              class="absolute bottom-0 left-0 flex flex-col items-center justify-center w-full h-full px-4 transition-all duration-300 opacity-0 group-hover:opacity-100 backdrop-blur-md dark:bg-black/80 bg-white/80"
+              class="flex absolute bottom-0 left-0 flex-col justify-center items-center px-4 w-full h-full opacity-0 backdrop-blur-md transition-all duration-300 group-hover:opacity-100 dark:bg-black/80 bg-white/80"
             >
-              <p class="dark:text-gray-300 text-gray-800 font-semibold">
+              <p class="font-semibold text-gray-800 dark:text-gray-300">
                 {{ $t('media.viewDetails') }}
               </p>
             </div>
@@ -121,11 +120,11 @@
           <!-- Content -->
           <div class="p-4">
             <h3
-              class="text-sm font-semibold dark:text-gray-300 text-gray-800 truncate mb-1"
+              class="mb-1 text-sm font-semibold text-gray-800 truncate dark:text-gray-300"
             >
               {{ title.title }}
             </h3>
-            <p class="text-xs dark:text-gray-300 text-gray-500 mb-2">
+            <p class="mb-2 text-xs text-gray-500 dark:text-gray-300">
               {{
                 title.type === MediaTypeEnum.movie
                   ? $t('media.movie')
@@ -144,6 +143,7 @@ import { ref, onMounted } from 'vue';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 import { getSession } from '@/composables/database/auth';
 import AlertMessage from '@/components/AlertMessage.vue';
+import IconButton from '@/components/ui/IconButton.vue';
 
 const { t } = useI18n();
 

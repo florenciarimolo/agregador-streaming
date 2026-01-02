@@ -1,12 +1,12 @@
 <template>
   <!-- Mobile: List View -->
   <section
-    class="mobile-list-view flex flex-col gap-4 py-4 md:hidden relative z-0 w-full max-w-full overflow-x-hidden"
+    class="flex overflow-x-hidden relative z-0 flex-col gap-4 py-4 w-full max-w-full mobile-list-view md:hidden"
   >
     <article
       v-for="mediaObject in mediaList"
       :key="mediaObject.id"
-      class="flex items-center gap-2 sm:gap-4 dark:bg-black/20 bg-gray-100/50 rounded-xl p-2 sm:p-4 dark:hover:bg-black/30 hover:bg-gray-200/50 transition-all w-full max-w-full overflow-hidden"
+      class="flex overflow-hidden gap-2 items-center p-2 w-full max-w-full rounded-xl transition-all sm:gap-4 dark:bg-black/20 bg-gray-100/50 sm:p-4 dark:hover:bg-black/30 hover:bg-gray-200/50"
     >
       <nuxt-link :to="mediaObject.path" class="flex-shrink-0 self-center">
         <div
@@ -30,7 +30,7 @@
               'bg-red-500':
                 mediaObject.vote_average && mediaObject.vote_average < 5,
             }"
-            class="absolute bottom-1 left-1 p-1.5 text-xs font-semibold rounded shadow-xl shadow-black/20 z-10"
+            class="absolute bottom-1 left-1 z-10 p-1.5 text-xs font-semibold rounded shadow-xl shadow-black/20"
           >
             <span class="font-bold text-white">
               ⭐
@@ -46,17 +46,17 @@
         </div>
       </nuxt-link>
       <div
-        class="flex flex-col justify-between flex-1 min-w-0 overflow-hidden w-0"
+        class="flex overflow-hidden flex-col flex-1 justify-between w-0 min-w-0"
       >
-        <div class="min-w-0 w-full">
+        <div class="w-full min-w-0">
           <h3
-            class="text-sm sm:text-base font-semibold dark:text-gray-300 text-gray-800 mb-1 break-words line-clamp-2"
+            class="mb-1 text-sm font-semibold text-gray-800 break-words sm:text-base dark:text-gray-300 line-clamp-2"
           >
             {{ mediaObject.title ? mediaObject.title : mediaObject.name }}
           </h3>
           <p
             v-if="mediaObject.release_date || mediaObject.first_air_date"
-            class="text-xs sm:text-sm dark:text-gray-100 text-gray-700 mb-1 sm:mb-2"
+            class="mb-1 text-xs text-gray-700 sm:text-sm dark:text-gray-100 sm:mb-2"
           >
             {{
               formatDateToSpanish(
@@ -66,26 +66,28 @@
           </p>
           <p
             v-if="mediaObject.overview"
-            class="text-xs sm:text-sm dark:text-gray-300 text-gray-500 line-clamp-3 mb-1 sm:mb-2"
+            class="mb-1 text-xs text-gray-500 sm:text-sm dark:text-gray-300 line-clamp-3 sm:mb-2"
           >
             {{ mediaObject.overview }}
           </p>
         </div>
-        <div class="flex items-center justify-end mt-2">
+        <div class="flex justify-end items-center mt-2">
           <!-- Mobile: Link -->
           <nuxt-link
             :to="mediaObject.path"
-            class="text-primary hover:text-secondary uppercase text-xs sm:text-sm font-semibold md:hidden"
+            class="text-xs font-semibold uppercase text-primary hover:text-secondary sm:text-sm md:hidden"
           >
             {{ $t('media.viewDetails') }}
           </nuxt-link>
           <!-- Desktop: Button -->
           <nuxt-link :to="mediaObject.path" class="hidden md:block">
-            <button
-              class="w-auto px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm text-white bg-gradient-to-r from-primary via-accent to-secondary hover:from-secondary hover:via-pink-500 hover:to-primary rounded-lg transition-all duration-300 shadow-lg shadow-primary/30"
+            <Button
+              size="small"
+              variant="primary"
+              custom-class="px-3 py-1.5 w-auto text-xs text-white bg-gradient-to-r shadow-lg sm:px-4 sm:py-2 sm:text-sm from-primary via-accent to-secondary hover:from-secondary hover:via-pink-500 hover:to-primary shadow-primary/30"
             >
               {{ $t('media.viewDetails') }}
-            </button>
+            </Button>
           </nuxt-link>
         </div>
       </div>
@@ -94,22 +96,25 @@
 
   <!-- Desktop/Tablet: Carousel View -->
   <section
-    class="desktop-carousel hidden md:flex items-center justify-between gap-0 py-4"
+    class="hidden gap-0 justify-between items-center py-4 desktop-carousel md:flex"
   >
     <!-- Flecha izquierda -->
-    <button
-      class="z-10 mb-20 bg-gradient-to-r from-primary to-accent disabled:opacity-30 flex-shrink-0 p-1 text-white rounded-full shadow-lg shadow-primary/30 hover:from-accent hover:to-secondary transition-all duration-300"
+    <Button
+      type="button"
+      variant="primary"
+      size="small"
+      custom-class="z-10 flex-shrink-0 p-1 mb-20 text-white bg-gradient-to-r rounded-full shadow-lg from-primary to-accent disabled:opacity-30 shadow-primary/30 hover:from-accent hover:to-secondary"
       :disabled="currentPage === 0"
       @click="prevPage"
     >
       ‹
-    </button>
+    </Button>
 
-    <div class="flex flex-row gap-3 no-scrollbar flex-1 justify-center">
+    <div class="flex flex-row flex-1 gap-3 justify-center no-scrollbar">
       <article
         v-for="mediaObject in pagedMedia"
         :key="mediaObject.id"
-        class="relative flex-shrink-0 w-full transition-all duration-300 md:w-40 rounded-xl group hover:scale-105"
+        class="relative flex-shrink-0 w-full rounded-xl transition-all duration-300 md:w-40 group hover:scale-105"
       >
         <nuxt-link :to="mediaObject.path" class="block">
           <div class="relative aspect-[2/3] overflow-hidden rounded-xl">
@@ -117,27 +122,27 @@
             <img
               :src="`https://image.tmdb.org/t/p/w780${mediaObject.poster_path}`"
               :alt="mediaObject.title ? mediaObject.title : mediaObject.name"
-              class="object-cover w-full h-full overflow-hidden shadow-md rounded-xl shadow-primary/30"
+              class="object-cover overflow-hidden w-full h-full rounded-xl shadow-md shadow-primary/30"
               loading="lazy"
               decoding="async"
             />
             <div
-              class="absolute bottom-0 left-0 flex flex-col items-center justify-center w-full h-full px-4 transition-all duration-300 opacity-0 rounded-xl group-hover:opacity-100 group-hover:shadow-primary/40 group-hover:shadow-xl backdrop-blur-md w-inherit dark:bg-black/80 bg-white/80 border border-primary/20"
+              class="flex absolute bottom-0 left-0 flex-col justify-center items-center px-4 w-full h-full rounded-xl border opacity-0 backdrop-blur-md transition-all duration-300 group-hover:opacity-100 group-hover:shadow-primary/40 group-hover:shadow-xl w-inherit dark:bg-black/80 bg-white/80 border-primary/20"
             >
-              <p class="dark:text-gray-300 text-gray-800 font-semibold">{{
+              <p class="font-semibold text-gray-800 dark:text-gray-300">{{
                 $t('media.viewDetails')
               }}</p>
             </div>
           </div>
         </nuxt-link>
         <p
-          class="mt-2 text-base font-semibold text-center dark:text-gray-300 text-gray-800"
+          class="mt-2 text-base font-semibold text-center text-gray-800 dark:text-gray-300"
         >
           {{ mediaObject.title ? mediaObject.title : mediaObject.name }}
         </p>
         <p
           v-if="mediaObject.release_date || mediaObject.first_air_date"
-          class="text-sm text-center dark:text-gray-100 text-gray-700"
+          class="text-sm text-center text-gray-700 dark:text-gray-100"
         >
           {{
             formatDateToSpanish(
@@ -148,13 +153,16 @@
       </article>
     </div>
     <!-- Flecha derecha -->
-    <button
+    <Button
+      type="button"
+      variant="primary"
+      size="small"
+      custom-class="z-10 flex-shrink-0 p-1 mb-20 text-white bg-gradient-to-r rounded-full shadow-lg shadow-primary/30 from-primary to-accent disabled:opacity-30 hover:from-accent hover:to-secondary"
       :disabled="endReached"
-      class="z-10 p-1 mb-20 rounded-full shadow-lg shadow-primary/30 bg-gradient-to-r from-primary to-accent disabled:opacity-30 flex-shrink-0 text-white hover:from-accent hover:to-secondary transition-all duration-300"
       @click="nextPage"
     >
       ›
-    </button>
+    </Button>
   </section>
 </template>
 
@@ -164,6 +172,7 @@ import { formatDateToSpanish } from '@/utils/formatDate';
 import type { Media } from '@/types/Media';
 import RatingBadge from './RatingBadge.vue';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
+import Button from '@/components/ui/Button.vue';
 
 const props = defineProps({
   mediaTrendingList: {

@@ -172,125 +172,123 @@ watch(
     userId: user.value?.id || (user.value as { sub?: string })?.sub || null,
     storeUserId:
       userStore.user?.id || (userStore.user as { sub?: string })?.sub || null,
+    mood: route.query.mood,
+    attention: route.query.attention,
   }),
-  async ({ authInitialized, userId, storeUserId }) => {
+  async (newValue, oldValue) => {
     // CRITICAL: Don't execute watcher until auth is initialized
-    // This prevents clearing recommendations during page refresh before auth hydrates
-    if (!authInitialized) {
+    if (!newValue.authInitialized) {
       return;
     }
 
-    // During hydration, useSupabaseUser() might not be ready yet
-    // So we check both the composable and the store
-    const effectiveUserId = userId || storeUserId;
+    // Get effective user ID (from composable or store)
+    const effectiveUserId = newValue.userId || newValue.storeUserId;
+    const oldEffectiveUserId = oldValue?.userId || oldValue?.storeUserId;
 
     // Skip if we're already fetching
     if (isFetchingProfile.value) {
       return;
     }
 
-    // Handle user state changes first
-    await handleUserStateChange();
-
-    // If no user after checking both sources, clear recommendations
-    // BUT only if we're not in hydration phase or if we're sure there's no user
-    if (!effectiveUserId) {
-      // During hydration, don't clear recommendations if store has a user
-      // This prevents clearing during the brief moment when useSupabaseUser() is null
-      // but the store still has the user from the plugin
-      if (isHydrating.value && storeUserId) {
-        // Still hydrating and store has user, wait for useSupabaseUser() to catch up
-        return;
-      }
-
-      // Only clear if we're sure there's no user (not hydrating or no user in store either)
-      recommendations.value = [];
-      lastFetchedUserId.value = null;
-      hasAttemptedLoad.value = false; // Reset flag when clearing recommendations
+    // DETERMINISTIC CHECK: Only proceed if user ID actually changed
+    // This prevents execution on token refresh or tab switch
+    if (effectiveUserId === oldEffectiveUserId && hasAttemptedLoad.value) {
       return;
     }
 
-    // Skip if we already fetched for this user AND query params haven't changed
-    // (mood/attention changes should trigger refetch)
-    const currentMood = route.query.mood;
-    const currentAttention = route.query.attention;
-    const lastMood = lastFetchedMood.value;
-    const lastAttention = lastFetchedAttention.value;
+    // Handle user state changes
+    await handleUserStateChange();
 
+    // If no user, clear recommendations
+    if (!effectiveUserId) {
+      if (isHydrating.value && newValue.storeUserId) {
+        return; // Still hydrating, wait
+      }
+      recommendations.value = [];
+      lastFetchedUserId.value = null;
+      hasAttemptedLoad.value = false;
+      return;
+    }
+
+    // Check if we already loaded for this user with these params
     if (
       lastFetchedUserId.value === effectiveUserId &&
-      recommendations.value.length > 0 &&
-      currentMood === lastMood &&
-      currentAttention === lastAttention
+      lastFetchedMood.value === (newValue.mood as string | null) &&
+      lastFetchedAttention.value === (newValue.attention as string | null) &&
+      hasAttemptedLoad.value
     ) {
       return;
     }
 
+    // Load recommendations
     isFetchingProfile.value = true;
     loadingRecommendations.value = true;
     try {
-      // Ensure profile is loaded
-      await userStore.ensureProfile();
+      if (!userStore.profile) {
+        await userStore.ensureProfile();
+      }
 
-      // Check onboarding status AFTER profile is loaded
       if (!userStore.hasCompletedOnboarding) {
         recommendations.value = [];
-        hasAttemptedLoad.value = true; // Mark as attempted even if no onboarding
+        hasAttemptedLoad.value = true;
         return;
       }
 
-      // Check if user has preferred languages
-      try {
-        const {
-          data: { session },
-        } = await getSession();
-        if (session?.access_token) {
-          const prefsResponse = await $fetch<{
-            success: boolean;
-            preferences: {
-              preferred_language?: string;
-            } | null;
-          }>('/api/users/preferences', {
-            headers: {
-              Authorization: `Bearer ${session.access_token}`,
-            },
-          });
-          hasPreferredLanguage.value = !!(
-            prefsResponse.success &&
-            prefsResponse.preferences?.preferred_language
+      // Check preferred languages only if not already checked
+      if (hasPreferredLanguage.value === null) {
+        try {
+          const {
+            data: { session },
+          } = await getSession();
+          if (session?.access_token) {
+            const prefsResponse = await $fetch<{
+              success: boolean;
+              preferences: {
+                preferred_language?: string;
+              } | null;
+            }>('/api/users/preferences', {
+              headers: {
+                Authorization: `Bearer ${session.access_token}`,
+              },
+            });
+            hasPreferredLanguage.value = !!(
+              prefsResponse.success &&
+              prefsResponse.preferences?.preferred_language
+            );
+          } else {
+            hasPreferredLanguage.value = false;
+          }
+        } catch (error) {
+          console.error(
+            '[index.vue] Error checking preferred languages:',
+            error
           );
-        } else {
           hasPreferredLanguage.value = false;
         }
-      } catch (error) {
-        console.error('[index.vue] Error checking preferred languages:', error);
-        hasPreferredLanguage.value = false;
       }
 
-      // Only fetch recommendations if user has preferred languages
       if (hasPreferredLanguage.value) {
         const fetched = await fetchRecommendations();
         recommendations.value = fetched;
 
-        // If pool is empty and we haven't already started populating, do it automatically
         if (
           fetched.length === 0 &&
           !populatingPool.value &&
           !sessionStorage.getItem('generatingRecommendations')
         ) {
-          // Automatically populate pool (it will set the sessionStorage flag internally)
           await populatePool();
         }
       } else {
         recommendations.value = [];
       }
+
       lastFetchedUserId.value = effectiveUserId;
-      lastFetchedMood.value = (route.query.mood as string) || null;
-      lastFetchedAttention.value = (route.query.attention as string) || null;
-      hasAttemptedLoad.value = true; // Mark as attempted after successful fetch
+      lastFetchedMood.value = (newValue.mood as string) || null;
+      lastFetchedAttention.value = (newValue.attention as string) || null;
+      hasAttemptedLoad.value = true;
     } catch (error) {
       console.error('[index.vue] Error fetching recommendations:', error);
-      hasAttemptedLoad.value = true; // Mark as attempted even on error
+      hasAttemptedLoad.value = true;
     } finally {
       isFetchingProfile.value = false;
       loadingRecommendations.value = false;
@@ -749,7 +747,7 @@ onMounted(() => {
     <ClientOnly>
       <section v-if="isMounted && userStore.authInitialized && effectiveUser">
         <div
-          class="container mx-auto max-w-7xl w-full flex flex-col gap-6 pt-6 pb-6 px-4 md:px-0"
+          class="container flex flex-col gap-6 px-4 pt-6 pb-6 mx-auto w-full max-w-7xl md:px-0"
         >
           <!-- Mood Selector -->
           <MoodSelector v-if="userStore.hasCompletedOnboarding" />
@@ -771,11 +769,11 @@ onMounted(() => {
               hasAttemptedLoad &&
               hasPreferredLanguage === false
             "
-            class="text-center py-6"
+            class="py-6 text-center"
           >
-            <div class="max-w-md mx-auto">
+            <div class="mx-auto max-w-md">
               <svg
-                class="w-16 h-16 text-gray-600 dark:text-gray-500 mx-auto mb-4"
+                class="mx-auto mb-4 w-16 h-16 text-gray-600 dark:text-gray-500"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -788,16 +786,16 @@ onMounted(() => {
                 />
               </svg>
               <h3
-                class="text-xl font-semibold dark:text-gray-300 text-gray-800 mb-2 font-heading"
+                class="mb-2 text-xl font-semibold text-gray-800 dark:text-gray-300 font-heading"
               >
                 {{ $t('home.noPreferredLanguage') }}
               </h3>
-              <p class="text-gray-800 dark:text-gray-300 mb-6">
+              <p class="mb-6 text-gray-800 dark:text-gray-300">
                 {{ $t('home.noPreferredLanguageDescription') }}
               </p>
               <nuxt-link
                 to="/profile?tab=content-preferences"
-                class="inline-block px-6 py-3 bg-primary-800 dark:bg-primary hover:bg-primary-900 dark:hover:bg-primary-600 text-white rounded-lg font-medium text-base transition-all duration-300 shadow-lg backdrop-blur-sm border border-primary-600/50"
+                class="inline-block px-6 py-3 text-base font-medium text-white rounded-lg border shadow-lg backdrop-blur-sm transition-all duration-300 bg-primary-800 dark:bg-primary hover:bg-primary-900 dark:hover:bg-primary-600 border-primary-600/50"
               >
                 {{ $t('home.setPreferredLanguage') }}
               </nuxt-link>
@@ -814,11 +812,11 @@ onMounted(() => {
               hasPreferredLanguage !== false &&
               !userStore.hasLikes
             "
-            class="text-center py-6"
+            class="py-6 text-center"
           >
-            <div class="max-w-md mx-auto">
+            <div class="mx-auto max-w-md">
               <svg
-                class="w-16 h-16 text-gray-600 dark:text-gray-500 mx-auto mb-4"
+                class="mx-auto mb-4 w-16 h-16 text-gray-600 dark:text-gray-500"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -831,16 +829,16 @@ onMounted(() => {
                 />
               </svg>
               <h3
-                class="text-xl font-semibold dark:text-gray-300 text-gray-800 mb-2 font-heading"
+                class="mb-2 text-xl font-semibold text-gray-800 dark:text-gray-300 font-heading"
               >
                 {{ $t('home.noRecommendations') }}
               </h3>
-              <p class="text-gray-800 dark:text-gray-300 mb-6">
+              <p class="mb-6 text-gray-800 dark:text-gray-300">
                 {{ $t('home.noRecommendationsDescription') }}
               </p>
               <nuxt-link
                 to="/onboarding"
-                class="inline-block px-6 py-3 bg-primary-800 dark:bg-primary hover:bg-primary-900 dark:hover:bg-primary-600 text-white rounded-lg font-medium text-base transition-all duration-300 shadow-lg backdrop-blur-sm border border-primary-600/50"
+                class="inline-block px-6 py-3 text-base font-medium text-white rounded-lg border shadow-lg backdrop-blur-sm transition-all duration-300 bg-primary-800 dark:bg-primary hover:bg-primary-900 dark:hover:bg-primary-600 border-primary-600/50"
               >
                 {{ $t('home.addFavorites') }}
               </nuxt-link>
@@ -869,7 +867,7 @@ onMounted(() => {
         <!-- Placeholder section to prevent hydration mismatch -->
         <section>
           <div
-            class="container mx-auto max-w-7xl w-full flex flex-col gap-6 pt-6 pb-6 px-4 md:px-0"
+            class="container flex flex-col gap-6 px-4 pt-6 pb-6 mx-auto w-full max-w-7xl md:px-0"
           ></div>
         </section>
       </template>
@@ -888,22 +886,22 @@ onMounted(() => {
     >
       <div class="container mx-auto max-w-6xl">
         <h2
-          class="text-3xl md:text-4xl font-bold text-center mb-6 dark:text-gray-300 text-gray-800 font-heading"
+          class="mb-6 text-3xl font-bold text-center text-gray-800 md:text-4xl dark:text-gray-300 font-heading"
         >
           {{ $t('home.howItWorksTitle') }}
         </h2>
-        <div class="grid md:grid-cols-3 gap-4">
+        <div class="grid gap-4 md:grid-cols-3">
           <Card
             padding="lg"
             custom-class="!bg-white/60 dark:!bg-gray-900/40 md:p-8 relative overflow-hidden group hover:border-primary/50 dark:hover:border-purple-500/30 transition-colors flex flex-col text-center"
           >
             <div
-              class="w-16 h-16 bg-gradient-to-r from-primary to-accent rounded-full flex items-center justify-center mx-auto mb-4"
+              class="flex justify-center items-center mx-auto mb-4 w-16 h-16 bg-gradient-to-r rounded-full from-primary to-accent"
             >
               <span class="text-2xl font-bold text-white">1</span>
             </div>
             <h3
-              class="text-xl font-semibold mb-2 dark:text-gray-300 text-gray-800 font-heading"
+              class="mb-2 text-xl font-semibold text-gray-800 dark:text-gray-300 font-heading"
             >
               {{ $t('home.step1Title') }}
             </h3>
@@ -916,12 +914,12 @@ onMounted(() => {
             custom-class="!bg-white/60 dark:!bg-gray-900/40 md:p-8 relative overflow-hidden group hover:border-primary/50 dark:hover:border-purple-500/30 transition-colors flex flex-col text-center"
           >
             <div
-              class="w-16 h-16 bg-gradient-to-r from-accent to-secondary rounded-full flex items-center justify-center mx-auto mb-4"
+              class="flex justify-center items-center mx-auto mb-4 w-16 h-16 bg-gradient-to-r rounded-full from-accent to-secondary"
             >
               <span class="text-2xl font-bold text-white">2</span>
             </div>
             <h3
-              class="text-xl font-semibold mb-2 dark:text-gray-300 text-gray-800 font-heading"
+              class="mb-2 text-xl font-semibold text-gray-800 dark:text-gray-300 font-heading"
             >
               {{ $t('home.step2Title') }}
             </h3>
@@ -934,12 +932,12 @@ onMounted(() => {
             custom-class="!bg-white/60 dark:!bg-gray-900/40 md:p-8 relative overflow-hidden group hover:border-primary/50 dark:hover:border-purple-500/30 transition-colors flex flex-col text-center"
           >
             <div
-              class="w-16 h-16 bg-gradient-to-r from-secondary to-pink rounded-full flex items-center justify-center mx-auto mb-4"
+              class="flex justify-center items-center mx-auto mb-4 w-16 h-16 bg-gradient-to-r rounded-full from-secondary to-pink"
             >
               <span class="text-2xl font-bold text-white">3</span>
             </div>
             <h3
-              class="text-xl font-semibold mb-2 dark:text-gray-300 text-gray-800 font-heading"
+              class="mb-2 text-xl font-semibold text-gray-800 dark:text-gray-300 font-heading"
             >
               {{ $t('home.step3Title') }}
             </h3>
@@ -959,16 +957,16 @@ onMounted(() => {
     >
       <div class="container mx-auto max-w-4xl text-center">
         <p
-          class="text-2xl md:text-3xl text-gray-900 dark:text-gray-100 leading-relaxed font-semibold mb-6"
+          class="mb-6 text-2xl font-semibold leading-relaxed text-gray-900 md:text-3xl dark:text-gray-100"
         >
           {{ $t('home.tagline1') }}
         </p>
         <p
-          class="text-3xl md:text-5xl text-gray-900 dark:text-gray-100 leading-relaxed font-semibold"
+          class="text-3xl font-semibold leading-relaxed text-gray-900 md:text-5xl dark:text-gray-100"
         >
           {{ $t('home.tagline2') }}
           <span
-            class="bg-gradient-to-r from-primary-700 via-primary-800 to-primary-900 dark:from-primary-400 dark:via-primary-500 dark:to-primary-600 bg-clip-text text-transparent"
+            class="text-transparent bg-clip-text bg-gradient-to-r from-primary-700 via-primary-800 to-primary-900 dark:from-primary-400 dark:via-primary-500 dark:to-primary-600"
             style="
               background-clip: text;
               -webkit-background-clip: text;
@@ -978,7 +976,7 @@ onMounted(() => {
           >
           {{ $t('home.tagline4') }}
           <span
-            class="bg-gradient-to-r from-primary-700 via-primary-800 to-primary-900 dark:from-primary-400 dark:via-primary-500 dark:to-primary-600 bg-clip-text text-transparent"
+            class="text-transparent bg-clip-text bg-gradient-to-r from-primary-700 via-primary-800 to-primary-900 dark:from-primary-400 dark:via-primary-500 dark:to-primary-600"
             style="
               background-clip: text;
               -webkit-background-clip: text;

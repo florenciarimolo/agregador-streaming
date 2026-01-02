@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import Button from '@/components/ui/Button.vue';
+
 interface Props {
   buttonText: string;
   showAuthForm?: boolean;
@@ -36,16 +38,16 @@ const scrollToHowItWorks = () => {
 </script>
 
 <template>
-  <section class="relative py-16 x-4 overflow-hidden">
+  <section class="overflow-hidden relative py-16 x-4">
     <!-- Animated Background -->
     <AnimatedBackground />
 
     <!-- Content -->
     <div
-      class="container mx-auto max-w-5xl text-center relative z-10 overflow-visible"
+      class="container overflow-visible relative z-10 mx-auto max-w-5xl text-center"
     >
       <h1
-        class="text-4xl md:text-7xl font-bold mb-6 font-heading bg-gradient-to-b from-primary-800 via-primary-800 to-primary-900 dark:from-white dark:via-white dark:to-gray-400 bg-clip-text text-transparent drop-shadow-2xl"
+        class="mb-6 text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-b drop-shadow-2xl md:text-7xl font-heading from-primary-800 via-primary-800 to-primary-900 dark:from-white dark:via-white dark:to-gray-400"
         style="
           line-height: 1.15;
           padding-top: 0.15em;
@@ -58,24 +60,18 @@ const scrollToHowItWorks = () => {
         {{ $t('hero.title') }}
       </h1>
       <p
-        class="text-lg md:text-xl text-gray-800 dark:text-gray-300 mb-8 max-w-3xl mx-auto leading-relaxed font-medium"
+        class="mx-auto mb-8 max-w-3xl text-lg font-medium leading-relaxed text-gray-800 md:text-xl dark:text-gray-300"
       >
         {{ $t('hero.description') }}<br />
         <span class="font-medium">{{ $t('hero.tagline') }}</span>
       </p>
-      <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
-        <button
-          class="px-6 py-3 bg-primary-800 dark:bg-primary hover:bg-primary-900 dark:hover:bg-primary-600 text-white rounded-lg font-medium text-base transition-all duration-300 shadow-lg backdrop-blur-sm border border-primary-600/50"
-          @click="handleGetStarted"
-        >
+      <div class="flex flex-col gap-4 justify-center items-center sm:flex-row">
+        <Button size="medium" variant="primary" @click="handleGetStarted">
           {{ props.buttonText }}
-        </button>
-        <button
-          class="px-6 py-3 border border-primary-800 dark:border-primary-600/50 text-gray-800 dark:text-gray-300 rounded-lg font-medium text-base hover:bg-primary-800 dark:hover:bg-primary hover:text-white transition-all duration-300 backdrop-blur-sm"
-          @click="scrollToHowItWorks"
-        >
+        </Button>
+        <Button size="medium" variant="secondary" @click="scrollToHowItWorks">
           {{ $t('hero.howItWorksButton') }}
-        </button>
+        </Button>
       </div>
     </div>
 

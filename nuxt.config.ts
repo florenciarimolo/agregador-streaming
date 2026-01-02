@@ -47,6 +47,7 @@ export default defineNuxtConfig({
   ],
 
   supabase: {
+    redirect: false, // Disable automatic redirects - we handle them manually in callback.vue, authform.vue, and middleware
     redirectOptions: {
       login: '/', // Redirect to home instead of /login
       callback: '/auth/callback',
