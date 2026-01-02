@@ -28,6 +28,30 @@ if (needsPolyfill) {
   } as Storage;
 }
 
+/**
+ * Get site URL based on environment
+ * Priority: NUXT_PUBLIC_BASE_URL > VERCEL_URL > VERCEL_ENV > localhost
+ */
+function getSiteUrl(): string {
+  // Use existing NUXT_PUBLIC_BASE_URL if defined
+  if (process.env.NUXT_PUBLIC_BASE_URL) {
+    return process.env.NUXT_PUBLIC_BASE_URL;
+  }
+  // Fallback to VERCEL_URL if available
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+  // Fallback to VERCEL_ENV
+  if (process.env.VERCEL_ENV === 'production') {
+    return 'https://getupnext.io';
+  }
+  if (process.env.VERCEL_ENV === 'preview') {
+    return 'https://up-next-dev.vercel.app';
+  }
+  // Default to localhost
+  return 'http://localhost:3000';
+}
+
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   // Disable devtools in development for faster load times
@@ -44,6 +68,7 @@ export default defineNuxtConfig({
     '@nuxtjs/supabase',
     '@nuxtjs/tailwindcss',
     '@nuxtjs/i18n',
+    '@nuxtjs/sitemap',
   ],
 
   supabase: {
@@ -88,7 +113,9 @@ export default defineNuxtConfig({
       tmdbBaseUrl: process.env.NUXT_TMDB_BASE_URL || '',
       supabaseUrl: process.env.NUXT_PUBLIC_SUPABASE_URL || '',
       supabaseAnonKey: process.env.NUXT_PUBLIC_SUPABASE_ANON_KEY || '',
-      baseUrl: process.env.NUXT_PUBLIC_BASE_URL || 'http://localhost:3000',
+      baseUrl: getSiteUrl(), // Uses NUXT_PUBLIC_BASE_URL or auto-detects environment
+      // Alias for SEO and sitemap (same as baseUrl)
+      siteUrl: getSiteUrl(),
     },
   },
 
@@ -140,6 +167,108 @@ export default defineNuxtConfig({
         { rel: 'icon', type: 'image/png', href: '/favicon.png' },
         { rel: 'apple-touch-icon', href: '/favicon.png' },
       ],
+    },
+  },
+
+  sitemap: {
+    // Use siteUrl helper to support multiple environments
+    // This will be resolved at build/runtime time
+    hostname: getSiteUrl(),
+    gzip: true,
+    trailingSlash: false,
+    exclude: [
+      '/search',
+      '/auth/**',
+      '/auth/callback',
+      '/onboarding',
+      '/my-account',
+      '/settings',
+      '/preferences',
+      '/watchlist',
+      '/api/**',
+    ],
+    routes: async () => {
+      const { getTitleIdsForSitemap } = await import('./server/utils/sitemap');
+      const titles = await getTitleIdsForSitemap();
+
+      const routes: Array<{
+        url: string;
+        lastmod?: string;
+        changefreq?: string;
+        priority?: number;
+      }> = [
+        // Static routes
+        {
+          url: '/',
+          changefreq: 'daily',
+          priority: 1.0,
+        },
+        {
+          url: '/how-it-works',
+          changefreq: 'monthly',
+          priority: 0.8,
+        },
+        {
+          url: '/faq',
+          changefreq: 'monthly',
+          priority: 0.8,
+        },
+      ];
+
+      // Dynamic routes for movies
+      const movies = titles.filter((t) => t.type === 'movie');
+      for (const movie of movies) {
+        routes.push({
+          url: `/movie/${movie.tmdb_id}`,
+          lastmod: movie.updated_at
+            ? new Date(movie.updated_at).toISOString()
+            : undefined,
+          changefreq: 'weekly',
+          priority: 0.7,
+        });
+      }
+
+      // Dynamic routes for TV shows
+      const tvShows = titles.filter((t) => t.type === 'tv');
+      const { getTVShowSeasons } = await import('./server/utils/sitemap');
+      
+      // Process TV shows in batches to avoid overwhelming TMDB API
+      const batchSize = 10;
+      for (let i = 0; i < tvShows.length; i += batchSize) {
+        const batch = tvShows.slice(i, i + batchSize);
+        const seasonPromises = batch.map(async (tvShow) => {
+          const seasons = await getTVShowSeasons(tvShow.tmdb_id);
+          return { tvShow, seasons };
+        });
+        
+        const results = await Promise.all(seasonPromises);
+        
+        for (const { tvShow, seasons } of results) {
+          // Add TV show route
+          routes.push({
+            url: `/tv-show/${tvShow.tmdb_id}`,
+            lastmod: tvShow.updated_at
+              ? new Date(tvShow.updated_at).toISOString()
+              : undefined,
+            changefreq: 'weekly',
+            priority: 0.7,
+          });
+          
+          // Add season routes
+          for (const season of seasons) {
+            routes.push({
+              url: `/tv-show/${tvShow.tmdb_id}/season/${season.season_number}`,
+              lastmod: tvShow.updated_at
+                ? new Date(tvShow.updated_at).toISOString()
+                : undefined,
+              changefreq: 'weekly',
+              priority: 0.6,
+            });
+          }
+        }
+      }
+
+      return routes;
     },
   },
 });

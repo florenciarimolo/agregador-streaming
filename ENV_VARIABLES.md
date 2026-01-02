@@ -29,9 +29,19 @@ NUXT_TMDB_BASE_URL=https://api.themoviedb.org/3
 ### Base URL (Opcional pero recomendado)
 
 ```env
-# URL de tu aplicación en producción
-NUXT_PUBLIC_BASE_URL=https://tu-dominio.com
+# URL de tu aplicación - se usa para SEO, sitemap y robots.txt
+# Si no se define, se detecta automáticamente según el entorno:
+# - Local: http://localhost:3000
+# - Preview (Vercel): https://up-next-dev.vercel.app
+# - Producción (Vercel): https://getupnext.io
+NUXT_PUBLIC_BASE_URL=https://getupnext.io
 ```
+
+**Nota**: Esta variable es opcional. El sistema detecta automáticamente el entorno usando:
+1. `NUXT_PUBLIC_BASE_URL` (si está definida - **recomendado**)
+2. `VERCEL_URL` (en deployments de Vercel)
+3. `VERCEL_ENV` (production/preview)
+4. `http://localhost:3000` (por defecto en local)
 
 ## Resumen
 
