@@ -78,7 +78,7 @@
 <script setup lang="ts">
 import { useRoute } from 'vue-router';
 import { useFetch, useSeoMeta, useHead } from 'nuxt/app';
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue';
 
 import { TVShow } from '@/types/TVShow';
 import { formatDateToSpanish } from '@/utils/formatDate';
@@ -172,6 +172,30 @@ useSeoMeta({
   twitterTitle: pageTitle,
   twitterDescription: pageDescription,
   twitterImage: ogImage,
+});
+
+// Save the previous route when mounting
+onMounted(() => {
+  if (import.meta.client) {
+    const referrer = document.referrer;
+    const currentOrigin = window.location.origin;
+    
+    // Only save if the referrer is from the same origin (within the app)
+    if (referrer && referrer.startsWith(currentOrigin)) {
+      try {
+        const referrerPath = new URL(referrer).pathname;
+        // Don't save if we're coming from another detail page or season page (to avoid loops)
+        if (
+          !referrerPath.startsWith('/pelicula/') &&
+          !referrerPath.startsWith('/serie/')
+        ) {
+          sessionStorage.setItem('previousRoute', referrerPath);
+        }
+      } catch (e) {
+        // If URL parsing fails, ignore
+      }
+    }
+  }
 });
 </script>
 

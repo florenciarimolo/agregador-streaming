@@ -153,6 +153,19 @@ watch(
       const fetched = await fetchRecommendations();
       allRecommendations.value = fetched;
       recommendations.value = filterRecommendationsByType(fetched);
+
+      // Log received recommendations for alphabet detection debugging
+      if (import.meta.dev && fetched.length > 0) {
+        console.log('[Recommendations] Refetched recommendations:', {
+          count: fetched.length,
+          sampleTitles: fetched.slice(0, 5).map((r) => ({
+            tmdb_id: r.tmdb_id,
+            title: r.title,
+            type: r.type,
+            titleLength: r.title?.length || 0,
+          })),
+        });
+      }
     }
   }
 );
@@ -297,6 +310,19 @@ watch(
         const fetched = await fetchRecommendations();
         allRecommendations.value = fetched;
         recommendations.value = filterRecommendationsByType(fetched);
+
+        // Log received recommendations for alphabet detection debugging
+        if (import.meta.dev && fetched.length > 0) {
+          console.log('[Recommendations] Received recommendations:', {
+            count: fetched.length,
+            sampleTitles: fetched.slice(0, 5).map((r) => ({
+              tmdb_id: r.tmdb_id,
+              title: r.title,
+              type: r.type,
+              titleLength: r.title?.length || 0,
+            })),
+          });
+        }
 
         // If no recommendations and onboarding is complete, regenerate pool automatically
         if (
@@ -449,7 +475,7 @@ const handleTitleStatus = async (
         {
           label: t('home.viewSeen'),
           action: async () => {
-            await navigateTo('/seen');
+            await navigateTo('/profile?tab=seen');
           },
         },
         5000
@@ -971,11 +997,11 @@ onMounted(() => {
           <!-- Content Type Filter -->
           <div
             v-if="userStore.hasCompletedOnboarding"
-            class="bg-white/60 dark:bg-gray-900/40 backdrop-blur-xl border border-gray-300/50 dark:border-white/10 rounded-3xl p-6 md:p-8"
+            class="p-6 rounded-3xl border backdrop-blur-xl bg-white/60 dark:bg-gray-900/40 border-gray-300/50 dark:border-white/10 md:p-8"
           >
             <div class="flex flex-col gap-2">
               <label
-                class="text-xs font-semibold uppercase tracking-wide text-gray-800 dark:text-gray-300"
+                class="text-xs font-semibold tracking-wide text-gray-800 uppercase dark:text-gray-300"
               >
                 {{ $t('home.contentTypeFilter') }}
               </label>

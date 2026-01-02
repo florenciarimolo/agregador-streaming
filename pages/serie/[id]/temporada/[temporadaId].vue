@@ -48,13 +48,13 @@
         class="z-10 relative flex flex-col flex-1 gap-6 rounded-lg lg:p-6 lg:ml-8 w-full min-w-[300px] flex-shrink-0 min-h-[300px]"
       >
         <div class="text-left relative flex-row">
-          <nuxt-link
-            :to="`/serie/${seriesId}`"
+          <button
+            @click="handleBack"
             class="inline-flex items-center gap-2 mb-4 text-sm font-medium dark:text-gray-300 text-gray-700 hover:dark:text-white hover:text-gray-900 transition-colors"
           >
             <IconArrowLeft icon-class="w-4 h-4" />
             {{ $t('media.backToSeries') }}
-          </nuxt-link>
+          </button>
           <div
             class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2 w-full"
           >
@@ -218,7 +218,7 @@
 </template>
 
 <script setup lang="ts">
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useFetch } from 'nuxt/app';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 
@@ -233,6 +233,7 @@ import IconCalendar from '@/components/icons/IconCalendar.vue';
 import IconEpisodes from '@/components/icons/IconEpisodes.vue';
 
 const route = useRoute();
+const router = useRouter();
 
 // Necesitamos obtener el seriesId desde la URL padre y el seasonId de los parámetros actuales
 const seriesId = route.params.id;
@@ -309,9 +310,44 @@ const handleResize = () => {
   checkMobile();
 };
 
+// Handle back navigation
+const handleBack = () => {
+  // Try to get the previous route from sessionStorage
+  const previousRoute = sessionStorage.getItem('previousRoute');
+  
+  if (previousRoute) {
+    // Clear the stored route
+    sessionStorage.removeItem('previousRoute');
+    // Navigate to the previous route
+    router.push(previousRoute);
+  } else {
+    // Default: go back to the series page
+    router.push(`/serie/${seriesId}`);
+  }
+};
+
 onMounted(() => {
   checkMobile();
   window.addEventListener('resize', handleResize);
+  
+  // Save the previous route when mounting
+  if (import.meta.client) {
+    const referrer = document.referrer;
+    const currentOrigin = window.location.origin;
+    
+    // Only save if the referrer is from the same origin (within the app)
+    if (referrer && referrer.startsWith(currentOrigin)) {
+      try {
+        const referrerPath = new URL(referrer).pathname;
+        // Don't save if we're coming from another season page (to avoid loops)
+        if (!referrerPath.includes('/temporada/')) {
+          sessionStorage.setItem('previousRoute', referrerPath);
+        }
+      } catch (e) {
+        // If URL parsing fails, ignore
+      }
+    }
+  }
 });
 
 onUnmounted(() => {

@@ -27,17 +27,17 @@
         style="clip-path: inset(0 round 1.5rem)"
       />
       <!-- Informative icons overlay -->
-      <div class="absolute top-2 right-2 flex gap-2">
+      <div class="flex absolute top-2 right-2 gap-2">
         <div
           v-if="isLiked"
-          class="flex items-center justify-center w-8 h-8 rounded-full bg-primary-600/90 backdrop-blur-sm"
+          class="flex justify-center items-center w-8 h-8 rounded-full backdrop-blur-sm bg-primary-600/90"
           :title="$t('media.liked')"
         >
           <IconHeartFilled icon-class="w-5 h-5 text-white" />
         </div>
         <div
           v-if="isInWatchlist"
-          class="flex items-center justify-center w-8 h-8 rounded-full bg-primary-600/90 backdrop-blur-sm"
+          class="flex justify-center items-center w-8 h-8 rounded-full backdrop-blur-sm bg-primary-600/90"
           :title="$t('media.watchLater')"
         >
           <IconClock icon-class="w-5 h-5 text-white" />
@@ -48,13 +48,13 @@
       class="z-10 relative flex flex-col flex-1 gap-6 rounded-lg lg:p-6 lg:ml-8 w-full min-w-[300px] flex-shrink-0 min-h-[300px]"
     >
       <div class="relative flex-row text-left">
-        <nuxt-link
-          to="/"
+        <button
           class="inline-flex gap-2 items-center mb-4 text-sm font-medium text-gray-700 transition-colors dark:text-gray-300 hover:dark:text-white hover:text-gray-900"
+          @click="handleBack"
         >
           <IconArrowLeft icon-class="w-4 h-4" />
           {{ $t('media.back') }}
-        </nuxt-link>
+        </button>
         <div
           class="flex flex-col gap-2 w-full xl:flex-row xl:items-center xl:justify-between"
         >
@@ -361,6 +361,7 @@ import {
   getUserLikedTitle,
   getTitleStatus,
 } from '@/composables/database/userTitleStatus';
+import { useRouter } from 'vue-router';
 
 const props = defineProps({
   media: {
@@ -418,6 +419,7 @@ const titleToRemoveLike = ref<{
 } | null>(null);
 const isLiked = ref(false);
 const isInWatchlist = ref(false);
+const router = useRouter();
 
 // Detect mobile/tablet screen size (use mobile style for tablet too)
 const checkMobile = () => {
@@ -608,7 +610,7 @@ const handleAction = async (action: TitleStatus | 'liked') => {
           {
             label: t('home.viewSeen'),
             action: async () => {
-              await navigateTo('/seen');
+              await navigateTo('/profile?tab=seen');
             },
           },
           5000
@@ -730,6 +732,27 @@ const handleRemoveLike = async () => {
     type: props.mediaType,
   };
   showRemoveLikeModal.value = true;
+};
+
+// Handle back navigation
+const handleBack = () => {
+  // Try to get the previous route from sessionStorage
+  const previousRoute = sessionStorage.getItem('previousRoute');
+
+  if (previousRoute) {
+    // Clear the stored route
+    sessionStorage.removeItem('previousRoute');
+    // Navigate to the previous route
+    router.push(previousRoute);
+  } else {
+    // Check if we can go back in history (user came from within the app)
+    if (window.history.length > 1) {
+      router.back();
+    } else {
+      // User came from outside the app, go to home
+      router.push('/');
+    }
+  }
 };
 
 // Handle removing from watchlist

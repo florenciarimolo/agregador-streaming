@@ -1,7 +1,10 @@
 // useSupabaseClient is auto-imported by Nuxt
 import { TABLES, TITLES_FIELDS } from './constants';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
-import { hasUnexpectedCharacters } from '@/utils/language-detection';
+import {
+  hasUnexpectedCharacters,
+  getPrimaryLanguageForRegion,
+} from '@/utils/language-detection';
 
 // Multi-language structure: {"es": "...", "ca": "...", "eu": "...", "gl": "...", "en": "..."}
 export type MultiLanguageText = Record<string, string>;
@@ -39,40 +42,74 @@ export function getTitleInLanguage(
     return '';
   }
 
+  // Determine primary language for region
+  const primaryLanguage = userRegion
+    ? getPrimaryLanguageForRegion(userRegion)
+    : 'es'; // Default to Spanish
+  const primaryLanguageKey = `${primaryLanguage}-${userRegion?.toUpperCase() || 'ES'}`;
+  const requestedLangCode = language.split('-')[0]?.toLowerCase() || '';
+  const primaryLangCode = primaryLanguage.split('-')[0]?.toLowerCase() || '';
+
+  // Only check alphabet if:
+  // 1. We're not dealing with image paths
+  // 2. The requested language is not the primary language of the region
+  // 3. The requested language is a Latin script language (es, ca, eu, gl)
+  const shouldCheckAlphabet =
+    !isImagePath &&
+    requestedLangCode !== primaryLangCode &&
+    ['es', 'ca', 'eu', 'gl'].includes(requestedLangCode) &&
+    (userRegion?.toUpperCase() === 'ES' || !userRegion);
+
   // Try requested language first (using ISO/TMDB format)
   if (titleJsonb[language]) {
     const titleText = titleJsonb[language];
 
-    // IMPORTANT: Never check language for image paths - they are universal
-    // IMPORTANT: Only check for non-Latin alphabet if we're in ES region and language is NOT Spanish
-    // This check should ONLY trigger when TMDB returns titles in completely wrong alphabets
-    // (e.g., Japanese, Chinese, Hindi alphabets when expecting Catalan)
-    // Catalan diacritics (à, è, é, í, ò, ó, ú, ç) are Latin and should NOT trigger this
-    if (!isImagePath) {
-      const langCode = language.split('-')[0]?.toLowerCase() || '';
-      if (userRegion && userRegion.toUpperCase() === 'ES' && langCode !== 'es') {
-        const hasUnexpected = hasUnexpectedCharacters(titleText, langCode);
-        if (hasUnexpected) {
-          // Only fallback to Spanish if we detect non-Latin alphabet (more than 50% non-Latin chars)
-          // This should be very rare - only when TMDB returns titles in completely wrong alphabets
-          if (import.meta.dev) {
-            console.log(
-              `[getTitleInLanguage] Falling back to Spanish for language ${language} due to non-Latin alphabet in:`,
-              titleText.substring(0, 50)
-            );
-          }
-          // Try Spanish in ISO format first
-          if (titleJsonb['es-ES']) {
-            return titleJsonb['es-ES'];
-          }
-          // Fallback to any Spanish variant
-          const spanishKey = Object.keys(titleJsonb).find((k) =>
-            k.startsWith('es-')
+    // Check alphabet if conditions are met
+    if (shouldCheckAlphabet) {
+      console.log(
+        `[AlphabetDetection] Checking alphabet for language: ${language} (code: ${requestedLangCode}), primary language: ${primaryLanguageKey} (code: ${primaryLangCode}), region: ${userRegion || 'unknown'}, title preview: "${titleText.substring(0, 50)}"`
+      );
+      const hasUnexpected = hasUnexpectedCharacters(
+        titleText,
+        requestedLangCode
+      );
+      if (hasUnexpected) {
+        console.log(
+          `[AlphabetDetection] ⚠️ Non-Latin alphabet detected! Falling back to primary language ${primaryLanguageKey} for language ${language}. Original title: "${titleText.substring(0, 100)}"`
+        );
+        // Try primary language in ISO format first
+        if (titleJsonb[primaryLanguageKey]) {
+          console.log(
+            `[AlphabetDetection] ✅ Using primary language (${primaryLanguageKey}) fallback: "${titleJsonb[primaryLanguageKey].substring(0, 100)}"`
           );
-          if (spanishKey) {
-            return titleJsonb[spanishKey];
-          }
+          return titleJsonb[primaryLanguageKey];
         }
+        // Fallback to primary language legacy format
+        if (titleJsonb[primaryLanguage]) {
+          console.log(
+            `[AlphabetDetection] ✅ Using primary language (${primaryLanguage}) fallback: "${titleJsonb[primaryLanguage].substring(0, 100)}"`
+          );
+          return titleJsonb[primaryLanguage];
+        }
+        // Fallback to any primary language variant
+        const primaryKey = Object.keys(titleJsonb).find((k) =>
+          k.startsWith(`${primaryLanguage}-`)
+        );
+        if (primaryKey) {
+          console.log(
+            `[AlphabetDetection] ✅ Using primary language variant (${primaryKey}) fallback: "${titleJsonb[primaryKey].substring(0, 100)}"`
+          );
+          return titleJsonb[primaryKey];
+        }
+        // If no primary language found, log and return empty to signal need to fetch from TMDB
+        console.log(
+          `[AlphabetDetection] ❌ No primary language (${primaryLanguageKey}) variant found in titleJsonb. Available keys: ${Object.keys(titleJsonb).join(', ')}. Should fetch from TMDB.`
+        );
+        return '';
+      } else {
+        console.log(
+          `[AlphabetDetection] ✅ Alphabet is valid for language ${language}. Using original title.`
+        );
       }
     }
 
@@ -84,33 +121,92 @@ export function getTitleInLanguage(
   // Backward compatibility: try simple format (e.g., 'ca' instead of 'ca-ES')
   const langCode = language.split('-')[0]?.toLowerCase() || '';
   if (langCode && titleJsonb[langCode]) {
+    const legacyText = titleJsonb[langCode];
+    // Check alphabet if conditions are met
+    if (shouldCheckAlphabet) {
+      console.log(
+        `[AlphabetDetection] Checking alphabet for legacy format language: ${langCode}, primary language: ${primaryLanguageKey}, region: ${userRegion || 'unknown'}, title preview: "${legacyText.substring(0, 50)}"`
+      );
+      const hasUnexpected = hasUnexpectedCharacters(legacyText, langCode);
+      if (hasUnexpected) {
+        console.log(
+          `[AlphabetDetection] ⚠️ Non-Latin alphabet detected in legacy format! Falling back to primary language ${primaryLanguageKey} for language ${langCode}. Original title: "${legacyText.substring(0, 100)}"`
+        );
+        // Try primary language fallbacks
+        if (titleJsonb[primaryLanguageKey]) {
+          return titleJsonb[primaryLanguageKey];
+        }
+        if (titleJsonb[primaryLanguage]) {
+          return titleJsonb[primaryLanguage];
+        }
+        const primaryKey = Object.keys(titleJsonb).find((k) =>
+          k.startsWith(`${primaryLanguage}-`)
+        );
+        if (primaryKey) {
+          return titleJsonb[primaryKey];
+        }
+        console.log(
+          `[AlphabetDetection] ❌ No primary language (${primaryLanguageKey}) variant found in legacy format fallback. Available keys: ${Object.keys(titleJsonb).join(', ')}. Should fetch from TMDB.`
+        );
+        return '';
+      }
+    }
+
     if (import.meta.dev) {
       console.log(
         `[getTitleInLanguage] Using legacy format for language ${language}, found key: ${langCode}`
       );
     }
-    return titleJsonb[langCode];
+    return legacyText;
   }
 
-  // Fallback to Spanish (ISO format)
-  if (titleJsonb['es-ES']) {
-    return titleJsonb['es-ES'];
+  // Fallback to primary language (ISO format)
+  if (titleJsonb[primaryLanguageKey]) {
+    return titleJsonb[primaryLanguageKey];
   }
 
-  // Fallback to Spanish (legacy format)
-  if (titleJsonb['es']) {
-    return titleJsonb['es'];
+  // Fallback to primary language (legacy format)
+  if (titleJsonb[primaryLanguage]) {
+    return titleJsonb[primaryLanguage];
   }
 
-  // Fallback to any Spanish variant
-  const spanishKey = Object.keys(titleJsonb).find((k) => k.startsWith('es'));
-  if (spanishKey) {
-    return titleJsonb[spanishKey];
+  // Fallback to any primary language variant
+  const primaryKey = Object.keys(titleJsonb).find((k) =>
+    k.startsWith(`${primaryLanguage}-`)
+  );
+  if (primaryKey) {
+    return titleJsonb[primaryKey];
   }
 
   // Fallback to any available language
+  // BUT: Check if we're expecting a Latin script language and the fallback is non-Latin
   const firstKey = Object.keys(titleJsonb)[0];
-  return firstKey ? titleJsonb[firstKey] : '';
+  if (firstKey) {
+    const fallbackText = titleJsonb[firstKey];
+    const fallbackLangCode = firstKey.split('-')[0]?.toLowerCase() || '';
+    const isFallbackLatin = ['es', 'ca', 'eu', 'gl'].includes(fallbackLangCode);
+
+    // If we're expecting Latin but the fallback is non-Latin, check for non-Latin characters
+    if (shouldCheckAlphabet && !isFallbackLatin) {
+      console.log(
+        `[AlphabetDetection] Fallback: Checking alphabet for fallback language "${firstKey}" (code: ${fallbackLangCode}) when expecting Latin script (${requestedLangCode}), primary: ${primaryLanguageKey}, region: ${userRegion || 'unknown'}, title preview: "${fallbackText.substring(0, 50)}"`
+      );
+      const hasUnexpected = hasUnexpectedCharacters(
+        fallbackText,
+        requestedLangCode
+      );
+      if (hasUnexpected) {
+        console.log(
+          `[AlphabetDetection] ⚠️ Fallback language "${firstKey}" has non-Latin alphabet! Title: "${fallbackText.substring(0, 100)}". Should fetch primary language (${primaryLanguageKey}) from TMDB.`
+        );
+        // Return empty string to signal that we need to fetch primary language from TMDB
+        return '';
+      }
+    }
+
+    return fallbackText;
+  }
+  return '';
 }
 
 /**
@@ -413,25 +509,149 @@ export async function getTitlesByTmdbIds(
   }
 
   // Extract language-specific text from JSONB fields (now with updated languages)
-  const titlesWithLanguage = data.map((title) => ({
-    ...title,
-    title: getTitleInLanguage(
-      title.title as MultiLanguageText,
+  // Determine primary language for region
+  const primaryLanguage = userRegion
+    ? getPrimaryLanguageForRegion(userRegion)
+    : 'es'; // Default to Spanish
+  const primaryLanguageKey = `${primaryLanguage}-${userRegion?.toUpperCase() || 'ES'}`;
+  const requestedLangCode = language.split('-')[0]?.toLowerCase() || '';
+  const primaryLangCode = primaryLanguage.split('-')[0]?.toLowerCase() || '';
+
+  // Identify titles that need primary language fallback
+  // (when non-Latin alphabet detected and primary language not found)
+  const titlesNeedingPrimaryLanguageFallback: Array<{
+    tmdb_id: number;
+    type: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv;
+    needsOverview: boolean; // If overview is empty in preferred language, also fetch it
+  }> = [];
+
+  const titlesWithLanguage = data.map((title) => {
+    const titleJsonb = title.title as MultiLanguageText;
+    const overviewJsonb = title.overview as MultiLanguageText | null;
+
+    // Extract title first
+    const extractedTitle = getTitleInLanguage(titleJsonb, language, userRegion);
+    const extractedOverview = getTitleInLanguage(
+      overviewJsonb,
       language,
       userRegion
-    ),
-    overview: getTitleInLanguage(
-      title.overview as MultiLanguageText | null,
-      language,
-      userRegion
-    ),
-    poster_path: getTitleInLanguage(
-      title.poster_path as MultiLanguageText | null,
-      language,
-      userRegion,
-      true // isImagePath = true - don't check language for image paths
-    ),
-  }));
+    );
+
+    // Check if title is empty (signals need to fetch primary language from TMDB)
+    // This happens when getTitleInLanguage detects non-Latin alphabet but primary language not found
+    if (extractedTitle === '' && requestedLangCode !== primaryLangCode) {
+      // Check if we have primary language in the JSONB
+      const hasPrimaryLanguage =
+        titleJsonb[primaryLanguageKey] ||
+        titleJsonb[primaryLanguage] ||
+        Object.keys(titleJsonb).some((k) =>
+          k.startsWith(`${primaryLanguage}-`)
+        );
+
+      if (!hasPrimaryLanguage) {
+        // Need to fetch primary language from TMDB
+        // Also check if overview is empty in preferred language
+        const needsOverview = !extractedOverview || extractedOverview === '';
+        titlesNeedingPrimaryLanguageFallback.push({
+          tmdb_id: title.tmdb_id,
+          type: title.type,
+          needsOverview,
+        });
+      }
+    }
+
+    return {
+      ...title,
+      title: extractedTitle,
+      overview: extractedOverview,
+      poster_path: getTitleInLanguage(
+        title.poster_path as MultiLanguageText | null,
+        language,
+        userRegion,
+        true // isImagePath = true - don't check language for image paths
+      ),
+    };
+  });
+
+  // If we have titles needing primary language fallback, fetch them from TMDB
+  if (titlesNeedingPrimaryLanguageFallback.length > 0) {
+    if (import.meta.dev) {
+      console.log(
+        `[getTitlesByTmdbIds] Titles needing primary language (${primaryLanguageKey}) fallback (non-Latin detected but no primary language found):`,
+        titlesNeedingPrimaryLanguageFallback.map((t) => ({
+          tmdb_id: t.tmdb_id,
+          needsOverview: t.needsOverview,
+        }))
+      );
+    }
+
+    // Fetch primary language translations from TMDB in parallel
+    const fetchPrimaryLanguagePromises =
+      titlesNeedingPrimaryLanguageFallback.map(async (title) => {
+        try {
+          const endpoint = title.type === 'movie' ? 'movies' : 'tvshows';
+          await $fetch(`/api/tmdb/${endpoint}/${title.tmdb_id}`, {
+            query: {
+              language: primaryLanguageKey, // Fetch primary language specifically
+            },
+          });
+          if (import.meta.dev) {
+            console.log(
+              `[getTitlesByTmdbIds] Successfully fetched primary language (${primaryLanguageKey}) for title ${title.tmdb_id} from TMDB`
+            );
+          }
+          return title.tmdb_id;
+        } catch (err) {
+          console.error(
+            `[getTitlesByTmdbIds] Error fetching primary language (${primaryLanguageKey}) for title ${title.tmdb_id} from TMDB:`,
+            err
+          );
+          return null;
+        }
+      });
+
+    await Promise.all(fetchPrimaryLanguagePromises);
+
+    // Reload titles from database after fetching primary language
+    const primaryLanguageTmdbIds = titlesNeedingPrimaryLanguageFallback.map(
+      (t) => t.tmdb_id
+    );
+    const { data: reloadedData, error: reloadError } = await supabase
+      .from(TABLES.TITLES)
+      .select('id, title, type, poster_path, tmdb_id, overview, genres')
+      .in(TITLES_FIELDS.TMDB_ID, primaryLanguageTmdbIds);
+
+    if (!reloadError && reloadedData) {
+      // Update the titlesWithLanguage array with the reloaded data
+      const reloadedDataMap = new Map(reloadedData.map((t) => [t.tmdb_id, t]));
+
+      titlesWithLanguage.forEach((title, index) => {
+        const reloaded = reloadedDataMap.get(title.tmdb_id);
+        if (reloaded) {
+          // Re-extract with the updated JSONB that now includes primary language
+          titlesWithLanguage[index] = {
+            ...title,
+            title: getTitleInLanguage(
+              reloaded.title as MultiLanguageText,
+              language,
+              userRegion
+            ),
+            overview: getTitleInLanguage(
+              reloaded.overview as MultiLanguageText | null,
+              language,
+              userRegion
+            ),
+            poster_path: getTitleInLanguage(
+              reloaded.poster_path as MultiLanguageText | null,
+              language,
+              userRegion,
+              true
+            ),
+          };
+        }
+      });
+    }
+  }
 
   return { data: titlesWithLanguage, error: null };
 }

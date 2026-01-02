@@ -65,11 +65,15 @@ export function hasUnexpectedCharacters(
     // and matches non-Latin patterns
     if (!isLatinChar(char)) {
       // Double-check with non-Latin patterns
+      let isNonLatin = false;
       for (const pattern of nonLatinPatterns) {
         if (pattern.test(char)) {
-          nonLatinCount++;
+          isNonLatin = true;
           break;
         }
+      }
+      if (isNonLatin) {
+        nonLatinCount++;
       }
     }
   }
@@ -79,19 +83,58 @@ export function hasUnexpectedCharacters(
     return false;
   }
 
+  // If we have no meaningful characters, don't flag as unexpected
+  if (totalChars === 0) {
+    return false;
+  }
+
   // If more than 50% of characters are non-Latin, consider it non-Latin alphabet
   const nonLatinRatio = nonLatinCount / totalChars;
-  if (nonLatinRatio > 0.5) {
-    // This is expected behavior when TMDB returns titles in non-Latin scripts (e.g., Japanese, Chinese)
-    // Only log in dev mode for debugging purposes
-    if (import.meta.dev) {
-      console.log(
-        `[LanguageDetection] Found non-Latin alphabet in ${expectedLanguage} text (${Math.round(nonLatinRatio * 100)}% non-Latin):`,
-        text.substring(0, 50)
-      );
-    }
+  
+  // For very short texts (like titles), if ALL characters are non-Latin, flag it
+  // This handles cases like "七つの大罪" where all characters are CJK
+  if (totalChars <= 10 && nonLatinCount === totalChars && nonLatinCount > 0) {
+    console.log(
+      `[AlphabetDetection] 🔍 Detected non-Latin alphabet in ${expectedLanguage} text (all characters are non-Latin):`,
+      {
+        nonLatinCount,
+        totalChars,
+        nonLatinRatio: `${Math.round(nonLatinRatio * 100)}%`,
+        textPreview: text.substring(0, 100),
+        detectedScripts: nonLatinPatterns
+          .map((pattern) => {
+            const matches = text.match(pattern);
+            return matches ? pattern.toString() : null;
+          })
+          .filter(Boolean),
+      }
+    );
     return true;
   }
+  
+  if (nonLatinRatio > 0.5) {
+    // This is expected behavior when TMDB returns titles in non-Latin scripts (e.g., Japanese, Chinese)
+    console.log(
+      `[AlphabetDetection] 🔍 Detected non-Latin alphabet in ${expectedLanguage} text:`,
+      {
+        nonLatinCount,
+        totalChars,
+        nonLatinRatio: `${Math.round(nonLatinRatio * 100)}%`,
+        textPreview: text.substring(0, 100),
+        detectedScripts: nonLatinPatterns
+          .map((pattern, idx) => {
+            const matches = text.match(pattern);
+            return matches ? pattern.toString() : null;
+          })
+          .filter(Boolean),
+      }
+    );
+    return true;
+  }
+  
+  console.log(
+    `[AlphabetDetection] ✅ Alphabet is valid for ${expectedLanguage}: ${Math.round(nonLatinRatio * 100)}% non-Latin (threshold: 50%)`
+  );
 
   return false;
 }

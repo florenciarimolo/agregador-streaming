@@ -24,6 +24,11 @@ import {
   USER_TITLE_STATUS_FIELDS,
   USER_PREFERENCES_FIELDS,
 } from '@/composables/database/constants';
+import {
+  getTitleInLanguage,
+  type MultiLanguageText,
+} from '@/composables/database/titles';
+import { getPrimaryLanguageForRegion } from '@/utils/language-detection';
 
 /**
  * Minimum quality criteria (less strict than recommendations endpoint)
@@ -195,9 +200,84 @@ export default defineEventHandler(async (event) => {
         // Extract full genre objects (not just IDs)
         const genres = fullResponse.genres || [];
 
+        // Convert title to multi-language format and use alphabet detector
+        const titleText = fullResponse.title || fullResponse.name || '';
+        const titleAsMultiLanguage: MultiLanguageText = {
+          [language]: titleText,
+        };
+
+        // Use getTitleInLanguage with alphabet detection
+        // If it returns empty, it means we need to fetch primary language from TMDB
+        let extractedTitle = getTitleInLanguage(
+          titleAsMultiLanguage,
+          language,
+          region,
+          false // isImagePath = false
+        );
+
+        // Determine primary language for region
+        const primaryLanguage = region
+          ? getPrimaryLanguageForRegion(region)
+          : 'es';
+        const primaryLanguageKey = `${primaryLanguage}-${region?.toUpperCase() || 'ES'}`;
+
+        // Check if we need to fetch primary language (title empty or overview empty)
+        const needsPrimaryLanguage =
+          !extractedTitle ||
+          !fullResponse.overview ||
+          fullResponse.overview.trim() === '';
+        let primaryResponse: TMDBTitleDetails | null = null;
+
+        if (needsPrimaryLanguage) {
+          try {
+            primaryResponse = await $fetch<TMDBTitleDetails>(
+              `${tmdbConfig.baseUrl}${endpoint}`,
+              {
+                query: {
+                  api_key: tmdbConfig.apiKey,
+                  language: primaryLanguageKey,
+                  region: tmdbConfig.region,
+                },
+              }
+            );
+
+            if (primaryResponse) {
+              devLog(
+                `[PopulatePool] Fetched primary language (${primaryLanguageKey}) for ${tmdbId}`
+              );
+            }
+          } catch (primaryError) {
+            safeError(
+              `[PopulatePool] Error fetching primary language for ${tmdbId}`,
+              primaryError
+            );
+          }
+        }
+
+        // Use primary language title if extracted title is empty
+        if (!extractedTitle && primaryResponse) {
+          extractedTitle =
+            primaryResponse.title || primaryResponse.name || titleText;
+        } else if (!extractedTitle) {
+          // Fallback to original title if primary language fetch failed
+          extractedTitle = titleText;
+        }
+
+        // Handle overview: if empty, use primary language overview
+        let overview = fullResponse.overview || '';
+        if (
+          (!overview || overview.trim() === '') &&
+          primaryResponse?.overview
+        ) {
+          overview = primaryResponse.overview;
+          devLog(
+            `[PopulatePool] Using primary language (${primaryLanguageKey}) overview for ${tmdbId}`
+          );
+        }
+
         return {
-          title: fullResponse.title || fullResponse.name || '',
-          overview: fullResponse.overview || '',
+          title: extractedTitle,
+          overview: overview,
           poster_path: fullResponse.poster_path || null,
           backdrop_path: fullResponse.backdrop_path || null,
           vote_average: fullResponse.vote_average || null,

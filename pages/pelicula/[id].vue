@@ -102,6 +102,26 @@ const handleResize = () => {
 onMounted(() => {
   checkMobile();
   window.addEventListener('resize', handleResize);
+  
+  // Save the previous route if it exists and is from within the app
+  if (import.meta.client) {
+    const referrer = document.referrer;
+    const currentOrigin = window.location.origin;
+    
+    // Only save if the referrer is from the same origin (within the app)
+    if (referrer && referrer.startsWith(currentOrigin)) {
+      try {
+        const referrerPath = new URL(referrer).pathname;
+        // Don't save if we're coming from another detail page (to avoid loops)
+        if (!referrerPath.startsWith('/pelicula/') && !referrerPath.startsWith('/serie/')) {
+          sessionStorage.setItem('previousRoute', referrerPath);
+        }
+      } catch (e) {
+        // If URL parsing fails, try to use router's previous route
+        // This is a fallback
+      }
+    }
+  }
 });
 
 onUnmounted(() => {

@@ -1891,23 +1891,6 @@ const fetchContentPreferences = async () => {
       // Use the value from DB directly, only default to 'es' if it's truly null/undefined
       const dbLanguage = response.preferences.preferred_language;
 
-      if (import.meta.dev) {
-        console.log('[Profile] Fetched preferences from DB:', {
-          preferred_language: dbLanguage,
-          favorite_genres: response.preferences.favorite_genres,
-          included_providers: response.preferences.included_providers,
-          region: response.preferences.region,
-        });
-        console.log(
-          '[Profile] Available genres count:',
-          availableGenres.value.length
-        );
-        console.log(
-          '[Profile] Available providers count:',
-          availableProviders.value.length
-        );
-      }
-
       contentPreferences.value = {
         preferred_language: dbLanguage ?? LanguageCode.SPANISH, // Only default if null/undefined
         favorite_genres: response.preferences.favorite_genres || [],
@@ -1942,19 +1925,8 @@ const fetchContentPreferences = async () => {
             contentPreferences.value.favorite_genres?.includes(g.id)
           );
           selectedGenres.value = mappedGenres;
-          if (import.meta.dev) {
-            console.log('[Profile] Mapped genres:', {
-              requested: contentPreferences.value.favorite_genres,
-              mapped: mappedGenres.map((g) => ({ id: g.id, name: g.name })),
-            });
-          }
         } else {
           // Genres not loaded yet, watcher will handle it
-          if (import.meta.dev) {
-            console.log(
-              '[Profile] Genres not loaded yet, watcher will handle mapping'
-            );
-          }
         }
       } else {
         selectedGenres.value = [];
@@ -1970,22 +1942,8 @@ const fetchContentPreferences = async () => {
             contentPreferences.value.included_providers?.includes(p.provider_id)
           );
           selectedProviders.value = mappedProviders;
-          if (import.meta.dev) {
-            console.log('[Profile] Mapped providers:', {
-              requested: contentPreferences.value.included_providers,
-              mapped: mappedProviders.map((p) => ({
-                id: p.provider_id,
-                name: p.provider_name,
-              })),
-            });
-          }
         } else {
           // Providers not loaded yet, watcher will handle it
-          if (import.meta.dev) {
-            console.log(
-              '[Profile] Providers not loaded yet, watcher will handle mapping'
-            );
-          }
         }
       } else {
         selectedProviders.value = [];
@@ -2011,30 +1969,8 @@ const fetchContentPreferences = async () => {
         ? { ...selectedLanguage.value }
         : null;
       hasUnsavedContentChanges.value = false;
-
-      if (import.meta.dev) {
-        console.log('[Profile] Saved initial state:', {
-          selectedGenres: selectedGenres.value.map((g) => ({
-            id: g.id,
-            name: g.name,
-          })),
-          selectedProviders: selectedProviders.value.map((p) => ({
-            id: p.provider_id,
-            name: p.provider_name,
-          })),
-          selectedLanguage: selectedLanguage.value,
-          savedContentPreferences: savedContentPreferences.value,
-          dbPreferences: {
-            favorite_genres: contentPreferences.value.favorite_genres,
-            included_providers: contentPreferences.value.included_providers,
-          },
-        });
-      }
     } else {
       // No preferences found, reset to empty
-      if (import.meta.dev) {
-        console.log('[Profile] No preferences found in DB');
-      }
       selectedLanguage.value = null;
       selectedGenres.value = [];
       selectedProviders.value = [];
@@ -2517,12 +2453,6 @@ watch(
           contentPreferences.value.favorite_genres?.includes(g.id)
         );
         selectedGenres.value = mappedGenres;
-        if (import.meta.dev) {
-          console.log('[Profile] Watcher (availableGenres) mapped genres:', {
-            requested: contentPreferences.value.favorite_genres,
-            mapped: mappedGenres.map((g) => ({ id: g.id, name: g.name })),
-          });
-        }
       }
     }
 
@@ -2548,18 +2478,6 @@ watch(
           contentPreferences.value.included_providers?.includes(p.provider_id)
         );
         selectedProviders.value = mappedProviders;
-        if (import.meta.dev) {
-          console.log(
-            '[Profile] Watcher (availableProviders) mapped providers:',
-            {
-              requested: contentPreferences.value.included_providers,
-              mapped: mappedProviders.map((p) => ({
-                id: p.provider_id,
-                name: p.provider_name,
-              })),
-            }
-          );
-        }
       }
     }
   },
@@ -2583,22 +2501,12 @@ watch(
           genreIds.includes(g.id)
         );
         selectedGenres.value = mappedGenres;
-        if (import.meta.dev) {
-          console.log('[Profile] Watcher mapped genres:', {
-            requested: genreIds,
-            mapped: mappedGenres.map((g) => ({ id: g.id, name: g.name })),
-            availableGenresCount: availableGenres.value.length,
-          });
-        }
       }
     } else if (!genreIds || genreIds.length === 0) {
       // Only clear if we're sure there are no genres (not just because they're not loaded yet)
       // Check if preferences have been loaded (savedContentPreferences exists)
       if (availableGenres.value.length > 0 && savedContentPreferences.value) {
         selectedGenres.value = [];
-        if (import.meta.dev) {
-          console.log('[Profile] Cleared genres - no genres in preferences');
-        }
       }
     }
   },
@@ -2626,16 +2534,6 @@ watch(
           providerIds.includes(p.provider_id)
         );
         selectedProviders.value = mappedProviders;
-        if (import.meta.dev) {
-          console.log('[Profile] Watcher mapped providers:', {
-            requested: providerIds,
-            mapped: mappedProviders.map((p) => ({
-              id: p.provider_id,
-              name: p.provider_name,
-            })),
-            availableProvidersCount: availableProviders.value.length,
-          });
-        }
       }
     } else if (!providerIds || providerIds.length === 0) {
       // Only clear if we're sure there are no providers (not just because they're not loaded yet)
@@ -2645,11 +2543,6 @@ watch(
         savedContentPreferences.value
       ) {
         selectedProviders.value = [];
-        if (import.meta.dev) {
-          console.log(
-            '[Profile] Cleared providers - no providers in preferences'
-          );
-        }
       }
     }
   },
@@ -2682,9 +2575,6 @@ watch(
       }
     } else if (!languageCode) {
       // No language - default to Spanish only if truly null/undefined
-      if (import.meta.dev) {
-        console.log('[Profile Watch] No language code, defaulting to Spanish');
-      }
       selectedLanguage.value =
         availableLanguages.find(
           (l: Language) => l.code === LanguageCode.SPANISH

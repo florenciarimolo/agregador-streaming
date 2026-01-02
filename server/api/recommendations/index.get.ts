@@ -23,6 +23,7 @@ import {
   TABLES,
   USER_TITLE_STATUS_FIELDS,
 } from '@/composables/database/constants';
+import type { MultiLanguageText } from '@/composables/database/titles';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 
 /**
@@ -394,50 +395,80 @@ export default defineEventHandler(async (event) => {
       ): Promise<TitleData | null> => {
         // If title_data exists, use it
         if (entry.title_data) {
-          const titleData = entry.title_data as any;
-          // Ensure title and overview are strings, not JSONB objects
-          // If they're objects (JSONB), extract the correct language
-          let title = titleData.title;
-          let overview = titleData.overview;
-          
-          // Extract language code from TMDB format (e.g., 'ca-ES' -> 'ca')
-          const { extractLanguageCode } = await import('@/constants/languages');
-          const langCode = extractLanguageCode(language);
-          
-          // If title is an object (multi-language JSONB), extract the user's language
-          if (title && typeof title === 'object' && !Array.isArray(title)) {
-            // Try user's preferred language first
-            if (title[langCode]) {
-              title = title[langCode];
-            } else if (title['es']) {
-              // Fallback to Spanish
-              title = title['es'];
-            } else {
-              // Fallback to first available language
-              const firstKey = Object.keys(title)[0];
-              title = firstKey ? title[firstKey] : '';
+          const titleData = entry.title_data as TitleData & {
+            title?: string | MultiLanguageText;
+            overview?: string | MultiLanguageText;
+          };
+
+          // Use getTitleInLanguage to extract title and overview with alphabet detection
+          const { getTitleInLanguage } =
+            await import('@/composables/database/titles');
+
+          // Extract title with alphabet detection and fallback
+          // getTitleInLanguage handles both string and multi-language object formats
+          let extractedTitle = '';
+          if (typeof titleData.title === 'string') {
+            // If it's a string, we need to check if it contains non-Latin characters
+            // Convert to multi-language object format for getTitleInLanguage
+            const titleAsMultiLanguage: MultiLanguageText = {
+              [language]: titleData.title,
+            };
+            extractedTitle = getTitleInLanguage(
+              titleAsMultiLanguage,
+              language,
+              region,
+              false // isImagePath = false
+            );
+            // If getTitleInLanguage returns empty (needs primary language from TMDB),
+            // use the original string as fallback for now
+            if (!extractedTitle) {
+              extractedTitle = titleData.title;
             }
+          } else if (titleData.title && typeof titleData.title === 'object') {
+            // Multi-language object, use getTitleInLanguage with alphabet detection
+            extractedTitle = getTitleInLanguage(
+              titleData.title,
+              language,
+              region,
+              false // isImagePath = false
+            );
           }
-          
-          // If overview is an object (multi-language JSONB), extract the user's language
-          if (overview && typeof overview === 'object' && !Array.isArray(overview)) {
-            // Try user's preferred language first
-            if (overview[langCode]) {
-              overview = overview[langCode];
-            } else if (overview['es']) {
-              // Fallback to Spanish
-              overview = overview['es'];
-            } else {
-              // Fallback to first available language
-              const firstKey = Object.keys(overview)[0];
-              overview = firstKey ? overview[firstKey] : '';
+
+          // Extract overview with alphabet detection and fallback
+          let extractedOverview = '';
+          if (typeof titleData.overview === 'string') {
+            // If it's a string, convert to multi-language object format for getTitleInLanguage
+            const overviewAsMultiLanguage: MultiLanguageText = {
+              [language]: titleData.overview,
+            };
+            extractedOverview = getTitleInLanguage(
+              overviewAsMultiLanguage,
+              language,
+              region,
+              false // isImagePath = false
+            );
+            // If getTitleInLanguage returns empty (needs primary language from TMDB),
+            // use the original string as fallback for now
+            if (!extractedOverview) {
+              extractedOverview = titleData.overview;
             }
+          } else if (
+            titleData.overview &&
+            typeof titleData.overview === 'object'
+          ) {
+            // Multi-language object, use getTitleInLanguage with alphabet detection
+            extractedOverview = getTitleInLanguage(
+              titleData.overview,
+              language,
+              region,
+              false // isImagePath = false
+            );
           }
-          
+
           return {
             ...titleData,
-            title: typeof title === 'string' ? title : '',
-            overview: typeof overview === 'string' ? overview : '',
+            title: extractedTitle || '',
+            overview: extractedOverview || '',
           } as TitleData;
         }
 
@@ -635,7 +666,9 @@ export default defineEventHandler(async (event) => {
           id: `pool-${entry.tmdb_id}`,
           tmdb_id: entry.tmdb_id,
           title: titleData.title || '',
-          type: entry.type as typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv,
+          type: entry.type as
+            | typeof MediaTypeEnum.movie
+            | typeof MediaTypeEnum.tv,
           poster_path: titleData.poster_path,
           overview: titleData.overview || null,
           vote_average: titleData.vote_average,
