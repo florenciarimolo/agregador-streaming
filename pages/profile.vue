@@ -104,70 +104,6 @@
       </div>
     </Modal>
 
-    <!-- Language Change Confirmation Modal -->
-    <Modal
-      :is-open="showLanguageChangeModal && !!pendingLanguageChange"
-      :close-on-overlay-click="!isConfirmingLanguageChange"
-      custom-class="relative"
-      @close="
-        if (!isConfirmingLanguageChange) {
-          showLanguageChangeModal = false;
-          pendingLanguageChange = null;
-        }
-      "
-    >
-      <!-- Loading overlay -->
-      <div
-        v-if="isConfirmingLanguageChange"
-        class="flex absolute inset-0 z-10 justify-center items-center -m-6 rounded-3xl backdrop-blur-sm bg-black/20 dark:bg-black/40"
-      >
-        <div class="flex flex-col gap-3 items-center">
-          <div
-            class="w-8 h-8 rounded-full border-b-2 animate-spin border-primary-600 dark:border-primary-400"
-          ></div>
-          <p class="text-sm text-gray-700 dark:text-gray-300">
-            {{ $t('preferences.content.preferredLanguage.saving') }}
-          </p>
-        </div>
-      </div>
-      <h3 class="mb-2 text-lg font-semibold text-gray-800 dark:text-gray-300">
-        {{ $t('preferences.content.preferredLanguage.confirmChangeTitle') }}
-      </h3>
-      <p class="mb-4 text-gray-800 dark:text-gray-300">
-        {{ $t('preferences.content.preferredLanguage.confirmChangeMessage') }}
-      </p>
-      <div class="flex gap-3 justify-end">
-        <Button
-          size="small"
-          variant="outline"
-          :disabled="isConfirmingLanguageChange"
-          @click="
-            if (!isConfirmingLanguageChange) {
-              showLanguageChangeModal = false;
-              pendingLanguageChange = null;
-            }
-          "
-        >
-          {{ $t('common.cancel') }}
-        </Button>
-        <Button
-          size="small"
-          variant="primary"
-          :disabled="isConfirmingLanguageChange"
-          @click="confirmLanguageChange"
-        >
-          <template v-if="isConfirmingLanguageChange">
-            <span
-              class="w-4 h-4 rounded-full border-b-2 border-white animate-spin"
-            ></span>
-          </template>
-          <template v-else>
-            {{ $t('common.confirm') }}
-          </template>
-        </Button>
-      </div>
-    </Modal>
-
     <!-- Tabs for Lists -->
     <Tabs
       :default-tab="activeTab"
@@ -188,7 +124,16 @@
               ? tab.count
               : undefined
           "
-          @click="setActiveTab(tab.id)"
+          @click="
+            handleTabButtonClick(
+              tab.id as
+                | 'liked'
+                | 'seen'
+                | 'not-interested'
+                | 'content-preferences',
+              setActiveTab
+            )
+          "
         >
           {{ tab.label }}
         </TabButton>
@@ -315,7 +260,7 @@
                     type="checkbox"
                     value="movie"
                     class="custom-checkbox"
-                    @change="saveContentPreferences"
+                    @change="markContentPreferencesChanged"
                   />
                   <span class="text-sm text-gray-800 dark:text-gray-300">{{
                     $t('preferences.content.contentTypes.movie')
@@ -329,7 +274,7 @@
                     type="checkbox"
                     value="tv"
                     class="custom-checkbox"
-                    @change="saveContentPreferences"
+                    @change="markContentPreferencesChanged"
                   />
                   <span class="text-sm text-gray-800 dark:text-gray-300">{{
                     $t('preferences.content.contentTypes.tv')
@@ -610,10 +555,118 @@
                 @update:model-value="handleRegionChange"
               />
             </Card>
+
+            <!-- Save Button -->
+            <div class="flex justify-end mt-6">
+              <Button
+                variant="primary"
+                size="medium"
+                :disabled="!hasUnsavedContentChanges"
+                @click="saveContentPreferences"
+              >
+                {{ $t('common.save') }}
+              </Button>
+            </div>
           </div>
         </div>
       </template>
     </Tabs>
+
+    <!-- Save Confirmation Modal -->
+    <Modal
+      :is-open="showSaveConfirmationModal"
+      @close="showSaveConfirmationModal = false"
+    >
+      <div class="flex flex-col gap-4">
+        <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-300">
+          {{ $t('preferences.content.saveConfirmationTitle') }}
+        </h2>
+        <p class="text-gray-700 dark:text-gray-400">
+          {{ $t('preferences.content.saveConfirmationMessage') }}
+        </p>
+        <div class="flex gap-3 justify-end mt-4">
+          <Button
+            variant="outline"
+            size="medium"
+            @click="
+              showSaveConfirmationModal = false;
+              revertContentPreferencesChanges();
+            "
+          >
+            {{ $t('common.cancel') }}
+          </Button>
+          <Button
+            variant="primary"
+            size="medium"
+            @click="confirmSaveContentPreferences"
+          >
+            {{ $t('common.confirm') }}
+          </Button>
+        </div>
+      </div>
+    </Modal>
+
+    <!-- Unsaved Changes Modal -->
+    <Modal
+      :is-open="showUnsavedChangesModal"
+      @close="showUnsavedChangesModal = false"
+    >
+      <div class="flex flex-col gap-4">
+        <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-300">
+          {{ $t('preferences.content.unsavedChangesTitle') }}
+        </h2>
+        <p class="text-gray-700 dark:text-gray-400">
+          {{ $t('preferences.content.unsavedChangesMessage') }}
+        </p>
+        <div class="flex gap-3 justify-end mt-4">
+          <Button
+            variant="outline"
+            size="medium"
+            @click="
+              showUnsavedChangesModal = false;
+              pendingNavigation = null;
+              pendingTabChange = null;
+              // Revert changes to saved state from DB
+              revertContentPreferencesChanges();
+            "
+          >
+            {{ $t('common.cancel') }}
+          </Button>
+          <Button
+            variant="primary"
+            size="medium"
+            @click="
+              showUnsavedChangesModal = false;
+              hasUnsavedContentChanges = false;
+              // Handle pending navigation
+              if (pendingNavigation) {
+                pendingNavigation();
+                pendingNavigation = null;
+              }
+              // Handle pending tab change
+              if (pendingTabChange) {
+                const tabToChange = pendingTabChange;
+                pendingTabChange = null;
+                // Use nextTick to ensure modal is closed before changing tab
+                nextTick(() => {
+                  activeTab = tabToChange;
+                  const route = useRoute();
+                  navigateTo(
+                    {
+                      path: route.path,
+                      query: { ...route.query, tab: tabToChange },
+                    },
+                    { replace: true }
+                  );
+                });
+              }
+            "
+          >
+            {{ $t('common.leave') }}
+          </Button>
+        </div>
+      </div>
+    </Modal>
 
     <!-- Modal for removing like -->
     <Modal :is-open="showRemoveLikeModal" @close="showRemoveLikeModal = false">
@@ -651,6 +704,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, nextTick, onUnmounted } from 'vue';
+import { onBeforeRouteLeave } from 'vue-router';
 import { useUserStore } from '@/stores/user';
 import { TitleStatus } from '@/types/TitleStatus';
 import CloseButton from '@/components/ui/CloseButton.vue';
@@ -715,8 +769,6 @@ const activeTab = ref<
   'liked' | 'seen' | 'not-interested' | 'content-preferences'
 >('liked');
 const titleToDelete = ref<{ id: string; title: string } | null>(null);
-const showLanguageChangeModal = ref(false);
-const isConfirmingLanguageChange = ref(false);
 const showRemoveLikeModal = ref(false);
 const titleToRemoveLike = ref<{
   id: string;
@@ -724,10 +776,31 @@ const titleToRemoveLike = ref<{
   tmdb_id: number;
   type: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv;
 } | null>(null);
-const pendingLanguageChange = ref<{
-  action: 'add' | 'remove' | 'change';
-  language: { code: string; name: string } | null;
-  newLanguages: Array<{ code: string; name: string }>;
+const hasUnsavedContentChanges = ref(false);
+const showUnsavedChangesModal = ref(false);
+const showSaveConfirmationModal = ref(false);
+const pendingNavigation = ref<(() => void) | null>(null);
+const pendingTabChange = ref<
+  'liked' | 'seen' | 'not-interested' | 'content-preferences' | null
+>(null);
+const savedContentPreferences = ref<{
+  preferred_language?: string;
+  content_types?: ('movie' | 'tv')[];
+  favorite_genres?: number[];
+  included_providers?: number[];
+  region?: string;
+} | null>(null);
+const savedSelectedGenres = ref<Array<{ id: number; name: string }>>([]);
+const savedSelectedProviders = ref<
+  Array<{
+    provider_id: number;
+    provider_name: string;
+    logo_path: string | null;
+  }>
+>([]);
+const savedSelectedLanguage = ref<{
+  code: string;
+  name: string;
 } | null>(null);
 
 const likedTitles = ref<
@@ -808,12 +881,33 @@ const showSuccess = (message: string) => {
   showToast(message, null, 5000);
 };
 
-// Handle tab change and update URL
+// Handle tab button click - intercepts before Tabs component changes state
+const handleTabButtonClick = (
+  tabId: 'liked' | 'seen' | 'not-interested' | 'content-preferences',
+  setActiveTab: (tab: string) => void
+) => {
+  // If trying to change from content-preferences tab and there are unsaved changes, show modal
+  if (
+    activeTab.value === 'content-preferences' &&
+    tabId !== 'content-preferences' &&
+    hasUnsavedContentChanges.value
+  ) {
+    pendingTabChange.value = tabId;
+    showUnsavedChangesModal.value = true;
+    // Don't call setActiveTab - prevent the tab change
+    return;
+  }
+
+  // No unsaved changes or same tab, proceed with change
+  setActiveTab(tabId);
+};
+
+// Handle tab change and update URL (called after Tabs component changes state)
 const handleTabChange = (
   tabId: 'liked' | 'seen' | 'not-interested' | 'content-preferences'
 ) => {
+  // Update local state and URL
   activeTab.value = tabId;
-  // Update URL query param without page reload
   const route = useRoute();
   navigateTo(
     {
@@ -1489,9 +1583,7 @@ const confirmRemoveLikeFromSeen = async () => {
     }
 
     // Show toast about regenerating recommendations
-    showToast(t('home.regeneratingRecommendations'), null, 5000);
-
-    // Regenerate recommendation pool in background
+    // Regenerate recommendation pool in background (silently)
     try {
       const {
         data: { session },
@@ -1805,6 +1897,23 @@ const fetchContentPreferences = async () => {
       } else {
         selectedProviders.value = [];
       }
+
+      // Save initial state for comparison and rollback
+      savedContentPreferences.value = {
+        preferred_language: selectedLanguage.value?.code,
+        content_types: [...(contentPreferences.value.content_types || [])],
+        favorite_genres: [...selectedGenres.value.map((g) => g.id)],
+        included_providers: [
+          ...selectedProviders.value.map((p) => p.provider_id),
+        ],
+        region: contentPreferences.value.region || undefined,
+      };
+      savedSelectedGenres.value = [...selectedGenres.value];
+      savedSelectedProviders.value = [...selectedProviders.value];
+      savedSelectedLanguage.value = selectedLanguage.value
+        ? { ...selectedLanguage.value }
+        : null;
+      hasUnsavedContentChanges.value = false;
     } else {
       // No preferences found, reset to empty
       selectedLanguage.value = null;
@@ -1899,7 +2008,7 @@ const addProvider = (provider: {
   );
   providerSearchQuery.value = '';
   filteredProviders.value = [];
-  saveContentPreferences();
+  markContentPreferencesChanged();
 };
 
 // Remove provider from selected list
@@ -1910,7 +2019,7 @@ const removeProvider = (providerId: number) => {
   contentPreferences.value.included_providers = selectedProviders.value.map(
     (p) => p.provider_id
   );
-  saveContentPreferences();
+  markContentPreferencesChanged();
 };
 
 // Change selected language (single selection)
@@ -1920,162 +2029,10 @@ const changeLanguage = (lang: { code: string; name: string }) => {
     return;
   }
 
-  // Show confirmation modal
-  pendingLanguageChange.value = {
-    action: 'change',
-    language: lang,
-    newLanguages: [lang], // Keep as array for compatibility with modal
-  };
-  showLanguageChangeModal.value = true;
-};
-
-// Confirm language change and regenerate pool
-const confirmLanguageChange = async () => {
-  if (!pendingLanguageChange.value || isConfirmingLanguageChange.value) return;
-
-  // Set loading state
-  isConfirmingLanguageChange.value = true;
-
-  // Store original state for potential rollback
-  const originalLanguage = selectedLanguage.value;
-  const originalPreference =
-    contentPreferences.value.preferred_language || LanguageCode.SPANISH;
-
-  try {
-    // Update selected language
-    const newLanguage = pendingLanguageChange.value.newLanguages[0];
-    selectedLanguage.value = newLanguage;
-
-    // Map to language code (single value)
-    const languageCode = newLanguage?.code || 'es';
-
-    contentPreferences.value.preferred_language = languageCode;
-
-    // Save preferences - wait for it to complete
-    const id = userId.value;
-    if (!id) {
-      throw new Error('User ID not found');
-    }
-
-    const {
-      data: { session },
-    } = await getSession();
-
-    if (!session?.access_token) {
-      throw new Error(t('profile.notAuthenticated'));
-    }
-
-    // Build preferences to save
-    const preferencesToSave = {
-      preferred_language: languageCode,
-      favorite_genres:
-        selectedGenres.value.length > 0
-          ? selectedGenres.value.map((g) => g.id)
-          : [],
-      included_providers:
-        selectedProviders.value.length > 0
-          ? selectedProviders.value.map((p) => p.provider_id)
-          : [],
-      content_types: contentPreferences.value.content_types || [],
-      region: contentPreferences.value.region || null,
-    };
-
-    // Save to Supabase
-    const saveResponse = await $fetch<{
-      success: boolean;
-      preferences: unknown;
-    }>('/api/users/preferences', {
-      method: 'PUT',
-      headers: {
-        Authorization: `Bearer ${session.access_token}`,
-      },
-      body: preferencesToSave,
-    });
-
-    if (!saveResponse.success) {
-      throw new Error('Failed to save preferences');
-    }
-
-    // Verify the save was successful by checking the response
-    console.log(
-      '[LanguageChange] Preferences saved successfully:',
-      saveResponse
-    );
-    console.log(
-      '[LanguageChange] Saved preferred_language:',
-      saveResponse.preferences &&
-        typeof saveResponse.preferences === 'object' &&
-        'preferred_language' in saveResponse.preferences
-        ? (saveResponse.preferences as { preferred_language?: string })
-            .preferred_language
-        : 'not found'
-    );
-
-    // Refresh preferences from server to ensure UI is in sync
-    await fetchContentPreferences();
-
-    // Recargar todas las listas de títulos con el nuevo idioma
-    // Esto también actualizará los campos jsonb en la base de datos si falta el idioma
-    await fetchAllLists();
-
-    // Show success toast with message about language update and pool regeneration
-    showSuccess(
-      t('preferences.content.preferredLanguage.languageUpdatedAndRegenerating')
-    );
-
-    // Close modal after showing toast (use nextTick to ensure toast is rendered)
-    await nextTick();
-    showLanguageChangeModal.value = false;
-    pendingLanguageChange.value = null;
-    isConfirmingLanguageChange.value = false;
-
-    // Regenerate recommendation pool in background (silently)
-    // Set flag in sessionStorage to indicate regeneration is in progress
-    sessionStorage.setItem('regeneratingPool', 'true');
-
-    // Call regenerate-pool endpoint in background (don't await)
-    $fetch<{
-      success: boolean;
-      message?: string;
-    }>('/api/recommendations/regenerate-pool', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${session.access_token}`,
-      },
-    })
-      .then((poolResponse) => {
-        if (poolResponse.success) {
-          console.log('[LanguageChange] Pool regenerated successfully');
-        } else {
-          console.error(
-            '[LanguageChange] Pool regeneration failed:',
-            poolResponse
-          );
-        }
-      })
-      .catch((poolError) => {
-        console.error('[LanguageChange] Error regenerating pool:', poolError);
-      })
-      .finally(() => {
-        // Clear the flag after regeneration completes
-        // Use a delay to allow for page navigation scenarios
-        setTimeout(() => {
-          sessionStorage.removeItem('regeneratingPool');
-        }, 1000);
-      });
-  } catch (error) {
-    console.error('Error confirming language change:', error);
-
-    // Revert language change on error
-    selectedLanguage.value = originalLanguage;
-    contentPreferences.value.preferred_language = originalPreference;
-
-    showError(t('preferences.content.errorSaving'));
-
-    // Keep modal open so user can try again
-    // Don't close it here - let user decide
-    isConfirmingLanguageChange.value = false;
-  }
+  // Update language and mark as changed
+  selectedLanguage.value = lang;
+  contentPreferences.value.preferred_language = lang.code;
+  markContentPreferencesChanged();
 };
 
 // Filter genres based on search query
@@ -2109,7 +2066,7 @@ const addGenre = (genre: { id: number; name: string }) => {
   );
   genreSearchQuery.value = '';
   showGenreResults.value = false;
-  saveContentPreferences();
+  markContentPreferencesChanged();
 };
 
 // Remove genre from selected list
@@ -2118,7 +2075,7 @@ const removeGenre = (genreId: number) => {
   contentPreferences.value.favorite_genres = selectedGenres.value.map(
     (g) => g.id
   );
-  saveContentPreferences();
+  markContentPreferencesChanged();
 };
 
 // Calculate dropdown position for genres
@@ -2151,11 +2108,102 @@ const handleGenreBlur = () => {
 
 // Handle region change
 const handleRegionChange = () => {
-  saveContentPreferences();
+  markContentPreferencesChanged();
 };
 
-// Save content preferences
+// Mark content preferences as changed - compares current state with saved state
+const markContentPreferencesChanged = () => {
+  if (!savedContentPreferences.value) {
+    // If no saved state, mark as changed if there are any preferences set
+    hasUnsavedContentChanges.value =
+      !!selectedLanguage.value ||
+      selectedGenres.value.length > 0 ||
+      selectedProviders.value.length > 0 ||
+      (contentPreferences.value.content_types?.length ?? 0) > 0 ||
+      !!contentPreferences.value.region;
+    return;
+  }
+
+  // Build current preferences object for comparison
+  const currentPreferences = {
+    preferred_language: selectedLanguage.value?.code,
+    content_types: [...(contentPreferences.value.content_types || [])].sort(),
+    favorite_genres: [...selectedGenres.value.map((g) => g.id)].sort(),
+    included_providers: [
+      ...selectedProviders.value.map((p) => p.provider_id),
+    ].sort(),
+    region: contentPreferences.value.region || null,
+  };
+
+  // Build saved preferences object for comparison
+  const savedPrefs = {
+    preferred_language:
+      savedContentPreferences.value.preferred_language || null,
+    content_types: [
+      ...(savedContentPreferences.value.content_types || []),
+    ].sort(),
+    favorite_genres: [
+      ...(savedContentPreferences.value.favorite_genres || []),
+    ].sort(),
+    included_providers: [
+      ...(savedContentPreferences.value.included_providers || []),
+    ].sort(),
+    region: savedContentPreferences.value.region || null,
+  };
+
+  // Deep comparison using JSON.stringify
+  hasUnsavedContentChanges.value =
+    JSON.stringify(currentPreferences) !== JSON.stringify(savedPrefs);
+};
+
+// Revert content preferences to saved state
+const revertContentPreferencesChanges = () => {
+  if (!savedContentPreferences.value) {
+    return;
+  }
+
+  // Revert contentPreferences
+  contentPreferences.value = {
+    preferred_language:
+      savedContentPreferences.value.preferred_language || LanguageCode.SPANISH,
+    content_types: [...(savedContentPreferences.value.content_types || [])],
+    favorite_genres: [...(savedContentPreferences.value.favorite_genres || [])],
+    included_providers: [
+      ...(savedContentPreferences.value.included_providers || []),
+    ],
+    region: savedContentPreferences.value.region || undefined,
+  };
+
+  // Revert selected items
+  selectedGenres.value = savedSelectedGenres.value.map((g) => ({ ...g }));
+  selectedProviders.value = savedSelectedProviders.value.map((p) => ({
+    ...p,
+  }));
+  selectedLanguage.value = savedSelectedLanguage.value
+    ? { ...savedSelectedLanguage.value }
+    : null;
+
+  hasUnsavedContentChanges.value = false;
+};
+
+// Save content preferences - shows confirmation modal first
 const saveContentPreferences = async () => {
+  if (!hasUnsavedContentChanges.value) {
+    return;
+  }
+
+  // Show confirmation modal first
+  showSaveConfirmationModal.value = true;
+};
+
+// Confirm save and actually save preferences
+const confirmSaveContentPreferences = async () => {
+  showSaveConfirmationModal.value = false;
+
+  if (!hasUnsavedContentChanges.value) {
+    return;
+  }
+
   const id = userId.value;
   if (!id) return;
 
@@ -2198,7 +2246,39 @@ const saveContentPreferences = async () => {
     });
 
     if (response.success) {
-      showSuccess(t('preferences.content.saved'));
+      // Show toast with regeneration message
+      showToast(t('preferences.content.savedAndRegenerating'), null, 5000);
+
+      // Regenerate recommendation pool in background
+      try {
+        await $fetch('/api/recommendations/populate-pool', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        });
+      } catch (poolError) {
+        console.error('Error regenerating pool:', poolError);
+        // Don't show error to user, pool regeneration is background task
+      }
+
+      hasUnsavedContentChanges.value = false;
+      // Update saved state
+      savedContentPreferences.value = {
+        preferred_language: selectedLanguage.value?.code,
+        content_types: [...(contentPreferences.value.content_types || [])],
+        favorite_genres: [...selectedGenres.value.map((g) => g.id)],
+        included_providers: [
+          ...selectedProviders.value.map((p) => p.provider_id),
+        ],
+        region: contentPreferences.value.region || undefined,
+      };
+      // Update saved selected items for potential rollback
+      savedSelectedGenres.value = [...selectedGenres.value];
+      savedSelectedProviders.value = [...selectedProviders.value];
+      savedSelectedLanguage.value = selectedLanguage.value
+        ? { ...selectedLanguage.value }
+        : null;
     } else {
       throw new Error('Failed to save preferences');
     }
@@ -2457,6 +2537,16 @@ onMounted(async () => {
   // Add scroll and resize listeners
   window.addEventListener('scroll', updateAllDropdownPositions, true);
   window.addEventListener('resize', updateAllDropdownPositions);
+});
+
+// Handle navigation away with unsaved changes
+onBeforeRouteLeave((_to, _from, next) => {
+  if (hasUnsavedContentChanges.value) {
+    showUnsavedChangesModal.value = true;
+    pendingNavigation.value = () => next();
+  } else {
+    next();
+  }
 });
 
 onUnmounted(() => {

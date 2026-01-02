@@ -7,6 +7,7 @@
     "cancel": "Cancelar",
     "confirm": "Confirmar",
     "save": "Guardar",
+    "leave": "Salir",
     "delete": "Eliminar",
     "edit": "Editar",
     "close": "Cerrar",
@@ -348,6 +349,13 @@
         "default": "Seleccionar región...",
         "searchPlaceholder": "Buscar región..."
       },
+      "unsavedChangesTitle": "Cambios sin guardar",
+      "unsavedChangesMessage": "Tienes cambios sin guardar en tus preferencias de contenido. ¿Estás seguro de que quieres salir sin guardar?",
+      "saveConfirmationTitle": "Guardar preferencias",
+      "saveConfirmationMessage": "Al guardar las preferencias, se regenerarán las recomendaciones. ¿Estás seguro de que quieres continuar?",
+      "savedAndRegenerating": "Preferencias guardadas correctamente. Se están regenerando las recomendaciones...",
+      "saved": "Preferencias guardadas correctamente",
+      "errorSaving": "Error al guardar las preferencias. Por favor, intenta de nuevo.",
       "preferredLanguage": {
         "title": "Idioma preferido",
         "description": "Selecciona el idioma en el que prefieres ver contenido.",
@@ -360,8 +368,6 @@
         "selected": "Idioma seleccionado",
         "noneSelected": "No has seleccionado un idioma todavía."
       },
-      "saved": "Preferencias guardadas exitosamente.",
-      "errorSaving": "Inténtalo de nuevo más tarde.",
       "loading": "Cargando preferencias..."
     }
   },
