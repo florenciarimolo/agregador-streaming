@@ -143,7 +143,8 @@
     "howItWorksButton": "Cómo funciona"
   },
   "home": {
-    "generatingRecommendations": "Generando tus recomendaciones",
+    "generatingRecommendations": "Generando recomendaciones",
+    "generatingRecommendationsDescription": "Estamos generando tus recomendaciones personalizadas. Esto puede tardar unos minutos. Por favor, espera y no recargues la página.",
     "noRecommendations": "Aún no hay recomendaciones",
     "generatingDescription": "Estamos preparando recomendaciones personalizadas basadas en tus gustos. Esto puede tardar unos momentos.",
     "noRecommendationsDescription": "Para recibir recomendaciones personalizadas, primero necesitas agregar películas y series que te gusten. Esto nos ayuda a conocerte mejor y sugerirte contenido que realmente disfrutarás.",
@@ -176,6 +177,7 @@
     "titleMarkedNotInterested": "\"{title}\" marcado como no me interesa",
     "titleMarkedSeen": "\"{title}\" marcado como visto",
     "titleSavedWatchlist": "\"{title}\" guardado para ver más tarde",
+    "titleRemovedFromWatchlist": "\"{title}\" eliminado de watchlist",
     "titleAddedFavorites": "\"{title}\" agregado a tus favoritos",
     "viewFavorites": "Ver favoritos",
     "viewSeen": "Ver vistos",
@@ -431,8 +433,10 @@
     "back": "Volver",
     "seen": "Visto",
     "liked": "Me gusta",
+    "removeFromLiked": "Eliminar de me gusta",
     "notInterested": "No me interesa",
     "watchLater": "Ver más tarde",
+    "removeFromWatchlist": "Eliminar de watchlist",
     "noDescription": "Sin descripción disponible",
     "notAvailable": "No disponible",
     "watchIn": "Ver en:",

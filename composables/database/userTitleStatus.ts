@@ -181,3 +181,16 @@ export async function removeLike(userId: string, tmdbId: number) {
     .eq(USER_TITLE_STATUS_FIELDS.USER_ID, userId)
     .eq(USER_TITLE_STATUS_FIELDS.TMDB_ID, tmdbId);
 }
+
+/**
+ * Get title status (liked and watchlist) for a specific title
+ */
+export async function getTitleStatus(userId: string, tmdbId: number) {
+  const supabase = useSupabaseClient();
+  return await supabase
+    .from(TABLES.USER_TITLE_STATUS)
+    .select(`${USER_TITLE_STATUS_FIELDS.LIKED}, ${USER_TITLE_STATUS_FIELDS.STATUS}`)
+    .eq(USER_TITLE_STATUS_FIELDS.USER_ID, userId)
+    .eq(USER_TITLE_STATUS_FIELDS.TMDB_ID, tmdbId)
+    .maybeSingle();
+}

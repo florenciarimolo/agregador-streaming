@@ -28,7 +28,7 @@ import {
 /**
  * Minimum quality criteria (less strict than recommendations endpoint)
  */
-const MIN_VOTE_AVERAGE_POOL = 6.0; // Less strict for pool population
+const MIN_VOTE_AVERAGE_POOL = 6.5; // Less strict for pool population
 const MIN_VOTE_COUNT_MOVIE = 500;
 const MIN_VOTE_COUNT_TV = 800;
 const MAX_POOL_SIZE = 200;
@@ -239,8 +239,13 @@ export default defineEventHandler(async (event) => {
         if (!response) return [];
 
         // Get providers from the region (flatrate, buy, rent)
+        // Try both uppercase and lowercase region codes
+        const regionLower = tmdbConfig.region.toLowerCase();
+        const regionUpper = tmdbConfig.region.toUpperCase();
         const regionData =
-          response.results?.[tmdbConfig.region.toLowerCase()] || {};
+          response.results?.[regionLower] ||
+          response.results?.[regionUpper] ||
+          {};
         const providers: number[] = [];
 
         // Combine all provider types
@@ -342,8 +347,14 @@ export default defineEventHandler(async (event) => {
 
               if (!hasMatchingProvider) {
                 // Skip this title if it doesn't have any of the user's preferred providers
+                devLog(
+                  `[PopulatePool] Skipping ${result.id} (${type}) - no matching providers. Title has: [${titleProviders.join(', ')}], User wants: [${includedProviders.join(', ')}]`
+                );
                 continue;
               }
+              devLog(
+                `[PopulatePool] Including ${result.id} (${type}) - has matching provider`
+              );
             }
 
             // Fetch full title details including complete genre objects
@@ -497,29 +508,36 @@ export default defineEventHandler(async (event) => {
     }
 
     // 4. Fetch easy to watch (comedy/animation) (easy)
-    await fetchAndProcess(
-      `${tmdbConfig.baseUrl}/discover/movie`,
-      {
-        with_genres: '35,16', // Comedy, Animation
-        sort_by: 'popularity.desc',
-      },
-      'easy',
-      'EASY_TO_WATCH',
-      MediaTypeEnum.movie,
-      2
-    );
+    // Only if user doesn't have favorite genres, or if comedy/animation are in favorites
+    const shouldFetchEasy =
+      favoriteGenres.length === 0 ||
+      favoriteGenres.some((g) => g === 35 || g === 16); // Comedy or Animation
 
-    await fetchAndProcess(
-      `${tmdbConfig.baseUrl}/discover/tv`,
-      {
-        with_genres: '35,16', // Comedy, Animation
-        sort_by: 'popularity.desc',
-      },
-      'easy',
-      'EASY_TO_WATCH',
-      MediaTypeEnum.tv,
-      2
-    );
+    if (shouldFetchEasy) {
+      await fetchAndProcess(
+        `${tmdbConfig.baseUrl}/discover/movie`,
+        {
+          with_genres: '35,16', // Comedy, Animation
+          sort_by: 'popularity.desc',
+        },
+        'easy',
+        'EASY_TO_WATCH',
+        MediaTypeEnum.movie,
+        2
+      );
+
+      await fetchAndProcess(
+        `${tmdbConfig.baseUrl}/discover/tv`,
+        {
+          with_genres: '35,16', // Comedy, Animation
+          sort_by: 'popularity.desc',
+        },
+        'easy',
+        'EASY_TO_WATCH',
+        MediaTypeEnum.tv,
+        2
+      );
+    }
 
     // Insert entries into pool
     if (entriesToInsert.length > 0) {

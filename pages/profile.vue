@@ -575,6 +575,21 @@
       </template>
     </Tabs>
 
+    <!-- Generating Recommendations Modal -->
+    <Modal :is-open="showGeneratingModal" :closeable="false">
+      <div class="flex flex-col gap-4 items-center text-center">
+        <div
+          class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"
+        ></div>
+        <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-300">
+          {{ $t('home.generatingRecommendations') }}
+        </h2>
+        <p class="text-gray-700 dark:text-gray-300">
+          {{ $t('home.generatingRecommendationsDescription') }}
+        </p>
+      </div>
+    </Modal>
+
     <!-- Save Confirmation Modal -->
     <Modal
       :is-open="showSaveConfirmationModal"
@@ -783,6 +798,7 @@ const titleToRemoveLike = ref<{
 const hasUnsavedContentChanges = ref(false);
 const showUnsavedChangesModal = ref(false);
 const showSaveConfirmationModal = ref(false);
+const showGeneratingModal = ref(false);
 const pendingNavigation = ref<(() => void) | null>(null);
 const pendingTabChange = ref<
   'liked' | 'seen' | 'not-interested' | 'content-preferences' | null
@@ -2338,10 +2354,9 @@ const confirmSaveContentPreferences = async () => {
         selectedLanguage.value = languageToSelect;
       }
 
-      // Show toast with regeneration message
-      showToast(t('preferences.content.savedAndRegenerating'), null, 5000);
-
-      // Regenerate recommendation pool in background (clear existing pool first)
+      // Regenerate recommendation pool with loading modal (clear existing pool first)
+      // Show modal and disable closing
+      showGeneratingModal.value = true;
       try {
         await $fetch('/api/recommendations/populate-pool?clearPool=true', {
           method: 'POST',
@@ -2351,7 +2366,9 @@ const confirmSaveContentPreferences = async () => {
         });
       } catch (poolError) {
         console.error('Error regenerating pool:', poolError);
-        // Don't show error to user, pool regeneration is background task
+        showToast(t('preferences.content.errorSaving'), null, 5000);
+      } finally {
+        showGeneratingModal.value = false;
       }
 
       hasUnsavedContentChanges.value = false;

@@ -26,6 +26,23 @@
         class="object-contain w-full h-full rounded-3xl max-h-[400px] lg:max-h-[500px]"
         style="clip-path: inset(0 round 1.5rem)"
       />
+      <!-- Informative icons overlay -->
+      <div class="absolute top-2 right-2 flex gap-2">
+        <div
+          v-if="isLiked"
+          class="flex items-center justify-center w-8 h-8 rounded-full bg-primary-600/90 backdrop-blur-sm"
+          :title="$t('media.liked')"
+        >
+          <IconHeartFilled icon-class="w-5 h-5 text-white" />
+        </div>
+        <div
+          v-if="isInWatchlist"
+          class="flex items-center justify-center w-8 h-8 rounded-full bg-primary-600/90 backdrop-blur-sm"
+          :title="$t('media.watchLater')"
+        >
+          <IconClock icon-class="w-5 h-5 text-white" />
+        </div>
+      </div>
     </div>
     <div
       class="z-10 relative flex flex-col flex-1 gap-6 rounded-lg lg:p-6 lg:ml-8 w-full min-w-[300px] flex-shrink-0 min-h-[300px]"
@@ -112,6 +129,7 @@
                   {{ $t('media.seen') }}
                 </Button>
                 <Button
+                  v-if="!isLiked"
                   type="button"
                   variant="ghost"
                   size="small"
@@ -125,6 +143,22 @@
                     <IconHeart icon-class="w-4 h-4" />
                   </template>
                   {{ $t('media.liked') }}
+                </Button>
+                <Button
+                  v-else
+                  type="button"
+                  variant="ghost"
+                  size="small"
+                  custom-class="justify-start mb-2 w-full text-left"
+                  @click.stop.prevent="
+                    dropdownRef?.close();
+                    handleRemoveLike();
+                  "
+                >
+                  <template #icon>
+                    <IconHeart icon-class="w-4 h-4" />
+                  </template>
+                  {{ $t('media.removeFromLiked') }}
                 </Button>
                 <Button
                   type="button"
@@ -142,6 +176,7 @@
                   {{ $t('media.notInterested') }}
                 </Button>
                 <Button
+                  v-if="!isInWatchlist"
                   type="button"
                   variant="ghost"
                   size="small"
@@ -155,6 +190,22 @@
                     <IconClock icon-class="w-4 h-4" />
                   </template>
                   {{ $t('media.watchLater') }}
+                </Button>
+                <Button
+                  v-else
+                  type="button"
+                  variant="ghost"
+                  size="small"
+                  custom-class="justify-start w-full text-left"
+                  @click.stop.prevent="
+                    dropdownRef?.close();
+                    handleRemoveFromWatchlist();
+                  "
+                >
+                  <template #icon>
+                    <IconClock icon-class="w-4 h-4" />
+                  </template>
+                  {{ $t('media.removeFromWatchlist') }}
                 </Button>
               </div>
             </Dropdown>
@@ -296,6 +347,7 @@ import IconTag from './icons/IconTag.vue';
 import IconMoreVertical from './icons/IconMoreVertical.vue';
 import IconCheck from './icons/IconCheck.vue';
 import IconHeart from './icons/IconHeart.vue';
+import IconHeartFilled from './icons/IconHeartFilled.vue';
 import IconX from './icons/IconX.vue';
 import IconClock from './icons/IconClock.vue';
 import { TitleStatus } from '@/types/TitleStatus';
@@ -305,7 +357,10 @@ import Dropdown from '@/components/ui/Dropdown.vue';
 import IconButton from '@/components/ui/IconButton.vue';
 import Button from '@/components/ui/Button.vue';
 import Modal from '@/components/ui/Modal.vue';
-import { getUserLikedTitle } from '@/composables/database/userTitleStatus';
+import {
+  getUserLikedTitle,
+  getTitleStatus,
+} from '@/composables/database/userTitleStatus';
 
 const props = defineProps({
   media: {
@@ -361,6 +416,8 @@ const titleToRemoveLike = ref<{
   title: string;
   type: string;
 } | null>(null);
+const isLiked = ref(false);
+const isInWatchlist = ref(false);
 
 // Detect mobile/tablet screen size (use mobile style for tablet too)
 const checkMobile = () => {
@@ -375,9 +432,41 @@ const handleResize = () => {
 const { showToast } = useUndoToast();
 const { t } = useI18n();
 
-onMounted(() => {
+// Fetch title status on mount
+const fetchTitleStatus = async () => {
+  try {
+    const {
+      data: { session },
+    } = await getSession();
+
+    if (!session?.access_token) {
+      return;
+    }
+
+    const userId = session.user?.id || (session.user as { sub?: string })?.sub;
+
+    if (!userId) {
+      return;
+    }
+
+    const { data: titleStatus } = await getTitleStatus(
+      userId,
+      mediaWithProviders.value.id
+    );
+
+    if (titleStatus) {
+      isLiked.value = titleStatus.liked === true;
+      isInWatchlist.value = titleStatus.status === TitleStatus.WATCHLIST;
+    }
+  } catch (error) {
+    console.error('Error fetching title status:', error);
+  }
+};
+
+onMounted(async () => {
   checkMobile();
   window.addEventListener('resize', handleResize);
+  await fetchTitleStatus();
 });
 
 onUnmounted(() => {
@@ -476,6 +565,10 @@ const handleAction = async (action: TitleStatus | 'liked') => {
         },
         5000
       );
+
+      // Update local state
+      isLiked.value = true;
+      await fetchTitleStatus();
     } else {
       // Update status
       await $fetch('/api/users/title-status', {
@@ -531,6 +624,10 @@ const handleAction = async (action: TitleStatus | 'liked') => {
           },
           5000
         );
+
+        // Update local state
+        isInWatchlist.value = true;
+        await fetchTitleStatus();
       }
     }
   } catch (error) {
@@ -605,6 +702,10 @@ const confirmRemoveLike = async () => {
     }
 
     titleToRemoveLike.value = null;
+
+    // Update local state
+    isLiked.value = false;
+    await fetchTitleStatus();
   } catch (error) {
     console.error('[confirmRemoveLike] Error:', error);
     showToast(
@@ -613,6 +714,68 @@ const confirmRemoveLike = async () => {
       3000
     );
     titleToRemoveLike.value = null;
+  }
+};
+
+// Handle removing like directly from dropdown
+const handleRemoveLike = async () => {
+  const mediaTitle =
+    mediaWithProviders.value.title ||
+    (mediaWithProviders.value as Movie & { name?: string }).name ||
+    t('media.thisTitle');
+
+  titleToRemoveLike.value = {
+    id: mediaWithProviders.value.id,
+    title: mediaTitle,
+    type: props.mediaType,
+  };
+  showRemoveLikeModal.value = true;
+};
+
+// Handle removing from watchlist
+const handleRemoveFromWatchlist = async () => {
+  try {
+    const {
+      data: { session },
+    } = await getSession();
+
+    if (!session?.access_token) {
+      showToast(t('media.authRequired'), null, 3000);
+      return;
+    }
+
+    const mediaTitle =
+      mediaWithProviders.value.title ||
+      (mediaWithProviders.value as Movie & { name?: string }).name ||
+      t('media.thisTitle');
+
+    // Remove from watchlist by deleting the status
+    await $fetch('/api/users/title-status', {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      query: {
+        tmdb_id: mediaWithProviders.value.id,
+      },
+    });
+
+    showToast(
+      t('home.titleRemovedFromWatchlist', { title: mediaTitle }),
+      null,
+      3000
+    );
+
+    // Update local state
+    isInWatchlist.value = false;
+    await fetchTitleStatus();
+  } catch (error) {
+    console.error('Error removing from watchlist:', error);
+    const mediaTitle =
+      mediaWithProviders.value.title ||
+      (mediaWithProviders.value as Movie & { name?: string }).name ||
+      t('media.thisTitle');
+    showToast(t('home.errorUpdatingStatus', { title: mediaTitle }), null, 3000);
   }
 };
 </script>

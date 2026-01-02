@@ -275,7 +275,43 @@ watch(
         const fetched = await fetchRecommendations();
         recommendations.value = fetched;
 
+        // If no recommendations and onboarding is complete, regenerate pool automatically
         if (
+          fetched.length === 0 &&
+          userStore.hasCompletedOnboarding &&
+          !populatingPool.value &&
+          !sessionStorage.getItem('generatingRecommendations')
+        ) {
+          // Get session for API call
+          const {
+            data: { session: sessionForPool },
+          } = await getSession();
+
+          if (sessionForPool?.access_token) {
+            // Set flag to prevent multiple calls
+            sessionStorage.setItem('generatingRecommendations', 'true');
+            populatingPool.value = true;
+            try {
+              await $fetch(
+                '/api/recommendations/populate-pool?clearPool=true',
+                {
+                  method: 'POST',
+                  headers: {
+                    Authorization: `Bearer ${sessionForPool.access_token}`,
+                  },
+                }
+              );
+              // After generation, fetch recommendations again
+              const newFetched = await fetchRecommendations();
+              recommendations.value = newFetched;
+            } catch (error) {
+              console.error('[index.vue] Error regenerating pool:', error);
+            } finally {
+              sessionStorage.removeItem('generatingRecommendations');
+              populatingPool.value = false;
+            }
+          }
+        } else if (
           fetched.length === 0 &&
           !populatingPool.value &&
           !sessionStorage.getItem('generatingRecommendations')
