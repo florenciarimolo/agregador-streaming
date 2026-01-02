@@ -172,7 +172,6 @@ const savePreferences = async () => {
       region: selectedRegion.value || null,
       favorite_genres: [],
       included_providers: [],
-      content_types: [],
     };
 
     const saveResponse = await $fetch<{

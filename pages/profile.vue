@@ -244,48 +244,6 @@
               </div>
             </Card>
 
-            <!-- Content Types -->
-            <Card padding="lg">
-              <h2
-                class="mb-2 text-xl font-semibold text-gray-800 dark:text-gray-300"
-              >
-                {{ $t('preferences.content.contentTypes.title') }}
-              </h2>
-              <p class="mb-4 text-sm text-gray-600 dark:text-gray-400">
-                {{ $t('preferences.content.contentTypes.description') }}
-              </p>
-              <div class="flex flex-wrap gap-4">
-                <label
-                  class="flex gap-2 items-center cursor-pointer custom-checkbox-label"
-                >
-                  <input
-                    v-model="contentPreferences.content_types"
-                    type="checkbox"
-                    value="movie"
-                    class="custom-checkbox"
-                    @change="markContentPreferencesChanged"
-                  />
-                  <span class="text-sm text-gray-800 dark:text-gray-300">{{
-                    $t('preferences.content.contentTypes.movie')
-                  }}</span>
-                </label>
-                <label
-                  class="flex gap-2 items-center cursor-pointer custom-checkbox-label"
-                >
-                  <input
-                    v-model="contentPreferences.content_types"
-                    type="checkbox"
-                    value="tv"
-                    class="custom-checkbox"
-                    @change="markContentPreferencesChanged"
-                  />
-                  <span class="text-sm text-gray-800 dark:text-gray-300">{{
-                    $t('preferences.content.contentTypes.tv')
-                  }}</span>
-                </label>
-              </div>
-            </Card>
-
             <!-- Favorite Genres -->
             <Card padding="lg" custom-class="relative">
               <h2
@@ -579,7 +537,7 @@
     <Modal :is-open="showGeneratingModal" :closeable="false">
       <div class="flex flex-col gap-4 items-center text-center">
         <div
-          class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"
+          class="w-12 h-12 rounded-full border-b-2 animate-spin border-primary-600"
         ></div>
         <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-300">
           {{ $t('home.generatingRecommendations') }}
@@ -805,7 +763,6 @@ const pendingTabChange = ref<
 >(null);
 const savedContentPreferences = ref<{
   preferred_language?: string;
-  content_types?: ('movie' | 'tv')[];
   favorite_genres?: number[];
   included_providers?: number[];
   region?: string;
@@ -1747,13 +1704,11 @@ const handleRemoveNotInterested = async (title: {
 // Content Preferences State
 const contentPreferences = ref<{
   preferred_language?: string;
-  content_types?: ('movie' | 'tv')[];
   favorite_genres?: number[];
   included_providers?: number[];
   region?: string;
 }>({
   preferred_language: LanguageCode.SPANISH, // Default to Spanish (TMDB format)
-  content_types: [],
   favorite_genres: [],
   included_providers: [],
   region: undefined,
@@ -1922,7 +1877,6 @@ const fetchContentPreferences = async () => {
       success: boolean;
       preferences: {
         preferred_language?: string;
-        content_types?: ('movie' | 'tv')[];
         favorite_genres?: number[];
         included_providers?: number[];
         region?: string;
@@ -1937,9 +1891,25 @@ const fetchContentPreferences = async () => {
       // Use the value from DB directly, only default to 'es' if it's truly null/undefined
       const dbLanguage = response.preferences.preferred_language;
 
+      if (import.meta.dev) {
+        console.log('[Profile] Fetched preferences from DB:', {
+          preferred_language: dbLanguage,
+          favorite_genres: response.preferences.favorite_genres,
+          included_providers: response.preferences.included_providers,
+          region: response.preferences.region,
+        });
+        console.log(
+          '[Profile] Available genres count:',
+          availableGenres.value.length
+        );
+        console.log(
+          '[Profile] Available providers count:',
+          availableProviders.value.length
+        );
+      }
+
       contentPreferences.value = {
         preferred_language: dbLanguage ?? LanguageCode.SPANISH, // Only default if null/undefined
-        content_types: response.preferences.content_types || [],
         favorite_genres: response.preferences.favorite_genres || [],
         included_providers: response.preferences.included_providers || [],
         region: response.preferences.region || undefined,
@@ -1962,40 +1932,77 @@ const fetchContentPreferences = async () => {
           ) || null;
       }
 
-      // Map genres if they're already loaded
+      // Map genres - wait for genres to be available if needed
       if (
-        availableGenres.value.length > 0 &&
         contentPreferences.value.favorite_genres &&
         contentPreferences.value.favorite_genres.length > 0
       ) {
-        selectedGenres.value = availableGenres.value.filter((g) =>
-          contentPreferences.value.favorite_genres?.includes(g.id)
-        );
+        if (availableGenres.value.length > 0) {
+          const mappedGenres = availableGenres.value.filter((g) =>
+            contentPreferences.value.favorite_genres?.includes(g.id)
+          );
+          selectedGenres.value = mappedGenres;
+          if (import.meta.dev) {
+            console.log('[Profile] Mapped genres:', {
+              requested: contentPreferences.value.favorite_genres,
+              mapped: mappedGenres.map((g) => ({ id: g.id, name: g.name })),
+            });
+          }
+        } else {
+          // Genres not loaded yet, watcher will handle it
+          if (import.meta.dev) {
+            console.log(
+              '[Profile] Genres not loaded yet, watcher will handle mapping'
+            );
+          }
+        }
       } else {
         selectedGenres.value = [];
       }
 
-      // Map providers if they're already loaded
+      // Map providers - wait for providers to be available if needed
       if (
-        availableProviders.value.length > 0 &&
         contentPreferences.value.included_providers &&
         contentPreferences.value.included_providers.length > 0
       ) {
-        selectedProviders.value = availableProviders.value.filter((p) =>
-          contentPreferences.value.included_providers?.includes(p.provider_id)
-        );
+        if (availableProviders.value.length > 0) {
+          const mappedProviders = availableProviders.value.filter((p) =>
+            contentPreferences.value.included_providers?.includes(p.provider_id)
+          );
+          selectedProviders.value = mappedProviders;
+          if (import.meta.dev) {
+            console.log('[Profile] Mapped providers:', {
+              requested: contentPreferences.value.included_providers,
+              mapped: mappedProviders.map((p) => ({
+                id: p.provider_id,
+                name: p.provider_name,
+              })),
+            });
+          }
+        } else {
+          // Providers not loaded yet, watcher will handle it
+          if (import.meta.dev) {
+            console.log(
+              '[Profile] Providers not loaded yet, watcher will handle mapping'
+            );
+          }
+        }
       } else {
         selectedProviders.value = [];
       }
 
       // Save initial state for comparison and rollback
+      // Use the actual DB values, not the mapped selected items (which may be empty if not loaded yet)
       savedContentPreferences.value = {
-        preferred_language: selectedLanguage.value?.code,
-        content_types: [...(contentPreferences.value.content_types || [])],
-        favorite_genres: [...selectedGenres.value.map((g) => g.id)],
-        included_providers: [
-          ...selectedProviders.value.map((p) => p.provider_id),
-        ],
+        preferred_language:
+          selectedLanguage.value?.code ||
+          contentPreferences.value.preferred_language,
+        favorite_genres: contentPreferences.value.favorite_genres
+          ? [...contentPreferences.value.favorite_genres]
+          : [],
+        included_providers: contentPreferences.value.included_providers
+          ? [...contentPreferences.value.included_providers]
+          : [],
         region: contentPreferences.value.region || undefined,
       };
       savedSelectedGenres.value = [...selectedGenres.value];
@@ -2004,14 +2011,35 @@ const fetchContentPreferences = async () => {
         ? { ...selectedLanguage.value }
         : null;
       hasUnsavedContentChanges.value = false;
+
+      if (import.meta.dev) {
+        console.log('[Profile] Saved initial state:', {
+          selectedGenres: selectedGenres.value.map((g) => ({
+            id: g.id,
+            name: g.name,
+          })),
+          selectedProviders: selectedProviders.value.map((p) => ({
+            id: p.provider_id,
+            name: p.provider_name,
+          })),
+          selectedLanguage: selectedLanguage.value,
+          savedContentPreferences: savedContentPreferences.value,
+          dbPreferences: {
+            favorite_genres: contentPreferences.value.favorite_genres,
+            included_providers: contentPreferences.value.included_providers,
+          },
+        });
+      }
     } else {
       // No preferences found, reset to empty
+      if (import.meta.dev) {
+        console.log('[Profile] No preferences found in DB');
+      }
       selectedLanguage.value = null;
       selectedGenres.value = [];
       selectedProviders.value = [];
       contentPreferences.value = {
         preferred_language: LanguageCode.SPANISH,
-        content_types: [],
         favorite_genres: [],
         included_providers: [],
         region: undefined,
@@ -2209,7 +2237,6 @@ const markContentPreferencesChanged = () => {
       !!selectedLanguage.value ||
       selectedGenres.value.length > 0 ||
       selectedProviders.value.length > 0 ||
-      (contentPreferences.value.content_types?.length ?? 0) > 0 ||
       !!contentPreferences.value.region;
     return;
   }
@@ -2217,7 +2244,6 @@ const markContentPreferencesChanged = () => {
   // Build current preferences object for comparison
   const currentPreferences = {
     preferred_language: selectedLanguage.value?.code,
-    content_types: [...(contentPreferences.value.content_types || [])].sort(),
     favorite_genres: [...selectedGenres.value.map((g) => g.id)].sort(),
     included_providers: [
       ...selectedProviders.value.map((p) => p.provider_id),
@@ -2229,9 +2255,6 @@ const markContentPreferencesChanged = () => {
   const savedPrefs = {
     preferred_language:
       savedContentPreferences.value.preferred_language || null,
-    content_types: [
-      ...(savedContentPreferences.value.content_types || []),
-    ].sort(),
     favorite_genres: [
       ...(savedContentPreferences.value.favorite_genres || []),
     ].sort(),
@@ -2256,7 +2279,6 @@ const revertContentPreferencesChanges = () => {
   contentPreferences.value = {
     preferred_language:
       savedContentPreferences.value.preferred_language || LanguageCode.SPANISH,
-    content_types: [...(savedContentPreferences.value.content_types || [])],
     favorite_genres: [...(savedContentPreferences.value.favorite_genres || [])],
     included_providers: [
       ...(savedContentPreferences.value.included_providers || []),
@@ -2320,7 +2342,6 @@ const confirmSaveContentPreferences = async () => {
         selectedProviders.value.length > 0
           ? selectedProviders.value.map((p) => p.provider_id)
           : [], // Empty = all providers
-      content_types: contentPreferences.value.content_types || [],
       region: contentPreferences.value.region || null,
     };
 
@@ -2375,7 +2396,6 @@ const confirmSaveContentPreferences = async () => {
       // Update saved state with the actual saved value from the response
       savedContentPreferences.value = {
         preferred_language: savedLanguageCode,
-        content_types: [...(contentPreferences.value.content_types || [])],
         favorite_genres: [...selectedGenres.value.map((g) => g.id)],
         included_providers: [
           ...selectedProviders.value.map((p) => p.provider_id),
@@ -2493,9 +2513,16 @@ watch(
         currentGenreIds.every((id, i) => id === prefGenreIds[i]);
 
       if (!idsMatch) {
-        selectedGenres.value = genres.filter((g) =>
+        const mappedGenres = genres.filter((g) =>
           contentPreferences.value.favorite_genres?.includes(g.id)
         );
+        selectedGenres.value = mappedGenres;
+        if (import.meta.dev) {
+          console.log('[Profile] Watcher (availableGenres) mapped genres:', {
+            requested: contentPreferences.value.favorite_genres,
+            mapped: mappedGenres.map((g) => ({ id: g.id, name: g.name })),
+          });
+        }
       }
     }
 
@@ -2517,9 +2544,22 @@ watch(
         currentProviderIds.every((id, i) => id === prefProviderIds[i]);
 
       if (!idsMatch) {
-        selectedProviders.value = providers.filter((p) =>
+        const mappedProviders = providers.filter((p) =>
           contentPreferences.value.included_providers?.includes(p.provider_id)
         );
+        selectedProviders.value = mappedProviders;
+        if (import.meta.dev) {
+          console.log(
+            '[Profile] Watcher (availableProviders) mapped providers:',
+            {
+              requested: contentPreferences.value.included_providers,
+              mapped: mappedProviders.map((p) => ({
+                id: p.provider_id,
+                name: p.provider_name,
+              })),
+            }
+          );
+        }
       }
     }
   },
@@ -2539,12 +2579,27 @@ watch(
         currentGenreIds.every((id, i) => id === prefGenreIds[i]);
 
       if (!idsMatch) {
-        selectedGenres.value = availableGenres.value.filter((g) =>
+        const mappedGenres = availableGenres.value.filter((g) =>
           genreIds.includes(g.id)
         );
+        selectedGenres.value = mappedGenres;
+        if (import.meta.dev) {
+          console.log('[Profile] Watcher mapped genres:', {
+            requested: genreIds,
+            mapped: mappedGenres.map((g) => ({ id: g.id, name: g.name })),
+            availableGenresCount: availableGenres.value.length,
+          });
+        }
       }
     } else if (!genreIds || genreIds.length === 0) {
-      selectedGenres.value = [];
+      // Only clear if we're sure there are no genres (not just because they're not loaded yet)
+      // Check if preferences have been loaded (savedContentPreferences exists)
+      if (availableGenres.value.length > 0 && savedContentPreferences.value) {
+        selectedGenres.value = [];
+        if (import.meta.dev) {
+          console.log('[Profile] Cleared genres - no genres in preferences');
+        }
+      }
     }
   },
   { immediate: true }
@@ -2567,12 +2622,35 @@ watch(
         currentProviderIds.every((id, i) => id === prefProviderIds[i]);
 
       if (!idsMatch) {
-        selectedProviders.value = availableProviders.value.filter((p) =>
+        const mappedProviders = availableProviders.value.filter((p) =>
           providerIds.includes(p.provider_id)
         );
+        selectedProviders.value = mappedProviders;
+        if (import.meta.dev) {
+          console.log('[Profile] Watcher mapped providers:', {
+            requested: providerIds,
+            mapped: mappedProviders.map((p) => ({
+              id: p.provider_id,
+              name: p.provider_name,
+            })),
+            availableProvidersCount: availableProviders.value.length,
+          });
+        }
       }
     } else if (!providerIds || providerIds.length === 0) {
-      selectedProviders.value = [];
+      // Only clear if we're sure there are no providers (not just because they're not loaded yet)
+      // Check if preferences have been loaded (savedContentPreferences exists)
+      if (
+        availableProviders.value.length > 0 &&
+        savedContentPreferences.value
+      ) {
+        selectedProviders.value = [];
+        if (import.meta.dev) {
+          console.log(
+            '[Profile] Cleared providers - no providers in preferences'
+          );
+        }
+      }
     }
   },
   { immediate: true }

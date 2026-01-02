@@ -93,13 +93,6 @@ export default defineEventHandler(async (event) => {
       preferences.preferred_language = LanguageCode.SPANISH;
     }
 
-    if (Array.isArray(body.content_types)) {
-      const validTypes = [MediaTypeEnum.movie, MediaTypeEnum.tv];
-      preferences.content_types = body.content_types.filter((t: unknown) =>
-        validTypes.includes(t as string)
-      ) as (typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv)[];
-    }
-
     if (Array.isArray(body.included_providers)) {
       preferences.included_providers = body.included_providers.filter(
         (p: unknown) => Number.isInteger(p)

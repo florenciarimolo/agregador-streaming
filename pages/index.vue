@@ -69,9 +69,11 @@ const loadingRecommendations = ref(false);
 const hasAttemptedLoad = ref(false); // Track if we've attempted to load recommendations at least once
 const populatingPool = ref(false);
 const recommendations = ref<Recommendation[]>([]);
+const allRecommendations = ref<Recommendation[]>([]); // Store all recommendations before filtering
 const lastFetchedMood = ref<string | null>(null);
 const lastFetchedAttention = ref<string | null>(null);
 const hasPreferredLanguage = ref<boolean | null>(null); // null = not checked yet, true/false = checked
+const selectedContentType = ref<'all' | 'movie' | 'tv'>('all');
 
 // Fetch recommendations function
 const fetchRecommendations = async (): Promise<Recommendation[]> => {
@@ -119,6 +121,25 @@ const fetchRecommendations = async (): Promise<Recommendation[]> => {
   }
 };
 
+// Filter recommendations by content type
+const filterRecommendationsByType = (
+  recs: Recommendation[]
+): Recommendation[] => {
+  if (selectedContentType.value === 'all') {
+    return recs;
+  }
+  return recs.filter((rec) => rec.type === selectedContentType.value);
+};
+
+// Watch for content type changes to filter recommendations
+watch(selectedContentType, () => {
+  if (allRecommendations.value.length > 0) {
+    recommendations.value = filterRecommendationsByType(
+      allRecommendations.value
+    );
+  }
+});
+
 // Watch for query param changes (mood/attention) to refetch recommendations
 watch(
   () => [route.query.mood, route.query.attention],
@@ -130,7 +151,8 @@ watch(
       hasAttemptedLoad.value
     ) {
       const fetched = await fetchRecommendations();
-      recommendations.value = fetched;
+      allRecommendations.value = fetched;
+      recommendations.value = filterRecommendationsByType(fetched);
     }
   }
 );
@@ -273,7 +295,8 @@ watch(
 
       if (hasPreferredLanguage.value) {
         const fetched = await fetchRecommendations();
-        recommendations.value = fetched;
+        allRecommendations.value = fetched;
+        recommendations.value = filterRecommendationsByType(fetched);
 
         // If no recommendations and onboarding is complete, regenerate pool automatically
         if (
@@ -303,7 +326,8 @@ watch(
               );
               // After generation, fetch recommendations again
               const newFetched = await fetchRecommendations();
-              recommendations.value = newFetched;
+              allRecommendations.value = newFetched;
+              recommendations.value = filterRecommendationsByType(newFetched);
             } catch (error) {
               console.error('[index.vue] Error regenerating pool:', error);
             } finally {
@@ -445,8 +469,11 @@ const handleTitleStatus = async (
 
     // Optimistically remove from UI (except watchlist which stays)
     if (status !== TitleStatus.WATCHLIST) {
-      recommendations.value = recommendations.value.filter(
+      allRecommendations.value = allRecommendations.value.filter(
         (r: Recommendation) => r.tmdb_id !== title.tmdb_id
+      );
+      recommendations.value = filterRecommendationsByType(
+        allRecommendations.value
       );
     }
   } catch (error) {
@@ -560,8 +587,11 @@ const handleMarkLiked = async (title: Recommendation) => {
     );
 
     // Optimistically remove from UI (liked titles are seen, not in recommendations)
-    recommendations.value = recommendations.value.filter(
+    allRecommendations.value = allRecommendations.value.filter(
       (r) => r.tmdb_id !== title.tmdb_id
+    );
+    recommendations.value = filterRecommendationsByType(
+      allRecommendations.value
     );
   } catch (error) {
     if (process.env.NODE_ENV === 'development') {
@@ -858,7 +888,8 @@ onMounted(() => {
         // Refresh recommendations after regeneration completes
         if (user.value && userStore.hasCompletedOnboarding) {
           fetchRecommendations().then((fetched) => {
-            recommendations.value = fetched;
+            allRecommendations.value = fetched;
+            recommendations.value = filterRecommendationsByType(fetched);
           });
         }
       }
@@ -936,6 +967,45 @@ onMounted(() => {
           </Alert>
           <!-- Mood Selector -->
           <MoodSelector v-if="userStore.hasCompletedOnboarding" />
+
+          <!-- Content Type Filter -->
+          <div
+            v-if="userStore.hasCompletedOnboarding"
+            class="bg-white/60 dark:bg-gray-900/40 backdrop-blur-xl border border-gray-300/50 dark:border-white/10 rounded-3xl p-6 md:p-8"
+          >
+            <div class="flex flex-col gap-2">
+              <label
+                class="text-xs font-semibold uppercase tracking-wide text-gray-800 dark:text-gray-300"
+              >
+                {{ $t('home.contentTypeFilter') }}
+              </label>
+              <div class="flex flex-wrap gap-2">
+                <button
+                  v-for="typeOption in [
+                    { value: 'all', label: $t('home.contentTypeAll') },
+                    { value: 'movie', label: $t('home.contentTypeMovie') },
+                    { value: 'tv', label: $t('home.contentTypeTv') },
+                  ]"
+                  :key="typeOption.value"
+                  :class="[
+                    'px-4 py-2 rounded-full font-medium transition-all text-sm',
+                    selectedContentType === typeOption.value
+                      ? 'bg-primary-800 text-white border border-gray-700/50 dark:border-gray-600/50'
+                      : 'bg-gray-100/50 dark:bg-gray-800/50 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700/50 hover:bg-gray-200 dark:hover:bg-gray-700/50 hover:border-primary/50 dark:hover:border-purple-500/30',
+                  ]"
+                  @click="
+                    selectedContentType = typeOption.value as
+                      | 'all'
+                      | 'movie'
+                      | 'tv'
+                  "
+                >
+                  {{ typeOption.label }}
+                </button>
+              </div>
+            </div>
+          </div>
+
           <!-- Loading State -->
           <div v-if="loadingRecommendations || populatingPool" class="w-full">
             <Spinner
