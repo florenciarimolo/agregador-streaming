@@ -8,10 +8,10 @@
   },
   "scripts": {
     "build": "nuxt build",
-    "dev": "NODE_OPTIONS='--no-warnings' nuxt dev",
+    "dev": "cross-env NODE_OPTIONS=--no-warnings nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "NODE_OPTIONS='--no-warnings' nuxt prepare",
+    "postinstall": "cross-env NODE_OPTIONS=--no-warnings nuxt prepare",
     "lint": "eslint . --ext .ts,.vue",
     "typecheck": "nuxt prepare && vue-tsc -b"
   },
@@ -28,6 +28,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.15.0",
+    "cross-env": "^10.1.0",
     "eslint": "^8.57.1",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-prettier": "^5.5.4",
