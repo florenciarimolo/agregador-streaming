@@ -330,7 +330,7 @@
         "description": "Selecciona tus géneros favoritos para mejorar las recomendaciones.",
         "searchPlaceholder": "Buscar géneros...",
         "selected": "Géneros seleccionados",
-        "noneSelected": "No has seleccionado géneros todavía.",
+        "noneSelected": "Todos los géneros están incluidos. Busca y selecciona géneros para personalizar las recomendaciones.",
         "remove": "Eliminar {name}"
       },
       "includedProviders": {

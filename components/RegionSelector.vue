@@ -12,40 +12,33 @@
         type="button"
         variant="outline"
         size="medium"
-        custom-class="flex gap-2 justify-between items-center px-4 py-2 w-full text-left text-gray-800 rounded-lg border border-gray-300 opacity-90 dark:bg-gray-800/50 bg-white/80 dark:border-gray-600 dark:text-gray-300 backdrop-blur-xs hover:opacity-100"
+        custom-class="px-4 py-2 w-full text-left text-gray-800 rounded-lg border border-gray-300 opacity-90 dark:bg-gray-800/50 bg-white/80 dark:border-gray-600 dark:text-gray-300 backdrop-blur-xs hover:opacity-100"
       >
-        <div class="flex flex-1 gap-2 items-center min-w-0">
-          <img
-            v-if="selectedRegion"
-            :src="`/icons/flags/${selectedRegion.toLowerCase()}.svg`"
-            :alt="selectedRegion"
-            class="object-contain flex-shrink-0 w-5 h-4"
-            loading="lazy"
-            @error="
-              (e) => ((e.target as HTMLImageElement).style.display = 'none')
-            "
+        <span class="flex gap-2 justify-between items-center w-full">
+          <div class="flex overflow-hidden flex-1 gap-2 items-center min-w-0">
+            <img
+              v-if="selectedRegion"
+              :src="`/icons/flags/${selectedRegion.toLowerCase()}.svg`"
+              :alt="selectedRegion"
+              class="object-contain flex-shrink-0 w-5 h-4"
+              loading="lazy"
+              @error="
+                (e) => ((e.target as HTMLImageElement).style.display = 'none')
+              "
+            />
+            <span class="text-sm truncate">{{
+              selectedRegion
+                ? regions.find((r: Region) => r.code === selectedRegion)
+                    ?.name || selectedRegion
+                : t('preferences.content.region.default')
+            }}</span>
+          </div>
+          <IconChevronDown
+            :icon-class="`flex-shrink-0 w-4 h-4 text-gray-400 transition-transform ${
+              isOpen ? 'rotate-180' : ''
+            }`"
           />
-          <span class="text-sm truncate">{{
-            selectedRegion
-              ? regions.find((r: Region) => r.code === selectedRegion)?.name ||
-                selectedRegion
-              : t('preferences.content.region.default')
-          }}</span>
-        </div>
-        <svg
-          class="flex-shrink-0 w-4 h-4 text-gray-400 transition-transform"
-          :class="{ 'rotate-180': isOpen }"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M19 9l-7 7-7-7"
-          />
-        </svg>
+        </span>
       </Button>
     </template>
     <div
@@ -63,19 +56,7 @@
           />
           <!-- Search Icon -->
           <div class="flex absolute inset-y-0 left-0 items-center pl-3">
-            <svg
-              class="w-4 h-4 text-gray-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              />
-            </svg>
+            <IconSearch icon-class="w-4 h-4 text-gray-400" />
           </div>
         </div>
       </div>
@@ -125,11 +106,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue';
+import { ref, watch } from 'vue';
 import { AVAILABLE_REGIONS } from '@/constants/regions';
 import type { Region } from '@/constants/regions';
 import Dropdown from '@/components/ui/Dropdown.vue';
 import Button from '@/components/ui/Button.vue';
+import IconChevronDown from '@/components/icons/IconChevronDown.vue';
+import IconSearch from '@/components/icons/IconSearch.vue';
 
 interface Props {
   modelValue: string | null | undefined;
