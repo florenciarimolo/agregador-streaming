@@ -157,15 +157,24 @@ onMounted(async () => {
     hash: typeof window !== 'undefined' ? window.location.hash : 'N/A',
   });
 
-  // Check for recovery flow flag before any redirect logic
+  // Check for recovery flow flag BEFORE any other logic
+  // This must be the first thing we check, even before checking session
   if (typeof window !== 'undefined') {
     const isRecoveryFlow = localStorage.getItem('auth:recovery') === '1';
+    console.log(
+      '[AUTH TRACE] callback.vue checking localStorage auth:recovery',
+      {
+        isRecoveryFlow,
+        localStorageValue: localStorage.getItem('auth:recovery'),
+      }
+    );
 
     if (isRecoveryFlow) {
       console.log(
         '[AUTH TRACE] callback.vue recovery flow detected via localStorage flag, redirecting to /auth/reset-password'
       );
       localStorage.removeItem('auth:recovery');
+      loading.value = false;
       router.replace('/auth/reset-password');
       return;
     }

@@ -27,7 +27,7 @@
       </div>
 
       <div
-        class="p-6 rounded-xl border shadow-lg dark:bg-gray-800/70 bg-gray-100/90 backdrop-blur-xs md:p-8 border-primary/20"
+        class="p-6 rounded-3xl border shadow-lg backdrop-blur-xl bg-white/60 dark:bg-gray-900/40 md:p-8 border-gray-300/50 dark:border-white/10"
       >
         <div class="mb-6 text-center">
           <h2
@@ -231,7 +231,6 @@
               type="submit"
               variant="primary"
               size="medium"
-              custom-class="w-full"
               :disabled="loading || !passwordsMatch || !isPasswordValid"
             >
               {{
@@ -276,6 +275,7 @@ import {
   validatePassword,
   getPasswordHelperText,
 } from '@/utils/passwordValidation';
+import Button from '@/components/ui/Button.vue';
 import IconButton from '@/components/ui/IconButton.vue';
 import IconEye from '@/components/icons/IconEye.vue';
 import IconEyeSlash from '@/components/icons/IconEyeSlash.vue';

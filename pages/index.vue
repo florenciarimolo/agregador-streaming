@@ -61,6 +61,7 @@ const effectiveUser = computed(() => {
 
 // Route
 const route = useRoute();
+const router = useRouter();
 
 // State
 const initialProfileLoaded = ref(false);
@@ -892,6 +893,35 @@ const populatePool = async () => {
 
 // Check if auth query param is present to show auth form
 onMounted(() => {
+  // Redirect auth-related query params to /auth/callback
+  // Supabase sometimes redirects to /?code=... or /?error=... instead of /auth/callback?code=... or /auth/callback?error=...
+  // All auth logic should be handled in callback.vue, not here
+  if (typeof window !== 'undefined') {
+    const hasCode = !!route.query.code;
+    const hasError = !!(
+      route.query.error ||
+      route.query.error_code ||
+      route.query.error_description ||
+      route.query.error_message
+    );
+
+    if (hasCode || hasError) {
+      console.log(
+        '[AUTH TRACE] index.vue detected auth params, redirecting to /auth/callback',
+        {
+          hasCode,
+          hasError,
+          query: route.query,
+        }
+      );
+      // Redirect to callback with all query params - callback.vue will handle everything
+      router.replace({
+        path: '/auth/callback',
+        query: route.query,
+      });
+      return;
+    }
+  }
   if (route.query.auth === 'login' && !effectiveUser.value) {
     showAuthForm.value = true;
     nextTick(() => {
