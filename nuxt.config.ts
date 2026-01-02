@@ -182,7 +182,6 @@ export default defineNuxtConfig({
       '/auth/callback',
       '/onboarding',
       '/my-account',
-      '/settings',
       '/preferences',
       '/watchlist',
       '/api/**',

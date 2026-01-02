@@ -19,13 +19,21 @@ definePageMeta({
 
 const { t } = useI18n();
 
+// SEO: Private page - noindex, nofollow
 useHead({
-  title: 'Onboarding - UpNext',
+  title: 'Onboarding',
+  meta: [
+    {
+      name: 'robots',
+      content: 'noindex, nofollow',
+    },
+  ],
 });
 
 useSeoMeta({
-  title: 'Onboarding - UpNext',
+  title: 'Onboarding',
   description: t('onboarding.description'),
+  robots: 'noindex, nofollow',
 });
 
 interface TitleResult {

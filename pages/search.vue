@@ -1,13 +1,29 @@
 <script setup lang="ts">
 const { t } = useI18n();
+const config = useRuntimeConfig();
+const siteUrl = config.public.baseUrl || config.public.siteUrl;
 
+// SEO: Search page - noindex, follow, canonical to home
 useHead({
-  title: `${t('search.title')} - UpNext`,
+  title: t('search.title'),
+  meta: [
+    {
+      name: 'robots',
+      content: 'noindex, follow',
+    },
+  ],
+  link: [
+    {
+      rel: 'canonical',
+      href: `${siteUrl}/`,
+    },
+  ],
 });
 
 useSeoMeta({
-  title: `${t('search.title')} - UpNext`,
+  title: t('search.title'),
   description: t('search.title'),
+  robots: 'noindex, follow',
 });
 </script>
 

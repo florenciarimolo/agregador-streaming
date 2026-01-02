@@ -1,7 +1,7 @@
 <template>
   <!-- Loading state -->
   <div v-if="isLoading" class="flex items-center justify-center min-h-screen">
-    <div class="text-xl dark:text-gray-300 text-gray-800">Cargando...</div>
+    <div class="text-xl dark:text-gray-300 text-gray-800">{{ $t('common.loading') }}</div>
   </div>
 
   <!-- Error state -->
@@ -9,7 +9,7 @@
     v-else-if="hasError"
     class="flex items-center justify-center min-h-screen"
   >
-    <div class="text-xl text-red-500">Error al cargar la serie</div>
+    <div class="text-xl text-red-500">{{ $t('media.errorLoadingTvShow') }}</div>
   </div>
 
   <!-- Content -->
@@ -99,6 +99,8 @@ import type { Media } from '@/types/Media';
 import IconCalendar from '@/components/icons/IconCalendar.vue';
 import IconEpisodes from '@/components/icons/IconEpisodes.vue';
 import RatingBadge from '@/components/RatingBadge.vue';
+import { useTVShowSchema } from '@/composables/useSchemaOrg';
+import { getTVShowSeoExperience } from '@/composables/useSeoExperience';
 
 const route = useRoute();
 
@@ -138,13 +140,28 @@ const tvShowWithProviders = computed<TVShow>(() => {
   };
 });
 
+// SEO: TV Show page - public, indexable
+const config = useRuntimeConfig();
+const siteUrl = config.public.baseUrl || config.public.siteUrl;
+
+const { t } = useI18n();
+
+// Get SEO experience based on genre
+const seoExperienceKey = computed(() => getTVShowSeoExperience(tvShow.value));
+const seoExperience = computed(() => t(seoExperienceKey.value));
+
 // Meta tags dinámicos
-const pageTitle = computed(() => tvShow.value?.name || 'Serie');
-const pageDescription = computed(() => {
-  const overview =
-    tvShow.value?.overview || 'Descubre esta serie y dónde verla en streaming.';
-  return overview.length > 160 ? overview.substring(0, 160) + '...' : overview;
+const pageTitle = computed(() => {
+  const name = tvShow.value?.name || t('media.series');
+  return `${name} – ${t('seo.tvShowPrefix')} ${seoExperience.value}`;
 });
+
+const pageDescription = computed(() => {
+  const title = tvShow.value?.name || t('media.series');
+  const experience = seoExperience.value;
+  return t('seo.tvShowDescription', { title, experience });
+});
+
 const ogImage = computed(() => {
   if (tvShow.value?.backdrop_path) {
     return `https://image.tmdb.org/t/p/w1280${tvShow.value.backdrop_path}`;
@@ -155,6 +172,15 @@ const ogImage = computed(() => {
   return '';
 });
 
+// Canonical URL - ensure unique, avoid duplicates with /tv-show/[id]/index
+const canonicalUrl = computed(() => `${siteUrl}/tv-show/${tvShowId}`);
+
+// Schema.org JSON-LD
+const tvShowSchema = computed(() => {
+  if (!tvShow.value) return null;
+  return useTVShowSchema(tvShow.value, siteUrl);
+});
+
 useHead({
   title: pageTitle,
   meta: [
@@ -162,7 +188,25 @@ useHead({
       name: 'description',
       content: pageDescription,
     },
+    {
+      name: 'robots',
+      content: 'index, follow',
+    },
   ],
+  link: [
+    {
+      rel: 'canonical',
+      href: canonicalUrl,
+    },
+  ],
+  script: tvShowSchema.value
+    ? [
+        {
+          type: 'application/ld+json',
+          children: JSON.stringify(tvShowSchema.value),
+        },
+      ]
+    : [],
 });
 
 useSeoMeta({
@@ -172,16 +216,12 @@ useSeoMeta({
   ogDescription: pageDescription,
   ogImage: ogImage,
   ogType: 'video.tv_show',
-  ogUrl: computed(() => {
-    if (import.meta.client) {
-      return `${window.location.origin}/tv-show/${tvShowId}`;
-    }
-    return '';
-  }),
+  ogUrl: canonicalUrl,
   twitterCard: 'summary_large_image',
   twitterTitle: pageTitle,
   twitterDescription: pageDescription,
   twitterImage: ogImage,
+  robots: 'index, follow',
 });
 
 // Save the previous route when mounting

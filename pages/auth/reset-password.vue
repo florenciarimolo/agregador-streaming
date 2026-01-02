@@ -289,11 +289,11 @@ definePageMeta({
 const { t } = useI18n();
 
 useHead({
-  title: t('auth.newPasswordTitle') + ' - UpNext',
+  title: t('auth.newPasswordTitle'),
 });
 
 useSeoMeta({
-  title: t('auth.newPasswordTitle') + ' - UpNext',
+  title: t('auth.newPasswordTitle'),
   description: t('auth.newPasswordDescription'),
 });
 

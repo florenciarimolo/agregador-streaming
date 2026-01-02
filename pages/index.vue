@@ -32,23 +32,12 @@ definePageMeta({
 
 const { t } = useI18n();
 
-// Use watchEffect to ensure i18n messages are loaded before setting SEO meta
-watchEffect(() => {
-  useHead({
-    title: t('seo.homeTitle'),
-  });
+// SEO: Home page - public version for non-authenticated users
+// If user is authenticated with personalized content, set noindex
+const config = useRuntimeConfig();
+const siteUrl = config.public.baseUrl || config.public.siteUrl;
 
-  useSeoMeta({
-    title: t('seo.homeTitle'),
-    description: t('seo.homeDescription'),
-    ogTitle: t('seo.homeTitle'),
-    ogDescription: t('seo.homeDescription'),
-    ogType: 'website',
-    twitterCard: 'summary_large_image',
-  });
-});
-
-// Auth state
+// Auth state - must be defined before watchEffect
 const user = useSupabaseUser();
 const userStore = useUserStore();
 
@@ -57,6 +46,44 @@ const effectiveUser = computed(() => {
   // During hydration, useSupabaseUser() might not be ready yet
   // So we check both the composable and the store
   return user.value || userStore.user;
+});
+
+// Use watchEffect to ensure i18n messages are loaded before setting SEO meta
+watchEffect(() => {
+  const isAuthenticated =
+    !!effectiveUser.value && userStore.hasCompletedOnboarding;
+
+  useHead({
+    title: isAuthenticated ? t('seo.defaultTitle') : t('seo.homeTitlePublic'),
+    titleTemplate: isAuthenticated ? '%s' : undefined,
+    meta: [
+      {
+        name: 'robots',
+        content: isAuthenticated ? 'noindex, nofollow' : 'index, follow',
+      },
+    ],
+    link: [
+      {
+        rel: 'canonical',
+        href: `${siteUrl}/`,
+      },
+    ],
+  });
+
+  useSeoMeta({
+    title: isAuthenticated ? t('seo.defaultTitle') : t('seo.homeTitlePublic'),
+    description: isAuthenticated
+      ? t('seo.homeDescription')
+      : t('seo.homeDescriptionPublic'),
+    ogTitle: isAuthenticated ? t('seo.defaultTitle') : t('seo.homeTitlePublic'),
+    ogDescription: isAuthenticated
+      ? t('seo.homeDescription')
+      : t('seo.homeDescriptionPublic'),
+    ogType: 'website',
+    ogUrl: `${siteUrl}/`,
+    twitterCard: 'summary_large_image',
+    robots: isAuthenticated ? 'noindex, nofollow' : 'index, follow',
+  });
 });
 
 // Route
@@ -75,6 +102,59 @@ const lastFetchedMood = ref<string | null>(null);
 const lastFetchedAttention = ref<string | null>(null);
 const hasPreferredLanguage = ref<boolean | null>(null); // null = not checked yet, true/false = checked
 const selectedContentType = ref<'all' | 'movie' | 'tv'>('all');
+
+// Track recommendations view to update scores
+const trackRecommendationsView = async (
+  recommendations: Recommendation[]
+): Promise<void> => {
+  if (!recommendations || recommendations.length === 0) {
+    return;
+  }
+
+  if (!user.value || !userStore.hasCompletedOnboarding) {
+    return;
+  }
+
+  try {
+    const {
+      data: { session },
+      error: sessionError,
+    } = await getSession();
+
+    if (sessionError || !session?.access_token) {
+      return;
+    }
+
+    // Extract tmdb_ids from recommendations
+    const tmdbIds = recommendations
+      .map((rec) => rec.tmdb_id)
+      .filter((id): id is number => typeof id === 'number' && id > 0);
+
+    if (tmdbIds.length === 0) {
+      return;
+    }
+
+    // Call track-view endpoint (don't await to avoid blocking UI)
+    $fetch('/api/recommendations/track-view', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      credentials: 'include',
+      body: { tmdb_ids: tmdbIds },
+    }).catch((error) => {
+      // Silently fail - this is not critical for UX
+      if (import.meta.dev) {
+        console.warn('[TrackView] Error tracking recommendations view:', error);
+      }
+    });
+  } catch (error) {
+    // Silently fail - this is not critical for UX
+    if (import.meta.dev) {
+      console.warn('[TrackView] Error tracking recommendations view:', error);
+    }
+  }
+};
 
 // Fetch recommendations function
 const fetchRecommendations = async (): Promise<Recommendation[]> => {
@@ -113,7 +193,14 @@ const fetchRecommendations = async (): Promise<Recommendation[]> => {
     });
 
     // Ensure it's an array
-    return Array.isArray(data) ? data : [];
+    const recommendations = Array.isArray(data) ? data : [];
+
+    // Track view after fetching recommendations
+    if (recommendations.length > 0) {
+      trackRecommendationsView(recommendations);
+    }
+
+    return recommendations;
   } catch (error) {
     console.error('Error fetching recommendations:', error);
     return [];

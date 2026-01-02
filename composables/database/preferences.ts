@@ -7,7 +7,6 @@ export interface UserPreferences {
   region?: string; // ISO 3166-1 alpha-2 country code
   exploration_mode?: 'similar' | 'balanced' | 'surprise';
   prioritize_content?: 'new' | 'classics' | 'top_rated';
-  excluded_types?: ('reality' | 'anime' | 'documentary')[];
 }
 
 /**

@@ -281,7 +281,7 @@ const { t } = useI18n();
 
 const pageTitle = computed(() => {
   if (seasonWithProviders.value?.name) {
-    return `${seasonWithProviders.value.name} - UpNext`;
+    return `${seasonWithProviders.value.name}`;
   }
   return t('media.seasonTitle');
 });

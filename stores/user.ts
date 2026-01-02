@@ -11,7 +11,6 @@ interface Profile {
   display_name?: string | null;
   avatar_url?: string | null;
   settings?: Record<string, unknown> | null;
-  deleted_at?: string | null;
   created_at: string;
   updated_at: string;
   onboarding_completed: boolean;

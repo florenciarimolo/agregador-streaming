@@ -1,7 +1,7 @@
 <template>
   <!-- Loading state -->
   <div v-if="isLoading" class="flex items-center justify-center min-h-screen">
-    <div class="text-xl dark:text-gray-300 text-gray-800">Cargando...</div>
+    <div class="text-xl dark:text-gray-300 text-gray-800">{{ $t('common.loading') }}</div>
   </div>
 
   <!-- Error state -->
@@ -9,7 +9,7 @@
     v-else-if="hasError"
     class="flex items-center justify-center min-h-screen"
   >
-    <div class="text-xl text-red-500">Error al cargar la película</div>
+    <div class="text-xl text-red-500">{{ $t('media.errorLoadingMovie') }}</div>
   </div>
 
   <!-- Content -->
@@ -33,6 +33,8 @@ import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 import type { Media } from '@/types/Media';
 import type { AlternativeTitlesResponse } from '@/types/AlternativeTitle';
 import { isMovieInTheaters } from '@/utils/movieStatus';
+import { useMovieSchema } from '@/composables/useSchemaOrg';
+import { getMovieSeoExperience } from '@/composables/useSeoExperience';
 
 const route = useRoute();
 const movieId = route.params.id as string;
@@ -141,14 +143,28 @@ const hasError = computed(
   () => movieError.value || providersError.value || alternativeTitlesError.value
 );
 
+// SEO: Movie page - public, indexable
+const config = useRuntimeConfig();
+const siteUrl = config.public.baseUrl || config.public.siteUrl;
+
 // Meta tags dinámicos
-const pageTitle = computed(() => movie.value?.title || 'Película');
-const pageDescription = computed(() => {
-  const overview =
-    movie.value?.overview ||
-    'Descubre esta película y dónde verla en streaming.';
-  return overview.length > 160 ? overview.substring(0, 160) + '...' : overview;
+const { t } = useI18n();
+
+// Get SEO experience based on genre
+const seoExperienceKey = computed(() => getMovieSeoExperience(movie.value));
+const seoExperience = computed(() => t(seoExperienceKey.value));
+
+const pageTitle = computed(() => {
+  const title = movie.value?.title || t('media.movie');
+  return `${title} – ${t('seo.moviePrefix')} ${seoExperience.value}`;
 });
+
+const pageDescription = computed(() => {
+  const title = movie.value?.title || t('media.movie');
+  const experience = seoExperience.value;
+  return t('seo.movieDescription', { title, experience });
+});
+
 const ogImage = computed(() => {
   if (movie.value?.backdrop_path) {
     return `https://image.tmdb.org/t/p/w1280${movie.value.backdrop_path}`;
@@ -159,6 +175,15 @@ const ogImage = computed(() => {
   return '';
 });
 
+const canonicalUrl = computed(() => `${siteUrl}/movie/${movieId}`);
+
+// Schema.org JSON-LD
+const movieSchema = computed(() => {
+  if (!movie.value) return null;
+  // Auto-imported composable
+  return useMovieSchema(movie.value, siteUrl);
+});
+
 useHead({
   title: pageTitle,
   meta: [
@@ -166,7 +191,25 @@ useHead({
       name: 'description',
       content: pageDescription,
     },
+    {
+      name: 'robots',
+      content: 'index, follow',
+    },
   ],
+  link: [
+    {
+      rel: 'canonical',
+      href: canonicalUrl,
+    },
+  ],
+  script: movieSchema.value
+    ? [
+        {
+          type: 'application/ld+json',
+          children: JSON.stringify(movieSchema.value),
+        },
+      ]
+    : [],
 });
 
 useSeoMeta({
@@ -176,16 +219,12 @@ useSeoMeta({
   ogDescription: pageDescription,
   ogImage: ogImage,
   ogType: 'video.movie',
-  ogUrl: computed(() => {
-    if (import.meta.client) {
-      return `${window.location.origin}/movie/${movieId}`;
-    }
-    return '';
-  }),
+  ogUrl: canonicalUrl,
   twitterCard: 'summary_large_image',
   twitterTitle: pageTitle,
   twitterDescription: pageDescription,
   twitterImage: ogImage,
+  robots: 'index, follow',
 });
 </script>
 <style scoped></style>

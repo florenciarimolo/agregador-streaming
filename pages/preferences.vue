@@ -175,31 +175,11 @@
                 {{ $t('preferences.content.preferredLanguage.description') }}
               </p>
 
-              <!-- Language Radio Buttons -->
-              <div class="space-y-2">
-                <label
-                  v-for="lang in availableLanguages"
-                  :key="lang.code"
-                  class="flex gap-3 items-center p-3 rounded-lg transition-colors duration-150 cursor-pointer dark:hover:bg-gray-800/50 hover:bg-gray-100/50 custom-radio-label"
-                  :class="{
-                    'dark:bg-gray-800/30 bg-gray-100/50':
-                      selectedLanguage?.code === lang.code,
-                  }"
-                >
-                  <input
-                    :id="`lang-${lang.code}`"
-                    type="radio"
-                    name="preferred-language"
-                    :value="lang.code"
-                    :checked="selectedLanguage?.code === lang.code"
-                    class="custom-radio"
-                    @change="changeLanguage(lang)"
-                  />
-                  <span class="flex-1 text-sm text-gray-800 dark:text-gray-300">
-                    {{ `${lang.name} (${lang.code})` }}
-                  </span>
-                </label>
-              </div>
+              <!-- Language Selector -->
+              <LanguageSelector
+                v-model="currentLanguageCode"
+                @update:model-value="handleLanguageChangeFromSelector"
+              />
             </Card>
 
             <!-- Favorite Genres -->
@@ -262,18 +242,33 @@
                     @mousedown.prevent
                   >
                     <div class="py-2">
-                      <div
-                        v-for="genre in filteredGenres"
-                        :key="genre.id"
-                        class="flex gap-3 items-center px-4 py-3 transition-colors duration-150 cursor-pointer dark:hover:bg-gray-800/50 hover:bg-gray-100/50"
-                        @mousedown.prevent="addGenre(genre)"
-                        @click="addGenre(genre)"
+                      <template
+                        v-for="(genre, index) in filteredGenres"
+                        :key="`${genre.id}-${genre.type}`"
                       >
-                        <span
-                          class="text-sm text-gray-800 dark:text-gray-300"
-                          >{{ genre.name }}</span
+                        <!-- Separator: show only when type changes (first item of each type) -->
+                        <div
+                          v-if="
+                            index === 0 ||
+                            filteredGenres[index - 1].type !== genre.type
+                          "
+                          class="px-4 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                          :class="index > 0 ? 'border-t border-gray-200 dark:border-gray-700' : ''"
                         >
-                      </div>
+                          {{ genre.type === MediaTypeEnum.movie ? t('preferences.content.contentTypes.movie') : t('preferences.content.contentTypes.tv') }}
+                        </div>
+                        <!-- Genre option -->
+                        <div
+                          class="flex gap-3 items-center px-4 py-3 transition-colors duration-150 cursor-pointer dark:hover:bg-gray-800/50 hover:bg-gray-100/50"
+                          @mousedown.prevent="addGenre(genre)"
+                          @click="addGenre(genre)"
+                        >
+                          <span
+                            class="text-sm text-gray-800 dark:text-gray-300"
+                            >{{ genre.name }}</span
+                          >
+                        </div>
+                      </template>
                     </div>
                   </div>
                 </Transition>
@@ -678,6 +673,8 @@ import EmptyState from '@/components/EmptyState.vue';
 import Spinner from '@/components/Spinner.vue';
 import Toast from '@/components/ui/Toast.vue';
 import IconSearch from '@/components/icons/IconSearch.vue';
+import LanguageSelector from '@/components/LanguageSelector.vue';
+import RegionSelector from '@/components/RegionSelector.vue';
 import { useUndoToast } from '@/composables/useUndoToast';
 import type { TMDBSearchResult } from '@/types/tmdb/Search';
 import { AVAILABLE_LANGUAGES, LanguageCode } from '@/constants/languages';
@@ -1582,7 +1579,7 @@ const handleRemoveNotInterested = async (title: {
             tmdb_id: title.tmdb_id,
             type:
               notInterestedTitles.value.find((t) => t.tmdb_id === title.tmdb_id)
-                ?.type || 'movie',
+                ?.type || MediaTypeEnum.movie,
             status: TitleStatus.NOT_INTERESTED,
           });
           await fetchNotInterestedTitles();
@@ -1617,6 +1614,13 @@ const selectedLanguage = ref<{
   name: string;
 } | null>(null);
 
+// Computed for current language code (for select value)
+const currentLanguageCode = computed(() => {
+  return selectedLanguage.value?.code || 
+         contentPreferences.value.preferred_language || 
+         LanguageCode.SPANISH;
+});
+
 // Preload genres using useAsyncData (runs during setup, before mount)
 const { data: genresData } = useAsyncData(
   'genres',
@@ -1624,10 +1628,10 @@ const { data: genresData } = useAsyncData(
     // Fetch both movie and TV genres
     const [movieResponse, tvResponse] = await Promise.all([
       $fetch<{ genres: Array<{ id: number; name: string }> }>(
-        '/api/tmdb/genres?type=movie'
+        `/api/tmdb/genres?type=${MediaTypeEnum.movie}`
       ),
       $fetch<{ genres: Array<{ id: number; name: string }> }>(
-        '/api/tmdb/genres?type=tv'
+        `/api/tmdb/genres?type=${MediaTypeEnum.tv}`
       ),
     ]);
     return { movie: movieResponse, tv: tvResponse };
@@ -1641,23 +1645,34 @@ const { data: genresData } = useAsyncData(
 const availableGenres = computed(() => {
   if (!genresData.value) return [];
 
-  // Merge and deduplicate by ID
-  const genreMap = new Map<number, string>();
+  // Combine all genres with their type (movie or tv)
+  const allGenres: Array<{ id: number; name: string; type: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv }> = [];
+
+  // Add movie genres
   genresData.value.movie.genres.forEach((g: { id: number; name: string }) => {
     if (g.name) {
-      genreMap.set(g.id, g.name);
-    }
-  });
-  genresData.value.tv.genres.forEach((g: { id: number; name: string }) => {
-    if (g.name) {
-      genreMap.set(g.id, g.name);
+      allGenres.push({ id: g.id, name: g.name, type: MediaTypeEnum.movie });
     }
   });
 
-  return Array.from(genreMap.entries())
-    .map(([id, name]) => ({ id, name }))
+  // Add TV genres
+  genresData.value.tv.genres.forEach((g: { id: number; name: string }) => {
+    if (g.name) {
+      allGenres.push({ id: g.id, name: g.name, type: MediaTypeEnum.tv });
+    }
+  });
+
+  // Sort: first by type (movie first, then tv), then alphabetically by name
+  return allGenres
     .filter((genre) => genre.name) // Filter out any genres without a name
-    .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    .sort((a, b) => {
+      // First sort by type: movie comes before tv
+      if (a.type !== b.type) {
+        return a.type === MediaTypeEnum.movie ? -1 : 1;
+      }
+      // Then sort alphabetically by name
+      return (a.name || '').localeCompare(b.name || '');
+    });
 });
 
 // Genre selector state
@@ -1667,6 +1682,7 @@ const filteredGenres = ref<
   Array<{
     id: number;
     name: string;
+    type: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv;
   }>
 >([]);
 const selectedGenres = ref<
@@ -1971,6 +1987,16 @@ const removeProvider = (providerId: number) => {
   markContentPreferencesChanged();
 };
 
+// Handle language change from selector component
+const handleLanguageChangeFromSelector = (code: string) => {
+  // Find the language object
+  const lang = availableLanguages.find((l) => l.code === code);
+  
+  if (lang) {
+    changeLanguage(lang);
+  }
+};
+
 // Change selected language (single selection)
 const changeLanguage = (lang: { code: string; name: string }) => {
   // If already selected, do nothing
@@ -1985,31 +2011,37 @@ const changeLanguage = (lang: { code: string; name: string }) => {
 };
 
 // Filter genres based on search query
+// Show all genres when search is empty, filtered when there's a query
 const filterGenres = () => {
-  if (!genreSearchQuery.value.trim()) {
-    filteredGenres.value = [];
+  const query = genreSearchQuery.value.toLowerCase().trim();
+  
+  if (!query) {
+    // Show all genres when search is empty
+    filteredGenres.value = availableGenres.value.filter(
+      (genre) => !selectedGenres.value.some((g) => g.id === genre.id)
+    );
     return;
   }
 
-  const query = genreSearchQuery.value.toLowerCase().trim();
+  // Filter by search query
   filteredGenres.value = availableGenres.value
     .filter(
       (genre) =>
         genre.name &&
         genre.name.toLowerCase().includes(query) &&
         !selectedGenres.value.some((g) => g.id === genre.id)
-    )
-    .slice(0, 10); // Limit to 10 results
+    );
 };
 
 // Add genre to selected list
-const addGenre = (genre: { id: number; name: string }) => {
+const addGenre = (genre: { id: number; name: string; type?: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv }) => {
   // Check if already selected
   if (selectedGenres.value.some((g) => g.id === genre.id)) {
     return;
   }
 
-  selectedGenres.value.push(genre);
+  // Add genre (only store id and name, not type)
+  selectedGenres.value.push({ id: genre.id, name: genre.name });
   contentPreferences.value.favorite_genres = selectedGenres.value.map(
     (g) => g.id
   );
@@ -2042,6 +2074,12 @@ const updateGenreDropdownPosition = () => {
 // Handle genre search focus
 const handleGenreFocus = () => {
   showGenreResults.value = true;
+  // Initialize filtered genres with all available genres when opening
+  if (!genreSearchQuery.value.trim()) {
+    filteredGenres.value = availableGenres.value.filter(
+      (genre) => !selectedGenres.value.some((g) => g.id === genre.id)
+    );
+  }
   nextTick(() => {
     updateGenreDropdownPosition();
   });
@@ -2535,7 +2573,18 @@ definePageMeta({
   middleware: 'auth',
 });
 
+// SEO: Private page - noindex, nofollow
 useHead({
-  title: t('preferences.title') + ' - UpNext',
+  title: t('preferences.title'),
+  meta: [
+    {
+      name: 'robots',
+      content: 'noindex, nofollow',
+    },
+  ],
+});
+
+useSeoMeta({
+  robots: 'noindex, nofollow',
 });
 </script>

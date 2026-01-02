@@ -106,8 +106,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
-import { AVAILABLE_REGIONS } from '@/constants/regions';
+import { ref, watch, computed } from 'vue';
 import type { Region } from '@/constants/regions';
 import Dropdown from '@/components/ui/Dropdown.vue';
 import Button from '@/components/ui/Button.vue';
@@ -129,24 +128,61 @@ const selectedRegion = ref<string | null>(props.modelValue || null);
 const searchQuery = ref('');
 const filteredRegions = ref<Region[]>([]);
 
-// Use regions from constants
-const regions = AVAILABLE_REGIONS;
+// Fetch regions from TMDB API with cache
+// Cache is handled server-side, but we use useAsyncData for client-side caching
+const { data: regionsData } = await useAsyncData(
+  'tmdb-regions',
+  async () => {
+    try {
+      const response = await $fetch<{
+        success: boolean;
+        regions: Region[];
+        cached?: boolean;
+      }>('/api/tmdb/regions');
+
+      if (!response.success || !response.regions) {
+        console.error('[RegionSelector] Failed to fetch regions');
+        return [];
+      }
+
+      return response.regions;
+    } catch (error) {
+      console.error('[RegionSelector] Error fetching regions:', error);
+      return [];
+    }
+  },
+  {
+    server: true, // Fetch on server for SSR
+    default: () => [],
+    // Cache for 24 hours (86400 seconds)
+    lazy: false, // Fetch immediately
+  }
+);
+
+// Use regions from TMDB API
+const regions = computed(() => regionsData.value || []);
 
 // Initialize filtered regions
-filteredRegions.value = [...regions].sort((a, b) =>
-  a.name.localeCompare(b.name)
+watch(
+  regions,
+  (newRegions) => {
+    filteredRegions.value = [...newRegions].sort((a, b) =>
+      a.name.localeCompare(b.name)
+    );
+  },
+  { immediate: true }
 );
 
 const filterRegions = () => {
   if (!searchQuery.value.trim()) {
-    filteredRegions.value = [...regions].sort((a, b) =>
+    filteredRegions.value = [...regions.value].sort((a, b) =>
       a.name.localeCompare(b.name)
     );
     return;
   }
 
   const query = searchQuery.value.toLowerCase().trim();
-  filteredRegions.value = regions
+  filteredRegions.value = regions.value
     .filter(
       (region: Region) =>
         region.name.toLowerCase().includes(query) ||
@@ -160,7 +196,7 @@ const dropdownRef = ref<InstanceType<typeof Dropdown> | null>(null);
 const handleDropdownOpen = () => {
   // Reset search and show all regions when opening
   searchQuery.value = '';
-  filteredRegions.value = [...regions].sort((a, b) =>
+  filteredRegions.value = [...regions.value].sort((a, b) =>
     a.name.localeCompare(b.name)
   );
 };

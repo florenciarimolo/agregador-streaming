@@ -9,12 +9,10 @@ import {
   PrioritizeContentEnum,
 } from '@/types/enums/PrioritizeContentEnum';
 import {
-  ExcludedTypesEnum,
-} from '@/types/enums/ExcludedTypesEnum';
-import {
   TABLES,
   USER_PREFERENCES_FIELDS,
 } from '@/composables/database/constants';
+import { LanguageCode, toTMDBLanguageCode } from '@/constants/languages';
 
 export default defineEventHandler(async (event) => {
   try {
@@ -82,14 +80,10 @@ export default defineEventHandler(async (event) => {
 
     // Handle preferred_language (single string value in TMDB format)
     if (typeof body.preferred_language === 'string') {
-      // Import language constants
-      const { LanguageCode, toTMDBLanguageCode } = await import('@/constants/languages');
-      
       // Convert to TMDB format (handles both legacy and TMDB codes)
       preferences.preferred_language = toTMDBLanguageCode(body.preferred_language);
     } else if (body.preferred_language === null || body.preferred_language === undefined) {
       // Default to Spanish if not provided
-      const { LanguageCode } = await import('@/constants/languages');
       preferences.preferred_language = LanguageCode.SPANISH;
     }
 
@@ -123,21 +117,6 @@ export default defineEventHandler(async (event) => {
       ].includes(body.prioritize_content)
     ) {
       preferences.prioritize_content = body.prioritize_content;
-    }
-
-    if (Array.isArray(body.excluded_types)) {
-      const validTypes = [
-        ExcludedTypesEnum.reality,
-        ExcludedTypesEnum.anime,
-        ExcludedTypesEnum.documentary,
-      ];
-      preferences.excluded_types = body.excluded_types.filter((t: unknown) =>
-        validTypes.includes(t as string)
-      ) as (
-        | typeof ExcludedTypesEnum.reality
-        | typeof ExcludedTypesEnum.anime
-        | typeof ExcludedTypesEnum.documentary
-      )[];
     }
 
     // Create Supabase client for server-side operations

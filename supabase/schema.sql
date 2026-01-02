@@ -12,7 +12,6 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   display_name TEXT,
   avatar_url TEXT,
   settings JSONB DEFAULT '{}'::jsonb,
-  deleted_at TIMESTAMP WITH TIME ZONE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL,
   onboarding_completed BOOLEAN DEFAULT FALSE NOT NULL
@@ -45,7 +44,7 @@ CREATE TABLE IF NOT EXISTS public.user_title_status (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
   tmdb_id INTEGER NOT NULL,
-  type TEXT NOT NULL CHECK (type IN ('movie', 'tv')), -- 'movie' or 'tv'
+  type TEXT CHECK (type IN ('movie', 'tv')), -- 'movie' or 'tv'
   status TEXT NOT NULL CHECK (status IN ('seen', 'not_interested', 'watchlist')),
   liked BOOLEAN DEFAULT FALSE NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL,
@@ -152,7 +151,7 @@ CREATE TABLE IF NOT EXISTS public.recommendation_pool (
   tmdb_id INTEGER NOT NULL,
   type TEXT NOT NULL CHECK (type IN ('movie', 'tv')),
   source TEXT NOT NULL CHECK (source IN ('based_on_like', 'trending', 'discover', 'easy', 'mood')),
-  score FLOAT DEFAULT 0 CHECK (score >= -100 AND score <= 100),
+  score DOUBLE PRECISION,
   explanation_code TEXT,
   title_data JSONB, -- Stores title, overview, poster_path, backdrop_path, vote_average, genres, etc.
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL,
@@ -216,12 +215,10 @@ CREATE TABLE IF NOT EXISTS public.user_preferences (
   user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE UNIQUE NOT NULL,
   favorite_genres INTEGER[], -- TMDB genre IDs
   preferred_language TEXT DEFAULT 'es-ES', -- TMDB format (e.g., 'es-ES', 'ca-ES', 'eu-ES', 'gl-ES', 'en-US')
-  content_types TEXT[] CHECK (content_types <@ ARRAY['movie', 'tv']), -- 'movie', 'tv', or both
   included_providers INTEGER[], -- TMDB provider IDs (if empty, all providers are included)
   region TEXT, -- ISO 3166-1 alpha-2 country code (e.g., 'ES', 'US', 'MX')
   exploration_mode TEXT CHECK (exploration_mode IN ('similar', 'balanced', 'surprise')) DEFAULT 'balanced',
   prioritize_content TEXT CHECK (prioritize_content IN ('new', 'classics', 'top_rated')) DEFAULT 'new',
-  excluded_types TEXT[] CHECK (excluded_types <@ ARRAY['reality', 'anime', 'documentary']) DEFAULT ARRAY[]::TEXT[],
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL
 );

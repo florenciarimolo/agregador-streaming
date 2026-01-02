@@ -197,6 +197,21 @@ definePageMeta({
 });
 
 const { t } = useI18n();
+
+// SEO: Private page - noindex, nofollow
+useHead({
+  title: t('navbar.myAccount'),
+  meta: [
+    {
+      name: 'robots',
+      content: 'noindex, nofollow',
+    },
+  ],
+});
+
+useSeoMeta({
+  robots: 'noindex, nofollow',
+});
 const router = useRouter();
 const userStore = useUserStore();
 const currentUser = useSupabaseUser();

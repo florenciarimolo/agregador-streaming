@@ -12,7 +12,6 @@ export default defineEventHandler((event) => {
 Disallow: /auth/
 Disallow: /onboarding
 Disallow: /my-account
-Disallow: /settings
 Disallow: /preferences
 Disallow: /watchlist
 Disallow: /api/

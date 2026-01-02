@@ -18,7 +18,6 @@ export const PROFILES_FIELDS = {
   DISPLAY_NAME: 'display_name',
   AVATAR_URL: 'avatar_url',
   SETTINGS: 'settings',
-  DELETED_AT: 'deleted_at',
   CREATED_AT: 'created_at',
   UPDATED_AT: 'updated_at',
   ONBOARDING_COMPLETED: 'onboarding_completed',
@@ -68,7 +67,6 @@ export const USER_PREFERENCES_FIELDS = {
   REGION: 'region',
   EXPLORATION_MODE: 'exploration_mode',
   PRIORITIZE_CONTENT: 'prioritize_content',
-  EXCLUDED_TYPES: 'excluded_types',
   CREATED_AT: 'created_at',
   UPDATED_AT: 'updated_at',
 } as const;

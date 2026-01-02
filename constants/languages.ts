@@ -9,6 +9,7 @@ export enum LanguageCode {
   BASQUE = 'eu-ES',
   GALICIAN = 'gl-ES',
   ENGLISH = 'en-US',
+  ENGLISH_UK = 'en-GB',
 }
 
 export interface Language {
@@ -21,7 +22,8 @@ export const AVAILABLE_LANGUAGES: Language[] = [
   { code: LanguageCode.CATALAN, name: 'Català' },
   { code: LanguageCode.BASQUE, name: 'Euskera' },
   { code: LanguageCode.GALICIAN, name: 'Galego' },
-  { code: LanguageCode.ENGLISH, name: 'Inglés' },
+  { code: LanguageCode.ENGLISH, name: 'Inglés (EE. UU.)' },
+  { code: LanguageCode.ENGLISH_UK, name: 'Inglés (Reino Unido)' },
 ].sort((a, b) => a.name.localeCompare(b.name));
 
 /**

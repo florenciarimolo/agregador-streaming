@@ -147,13 +147,21 @@ import IconButton from '@/components/ui/IconButton.vue';
 
 const { t } = useI18n();
 
+// SEO: Private page - noindex, nofollow
 useHead({
-  title: `${t('watchlist.title')} - UpNext`,
+  title: t('watchlist.title'),
+  meta: [
+    {
+      name: 'robots',
+      content: 'noindex, nofollow',
+    },
+  ],
 });
 
 useSeoMeta({
-  title: `${t('watchlist.title')} - UpNext`,
+  title: t('watchlist.title'),
   description: t('watchlist.description'),
+  robots: 'noindex, nofollow',
 });
 
 type WatchlistTitle = {
