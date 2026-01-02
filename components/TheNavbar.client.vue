@@ -91,7 +91,14 @@
                     class="block px-4 py-2 mb-2 w-full text-sm text-left text-gray-800 rounded-lg transition-colors dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                     @click="userMenuDropdownRef?.close()"
                   >
-                    {{ $t('navbar.editProfile') }}
+                    {{ $t('navbar.preferencesAndLists') }}
+                  </nuxt-link>
+                  <nuxt-link
+                    to="/my-account"
+                    class="block px-4 py-2 mb-2 w-full text-sm text-left text-gray-800 rounded-lg transition-colors dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    @click="userMenuDropdownRef?.close()"
+                  >
+                    {{ $t('navbar.myAccount') }}
                   </nuxt-link>
                   <div
                     class="my-2 border-t border-gray-300/50 dark:border-white/10"
@@ -240,7 +247,15 @@
             active-class="bg-gray-100 dark:bg-gray-700 text-primary dark:text-primary-400"
             @click="showMobileMenu = false"
           >
-            {{ $t('navbar.editProfile') }}
+            {{ $t('navbar.preferencesAndLists') }}
+          </nuxt-link>
+          <nuxt-link
+            to="/my-account"
+            class="flex items-center px-4 py-3 text-sm font-medium text-gray-800 rounded-lg transition-colors dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+            active-class="bg-gray-100 dark:bg-gray-700 text-primary dark:text-primary-400"
+            @click="showMobileMenu = false"
+          >
+            {{ $t('navbar.myAccount') }}
           </nuxt-link>
           <nuxt-link
             to="/watchlist"

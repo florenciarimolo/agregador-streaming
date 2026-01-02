@@ -6,74 +6,32 @@
         <!-- Avatar -->
         <div class="flex flex-shrink-0 items-center">
           <div
-            class="w-12 h-12 md:w-24 md:h-24 [&_.avatar-upload]:!w-full [&_.avatar-upload]:!h-full [&_.avatar-upload>div]:!w-full [&_.avatar-upload>div]:!h-full [&_.avatar-upload>div>div]:!w-full [&_.avatar-upload>div>div]:!h-full [&_.avatar-upload>div>div>img]:!w-full [&_.avatar-upload>div>div>img]:!h-full [&_.avatar-upload>div>div>img]:!object-cover [&_.avatar-upload>div>div>span]:!w-full [&_.avatar-upload>div>div>span]:!h-full"
+            class="rounded-full border shadow-md hover:ring-2 hover:ring-primary/50 border-primary"
           >
-            <AvatarUpload
+            <Avatar
               :avatar-url="profile?.avatar_url"
               :display-name="profile?.display_name"
               :email="currentUser?.email"
               :user-id="userId"
               size="xl"
-              @uploaded="handleAvatarUploaded"
-              @error="handleAvatarError"
             />
           </div>
         </div>
 
         <!-- Profile Info -->
         <div class="overflow-hidden flex-1 min-w-0">
-          <div v-if="!isEditing" class="space-y-2">
-            <div class="flex gap-2 items-center">
-              <h1
-                class="text-sm font-medium text-gray-800 whitespace-nowrap dark:text-gray-300 font-heading"
-              >
-                {{ displayName || currentUser?.email || $t('profile.user') }}
-              </h1>
-              <IconButton
-                :icon="IconEdit"
-                :aria-label="$t('profile.editProfile')"
-                size="medium"
-                variant="ghost"
-                custom-class="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg flex-shrink-0 [&_svg]:text-gray-600 dark:[&_svg]:text-gray-400"
-                @click="startEdit"
-              />
-            </div>
+          <div class="space-y-2">
+            <h1
+              class="text-sm font-medium text-gray-800 whitespace-nowrap dark:text-gray-300 font-heading"
+            >
+              {{ displayName || currentUser?.email || $t('profile.user') }}
+            </h1>
             <p
               v-if="currentUser?.email"
               class="text-xs text-gray-500 whitespace-nowrap dark:text-gray-400"
             >
               {{ currentUser.email }}
             </p>
-          </div>
-
-          <!-- Edit Mode -->
-          <div v-else class="space-y-4 max-w-md">
-            <div>
-              <label
-                for="display-name"
-                class="block mb-2 text-sm font-medium text-gray-800 dark:text-gray-300"
-              >
-                {{ $t('profile.displayName') }}
-              </label>
-              <input
-                id="display-name"
-                v-model="editDisplayName"
-                type="text"
-                class="px-4 py-2 w-full text-gray-800 bg-gray-100 rounded-lg border border-gray-300 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
-                :placeholder="$t('profile.displayNamePlaceholder')"
-                maxlength="50"
-                @keydown.enter="saveProfile"
-                @keydown.esc="cancelEdit"
-              />
-            </div>
-            <div class="flex gap-3">
-              <Button size="small" variant="primary" @click="saveProfile">
-                {{ $t('common.save') }}
-              </Button>
-              <Button size="small" variant="outline" @click="cancelEdit">
-                {{ $t('common.cancel') }}
-              </Button>
-            </div>
           </div>
         </div>
       </div>
@@ -714,14 +672,12 @@ import {
 import { getProfile } from '@/composables/database/profiles';
 import { getSession } from '@/composables/database/auth';
 import SearchBar from '@/components/SearchBar.vue';
-import AvatarUpload from '@/components/AvatarUpload.vue';
+import Avatar from '@/components/Avatar.vue';
 import TitleGrid from '@/components/TitleGrid.vue';
 import EmptyState from '@/components/EmptyState.vue';
 import Spinner from '@/components/Spinner.vue';
 import Toast from '@/components/ui/Toast.vue';
-import IconEdit from '@/components/icons/IconEdit.vue';
 import IconSearch from '@/components/icons/IconSearch.vue';
-import IconButton from '@/components/ui/IconButton.vue';
 import { useUndoToast } from '@/composables/useUndoToast';
 import type { TMDBSearchResult } from '@/types/tmdb/Search';
 import { AVAILABLE_LANGUAGES, LanguageCode } from '@/constants/languages';
@@ -740,8 +696,6 @@ const profile = ref<{
   avatar_url?: string | null;
 } | null>(null);
 const isLoading = ref(true);
-const isEditing = ref(false);
-const editDisplayName = ref('');
 const activeTab = ref<
   'liked' | 'seen' | 'not-interested' | 'content-preferences'
 >('liked');
@@ -1141,75 +1095,6 @@ const fetchWatchlistTitles = async () => {
   } catch {
     // Error handled silently
   }
-};
-
-// Profile editing
-const startEdit = () => {
-  editDisplayName.value = profile.value?.display_name || '';
-  isEditing.value = true;
-};
-
-const cancelEdit = () => {
-  isEditing.value = false;
-  editDisplayName.value = '';
-};
-
-const saveProfile = async () => {
-  const id = userId.value;
-  if (!id) return;
-
-  try {
-    const {
-      data: { session },
-    } = await getSession();
-
-    if (!session?.access_token) {
-      throw new Error(t('profile.notAuthenticated'));
-    }
-
-    const response = await $fetch<{
-      success: boolean;
-      profile: {
-        display_name?: string | null;
-        avatar_url?: string | null;
-      };
-    }>('/api/users/profile', {
-      method: 'PUT',
-      headers: {
-        Authorization: `Bearer ${session.access_token}`,
-      },
-      body: {
-        display_name: editDisplayName.value.trim() || null,
-      },
-    });
-
-    if (response.success && response.profile) {
-      profile.value = {
-        ...profile.value,
-        display_name: response.profile.display_name,
-        avatar_url: response.profile.avatar_url || profile.value?.avatar_url,
-      };
-      await userStore.fetchProfile();
-      isEditing.value = false;
-      showSuccess(t('profile.profileUpdated'));
-    } else {
-      throw new Error('Failed to update profile');
-    }
-  } catch (error) {
-    console.error('Error updating profile:', error);
-    showError(t('profile.errorUpdating'));
-  }
-};
-
-// Avatar
-const handleAvatarUploaded = async (url: string) => {
-  profile.value = { ...profile.value, avatar_url: url };
-  await userStore.fetchProfile();
-  showSuccess(t('profile.avatarUpdated'));
-};
-
-const handleAvatarError = (message: string) => {
-  showError(message);
 };
 
 // Title management

@@ -32,7 +32,9 @@
     "logoutConfirmMessage": "¿Estás seguro de que quieres cerrar sesión?",
     "scrollToTop": "Ir arriba",
     "mobileMenu": "Menú móvil",
-    "theme": "Tema"
+    "theme": "Tema",
+    "myAccount": "Mi cuenta",
+    "preferencesAndLists": "Preferencias y listas"
   },
   "auth": {
     "login": "Iniciar sesión",
@@ -273,7 +275,7 @@
     "noTitle": "Sin título"
   },
   "profile": {
-    "title": "Perfil",
+    "title": "Preferencias y listas",
     "editProfile": "Editar perfil",
     "email": "Email",
     "preferences": "Preferencias",
@@ -623,6 +625,43 @@
     "alert": {
       "title": "Precisión de idiomas",
       "message": "Los títulos y descripciones se obtienen de fuentes externas (TMDB) y pueden no estar disponibles al 100% en el idioma seleccionado. Hacemos nuestro mejor esfuerzo para mostrar el contenido en tu idioma preferido."
+    }
+  },
+  "myAccount": {
+    "title": "Mi cuenta",
+    "description": "Gestiona tu información personal y configuración de cuenta",
+    "avatar": {
+      "title": "Avatar",
+      "description": "Cambia tu foto de perfil"
+    },
+    "displayName": {
+      "title": "Nombre visible",
+      "description": "Este es el nombre que otros usuarios verán",
+      "placeholder": "Tu nombre o apodo",
+      "updated": "Nombre actualizado correctamente",
+      "error": "Error al actualizar el nombre"
+    },
+    "password": {
+      "title": "Cambiar contraseña",
+      "description": "Actualiza tu contraseña para mantener tu cuenta segura",
+      "currentPassword": "Contraseña actual",
+      "newPassword": "Nueva contraseña",
+      "confirmPassword": "Confirmar nueva contraseña",
+      "updated": "Contraseña actualizada correctamente",
+      "error": "Error al actualizar la contraseña",
+      "currentPasswordRequired": "La contraseña actual es requerida",
+      "passwordsMismatch": "Las contraseñas no coinciden"
+    },
+    "deleteAccount": {
+      "title": "Eliminar cuenta",
+      "description": "Eliminar tu cuenta es permanente y no se puede deshacer",
+      "button": "Eliminar cuenta",
+      "confirmTitle": "Confirmar eliminación de cuenta",
+      "confirmMessage": "¿Estás seguro de que quieres eliminar tu cuenta? Esta acción es permanente y eliminará todos tus datos, incluyendo tus preferencias, recomendaciones y historial. Si quieres volver a usar UpNext, tendrás que crear una cuenta nueva.",
+      "confirmButton": "Sí, eliminar mi cuenta",
+      "deleting": "Eliminando cuenta...",
+      "deleted": "Cuenta eliminada correctamente",
+      "error": "Error al eliminar la cuenta"
     }
   }
 }

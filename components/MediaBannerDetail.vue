@@ -11,36 +11,39 @@
       style="top: 0px; right: 0px; bottom: 0px; left: 0px"
     ></div>
     <div
-      class="relative overflow-hidden rounded-3xl w-full max-w-80 lg:w-80 flex-shrink-0 aspect-[2/3]"
+      class="relative w-full max-w-80 lg:w-80 flex-shrink-0 lg:aspect-[2/3]"
       style="
         filter: drop-shadow(0 10px 15px -3px rgb(0 0 0 / 0.1))
           drop-shadow(0 4px 6px -4px rgb(0 0 0 / 0.1))
           drop-shadow(0 0 20px rgb(var(--color-primary) / 0.3));
       "
     >
-      <img
-        :src="
-          `https://image.tmdb.org/t/p/w780` + mediaWithProviders.poster_path
-        "
-        :alt="mediaWithProviders.title"
-        class="object-contain w-full h-full rounded-3xl max-h-[400px] lg:max-h-[500px]"
-        style="clip-path: inset(0 round 1.5rem)"
-      />
-      <!-- Informative icons overlay -->
-      <div class="flex absolute top-2 right-2 gap-2">
-        <div
-          v-if="isLiked"
-          class="flex justify-center items-center w-8 h-8 rounded-full backdrop-blur-sm bg-primary-600/90"
-          :title="$t('media.liked')"
-        >
-          <IconHeartFilled icon-class="w-5 h-5 text-white" />
-        </div>
-        <div
-          v-if="isInWatchlist"
-          class="flex justify-center items-center w-8 h-8 rounded-full backdrop-blur-sm bg-primary-600/90"
-          :title="$t('media.watchLater')"
-        >
-          <IconClock icon-class="w-5 h-5 text-white" />
+      <div
+        class="relative overflow-hidden rounded-3xl w-full max-h-[400px] lg:h-full lg:max-h-[500px]"
+      >
+        <img
+          :src="
+            `https://image.tmdb.org/t/p/w780` + mediaWithProviders.poster_path
+          "
+          :alt="mediaWithProviders.title"
+          class="object-contain w-full h-full rounded-3xl"
+        />
+        <!-- Informative icons overlay -->
+        <div class="flex absolute top-2 right-2 gap-2">
+          <div
+            v-if="isLiked"
+            class="flex justify-center items-center w-8 h-8 rounded-full backdrop-blur-sm bg-primary-600/90"
+            :title="$t('media.liked')"
+          >
+            <IconHeartFilled icon-class="w-5 h-5 text-white" />
+          </div>
+          <div
+            v-if="isInWatchlist"
+            class="flex justify-center items-center w-8 h-8 rounded-full backdrop-blur-sm bg-primary-600/90"
+            :title="$t('media.watchLater')"
+          >
+            <IconClock icon-class="w-5 h-5 text-white" />
+          </div>
         </div>
       </div>
     </div>
