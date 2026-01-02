@@ -1,7 +1,7 @@
 <template>
   <div
     :class="[
-      'rounded-lg p-4 border',
+      'rounded-3xl p-4 border',
       variantClasses,
       customClass,
     ]"

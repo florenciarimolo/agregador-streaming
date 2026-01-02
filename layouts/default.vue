@@ -7,7 +7,7 @@
 
     <!-- Contenido principal -->
     <main
-      class="pb-[54px] pt-[104px] relative z-0 md:w-[80%] lg:w-full mx-auto"
+      class="pb-[54px] pt-[104px] md:pt-[64px] relative z-0 md:w-[80%] lg:w-full mx-auto"
     >
       <slot />
     </main>
@@ -15,42 +15,42 @@
     <!-- Footer -->
     <footer class="w-full">
       <div
-        class="border-t border-gray-300/50 dark:border-white/10 py-6 px-6 text-center"
+        class="px-6 py-6 text-center border-t border-gray-300/50 dark:border-white/10"
       >
-        <div class="flex flex-wrap justify-center items-center gap-4 mb-4">
+        <div class="flex flex-wrap gap-4 justify-center items-center mb-4">
           <nuxt-link
             to="/how-it-works"
-            class="text-gray-800 dark:text-gray-300 hover:text-primary dark:hover:text-primary-400 transition-colors text-sm no-underline"
+            class="text-sm text-gray-800 no-underline transition-colors dark:text-gray-300 hover:text-primary dark:hover:text-primary-400"
           >
             {{ $t('footer.howItWorks') }}
           </nuxt-link>
           <span class="text-gray-400">•</span>
           <nuxt-link
             to="/faq"
-            class="text-gray-800 dark:text-gray-300 hover:text-primary dark:hover:text-primary-400 transition-colors text-sm no-underline"
+            class="text-sm text-gray-800 no-underline transition-colors dark:text-gray-300 hover:text-primary dark:hover:text-primary-400"
           >
             {{ $t('footer.faq') }}
           </nuxt-link>
         </div>
-        <p class="text-gray-800 dark:text-gray-300 text-sm mb-2">
+        <p class="mb-2 text-sm text-gray-800 dark:text-gray-300">
           {{ $t('footer.copyright') }}
         </p>
-        <p class="text-gray-800 dark:text-gray-300 text-sm">
+        <p class="text-sm text-gray-800 dark:text-gray-300">
           {{ $t('footer.developedBy') }}
           <a
             href="https://rimobyte.com"
             target="_blank"
             rel="noopener noreferrer"
-            class="text-gray-800 dark:text-gray-300 hover:text-primary dark:hover:text-primary-400 transition-colors no-underline"
+            class="text-gray-800 no-underline transition-colors dark:text-gray-300 hover:text-primary dark:hover:text-primary-400"
           >
             RimoByte
           </a>
         </p>
-        <p class="text-gray-800 dark:text-gray-300 text-sm mt-2">
+        <p class="mt-2 text-sm text-gray-800 dark:text-gray-300">
           {{ $t('footer.contact') }}
           <a
             href="mailto:hello@getupnext.io"
-            class="text-gray-800 dark:text-gray-300 hover:text-primary dark:hover:text-primary-400 transition-colors no-underline"
+            class="text-gray-800 no-underline transition-colors dark:text-gray-300 hover:text-primary dark:hover:text-primary-400"
           >
             hello@getupnext.io
           </a>
@@ -60,14 +60,10 @@
 
     <!-- Global Undo Toast -->
     <Toast />
-
-    <!-- Language Accuracy Alert -->
-    <LanguageAccuracyAlert />
   </div>
 </template>
 
 <script setup lang="ts">
 import Toast from '@/components/ui/Toast.vue';
-import LanguageAccuracyAlert from '@/components/LanguageAccuracyAlert.vue';
 // Layout por defecto - se aplica a todas las páginas
 </script>

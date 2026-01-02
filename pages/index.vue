@@ -8,6 +8,7 @@ import { nextTick, onMounted, computed, watch, watchEffect, ref } from 'vue';
 import Card from '@/components/ui/Card.vue';
 import Modal from '@/components/ui/Modal.vue';
 import Button from '@/components/ui/Button.vue';
+import Alert from '@/components/ui/Alert.vue';
 import { getUserLikedTitle } from '@/composables/database/userTitleStatus';
 
 // Type for Supabase user that may have either 'id' or 'sub' as identifier
@@ -604,11 +605,7 @@ const confirmRemoveLike = async () => {
     }
 
     // Show toast about regenerating recommendations
-    showToast(
-      t('home.regeneratingRecommendations'),
-      null,
-      5000
-    );
+    showToast(t('home.regeneratingRecommendations'), null, 5000);
 
     // Regenerate recommendation pool in background
     try {
@@ -892,6 +889,15 @@ onMounted(() => {
         <div
           class="container flex flex-col gap-6 px-4 pt-6 pb-6 mx-auto w-full max-w-7xl md:px-0"
         >
+          <!-- Language Accuracy Alert -->
+          <Alert
+            v-if="userStore.hasCompletedOnboarding"
+            variant="info"
+            custom-class="mb-4"
+            :show-icon="true"
+          >
+            {{ $t('languageAccuracy.alert.message') }}
+          </Alert>
           <!-- Mood Selector -->
           <MoodSelector v-if="userStore.hasCompletedOnboarding" />
           <!-- Loading State -->

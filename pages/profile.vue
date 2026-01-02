@@ -141,11 +141,7 @@
       <template #default="{ activeTab: currentTab }">
         <!-- Liked Tab -->
         <div v-if="currentTab === 'liked'">
-          <Alert
-            variant="info"
-            custom-class="mb-4"
-            :show-icon="true"
-          >
+          <Alert variant="info" custom-class="mb-4" :show-icon="true">
             {{ $t('preferences.likedTabInfo') }}
           </Alert>
           <div class="mb-4">

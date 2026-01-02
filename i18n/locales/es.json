@@ -615,8 +615,7 @@
   "languageAccuracy": {
     "alert": {
       "title": "Precisión de idiomas",
-      "message": "Los títulos y descripciones se obtienen de fuentes externas (TMDB) y pueden no estar disponibles al 100% en el idioma seleccionado. Hacemos nuestro mejor esfuerzo para mostrar el contenido en tu idioma preferido.",
-      "dismiss": "Cerrar"
+      "message": "Los títulos y descripciones se obtienen de fuentes externas (TMDB) y pueden no estar disponibles al 100% en el idioma seleccionado. Hacemos nuestro mejor esfuerzo para mostrar el contenido en tu idioma preferido."
     }
   }
 }
