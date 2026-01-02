@@ -1,18 +1,18 @@
 <template>
-  <div class="relative">
+  <div ref="searchContainerRef" class="relative">
     <!-- Search Input -->
     <div class="relative">
       <input
         v-model="searchQuery"
         type="text"
         :placeholder="$t('search.placeholder')"
-        class="w-full px-4 py-2 pl-10 pr-4 text-sm dark:text-gray-300 text-gray-800 dark:bg-gray-800/50 bg-white/80 dark:border-gray-600 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-transparent focus:border-transparent backdrop-blur-xs transition-all"
+        class="px-4 py-2 pr-4 pl-10 w-full text-sm text-gray-800 rounded-lg border-gray-300 transition-all dark:text-gray-300 dark:bg-gray-800/50 bg-white/80 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-transparent focus:border-transparent backdrop-blur-xs"
         @input="handleSearch"
         @focus="showResults = true"
         @blur="handleBlur"
       />
       <!-- Search Icon -->
-      <div class="absolute inset-y-0 left-0 flex items-center pl-3">
+      <div class="flex absolute inset-y-0 left-0 items-center pl-3">
         <svg
           class="w-4 h-4 text-gray-400"
           fill="none"
@@ -30,10 +30,10 @@
       <!-- Loading Spinner -->
       <div
         v-if="isLoading"
-        class="absolute inset-y-0 right-0 flex items-center pr-3"
+        class="flex absolute inset-y-0 right-0 items-center pr-3"
       >
         <svg
-          class="w-4 h-4 text-primary animate-spin"
+          class="w-4 h-4 animate-spin text-primary"
           fill="none"
           viewBox="0 0 24 24"
         >
@@ -57,11 +57,11 @@
     <!-- Search Results Dropdown -->
     <Transition
       enter-active-class="transition duration-200 ease-out"
-      enter-from-class="transform scale-95 opacity-0"
-      enter-to-class="transform scale-100 opacity-100"
+      enter-from-class="opacity-0 transform scale-95"
+      enter-to-class="opacity-100 transform scale-100"
       leave-active-class="transition duration-150 ease-in"
-      leave-from-class="transform scale-100 opacity-100"
-      leave-to-class="transform scale-95 opacity-0"
+      leave-from-class="opacity-100 transform scale-100"
+      leave-to-class="opacity-0 transform scale-95"
     >
       <div
         v-if="
@@ -76,24 +76,24 @@
           <div
             v-for="result in searchResults"
             :key="`${result.media_type}-${result.id}`"
-            class="flex items-center px-4 py-3 cursor-pointer dark:hover:bg-gray-800/50 hover:bg-gray-100/50 transition-colors duration-150"
+            class="flex items-center px-4 py-3 transition-colors duration-150 cursor-pointer dark:hover:bg-gray-800/50 hover:bg-gray-100/50"
             @mousedown.prevent="navigateToDetail(result)"
             @click="navigateToDetail(result)"
           >
             <!-- Thumbnail -->
             <div
-              class="flex-shrink-0 w-12 h-16 mr-3 dark:bg-gray-700 bg-gray-200 rounded overflow-hidden"
+              class="overflow-hidden flex-shrink-0 mr-3 w-12 h-16 bg-gray-200 rounded dark:bg-gray-700"
             >
               <img
                 v-if="result.poster_path"
                 :src="`https://image.tmdb.org/t/p/w92${result.poster_path}`"
                 :alt="getTitle(result)"
-                class="w-full h-full object-cover"
+                class="object-cover w-full h-full"
                 loading="lazy"
               />
               <div
                 v-else
-                class="w-full h-full flex items-center justify-center text-gray-500 text-xs"
+                class="flex justify-center items-center w-full h-full text-xs text-gray-500"
               >
                 <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
                   <path
@@ -107,14 +107,14 @@
 
             <!-- Content -->
             <div class="flex-1 min-w-0">
-              <div class="flex items-start justify-between">
+              <div class="flex justify-between items-start">
                 <div class="flex-1 min-w-0">
                   <h3
-                    class="text-sm font-medium dark:text-gray-300 text-gray-800 truncate"
+                    class="text-sm font-medium text-gray-800 truncate dark:text-gray-300"
                   >
                     {{ getTitle(result) }}
                   </h3>
-                  <p class="text-xs dark:text-gray-400 text-gray-600 mt-1">
+                  <p class="mt-1 text-xs text-gray-600 dark:text-gray-400">
                     {{
                       result.media_type === MediaTypeEnum.movie
                         ? $t('media.movie')
@@ -157,10 +157,10 @@
         <!-- No Results -->
         <div
           v-else-if="searchQuery.length >= 4 && !isLoading"
-          class="px-4 py-6 text-center dark:text-gray-400 text-gray-600"
+          class="px-4 py-6 text-center text-gray-600 dark:text-gray-400"
         >
           <svg
-            class="w-12 h-12 mx-auto mb-2 text-gray-500"
+            class="mx-auto mb-2 w-12 h-12 text-gray-500"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -173,7 +173,7 @@
             />
           </svg>
           <p class="text-sm">{{ $t('search.noResults') }}</p>
-          <p class="text-xs mt-1">{{ $t('search.tryDifferent') }}</p>
+          <p class="mt-1 text-xs">{{ $t('search.tryDifferent') }}</p>
         </div>
       </div>
     </Transition>
@@ -181,17 +181,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 import type { TMDBSearchResult } from '@/types/tmdb/Search';
 
 const router = useRouter();
+const searchContainerRef = ref<HTMLElement | null>(null);
 
 // Props
 interface Props {
   placeholder?: string;
   emitOnSelect?: boolean; // If true, emit event instead of navigating
+  language?: string; // Optional language code for search (e.g., 'es-ES', 'en-US'). If not provided, server will use user preference or default.
 }
 
 const { t } = useI18n();
@@ -199,11 +201,13 @@ const { t } = useI18n();
 const props = withDefaults(defineProps<Props>(), {
   placeholder: '', // Se usa $t('search.placeholder') directamente en el template
   emitOnSelect: false,
+  language: undefined,
 });
 
 // Emit
 const emit = defineEmits<{
   'title-selected': [result: TMDBSearchResult];
+  closed: [];
 }>();
 
 // Reactive state
@@ -224,10 +228,23 @@ const getYear = (result: TMDBSearchResult): string => {
   return date ? new Date(date).getFullYear().toString() : '';
 };
 
-// Navigate to detail page or emit event
-const navigateToDetail = (result: TMDBSearchResult) => {
+// Close search and clear query
+const closeSearch = () => {
   showResults.value = false;
   searchQuery.value = '';
+  searchResults.value = [];
+  if (searchTimeout) {
+    clearTimeout(searchTimeout);
+    searchTimeout = null;
+  }
+};
+
+// Navigate to detail page or emit event
+const navigateToDetail = (result: TMDBSearchResult) => {
+  // Close dropdown and clear query
+  closeSearch();
+  // Emit closed event to notify parent (useful for mobile search)
+  emit('closed');
 
   if (props.emitOnSelect) {
     emit('title-selected', result);
@@ -261,10 +278,20 @@ const handleSearch = () => {
   // Debounce search
   searchTimeout = setTimeout(async () => {
     try {
+      const queryParams: { query: string; language?: string } = {
+        query: searchQuery.value,
+      };
+
+      // If language prop is provided, pass it to the API
+      // Otherwise, the server will use user preference or default
+      if (props.language) {
+        queryParams.language = props.language;
+      }
+
       const response = await $fetch<{ data: { results: TMDBSearchResult[] } }>(
         `/api/tmdb/search/multi`,
         {
-          query: { query: searchQuery.value },
+          query: queryParams,
         }
       );
 
@@ -287,13 +314,35 @@ const handleSearch = () => {
 
 // Handle blur with delay to allow clicks on results
 const handleBlur = () => {
-  setTimeout(() => {
-    showResults.value = false;
-  }, 200);
+  // Don't close immediately, let handleClickOutside handle it
+  // This prevents closing when clicking on results
 };
+
+// Handle clicks outside the search container
+const handleClickOutside = (event: MouseEvent) => {
+  // Only close if results are visible and click is outside
+  if (
+    showResults.value &&
+    searchContainerRef.value &&
+    !searchContainerRef.value.contains(event.target as Node)
+  ) {
+    closeSearch();
+  }
+};
+
+// Expose methods for parent components
+defineExpose({
+  clearSearch: closeSearch,
+});
+
+onMounted(() => {
+  // Add click outside listener
+  document.addEventListener('click', handleClickOutside);
+});
 
 // Clear search when component unmounts
 onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside);
   if (searchTimeout) {
     clearTimeout(searchTimeout);
   }

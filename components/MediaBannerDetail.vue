@@ -28,8 +28,8 @@
           :alt="mediaWithProviders.title"
           class="w-full h-full rounded-3xl object-contain lg:object-cover"
         />
-        <!-- Informative icons overlay -->
-        <div class="flex absolute top-2 right-2 gap-2">
+        <!-- Informative icons overlay (only show if user has session) -->
+        <div v-if="hasSession" class="flex absolute top-2 right-2 gap-2">
           <div
             v-if="isLiked"
             class="flex justify-center items-center w-8 h-8 rounded-full backdrop-blur-sm bg-primary-600/90"
@@ -93,8 +93,9 @@
               :in-production="inProduction"
               :in-theaters="inTheaters"
             />
-            <!-- Actions Menu -->
+            <!-- Actions Menu (only show if user has session) -->
             <Dropdown
+              v-if="hasSession"
               ref="dropdownRef"
               position="right"
               width="w-48"
@@ -424,6 +425,10 @@ const isLiked = ref(false);
 const isInWatchlist = ref(false);
 const router = useRouter();
 
+// Check if user has session
+const user = useSupabaseUser();
+const hasSession = computed(() => !!user.value);
+
 // Detect mobile/tablet screen size (use mobile style for tablet too)
 const checkMobile = () => {
   isMobile.value = window.innerWidth < 1024; // lg breakpoint
@@ -437,8 +442,13 @@ const handleResize = () => {
 const { showToast } = useUndoToast();
 const { t } = useI18n();
 
-// Fetch title status on mount
+// Fetch title status on mount (only if user has session)
 const fetchTitleStatus = async () => {
+  // Don't fetch if no session
+  if (!hasSession.value) {
+    return;
+  }
+
   try {
     const {
       data: { session },
@@ -471,7 +481,10 @@ const fetchTitleStatus = async () => {
 onMounted(async () => {
   checkMobile();
   window.addEventListener('resize', handleResize);
-  await fetchTitleStatus();
+  // Only fetch title status if user has session
+  if (hasSession.value) {
+    await fetchTitleStatus();
+  }
 });
 
 onUnmounted(() => {

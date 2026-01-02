@@ -2,15 +2,33 @@ import { getTMDBConfig } from '../../../utils/config';
 import { getUserTMDBParams } from '../../../utils/user-preferences';
 import { createError, defineEventHandler, getQuery, H3Event } from 'h3';
 import type { MediaResponse } from '@/types/Media';
+import { hasUnexpectedCharacters } from '@/utils/language-detection';
+import { getPrimaryLanguageForRegion } from '@/utils/language-detection';
+import type { TMDBSearchResult } from '@/types/tmdb/Search';
+import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 
 export default defineEventHandler(async (event: H3Event) => {
   try {
-    // Get user preferences for language and region
-    const { language, region } = await getUserTMDBParams(event);
-    const config = getTMDBConfig(language, region);
-
     const query = getQuery(event);
     const searchQuery = query.query as string;
+
+    // If language is provided in query, use it; otherwise get from user preferences
+    let language: string;
+    let region: string;
+
+    if (query.language && typeof query.language === 'string') {
+      // Use provided language, but still get region from user preferences
+      const userParams = await getUserTMDBParams(event);
+      language = query.language;
+      region = userParams.region;
+    } else {
+      // Get both language and region from user preferences (or defaults)
+      const userParams = await getUserTMDBParams(event);
+      language = userParams.language;
+      region = userParams.region;
+    }
+
+    const config = getTMDBConfig(language, region);
 
     if (!searchQuery || searchQuery.length < 4) {
       throw createError({
@@ -20,17 +38,179 @@ export default defineEventHandler(async (event: H3Event) => {
       });
     }
 
-    const response = await $fetch(`${config.baseUrl}/search/multi`, {
-      query: {
-        api_key: config.apiKey,
-        language: config.language,
-        region: config.region,
-        include_adult: config.includeAdult,
-        query: searchQuery,
-      },
-    });
+    const response = await $fetch<MediaResponse>(
+      `${config.baseUrl}/search/multi`,
+      {
+        query: {
+          api_key: config.apiKey,
+          language: config.language,
+          region: config.region,
+          include_adult: config.includeAdult,
+          query: searchQuery,
+        },
+      }
+    );
 
-    return { data: response as MediaResponse };
+    // Extract language code (e.g., 'es-ES' -> 'es')
+    const languageCode = language.split('-')[0]?.toLowerCase() || 'es';
+    const primaryLanguage = getPrimaryLanguageForRegion(region);
+
+    // Filter results to only movies and TV shows
+    const filteredResults = (response.results || []).filter(
+      (result: TMDBSearchResult) =>
+        result.media_type === MediaTypeEnum.movie ||
+        result.media_type === MediaTypeEnum.tv
+    ) as TMDBSearchResult[];
+
+    // Detect titles with non-Latin alphabets and fetch titles in preferred language
+    const resultsWithCorrectedTitles = await Promise.all(
+      filteredResults.map(async (result: TMDBSearchResult) => {
+        const title = result.title || result.name || '';
+
+        // Check alphabet if the user's language is a Latin script language
+        // (Spanish, Catalan, Basque, Galician, or English)
+        const latinLanguages = ['es', 'ca', 'eu', 'gl', 'en'];
+        const shouldCheckAlphabet = latinLanguages.includes(languageCode);
+
+        if (shouldCheckAlphabet && title) {
+          // For English, we need to check differently since hasUnexpectedCharacters
+          // is designed for ES region languages. For English, we'll use a simpler check.
+          let hasNonLatin = false;
+
+          if (languageCode === 'en') {
+            // Simple check for non-Latin characters in English
+            const nonLatinPatterns = [
+              /[\u3040-\u309F]/, // Hiragana
+              /[\u30A0-\u30FF]/, // Katakana
+              /[\u4E00-\u9FAF]/, // CJK Unified Ideographs
+              /[\u3400-\u4DBF]/, // CJK Extension A
+              /[\u0900-\u097F]/, // Devanagari
+              /[\u0600-\u06FF]/, // Arabic
+              /[\u0590-\u05FF]/, // Hebrew
+              /[\u0400-\u04FF]/, // Cyrillic
+            ];
+
+            // Count non-Latin characters
+            let nonLatinCount = 0;
+            let totalChars = 0;
+
+            for (const char of title) {
+              if (/[\s0-9.,;:!?\-_()[\]{}'"/\\]/.test(char)) {
+                continue;
+              }
+              totalChars++;
+
+              for (const pattern of nonLatinPatterns) {
+                if (pattern.test(char)) {
+                  nonLatinCount++;
+                  break;
+                }
+              }
+            }
+
+            hasNonLatin = totalChars > 0 && nonLatinCount / totalChars > 0.5;
+          } else {
+            hasNonLatin = hasUnexpectedCharacters(title, languageCode);
+          }
+
+          if (hasNonLatin) {
+            // Fetch title in preferred language from TMDB
+            try {
+              const endpoint =
+                result.media_type === MediaTypeEnum.movie
+                  ? `${config.baseUrl}/movie/${result.id}`
+                  : `${config.baseUrl}/tv/${result.id}`;
+
+              const titleResponse = await $fetch<{
+                title?: string;
+                name?: string;
+              }>(endpoint, {
+                query: {
+                  api_key: config.apiKey,
+                  language: config.language,
+                  region: config.region,
+                },
+              });
+
+              // Replace title if we got a valid one in preferred language
+              const preferredTitle = titleResponse.title || titleResponse.name;
+              if (preferredTitle && preferredTitle.trim() !== '') {
+                // Check if the preferred title is also non-Latin
+                const preferredHasNonLatin = hasUnexpectedCharacters(
+                  preferredTitle,
+                  languageCode
+                );
+
+                if (!preferredHasNonLatin) {
+                  // Use preferred title
+                  if (result.media_type === MediaTypeEnum.movie) {
+                    result.title = preferredTitle;
+                  } else {
+                    result.name = preferredTitle;
+                  }
+                } else {
+                  // If preferred language also has non-Latin, try primary language
+                  const primaryLangCode = `${primaryLanguage}-${region?.toUpperCase() || 'ES'}`;
+                  const primaryConfig = getTMDBConfig(primaryLangCode, region);
+
+                  try {
+                    const primaryResponse = await $fetch<{
+                      title?: string;
+                      name?: string;
+                    }>(endpoint, {
+                      query: {
+                        api_key: primaryConfig.apiKey,
+                        language: primaryConfig.language,
+                        region: primaryConfig.region,
+                      },
+                    });
+
+                    const primaryTitle =
+                      primaryResponse.title || primaryResponse.name;
+                    if (primaryTitle && primaryTitle.trim() !== '') {
+                      const primaryHasNonLatin = hasUnexpectedCharacters(
+                        primaryTitle,
+                        primaryLanguage
+                      );
+
+                      if (!primaryHasNonLatin) {
+                        if (result.media_type === MediaTypeEnum.movie) {
+                          result.title = primaryTitle;
+                        } else {
+                          result.name = primaryTitle;
+                        }
+                      }
+                    }
+                  } catch (primaryError) {
+                    // If primary language fetch fails, keep original title
+                    console.error(
+                      `[Search] Failed to fetch primary language title for ${result.media_type} ${result.id}:`,
+                      primaryError
+                    );
+                  }
+                }
+              }
+            } catch (error) {
+              // If fetch fails, keep original title
+              console.error(
+                `[Search] Failed to fetch preferred language title for ${result.media_type} ${result.id}:`,
+                error
+              );
+            }
+          }
+        }
+
+        return result;
+      })
+    );
+
+    // Return results with corrected titles
+    return {
+      data: {
+        ...response,
+        results: resultsWithCorrectedTitles,
+      } as MediaResponse,
+    };
   } catch (error) {
     throw createError({
       statusCode: 500,

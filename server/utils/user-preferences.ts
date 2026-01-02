@@ -161,8 +161,30 @@ export async function getUserTMDBParams(event?: H3Event): Promise<{
 
     return await getUserTMDBParamsByUserId(userId);
   } catch (error) {
-    // If any error occurs, return defaults
-    console.error('Error getting user TMDB params from event:', error);
+    // If error is about missing session, this is expected and we should return defaults silently
+    // Only log unexpected errors
+    let isAuthError = false;
+
+    if (error && typeof error === 'object') {
+      if ('statusMessage' in error) {
+        const statusMsg = String(error.statusMessage);
+        isAuthError =
+          statusMsg === 'Auth session missing!' ||
+          statusMsg.includes('Auth session');
+      } else if ('message' in error && typeof error.message === 'string') {
+        isAuthError = error.message.includes('Auth session');
+      }
+    }
+
+    if (isAuthError) {
+      // This is expected when user is not logged in, return defaults silently
+      return defaults;
+    }
+
+    // For other unexpected errors, log them
+    if (import.meta.dev) {
+      console.error('Error getting user TMDB params from event:', error);
+    }
     return defaults;
   }
 }

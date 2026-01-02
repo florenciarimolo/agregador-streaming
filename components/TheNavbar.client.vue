@@ -22,8 +22,13 @@
           />
         </nuxt-link>
 
+        <!-- Search Bar (Public - Always visible) -->
+        <div class="flex-1 mx-6 max-w-md">
+          <SearchBar />
+        </div>
+
         <!-- Desktop Menu -->
-        <div class="flex items-center gap-4 w-[70%] justify-end">
+        <div class="flex items-center gap-4 flex-shrink-0">
           <!-- When logged in: Navigation Links, Theme Switcher, and User Avatar -->
           <template v-if="currentUser">
             <!-- Navigation Links -->
@@ -150,8 +155,18 @@
           />
         </nuxt-link>
 
-        <!-- Right side: Hamburger Menu (if logged in) or Theme Switcher (if not logged in) -->
-        <div class="flex items-center">
+        <!-- Right side: Search Icon, Hamburger Menu (if logged in) or Theme Switcher (if not logged in) -->
+        <div class="flex items-center gap-2">
+          <!-- Search Icon -->
+          <IconButton
+            :icon="IconSearch"
+            :aria-label="$t('search.title')"
+            size="large"
+            variant="ghost"
+            custom-class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 [&_svg]:text-gray-800 dark:[&_svg]:text-gray-300"
+            @click.stop="toggleMobileSearch"
+          />
+          
           <IconButton
             v-if="currentUser"
             :icon="showMobileMenu ? IconClose : IconMenu"
@@ -166,6 +181,42 @@
       </div>
     </nav>
   </header>
+
+  <!-- Mobile Search Bar Overlay (Shown when search icon is clicked) -->
+  <Transition
+    enter-active-class="transition duration-200 ease-out"
+    enter-from-class="opacity-0"
+    enter-to-class="opacity-100"
+    leave-active-class="transition duration-150 ease-in"
+    leave-from-class="opacity-100"
+    leave-to-class="opacity-0"
+  >
+    <div
+      v-if="showMobileSearch"
+      class="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm md:hidden"
+      @click="closeMobileSearch"
+    ></div>
+  </Transition>
+
+  <!-- Mobile Search Bar (Shown when search icon is clicked) -->
+  <Transition
+    enter-active-class="transition duration-200 ease-out"
+    enter-from-class="transform translate-y-[-100%] opacity-0"
+    enter-to-class="transform translate-y-0 opacity-100"
+    leave-active-class="transition duration-150 ease-in"
+    leave-from-class="transform translate-y-0 opacity-100"
+    leave-to-class="transform translate-y-[-100%] opacity-0"
+  >
+    <div
+      v-if="showMobileSearch"
+      class="fixed left-0 top-20 z-[70] container px-4 w-full md:hidden mt-4"
+      @click.stop
+    >
+      <div class="rounded-3xl border backdrop-blur-xl dark:bg-gray-900/40 bg-gray-100/90 border-gray-300/50 dark:border-white/10 p-4">
+        <SearchBar ref="mobileSearchBarRef" @closed="closeMobileSearch" />
+      </div>
+    </div>
+  </Transition>
 
   <!-- Mobile Menu Overlay (Outside header, covers navbar with blur) -->
   <Transition
@@ -336,8 +387,10 @@ import Modal from '@/components/ui/Modal.vue';
 import Button from '@/components/ui/Button.vue';
 import IconButton from '@/components/ui/IconButton.vue';
 import AvatarButton from '@/components/ui/AvatarButton.vue';
+import SearchBar from '@/components/SearchBar.vue';
 import IconMenu from '@/components/icons/IconMenu.vue';
 import IconClose from '@/components/icons/IconClose.vue';
+import IconSearch from '@/components/icons/IconSearch.vue';
 import IconArrowUp from '@/components/icons/IconArrowUp.vue';
 
 // User state
@@ -346,7 +399,9 @@ const userStore = useUserStore();
 const { signOut } = useAuth();
 const router = useRouter();
 const showMobileMenu = ref(false);
+const showMobileSearch = ref(false);
 const userMenuDropdownRef = ref<InstanceType<typeof Dropdown> | null>(null);
+const mobileSearchBarRef = ref<InstanceType<typeof SearchBar> | null>(null);
 
 // Use computed to ensure user is available after hydration
 // During hydration, useSupabaseUser() might be null initially, so we also check the store
@@ -366,6 +421,28 @@ const toggleMobileMenu = () => {
   showMobileMenu.value = !showMobileMenu.value;
   // Close desktop menu if open
   userMenuDropdownRef.value?.close();
+  // Close search if open
+  if (showMobileMenu.value) {
+    showMobileSearch.value = false;
+  }
+};
+
+// Toggle mobile search
+const toggleMobileSearch = () => {
+  showMobileSearch.value = !showMobileSearch.value;
+  // Close menu if open
+  if (showMobileSearch.value) {
+    showMobileMenu.value = false;
+  }
+};
+
+// Close mobile search
+const closeMobileSearch = () => {
+  showMobileSearch.value = false;
+  // Clear search query
+  if (mobileSearchBarRef.value) {
+    mobileSearchBarRef.value.clearSearch();
+  }
 };
 
 // Logout confirmation state
