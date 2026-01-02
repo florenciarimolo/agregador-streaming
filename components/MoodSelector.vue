@@ -70,9 +70,9 @@ import IconLigero from './icons/IconLigero.vue';
 import IconIntenso from './icons/IconIntenso.vue';
 import IconEmocional from './icons/IconEmocional.vue';
 import IconReflexivo from './icons/IconReflexivo.vue';
-import IconAttentionLow from './icons/IconAttentionLow.vue';
-import IconAttentionMedium from './icons/IconAttentionMedium.vue';
-import IconAttentionHigh from './icons/IconAttentionHigh.vue';
+import IconBattery0 from './icons/IconBattery0.vue';
+import IconBattery50 from './icons/IconBattery50.vue';
+import IconBattery100 from './icons/IconBattery100.vue';
 
 type Mood = MoodEnumType | null;
 type Attention = AttentionEnumType | null;
@@ -95,9 +95,9 @@ const moodOptions = [
 ];
 
 const attentionOptions = [
-  { value: AttentionEnum.LOW, label: 'Bajo', icon: IconAttentionLow },
-  { value: AttentionEnum.MEDIUM, label: 'Medio', icon: IconAttentionMedium },
-  { value: AttentionEnum.HIGH, label: 'Alto', icon: IconAttentionHigh },
+  { value: AttentionEnum.LOW, label: 'Bajo', icon: IconBattery0 },
+  { value: AttentionEnum.MEDIUM, label: 'Medio', icon: IconBattery50 },
+  { value: AttentionEnum.HIGH, label: 'Alto', icon: IconBattery100 },
 ];
 
 const selectMood = (value: Mood) => {
