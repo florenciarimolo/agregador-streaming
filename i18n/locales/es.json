@@ -182,7 +182,11 @@
     "errorSavingWatchlist": "Error al guardar \"{title}\" para ver más tarde",
     "errorMarkingSeen": "Error al marcar \"{title}\" como visto",
     "errorUpdatingStatus": "Error al actualizar el estado de \"{title}\"",
-    "errorAddingFavorites": "Error al agregar \"{title}\" a favoritos"
+    "errorAddingFavorites": "Error al agregar \"{title}\" a favoritos",
+    "confirmRemoveLikeTitle": "Quitar de favoritos",
+    "confirmRemoveLikeMessage": "¿Estás seguro de que quieres quitar \"{title}\" de tus favoritos? Se recalcularán tus recomendaciones.",
+    "regeneratingRecommendations": "Se están regenerando las recomendaciones",
+    "errorRemovingFavorites": "Error al quitar \"{title}\" de favoritos"
   },
   "onboarding": {
     "title": "¿Qué te gusta ver?",

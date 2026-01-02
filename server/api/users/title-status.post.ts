@@ -107,6 +107,14 @@ export default defineEventHandler(async (event) => {
   });
 
   try {
+    console.log('[UNLIKE DEBUG] title-status.post.ts received request', {
+      userId,
+      tmdb_id,
+      type,
+      status,
+      liked,
+    });
+
     // Upsert user title status (insert or update)
     const upsertData: {
       user_id: string;
@@ -124,6 +132,7 @@ export default defineEventHandler(async (event) => {
     // Only include liked if provided
     if (typeof liked === 'boolean') {
       upsertData.liked = liked;
+      console.log('[UNLIKE DEBUG] Setting liked to:', liked);
     }
 
     // Get previous status to detect changes
@@ -134,11 +143,15 @@ export default defineEventHandler(async (event) => {
       .eq('tmdb_id', tmdb_id)
       .maybeSingle();
 
+    console.log('[UNLIKE DEBUG] Previous status:', previousStatus);
+
     const { error } = await supabase
       .from('user_title_status')
       .upsert(upsertData, {
         onConflict: 'user_id,tmdb_id',
       });
+
+    console.log('[UNLIKE DEBUG] Upsert result:', { error });
 
     if (error) {
       if (process.env.NODE_ENV === 'development') {

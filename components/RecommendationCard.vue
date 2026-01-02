@@ -29,20 +29,7 @@
           $t('media.noPosterAvailableFor', { title: props.title.title })
         "
       >
-        <svg
-          class="w-12 h-12"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          aria-hidden="true"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-          />
-        </svg>
+        <IconImage icon-class="w-12 h-12" />
       </div>
 
       <!-- Rating Badge (top-left) -->
@@ -96,19 +83,7 @@
                 @click.stop.prevent="handleAction(TitleStatus.SEEN)"
               >
                 <template #icon>
-                  <svg
-                    class="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
+                  <IconCheck icon-class="w-4 h-4" />
                 </template>
                 {{ $t('media.seen') }}
               </Button>
@@ -120,19 +95,7 @@
                 @click.stop.prevent="handleAction('liked')"
               >
                 <template #icon>
-                  <svg
-                    class="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                    />
-                  </svg>
+                  <IconHeartFilled icon-class="w-4 h-4" />
                 </template>
                 {{ $t('media.liked') }}
               </Button>
@@ -144,19 +107,7 @@
                 @click.stop.prevent="handleAction(TitleStatus.NOT_INTERESTED)"
               >
                 <template #icon>
-                  <svg
-                    class="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
+                  <IconX icon-class="w-4 h-4" />
                 </template>
                 {{ $t('media.notInterested') }}
               </Button>
@@ -168,19 +119,7 @@
                 @click.stop.prevent="handleAction(TitleStatus.WATCHLIST)"
               >
                 <template #icon>
-                  <svg
-                    class="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
+                  <IconClock icon-class="w-4 h-4" />
                 </template>
                 {{ $t('media.watchLater') }}
               </Button>
@@ -251,6 +190,10 @@ import { ref, onMounted, onUnmounted } from 'vue';
 import RatingBadge from './RatingBadge.vue';
 import IconMoreVertical from './icons/IconMoreVertical.vue';
 import IconClock from './icons/IconClock.vue';
+import IconImage from './icons/IconImage.vue';
+import IconCheck from './icons/IconCheck.vue';
+import IconHeartFilled from './icons/IconHeartFilled.vue';
+import IconX from './icons/IconX.vue';
 import { TitleStatus } from '@/types/TitleStatus';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 import type { Recommendation } from '@/types/Recommendation';

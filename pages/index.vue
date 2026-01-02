@@ -4,8 +4,11 @@ import { Recommendation } from '@/types/Recommendation';
 import { TitleStatus } from '@/types/TitleStatus';
 import { getSession } from '@/composables/database/auth';
 import { useUndoToast } from '@/composables/useUndoToast';
-import { nextTick, onMounted, computed, watch, watchEffect } from 'vue';
+import { nextTick, onMounted, computed, watch, watchEffect, ref } from 'vue';
 import Card from '@/components/ui/Card.vue';
+import Modal from '@/components/ui/Modal.vue';
+import Button from '@/components/ui/Button.vue';
+import { getUserLikedTitle } from '@/composables/database/userTitleStatus';
 
 // Type for Supabase user that may have either 'id' or 'sub' as identifier
 type SupabaseUserWithSub = {
@@ -432,22 +435,64 @@ const handleTitleStatus = async (
   }
 };
 
+// Modal state for removing like
+const showRemoveLikeModal = ref(false);
+const titleToRemoveLike = ref<Recommendation | null>(null);
+
 // Handle marking as liked (implies seen, removes from watchlist)
+// Or removing like if already liked
 const handleMarkLiked = async (title: Recommendation) => {
+  console.log('[UNLIKE DEBUG] handleMarkLiked called', {
+    title: title.title,
+    tmdb_id: title.tmdb_id,
+    type: title.type,
+    currentLiked: title.liked,
+  });
+
   try {
     const {
       data: { session },
     } = await getSession();
 
     if (!session?.access_token) {
-      if (process.env.NODE_ENV === 'development') {
-        console.warn('[handleMarkLiked] No session available');
-      }
+      console.warn('[UNLIKE DEBUG] No session available');
       return;
     }
 
-    // Update or insert with liked=true and status=seen
-    // This automatically removes from watchlist (single active status)
+    const userId = getUserId(user.value);
+    if (!userId) {
+      console.warn('[UNLIKE DEBUG] No userId available');
+      return;
+    }
+
+    console.log('[UNLIKE DEBUG] Checking if title is liked', {
+      userId,
+      tmdb_id: title.tmdb_id,
+    });
+
+    // Check if title is already liked
+    const { data: likedTitle, error: likedError } = await getUserLikedTitle(
+      userId,
+      title.tmdb_id
+    );
+
+    console.log('[UNLIKE DEBUG] getUserLikedTitle result', {
+      likedTitle,
+      error: likedError,
+      hasLikedTitle: !!likedTitle,
+    });
+
+    if (likedTitle) {
+      console.log('[UNLIKE DEBUG] Title is already liked, showing modal');
+      // Title is already liked, show confirmation modal
+      titleToRemoveLike.value = title;
+      showRemoveLikeModal.value = true;
+      return;
+    }
+
+    console.log('[UNLIKE DEBUG] Title is not liked, adding it');
+
+    // Title is not liked, add it
     const response = await $fetch('/api/users/title-status', {
       method: 'POST',
       headers: {
@@ -491,6 +536,104 @@ const handleMarkLiked = async (title: Recommendation) => {
       null,
       3000
     );
+  }
+};
+
+// Handle removing like after confirmation
+const confirmRemoveLike = async () => {
+  console.log('[UNLIKE DEBUG] confirmRemoveLike called', {
+    title: titleToRemoveLike.value,
+  });
+
+  if (!titleToRemoveLike.value) {
+    console.warn('[UNLIKE DEBUG] No title to remove like');
+    return;
+  }
+
+  const title = titleToRemoveLike.value;
+  showRemoveLikeModal.value = false;
+
+  try {
+    const {
+      data: { session },
+    } = await getSession();
+
+    if (!session?.access_token) {
+      console.warn('[UNLIKE DEBUG] No session available in confirmRemoveLike');
+      return;
+    }
+
+    const userId = getUserId(user.value);
+    if (!userId) {
+      console.warn('[UNLIKE DEBUG] No userId available in confirmRemoveLike');
+      return;
+    }
+
+    console.log('[UNLIKE DEBUG] Removing like', {
+      userId,
+      tmdb_id: title.tmdb_id,
+      type: title.type,
+    });
+
+    // Remove like
+    const response = await $fetch('/api/users/title-status', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: {
+        tmdb_id: title.tmdb_id,
+        type: title.type,
+        status: TitleStatus.SEEN, // Keep status as seen, just remove liked
+        liked: false,
+      },
+    });
+
+    console.log('[UNLIKE DEBUG] Remove like response', { response });
+
+    // Update frontend state - mark as not liked
+    const titleIndex = recommendations.value.findIndex(
+      (r) => r.tmdb_id === title.tmdb_id
+    );
+    if (titleIndex !== -1) {
+      // Update the title to reflect it's no longer liked
+      recommendations.value[titleIndex] = {
+        ...recommendations.value[titleIndex],
+        liked: false,
+      };
+    }
+
+    // Show toast about regenerating recommendations
+    showToast(
+      t('home.regeneratingRecommendations'),
+      null,
+      5000
+    );
+
+    // Regenerate recommendation pool in background
+    try {
+      await $fetch('/api/recommendations/populate-pool', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+    } catch (poolError) {
+      console.error('[handleMarkLiked] Error regenerating pool:', poolError);
+      // Don't show error to user, pool regeneration is background task
+    }
+
+    titleToRemoveLike.value = null;
+  } catch (error) {
+    if (process.env.NODE_ENV === 'development') {
+      console.error('[confirmRemoveLike] Error:', error);
+    }
+    showToast(
+      t('home.errorRemovingFavorites', { title: title.title }),
+      null,
+      3000
+    );
+    titleToRemoveLike.value = null;
   }
 };
 
@@ -987,5 +1130,34 @@ onMounted(() => {
         </p>
       </div>
     </section>
+
+    <!-- Modal for removing like -->
+    <Modal :is-open="showRemoveLikeModal" @close="showRemoveLikeModal = false">
+      <div class="flex flex-col gap-4">
+        <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-300">
+          {{ $t('home.removeLikeTitle') || 'Quitar de favoritos' }}
+        </h2>
+        <p class="text-gray-700 dark:text-gray-300">
+          {{
+            $t('home.removeLikeMessage', {
+              title: titleToRemoveLike?.title || '',
+            }) ||
+            `¿Estás seguro de que quieres quitar "${titleToRemoveLike?.title}" de tus favoritos? Se recalcularán tus recomendaciones.`
+          }}
+        </p>
+        <div class="flex gap-3 justify-end mt-4">
+          <Button
+            variant="outline"
+            size="medium"
+            @click="showRemoveLikeModal = false"
+          >
+            {{ $t('common.cancel') || 'Cancelar' }}
+          </Button>
+          <Button variant="primary" size="medium" @click="confirmRemoveLike">
+            {{ $t('common.confirm') || 'Confirmar' }}
+          </Button>
+        </div>
+      </div>
+    </Modal>
   </div>
 </template>

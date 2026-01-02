@@ -107,19 +107,7 @@
                   "
                 >
                   <template #icon>
-                    <svg
-                      class="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M5 13l4 4L19 7"
-                      />
-                    </svg>
+                    <IconCheck icon-class="w-4 h-4" />
                   </template>
                   {{ $t('media.seen') }}
                 </Button>
@@ -134,19 +122,7 @@
                   "
                 >
                   <template #icon>
-                    <svg
-                      class="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                      />
-                    </svg>
+                    <IconHeartFilled icon-class="w-4 h-4" />
                   </template>
                   {{ $t('media.liked') }}
                 </Button>
@@ -161,19 +137,7 @@
                   "
                 >
                   <template #icon>
-                    <svg
-                      class="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M6 18L18 6M6 6l12 12"
-                      />
-                    </svg>
+                    <IconX icon-class="w-4 h-4" />
                   </template>
                   {{ $t('media.notInterested') }}
                 </Button>
@@ -188,19 +152,7 @@
                   "
                 >
                   <template #icon>
-                    <svg
-                      class="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                      />
-                    </svg>
+                    <IconClock icon-class="w-4 h-4" />
                   </template>
                   {{ $t('media.watchLater') }}
                 </Button>
@@ -295,6 +247,35 @@
         </section>
       </section>
     </div>
+
+    <!-- Modal for removing like -->
+    <Modal :is-open="showRemoveLikeModal" @close="showRemoveLikeModal = false">
+      <div class="flex flex-col gap-4">
+        <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-300">
+          {{ $t('home.confirmRemoveLikeTitle') }}
+        </h2>
+        <p class="text-gray-700 dark:text-gray-300">
+          {{
+            $t('home.removeLikeMessage', {
+              title: titleToRemoveLike?.title || '',
+            }) ||
+            `¿Estás seguro de que quieres quitar "${titleToRemoveLike?.title}" de tus favoritos? Se recalcularán tus recomendaciones.`
+          }}
+        </p>
+        <div class="flex gap-3 justify-end mt-4">
+          <Button
+            variant="outline"
+            size="medium"
+            @click="showRemoveLikeModal = false"
+          >
+            {{ $t('common.cancel') }}
+          </Button>
+          <Button variant="primary" size="medium" @click="confirmRemoveLike">
+            {{ $t('common.confirm') }}
+          </Button>
+        </div>
+      </div>
+    </Modal>
   </section>
 </template>
 
@@ -313,12 +294,18 @@ import IconArrowLeft from './icons/IconArrowLeft.vue';
 import IconCalendar from './icons/IconCalendar.vue';
 import IconTag from './icons/IconTag.vue';
 import IconMoreVertical from './icons/IconMoreVertical.vue';
+import IconCheck from './icons/IconCheck.vue';
+import IconHeartFilled from './icons/IconHeartFilled.vue';
+import IconX from './icons/IconX.vue';
+import IconClock from './icons/IconClock.vue';
 import { TitleStatus } from '@/types/TitleStatus';
 import { getSession } from '@/composables/database/auth';
 import { useUndoToast } from '@/composables/useUndoToast';
 import Dropdown from '@/components/ui/Dropdown.vue';
 import IconButton from '@/components/ui/IconButton.vue';
 import Button from '@/components/ui/Button.vue';
+import Modal from '@/components/ui/Modal.vue';
+import { getUserLikedTitle } from '@/composables/database/userTitleStatus';
 
 const props = defineProps({
   media: {
@@ -368,6 +355,12 @@ const alternativeTitles = computed(() => {
 
 const isMobile = ref(false);
 const dropdownRef = ref<InstanceType<typeof Dropdown> | null>(null);
+const showRemoveLikeModal = ref(false);
+const titleToRemoveLike = ref<{
+  id: number;
+  title: string;
+  type: string;
+} | null>(null);
 
 // Detect mobile/tablet screen size (use mobile style for tablet too)
 const checkMobile = () => {
@@ -421,7 +414,45 @@ const handleAction = async (action: TitleStatus | 'liked') => {
       t('media.thisTitle');
 
     if (action === 'liked') {
-      // Update or insert with liked=true and status=seen
+      console.log('[UNLIKE DEBUG] handleAction liked called', {
+        title: mediaTitle,
+        tmdb_id: mediaWithProviders.value.id,
+        type: props.mediaType,
+      });
+
+      // Check if title is already liked
+      const userId =
+        session.user?.id || (session.user as { sub?: string })?.sub;
+      console.log('[UNLIKE DEBUG] userId', { userId });
+
+      if (userId) {
+        const { data: likedTitle, error: likedError } = await getUserLikedTitle(
+          userId,
+          mediaWithProviders.value.id
+        );
+
+        console.log('[UNLIKE DEBUG] getUserLikedTitle result', {
+          likedTitle,
+          error: likedError,
+          hasLikedTitle: !!likedTitle,
+        });
+
+        if (likedTitle) {
+          console.log('[UNLIKE DEBUG] Title is already liked, showing modal');
+          // Title is already liked, show confirmation modal
+          titleToRemoveLike.value = {
+            id: mediaWithProviders.value.id,
+            title: mediaTitle,
+            type: props.mediaType,
+          };
+          showRemoveLikeModal.value = true;
+          return;
+        }
+      }
+
+      console.log('[UNLIKE DEBUG] Title is not liked, adding it');
+
+      // Title is not liked, add it
       await $fetch('/api/users/title-status', {
         method: 'POST',
         headers: {
@@ -509,6 +540,79 @@ const handleAction = async (action: TitleStatus | 'liked') => {
       (mediaWithProviders.value as Movie & { name?: string }).name ||
       t('media.thisTitle');
     showToast(t('home.errorUpdatingStatus', { title: mediaTitle }), null, 3000);
+  }
+};
+
+// Handle removing like after confirmation
+const confirmRemoveLike = async () => {
+  console.log('[UNLIKE DEBUG] confirmRemoveLike called', {
+    title: titleToRemoveLike.value,
+  });
+
+  if (!titleToRemoveLike.value) {
+    console.warn('[UNLIKE DEBUG] No title to remove like');
+    return;
+  }
+
+  const title = titleToRemoveLike.value;
+  showRemoveLikeModal.value = false;
+
+  try {
+    const {
+      data: { session },
+    } = await getSession();
+
+    if (!session?.access_token) {
+      console.warn('[UNLIKE DEBUG] No session available in confirmRemoveLike');
+      return;
+    }
+
+    console.log('[UNLIKE DEBUG] Removing like', {
+      tmdb_id: title.id,
+      type: title.type,
+    });
+
+    // Remove like
+    const response = await $fetch('/api/users/title-status', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: {
+        tmdb_id: title.id,
+        type: title.type,
+        status: TitleStatus.SEEN, // Keep status as seen, just remove liked
+        liked: false,
+      },
+    });
+
+    console.log('[UNLIKE DEBUG] Remove like response', { response });
+
+    // Show toast about regenerating recommendations
+    showToast(t('home.regeneratingRecommendations'), null, 5000);
+
+    // Regenerate recommendation pool in background
+    try {
+      await $fetch('/api/recommendations/populate-pool', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+    } catch (poolError) {
+      console.error('[handleAction] Error regenerating pool:', poolError);
+      // Don't show error to user, pool regeneration is background task
+    }
+
+    titleToRemoveLike.value = null;
+  } catch (error) {
+    console.error('[confirmRemoveLike] Error:', error);
+    showToast(
+      t('home.errorRemovingFavorites', { title: title.title }),
+      null,
+      3000
+    );
+    titleToRemoveLike.value = null;
   }
 };
 </script>

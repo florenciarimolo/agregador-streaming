@@ -203,7 +203,7 @@
             />
             <p
               v-if="likedTitles.length >= 10"
-              class="mt-2 text-sm text-amber-600 dark:text-amber-400"
+              class="mt-2 text-xs text-amber-600 dark:text-amber-400"
             >
               {{ $t('preferences.limitReached') }}
             </p>
@@ -368,19 +368,7 @@
                   <div
                     class="flex absolute inset-y-0 left-0 items-center pl-3 pointer-events-none"
                   >
-                    <svg
-                      class="w-4 h-4 text-gray-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                      />
-                    </svg>
+                    <IconSearch icon-class="w-4 h-4 text-gray-400" />
                   </div>
                 </div>
               </div>
@@ -499,19 +487,7 @@
                   <div
                     class="flex absolute inset-y-0 left-0 items-center pl-3 pointer-events-none"
                   >
-                    <svg
-                      class="w-4 h-4 text-gray-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                      />
-                    </svg>
+                    <IconSearch icon-class="w-4 h-4 text-gray-400" />
                   </div>
                 </div>
               </div>
@@ -638,6 +614,38 @@
         </div>
       </template>
     </Tabs>
+
+    <!-- Modal for removing like -->
+    <Modal :is-open="showRemoveLikeModal" @close="showRemoveLikeModal = false">
+      <div class="flex flex-col gap-4">
+        <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-300">
+          {{ $t('home.confirmRemoveLikeTitle') }}
+        </h2>
+        <p class="text-gray-700 dark:text-gray-400">
+          {{
+            $t('home.confirmRemoveLikeMessage', {
+              title: titleToRemoveLike?.title,
+            })
+          }}
+        </p>
+        <div class="flex gap-3 justify-end mt-4">
+          <Button
+            variant="outline"
+            size="medium"
+            @click="showRemoveLikeModal = false"
+          >
+            {{ $t('common.cancel') }}
+          </Button>
+          <Button
+            variant="primary"
+            size="medium"
+            @click="confirmRemoveLikeFromSeen"
+          >
+            {{ $t('common.confirm') }}
+          </Button>
+        </div>
+      </div>
+    </Modal>
   </div>
 </template>
 
@@ -681,6 +689,7 @@ import EmptyState from '@/components/EmptyState.vue';
 import Spinner from '@/components/Spinner.vue';
 import Toast from '@/components/ui/Toast.vue';
 import IconEdit from '@/components/icons/IconEdit.vue';
+import IconSearch from '@/components/icons/IconSearch.vue';
 import IconButton from '@/components/ui/IconButton.vue';
 import { useUndoToast } from '@/composables/useUndoToast';
 import type { TMDBSearchResult } from '@/types/TMDBSearch';
@@ -708,6 +717,13 @@ const activeTab = ref<
 const titleToDelete = ref<{ id: string; title: string } | null>(null);
 const showLanguageChangeModal = ref(false);
 const isConfirmingLanguageChange = ref(false);
+const showRemoveLikeModal = ref(false);
+const titleToRemoveLike = ref<{
+  id: string;
+  title: string;
+  tmdb_id: number;
+  type: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv;
+} | null>(null);
 const pendingLanguageChange = ref<{
   action: 'add' | 'remove' | 'change';
   language: { code: string; name: string } | null;
@@ -1305,28 +1321,46 @@ const handleAddToLiked = async (title: {
   type: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv;
   liked?: boolean;
 }) => {
+  console.log('[UNLIKE DEBUG] handleAddToLiked called', {
+    title: title.title,
+    tmdb_id: title.tmdb_id,
+    type: title.type,
+    currentLiked: title.liked,
+  });
+
   try {
     const id = userId.value;
-    if (!id) return;
-
-    // Check if already liked in likedTitles list
-    const alreadyLiked = likedTitles.value.some(
-      (t) => t.tmdb_id === title.tmdb_id && t.type === title.type
-    );
-
-    // Also check if the title in seenTitles already has liked=true
-    const alreadyLikedInSeen = title.liked === true;
-
-    if (alreadyLiked || alreadyLikedInSeen) {
-      // If already liked, refresh both lists to ensure UI is in sync
-      // This ensures that seenTitles shows the correct liked status
-      await fetchSeenTitles();
-      if (alreadyLiked) {
-        await fetchLikedTitles();
-      }
-      showError(t('preferences.alreadyInPreferences'));
+    if (!id) {
+      console.warn('[UNLIKE DEBUG] No userId available');
       return;
     }
+
+    // Check if title is already liked using the database
+    const { data: likedTitle, error: likedError } = await getUserLikedTitle(
+      id,
+      title.tmdb_id
+    );
+
+    console.log('[UNLIKE DEBUG] getUserLikedTitle result', {
+      likedTitle,
+      error: likedError,
+      hasLikedTitle: !!likedTitle,
+    });
+
+    if (likedTitle) {
+      console.log('[UNLIKE DEBUG] Title is already liked, showing modal');
+      // Title is already liked, show confirmation modal
+      titleToRemoveLike.value = {
+        id: title.id,
+        title: title.title,
+        tmdb_id: title.tmdb_id,
+        type: title.type,
+      };
+      showRemoveLikeModal.value = true;
+      return;
+    }
+
+    console.log('[UNLIKE DEBUG] Title is not liked, adding it');
 
     // Check if limit reached
     if (likedTitles.value.length >= 10) {
@@ -1393,6 +1427,97 @@ const handleAddToLiked = async (title: {
     console.error('Error adding to liked:', error);
     showError(t('preferences.errorAdding'));
     await fetchSeenTitles();
+  }
+};
+
+// Handle removing like after confirmation (from Seen tab)
+const confirmRemoveLikeFromSeen = async () => {
+  console.log('[UNLIKE DEBUG] confirmRemoveLikeFromSeen called', {
+    title: titleToRemoveLike.value,
+  });
+
+  if (!titleToRemoveLike.value) {
+    console.warn('[UNLIKE DEBUG] No title to remove like');
+    return;
+  }
+
+  const title = titleToRemoveLike.value;
+  showRemoveLikeModal.value = false;
+
+  try {
+    const id = userId.value;
+    if (!id) {
+      console.warn(
+        '[UNLIKE DEBUG] No userId available in confirmRemoveLikeFromSeen'
+      );
+      return;
+    }
+
+    console.log('[UNLIKE DEBUG] Removing like', {
+      userId: id,
+      tmdb_id: title.tmdb_id,
+      type: title.type,
+    });
+
+    // Remove like
+    const { error: likeError } = await upsertUserTitleStatus({
+      user_id: id,
+      tmdb_id: title.tmdb_id,
+      type: title.type,
+      status: TitleStatus.SEEN, // Keep status as seen, just remove liked
+      liked: false,
+    });
+
+    console.log('[UNLIKE DEBUG] Remove like result', { error: likeError });
+
+    if (likeError) {
+      throw likeError;
+    }
+
+    // Update frontend state - remove from likedTitles and update seenTitles
+    likedTitles.value = likedTitles.value.filter(
+      (t) => !(t.tmdb_id === title.tmdb_id && t.type === title.type)
+    );
+
+    // Update the title in seen titles to mark it as not liked
+    const seenTitleIndex = seenTitles.value.findIndex((t) => t.id === title.id);
+    if (seenTitleIndex !== -1) {
+      seenTitles.value[seenTitleIndex] = {
+        ...seenTitles.value[seenTitleIndex],
+        liked: false,
+      };
+    }
+
+    // Show toast about regenerating recommendations
+    showToast(t('home.regeneratingRecommendations'), null, 5000);
+
+    // Regenerate recommendation pool in background
+    try {
+      const {
+        data: { session },
+      } = await getSession();
+      if (session?.access_token) {
+        await $fetch('/api/recommendations/populate-pool', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        });
+      }
+    } catch (poolError) {
+      console.error('[UNLIKE DEBUG] Error regenerating pool:', poolError);
+      // Don't show error to user, pool regeneration is background task
+    }
+
+    titleToRemoveLike.value = null;
+  } catch (error) {
+    console.error('[UNLIKE DEBUG] Error in confirmRemoveLikeFromSeen:', error);
+    showToast(
+      t('home.errorRemovingFavorites', { title: title.title }),
+      null,
+      3000
+    );
+    titleToRemoveLike.value = null;
   }
 };
 
@@ -1627,18 +1752,6 @@ const fetchContentPreferences = async () => {
     });
 
     if (response.success && response.preferences) {
-      // Debug: log the raw response
-      if (import.meta.dev) {
-        console.log(
-          '[Profile] Raw preferences from API:',
-          response.preferences
-        );
-        console.log(
-          '[Profile] preferred_language value:',
-          response.preferences.preferred_language
-        );
-      }
-
       // Use the value from DB directly, only default to 'es' if it's truly null/undefined
       const dbLanguage = response.preferences.preferred_language;
 
@@ -1653,31 +1766,14 @@ const fetchContentPreferences = async () => {
       // Load selected language - use the actual DB value
       const languageCode = dbLanguage ?? LanguageCode.SPANISH;
 
-      if (import.meta.dev) {
-        console.log('[Profile] Language code to select:', languageCode);
-        console.log(
-          '[Profile] Available languages:',
-          availableLanguages.map((l: Language) => l.code)
-        );
-      }
-
       const languageToSelect = availableLanguages.find(
         (l: Language) => l.code === languageCode
       );
 
       if (languageToSelect) {
         selectedLanguage.value = languageToSelect;
-        if (import.meta.dev) {
-          console.log('[Profile] Selected language:', languageToSelect);
-        }
       } else {
         // Default to Spanish if not found
-        if (import.meta.dev) {
-          console.warn(
-            '[Profile] Language not found in available languages, defaulting to Spanish. Code was:',
-            languageCode
-          );
-        }
         selectedLanguage.value =
           availableLanguages.find(
             (l: Language) => l.code === LanguageCode.SPANISH

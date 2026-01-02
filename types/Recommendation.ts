@@ -19,6 +19,7 @@ export type Recommendation = {
   explanation_code?: string | null; // BASED_ON_LIKE, TRENDING, DISCOVER, EASY_TO_WATCH, MOOD_MATCH
   providers?: Provider[];
   in_watchlist?: boolean; // Indicates if title is in user's watchlist
+  liked?: boolean; // Indicates if title is in user's liked titles
 };
 
 // Single array of recommendations - no more separate lists
