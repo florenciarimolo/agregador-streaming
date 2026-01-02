@@ -141,6 +141,13 @@
       <template #default="{ activeTab: currentTab }">
         <!-- Liked Tab -->
         <div v-if="currentTab === 'liked'">
+          <Alert
+            variant="info"
+            custom-class="mb-4"
+            :show-icon="true"
+          >
+            {{ $t('preferences.likedTabInfo') }}
+          </Alert>
           <div class="mb-4">
             <SearchBar
               :emit-on-select="true"
@@ -713,6 +720,7 @@ import Modal from '@/components/ui/Modal.vue';
 import Tabs from '@/components/ui/Tabs.vue';
 import TabButton from '@/components/ui/TabButton.vue';
 import Card from '@/components/ui/Card.vue';
+import Alert from '@/components/ui/Alert.vue';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 import {
   getUserLikedTitles,
@@ -1330,6 +1338,24 @@ const handleTitleSelected = async (result: TMDBSearchResult) => {
 
     await userStore.fetchProfile();
     showSuccess(t('preferences.titleAdded'));
+
+    // Regenerate recommendation pool in background
+    try {
+      const {
+        data: { session },
+      } = await getSession();
+      if (session?.access_token) {
+        await $fetch('/api/recommendations/populate-pool', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        });
+      }
+    } catch (poolError) {
+      console.error('Error regenerating pool:', poolError);
+      // Don't show error to user, pool regeneration is background task
+    }
   } catch {
     showError(t('preferences.errorAdding'));
   }
@@ -1357,6 +1383,24 @@ const confirmRemoveLiked = async () => {
     likedTitles.value = likedTitles.value.filter((t) => t.id !== title.id);
     await userStore.fetchProfile();
 
+    // Regenerate recommendation pool in background
+    try {
+      const {
+        data: { session },
+      } = await getSession();
+      if (session?.access_token) {
+        await $fetch('/api/recommendations/populate-pool', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        });
+      }
+    } catch (poolError) {
+      console.error('Error regenerating pool:', poolError);
+      // Don't show error to user, pool regeneration is background task
+    }
+
     showToast(
       t('preferences.titleRemoved'),
       {
@@ -1379,6 +1423,22 @@ const confirmRemoveLiked = async () => {
               });
               // Refetch will use the correct language
               await fetchLikedTitles();
+              // Regenerate pool after undo
+              try {
+                const {
+                  data: { session },
+                } = await getSession();
+                if (session?.access_token) {
+                  await $fetch('/api/recommendations/populate-pool', {
+                    method: 'POST',
+                    headers: {
+                      Authorization: `Bearer ${session.access_token}`,
+                    },
+                  });
+                }
+              } catch (poolError) {
+                console.error('Error regenerating pool:', poolError);
+              }
             }
           }
         },
@@ -1517,6 +1577,24 @@ const handleAddToLiked = async (title: {
     // Refresh seen titles to ensure all titles have the correct liked status
     await fetchSeenTitles();
     showSuccess(t('preferences.titleAdded'));
+
+    // Regenerate recommendation pool in background
+    try {
+      const {
+        data: { session },
+      } = await getSession();
+      if (session?.access_token) {
+        await $fetch('/api/recommendations/populate-pool', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        });
+      }
+    } catch (poolError) {
+      console.error('Error regenerating pool:', poolError);
+      // Don't show error to user, pool regeneration is background task
+    }
   } catch (error) {
     console.error('Error adding to liked:', error);
     showError(t('preferences.errorAdding'));

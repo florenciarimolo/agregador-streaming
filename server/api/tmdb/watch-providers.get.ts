@@ -26,14 +26,6 @@ export default defineEventHandler(async (event) => {
       },
     });
 
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[WatchProviders] Raw TMDB response:', {
-        hasResponse: !!response,
-        hasResults: !!response?.results,
-        resultsLength: response?.results?.length || 0,
-        sample: response?.results?.slice(0, 3),
-      });
-    }
 
     // Check if response has results
     if (!response || !response.results || !Array.isArray(response.results)) {
