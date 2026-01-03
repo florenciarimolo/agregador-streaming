@@ -1,69 +1,35 @@
 <template>
-  <article
-    class="overflow-visible relative rounded-lg border backdrop-blur-xl transition-all duration-300 group dark:bg-gray-900/40 bg-gray-100/80 border-gray-300/50 dark:border-white/10 hover:border-gray-400/50 dark:hover:border-white/20 hover:shadow-lg hover:shadow-gray-900/20"
+  <TitleCard
+    :title="props.title.title"
+    :poster-path="props.title.poster_path"
+    :link-to="`/${mediaType}/${props.title.tmdb_id}`"
+    :link-aria-label="$t('media.viewDetailsOf', { title: props.title.title })"
+    :image-alt="$t('media.posterOf', { title: props.title.title })"
+    :no-image-aria-label="
+      $t('media.noPosterAvailableFor', { title: props.title.title })
+    "
+    :type="props.title.type"
     :aria-label="$t('media.recommendationLabel', { title: props.title.title })"
   >
-    <!-- Poster Container -->
-    <div
-      class="relative aspect-[2/3] bg-gray-800 rounded-t-lg overflow-visible"
-    >
-      <nuxt-link
-        :to="`/${mediaType}/${props.title.tmdb_id}`"
-        :aria-label="$t('media.viewDetailsOf', { title: props.title.title })"
-        class="block overflow-hidden relative w-full h-full rounded-t-lg focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+    <!-- Top-left: Rating Badge and Watchlist Badge -->
+    <template #top-left-badges>
+      <RatingBadge
+        v-if="props.title.vote_average"
+        :rating="props.title.vote_average"
+      />
+      <div
+        v-if="props.title.in_watchlist"
+        class="p-2 rounded-full backdrop-blur-sm bg-primary/80"
+        :class="props.title.vote_average ? 'mt-2' : ''"
+        :title="$t('media.savedWatchlist')"
       >
-        <div
-          v-if="props.title.poster_path"
-          class="overflow-hidden w-full h-full rounded-t-lg"
-        >
-          <img
-            :src="`https://image.tmdb.org/t/p/w500${props.title.poster_path}`"
-            :alt="$t('media.posterOf', { title: props.title.title })"
-            class="object-cover w-full h-full transition-transform duration-300 group-hover:scale-105"
-            loading="lazy"
-            decoding="async"
-          />
-        </div>
-        <div
-          v-else
-          class="flex overflow-hidden justify-center items-center w-full h-full text-gray-600 rounded-t-lg dark:text-gray-500"
-          role="img"
-          :aria-label="
-            $t('media.noPosterAvailableFor', { title: props.title.title })
-          "
-        >
-          <IconImage icon-class="w-12 h-12" />
-        </div>
+        <IconClock icon-class="w-4 h-4 text-white" />
+      </div>
+    </template>
 
-        <!-- Rating Badge (top-left) -->
-        <RatingBadge
-          v-if="props.title.vote_average"
-          :rating="props.title.vote_average"
-          class="absolute top-2 left-2 z-10"
-        />
-
-        <!-- Watchlist Badge (top-left, below rating if rating exists) -->
-        <div
-          v-if="props.title.in_watchlist"
-          class="absolute left-2 z-10 p-2 rounded-full backdrop-blur-sm bg-primary/80"
-          :class="props.title.vote_average ? 'top-12' : 'top-2'"
-          :title="$t('media.savedWatchlist')"
-        >
-          <IconClock icon-class="w-4 h-4 text-white" />
-        </div>
-
-        <!-- Hover Overlay (same as MediaCarousel) -->
-        <div
-          class="flex absolute bottom-0 left-0 flex-col justify-center items-center px-4 w-full h-full opacity-0 backdrop-blur-md transition-all duration-300 pointer-events-none group-hover:opacity-100 dark:bg-black/80 bg-white/80"
-        >
-          <p class="font-semibold text-gray-800 dark:text-gray-300">
-            {{ $t('media.viewDetails') }}
-          </p>
-        </div>
-      </nuxt-link>
-
-      <!-- Actions Menu (top-right) - Outside the link to prevent hover activation -->
-      <div class="overflow-visible absolute top-2 right-2 z-30">
+    <!-- Top-right: Actions Menu -->
+    <template #top-right-actions>
+      <div class="overflow-visible">
         <ActionMenu ref="dropdownRef" width="w-48" position="right">
           <template #trigger>
             <IconButton
@@ -128,10 +94,10 @@
           </div>
         </ActionMenu>
       </div>
-    </div>
+    </template>
 
-    <!-- Content -->
-    <div class="p-4">
+    <!-- Content: Custom content with overview and providers -->
+    <template #content>
       <h3
         class="mb-1 text-sm font-semibold text-gray-800 truncate dark:text-gray-300"
       >
@@ -145,7 +111,7 @@
         }}
       </p>
 
-      <!-- Overview (instead of explanation) -->
+      <!-- Overview -->
       <p
         v-if="props.title.overview"
         class="mb-3 text-xs text-gray-800 dark:text-gray-300 line-clamp-3"
@@ -173,8 +139,8 @@
       <div v-else class="text-xs italic text-gray-700 dark:text-gray-300">
         {{ $t('media.noPlatforms') }}
       </div>
-    </div>
-  </article>
+    </template>
+  </TitleCard>
 </template>
 
 <script setup lang="ts">
@@ -182,7 +148,6 @@ import { computed, ref } from 'vue';
 import RatingBadge from './RatingBadge.vue';
 import IconMoreVertical from './icons/IconMoreVertical.vue';
 import IconClock from './icons/IconClock.vue';
-import IconImage from './icons/IconImage.vue';
 import IconCheck from './icons/IconCheck.vue';
 import IconHeart from './icons/IconHeart.vue';
 import IconX from './icons/IconX.vue';
@@ -192,6 +157,7 @@ import type { Recommendation } from '@/types/Recommendation';
 import IconButton from '@/components/ui/IconButton.vue';
 import Button from '@/components/ui/Button.vue';
 import ActionMenu from '@/components/ui/ActionMenu.vue';
+import TitleCard from './TitleCard.vue';
 
 interface Props {
   title: Recommendation;
@@ -235,90 +201,3 @@ const providersWithLogos = computed(() => {
     .slice(0, 6);
 });
 </script>
-
-<style scoped>
-/* Tooltip styles */
-.tooltip-container {
-  position: relative;
-  z-index: 20;
-}
-
-/* Ensure tooltips can escape overflow containers */
-.tooltip-container:hover,
-.tooltip-container:focus {
-  z-index: 10000;
-}
-
-.tooltip {
-  position: absolute;
-  top: calc(100% + 8px);
-  left: 50%;
-  transform: translateX(-50%) translateY(4px);
-  background-color: rgba(0, 0, 0, 0.95);
-  color: white;
-  padding: 6px 10px;
-  border-radius: 6px;
-  font-size: 12px;
-  white-space: nowrap;
-  pointer-events: none;
-  opacity: 0;
-  transition:
-    opacity 0.2s ease-in-out,
-    transform 0.2s ease-in-out;
-  z-index: 9999;
-  margin-top: 0;
-}
-
-.tooltip::after {
-  content: '';
-  position: absolute;
-  bottom: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  border: 4px solid transparent;
-  border-bottom-color: rgba(0, 0, 0, 0.95);
-}
-
-.tooltip-container:hover .tooltip,
-.tooltip-container:focus .tooltip {
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
-}
-
-/* Ensure tooltip is visible on focus for keyboard navigation */
-.tooltip-container:focus-visible .tooltip {
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
-}
-
-/* Ensure article allows dropdown overflow while maintaining rounded corners */
-article {
-  overflow: visible;
-  position: relative;
-}
-
-/* Poster container - allows dropdown to escape */
-article > div:first-child {
-  position: relative;
-  overflow: visible;
-}
-
-/* Poster link - overflow-hidden to contain image but allow dropdown to escape */
-article > div:first-child > a {
-  border-radius: 0.5rem 0.5rem 0 0;
-  position: relative;
-  overflow: hidden;
-}
-
-/* Image container needs overflow-hidden to contain scaled image */
-article > div:first-child > a > div:first-of-type {
-  overflow: hidden;
-  border-radius: 0.5rem 0.5rem 0 0;
-}
-
-/* Ensure content area also has proper overflow and rounded corners */
-article > div:last-child {
-  overflow: hidden;
-  border-radius: 0 0 0.5rem 0.5rem;
-}
-</style>

@@ -1,0 +1,160 @@
+<template>
+  <article
+    :class="[
+      'overflow-visible relative rounded-lg border backdrop-blur-xl transition-all duration-300 group',
+      'dark:bg-gray-900/40 bg-gray-100/80 border-gray-300/50 dark:border-white/10',
+      'hover:border-gray-400/50 dark:hover:border-white/20 hover:shadow-lg hover:shadow-gray-900/20',
+      customClass,
+    ]"
+    :aria-label="ariaLabel || $t('media.titleCardLabel', { title: title })"
+  >
+    <!-- Poster Container -->
+    <div
+      :class="[
+        'relative bg-gray-800 rounded-t-lg overflow-visible',
+        aspectRatio === 'video' ? 'aspect-video' : 'aspect-[2/3]',
+      ]"
+    >
+      <nuxt-link
+        :to="linkTo"
+        :aria-label="linkAriaLabel"
+        class="block overflow-hidden relative w-full h-full rounded-t-lg focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+      >
+        <!-- Image or Placeholder -->
+        <div
+          v-if="posterPath"
+          class="overflow-hidden w-full h-full rounded-t-lg"
+        >
+          <img
+            :src="`https://image.tmdb.org/t/p/w500${posterPath}`"
+            :alt="imageAlt"
+            class="object-cover w-full h-full transition-transform duration-300 group-hover:scale-105"
+            loading="lazy"
+            decoding="async"
+          />
+        </div>
+        <div
+          v-else
+          :class="[
+            'flex overflow-hidden justify-center items-center w-full h-full rounded-t-lg',
+            'text-gray-600 dark:text-gray-500',
+          ]"
+          role="img"
+          :aria-label="noImageAriaLabel"
+        >
+          <IconImage icon-class="w-12 h-12" />
+        </div>
+
+        <!-- Top-left badges slot -->
+        <div class="flex absolute top-2 left-2 z-10 flex-col gap-2">
+          <slot name="top-left-badges" />
+        </div>
+
+        <!-- Hover Overlay -->
+        <div
+          class="flex absolute bottom-0 left-0 flex-col justify-center items-center px-4 w-full h-full opacity-0 backdrop-blur-md transition-all duration-300 pointer-events-none group-hover:opacity-100 dark:bg-black/80 bg-white/80"
+        >
+          <p class="font-semibold text-gray-800 dark:text-gray-300">
+            {{ hoverText || $t('media.viewDetails') }}
+          </p>
+        </div>
+      </nuxt-link>
+
+      <!-- Top-right actions slot - Outside the link to prevent navigation -->
+      <div class="overflow-visible absolute top-2 right-2 z-30">
+        <slot name="top-right-actions" />
+      </div>
+    </div>
+
+    <!-- Content -->
+    <div class="p-4">
+      <slot name="content">
+        <!-- Default content: title and type -->
+        <h3
+          class="mb-1 text-sm font-semibold text-gray-800 truncate dark:text-gray-300"
+        >
+          {{ title }}
+        </h3>
+        <p
+          v-if="showType"
+          class="mb-2 text-xs text-gray-700 dark:text-gray-300"
+        >
+          {{ typeLabel }}
+        </p>
+      </slot>
+    </div>
+  </article>
+</template>
+
+<script setup lang="ts">
+import { computed } from 'vue';
+import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
+import IconImage from './icons/IconImage.vue';
+
+interface Props {
+  // Required
+  title: string;
+  linkTo: string;
+
+  // Optional display
+  posterPath?: string | null;
+  aspectRatio?: 'poster' | 'video';
+  showType?: boolean;
+  type?: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv;
+
+  // Optional customization
+  customClass?: string;
+  ariaLabel?: string;
+  linkAriaLabel?: string;
+  imageAlt?: string;
+  noImageAriaLabel?: string;
+  hoverText?: string;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  aspectRatio: 'poster',
+  showType: true,
+  customClass: '',
+});
+
+const typeLabel = computed(() => {
+  if (!props.type) return '';
+  const { t } = useI18n();
+  return props.type === MediaTypeEnum.movie
+    ? t('media.movie')
+    : t('media.series');
+});
+</script>
+
+<style scoped>
+/* Ensure article allows dropdown overflow while maintaining rounded corners */
+article {
+  overflow: visible;
+  position: relative;
+}
+
+/* Poster container - allows dropdown to escape */
+article > div:first-child {
+  position: relative;
+  overflow: visible;
+}
+
+/* Poster link - overflow-hidden to contain image but allow dropdown to escape */
+article > div:first-child > a {
+  border-radius: 0.5rem 0.5rem 0 0;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Image container needs overflow-hidden to contain scaled image */
+article > div:first-child > a > div:first-of-type {
+  overflow: hidden;
+  border-radius: 0.5rem 0.5rem 0 0;
+}
+
+/* Ensure content area also has proper overflow and rounded corners */
+article > div:last-child {
+  overflow: hidden;
+  border-radius: 0 0 0.5rem 0.5rem;
+}
+</style>

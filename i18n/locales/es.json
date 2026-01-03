@@ -481,6 +481,7 @@
     "passwordUpdateGenericError": "Error al actualizar la contraseña. Por favor, intenta de nuevo.",
     "unexpectedError": "Ocurrió un error al procesar tu solicitud. Por favor, intenta de nuevo.",
     "recommendationLabel": "Recomendación: {title}",
+    "titleCardLabel": "Tarjeta de {title}",
     "viewDetailsOf": "Ver detalles de {title}",
     "posterOf": "Poster de {title}",
     "noPosterAvailableFor": "Sin poster disponible para {title}",

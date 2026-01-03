@@ -2,45 +2,26 @@
   <div
     class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
   >
-    <div
+    <TitleCard
       v-for="title in titles"
       :key="title.id"
-      class="relative rounded-lg border backdrop-blur-xl transition-all duration-300 group dark:bg-gray-900/40 bg-gray-100/80 border-gray-300/50 dark:border-white/10 hover:border-gray-400/50 dark:hover:border-white/20 hover:shadow-lg hover:shadow-gray-900/20"
+      :title="title.title"
+      :poster-path="title.poster_path"
+      :link-to="`/${title.type === MediaTypeEnum.movie ? 'movie' : 'tv-show'}/${title.tmdb_id}`"
+      :link-aria-label="$t('media.viewDetailsOf', { title: title.title })"
+      :image-alt="$t('media.posterOf', { title: title.title })"
+      :no-image-aria-label="$t('media.noPosterAvailableFor', { title: title.title })"
+      :type="title.type"
+      :aria-label="$t('media.titleCardLabel', { title: title.title })"
     >
-      <!-- Poster -->
-      <nuxt-link
-        :to="`/${title.type === MediaTypeEnum.movie ? 'movie' : 'tv-show'}/${title.tmdb_id}`"
-        :aria-label="$t('media.viewDetailsOf', { title: title.title })"
-        class="block aspect-[2/3] relative bg-gray-800 rounded-t-lg focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-      >
-        <div
-          v-if="title.poster_path"
-          class="overflow-hidden w-full h-full rounded-t-lg"
-        >
-          <img
-            :src="`https://image.tmdb.org/t/p/w500${title.poster_path}`"
-            :alt="$t('media.posterOf', { title: title.title })"
-            class="object-cover w-full h-full transition-transform duration-300 group-hover:scale-105"
-            loading="lazy"
-            decoding="async"
-          />
-        </div>
-        <div
-          v-else
-          class="flex overflow-hidden justify-center items-center w-full h-full text-gray-400 rounded-t-lg"
-          role="img"
-          :aria-label="$t('media.noPosterAvailableFor', { title: title.title })"
-        >
-          <IconImage icon-class="w-12 h-12" />
-        </div>
-
-        <!-- Like Button (top-left) -->
+      <!-- Top-left: Like Button -->
+      <template #top-left-badges>
         <IconButton
           v-if="onLike"
           :aria-label="likeLabel || $t('media.liked')"
           size="small"
           variant="default"
-          :custom-class="`tooltip-container absolute top-2 left-2 z-20 p-2 rounded-full backdrop-blur-sm pointer-events-auto ${
+          :custom-class="`tooltip-container p-2 rounded-full backdrop-blur-sm pointer-events-auto ${
             title.liked === true
               ? 'bg-primary-800 text-white border border-gray-700/50 dark:bg-primary-600/70 dark:border-primary-800 hover:bg-primary-900 dark:hover:bg-primary-600'
               : 'bg-black/50 hover:bg-primary-900 dark:hover:bg-primary-600'
@@ -54,46 +35,23 @@
           <IconHeart v-else icon-class="w-4 h-4 text-white" />
           <span class="tooltip">{{ likeLabel || $t('media.liked') }}</span>
         </IconButton>
+      </template>
 
-        <!-- Remove Button (top-right) -->
+      <!-- Top-right: Remove Button -->
+      <template #top-right-actions>
         <IconButton
           v-if="onRemove"
           :aria-label="removeLabel || $t('common.delete')"
           size="small"
           variant="default"
-          custom-class="absolute top-2 right-2 z-20 p-2 rounded-full backdrop-blur-sm pointer-events-auto tooltip-container bg-black/50 hover:bg-red-600/80"
+          custom-class="tooltip-container p-2 rounded-full backdrop-blur-sm pointer-events-auto bg-black/50 hover:bg-red-600/80"
           @click.stop.prevent="onRemove(title)"
         >
           <IconX icon-class="w-4 h-4 text-white" />
           <span class="tooltip">{{ removeLabel || $t('common.delete') }}</span>
         </IconButton>
-
-        <!-- Hover Overlay (same as RecommendationCard) -->
-        <div
-          class="flex absolute bottom-0 left-0 flex-col justify-center items-center px-4 w-full h-full opacity-0 backdrop-blur-md transition-all duration-300 group-hover:opacity-100 dark:bg-black/80 bg-white/80"
-        >
-          <p class="font-semibold text-gray-800 dark:text-gray-300">
-            {{ $t('media.viewDetails') }}
-          </p>
-        </div>
-      </nuxt-link>
-
-      <!-- Title -->
-      <div class="p-4">
-        <h3
-          class="mb-1 text-sm font-semibold text-gray-800 truncate dark:text-gray-300"
-        >
-          {{ title.title }}
-        </h3>
-        <p class="mb-2 text-xs text-gray-500 dark:text-gray-300">
-          {{
-            title.type === MediaTypeEnum.movie
-              ? $t('media.movie')
-              : $t('media.series')
-          }}
-        </p>
-      </div>
-    </div>
+      </template>
+    </TitleCard>
   </div>
 </template>
 
@@ -101,10 +59,10 @@
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 import { watch } from 'vue';
 import IconButton from '@/components/ui/IconButton.vue';
-import IconImage from './icons/IconImage.vue';
 import IconHeart from './icons/IconHeart.vue';
 import IconHeartFilled from './icons/IconHeartFilled.vue';
 import IconX from './icons/IconX.vue';
+import TitleCard from './TitleCard.vue';
 
 interface Title {
   id: string;
