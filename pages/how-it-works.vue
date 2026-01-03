@@ -201,6 +201,13 @@
                 <li>{{ $t('howItWorks.platformsRent') }}</li>
                 <li>{{ $t('howItWorks.platformsBuy') }}</li>
               </ul>
+              <div
+                class="p-4 mt-4 rounded-lg bg-primary/10 dark:bg-primary-500/20"
+              >
+                <p class="text-sm text-gray-800 dark:text-gray-300">
+                  {{ $t('languageAccuracy.alert.message') }}
+                </p>
+              </div>
             </section>
 
             <!-- Sección 7: Búsqueda -->

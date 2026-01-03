@@ -17,15 +17,18 @@
 
         <!-- Content -->
         <template v-else>
-          <MediaBannerDetail
-            :media="tvShowWithProviders as unknown as Media"
-            :media-type="MediaTypeEnum.tv"
-            :in-production="tvShowWithProviders.in_production"
-          />
-          <section class="mt-6 mb-6 w-full">
-    <h2 class="col-span-4 text-2xl font-semibold mb-6">Temporadas</h2>
+          <Section>
+            <MediaBannerDetail
+              :media="tvShowWithProviders as unknown as Media"
+              :media-type="MediaTypeEnum.tv"
+              :in-production="tvShowWithProviders.in_production"
+            />
+          </Section>
+          <Section>
+            <SectionTitle>{{ $t('media.seasons') }}</SectionTitle>
+            <div class="w-full">
     <div
-      class="relative grid grid-cols-2 gap-4 md:gap-8 justify-items-stretch lg:grid-cols-3 xl:grid-cols-4"
+      class="relative grid grid-cols-2 gap-4 justify-items-stretch lg:grid-cols-3 xl:grid-cols-4"
     >
       <article
         v-for="season in tvShowWithProviders.seasons"
@@ -85,7 +88,8 @@
         </div>
       </article>
     </div>
-  </section>
+            </div>
+          </Section>
         </template>
       </div>
     </PageContainer>
@@ -110,6 +114,8 @@ import { useTVShowSchema } from '@/composables/useSchemaOrg';
 import { getTVShowSeoExperience } from '@/composables/useSeoExperience';
 import AppShell from '@/components/layout/AppShell.vue';
 import PageContainer from '@/components/layout/PageContainer.vue';
+import Section from '@/components/layout/Section.vue';
+import SectionTitle from '@/components/layout/SectionTitle.vue';
 
 const route = useRoute();
 

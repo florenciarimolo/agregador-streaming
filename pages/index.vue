@@ -12,6 +12,7 @@ import Alert from '@/components/ui/Alert.vue';
 import { getUserLikedTitle } from '@/composables/database/userTitleStatus';
 import AppShell from '@/components/layout/AppShell.vue';
 import PageContainer from '@/components/layout/PageContainer.vue';
+import Section from '@/components/layout/Section.vue';
 
 // Type for Supabase user that may have either 'id' or 'sub' as identifier
 type SupabaseUserWithSub = {
@@ -1093,24 +1094,17 @@ onMounted(() => {
       <section v-if="isMounted && userStore.authInitialized && effectiveUser">
         <AppShell>
           <PageContainer>
-          <div class="w-full flex flex-col gap-6 pt-6 pb-6">
-          <!-- Language Accuracy Alert -->
-          <Alert
-            v-if="userStore.hasCompletedOnboarding"
-            variant="info"
-            custom-class="mb-4"
-            :show-icon="true"
-          >
-            {{ $t('languageAccuracy.alert.message') }}
-          </Alert>
-          <!-- Mood Selector -->
-          <MoodSelector v-if="userStore.hasCompletedOnboarding" />
+          <div class="w-full pt-6 pb-6">
+          <!-- Filtros Section -->
+          <Section v-if="userStore.hasCompletedOnboarding">
+            <div class="flex flex-col gap-4">
+              <!-- Mood Selector -->
+              <MoodSelector />
 
-          <!-- Content Type Filter -->
-          <div
-            v-if="userStore.hasCompletedOnboarding"
-            class="p-6 rounded-3xl border backdrop-blur-xl bg-white/60 dark:bg-gray-900/40 border-gray-300/50 dark:border-white/10 md:p-8"
-          >
+              <!-- Content Type Filter -->
+              <div
+                class="p-6 rounded-3xl border backdrop-blur-xl bg-white/60 dark:bg-gray-900/40 border-gray-300/50 dark:border-white/10 md:p-8"
+              >
             <div class="flex flex-col gap-2">
               <label
                 class="text-xs font-semibold tracking-wide text-gray-800 uppercase dark:text-gray-300"
@@ -1142,7 +1136,9 @@ onMounted(() => {
                 </button>
               </div>
             </div>
-          </div>
+            </div>
+            </div>
+          </Section>
 
           <!-- Loading State -->
           <div v-if="loadingRecommendations || populatingPool" class="w-full">
@@ -1239,7 +1235,7 @@ onMounted(() => {
           </div>
 
           <!-- Recommendations Section -->
-          <div v-else>
+          <Section v-else>
             <RecommendationSection
               v-if="recommendations && recommendations.length > 0"
               :key="`rec-${recommendations.length}`"
@@ -1253,7 +1249,7 @@ onMounted(() => {
               @mark-liked="handleMarkLiked($event)"
               @mark-watchlist="handleTitleStatus($event, TitleStatus.WATCHLIST)"
             />
-          </div>
+          </Section>
           </div>
           </PageContainer>
         </AppShell>

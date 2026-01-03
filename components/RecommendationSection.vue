@@ -1,18 +1,12 @@
 <template>
-  <section v-if="recommendations.length > 0">
-    <div class="mb-6">
-      <h2
-        class="mb-2 text-2xl font-bold text-gray-800 dark:text-gray-300 font-heading"
-      >
-        {{ title }}
-      </h2>
-      <p
-        v-if="description"
-        class="text-sm text-gray-800 dark:text-gray-300 md:text-base"
-      >
-        {{ description }}
-      </p>
-    </div>
+  <div v-if="recommendations.length > 0">
+    <SectionTitle>{{ title }}</SectionTitle>
+    <p
+      v-if="description"
+      class="text-sm text-gray-800 dark:text-gray-300 md:text-base"
+    >
+      {{ description }}
+    </p>
     <div class="grid grid-cols-2 gap-4 md:grid-cols-4 overflow-visible">
       <RecommendationCard
         v-for="recommendation in recommendations"
@@ -30,11 +24,12 @@
         @mark-watchlist="$emit('mark-watchlist', $event)"
       />
     </div>
-  </section>
+  </div>
 </template>
 
 <script setup lang="ts">
 import type { Recommendation } from '@/types/Recommendation';
+import SectionTitle from '@/components/layout/SectionTitle.vue';
 
 defineProps<{
   title: string;

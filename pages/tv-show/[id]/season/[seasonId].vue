@@ -19,10 +19,11 @@
 
         <!-- Content -->
         <div v-else>
-          <!-- Header de temporada -->
-          <section
-            class="relative flex flex-col items-center justify-between gap-16 pb-8 dark:text-gray-300 text-gray-800 w-full flex-shrink-0 min-h-[400px] lg:flex-row lg:items-stretch lg:p-16 lg:bg-gray-100/80 dark:lg:bg-gray-900/40 lg:backdrop-blur-xl lg:border lg:gap-7 rounded-3xl lg:border-gray-300/50 lg:dark:border-primary-800 lg:shadow-lg lg:shadow-primary/20 py-16"
-          >
+          <Section>
+            <!-- Header de temporada -->
+            <section
+              class="relative flex flex-col items-center justify-between gap-16 pb-8 dark:text-gray-300 text-gray-800 w-full flex-shrink-0 min-h-[400px] lg:flex-row lg:items-stretch lg:p-16 lg:bg-gray-100/80 dark:lg:bg-gray-900/40 lg:backdrop-blur-xl lg:border lg:gap-7 rounded-3xl lg:border-gray-300/50 lg:dark:border-primary-800 lg:shadow-lg lg:shadow-primary/20 py-16"
+            >
       <div
         class="absolute inset-0 z-0 hidden lg:block rounded-3xl"
         :style="sectionStyle"
@@ -151,18 +152,16 @@
           </section>
         </section>
       </div>
-    </section>
+            </section>
+          </Section>
 
-    <!-- Episodios -->
-    <section>
-      <h2
-        class="py-16 text-2xl font-semibold dark:text-gray-300 text-gray-800"
-        >{{ $t('media.episodes') }}</h2
-      >
+          <!-- Episodios -->
+          <Section>
+            <SectionTitle>{{ $t('media.episodes') }}</SectionTitle>
 
       <div
         v-if="seasonWithProviders?.episodes?.length"
-        class="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-3"
+        class="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3"
       >
         <article
           v-for="(episode, index) in seasonWithProviders.episodes"
@@ -226,7 +225,7 @@
       <div v-else class="py-12 text-center dark:text-gray-400 text-gray-600">
         <div class="text-xl">{{ $t('media.noEpisodes') }}</div>
       </div>
-    </section>
+          </Section>
         </div>
       </div>
     </PageContainer>
@@ -249,6 +248,8 @@ import IconCalendar from '@/components/icons/IconCalendar.vue';
 import IconEpisodes from '@/components/icons/IconEpisodes.vue';
 import AppShell from '@/components/layout/AppShell.vue';
 import PageContainer from '@/components/layout/PageContainer.vue';
+import Section from '@/components/layout/Section.vue';
+import SectionTitle from '@/components/layout/SectionTitle.vue';
 
 const route = useRoute();
 const router = useRouter();
