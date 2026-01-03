@@ -1,253 +1,267 @@
 <template>
-  <div class="max-w-4xl mx-auto px-4 pb-6 pt-6">
-    <div class="mb-6">
-      <h1 class="text-4xl font-bold dark:text-gray-300 text-gray-800 mb-4">
-        {{ $t('howItWorks.title') }}
-      </h1>
-      <p class="text-lg dark:text-gray-300 text-gray-800">
-        {{ $t('howItWorks.description') }}
-      </p>
-    </div>
-
-    <div class="space-y-6">
-      <!-- Sección 1: Introducción -->
-      <section
-        class="bg-white/60 dark:bg-gray-900/40 backdrop-blur-xl rounded-2xl p-6 border border-gray-300/50 dark:border-white/10"
-      >
-        <h2
-          class="text-2xl font-semibold dark:text-gray-300 text-gray-800 mb-4"
-        >
-          {{ $t('howItWorks.whatIsTitle') }}
-        </h2>
-        <p class="dark:text-gray-300 text-gray-800 mb-4">
-          {{ $t('howItWorks.whatIsDescription1') }}
-        </p>
-        <p class="dark:text-gray-300 text-gray-800">
-          {{ $t('howItWorks.whatIsDescription2') }}
-        </p>
-      </section>
-
-      <!-- Sección 2: Onboarding -->
-      <section
-        class="bg-white/60 dark:bg-gray-900/40 backdrop-blur-xl rounded-2xl p-6 border border-gray-300/50 dark:border-white/10"
-      >
-        <h2
-          class="text-2xl font-semibold dark:text-gray-300 text-gray-800 mb-4"
-        >
-          {{ $t('howItWorks.setupTitle') }}
-        </h2>
-        <p class="dark:text-gray-300 text-gray-800 mb-4">
-          {{ $t('howItWorks.setupDescription') }}
-        </p>
-        <div class="bg-primary/10 dark:bg-primary-500/20 rounded-lg p-4">
-          <p class="text-sm dark:text-gray-300 text-gray-800">
-            {{ $t('howItWorks.setupTip') }}
-          </p>
-        </div>
-      </section>
-
-      <!-- Sección 3: Recomendaciones -->
-      <section
-        class="bg-white/60 dark:bg-gray-900/40 backdrop-blur-xl rounded-2xl p-6 border border-gray-300/50 dark:border-white/10"
-      >
-        <h2
-          class="text-2xl font-semibold dark:text-gray-300 text-gray-800 mb-4"
-        >
-          {{ $t('howItWorks.recommendationsTitle') }}
-        </h2>
-        <p class="dark:text-gray-300 text-gray-800 mb-4">
-          {{ $t('howItWorks.recommendationsDescription1') }}
-        </p>
-        <p class="dark:text-gray-300 text-gray-800 mb-4">
-          {{ $t('howItWorks.recommendationsDescription2') }}
-        </p>
-        <ul
-          class="list-disc list-inside space-y-2 dark:text-gray-300 text-gray-800 ml-4"
-        >
-          <li>{{ $t('howItWorks.recommendationItem1') }}</li>
-          <li>{{ $t('howItWorks.recommendationItem2') }}</li>
-          <li>{{ $t('howItWorks.recommendationItem3') }}</li>
-          <li>{{ $t('howItWorks.recommendationItem4') }}</li>
-        </ul>
-      </section>
-
-      <!-- Sección 4: Filtros -->
-      <section
-        class="bg-white/60 dark:bg-gray-900/40 backdrop-blur-xl rounded-2xl p-6 border border-gray-300/50 dark:border-white/10"
-      >
-        <h2
-          class="text-2xl font-semibold dark:text-gray-300 text-gray-800 mb-4"
-        >
-          {{ $t('howItWorks.filtersTitle') }}
-        </h2>
-        <p class="dark:text-gray-300 text-gray-800 mb-4">
-          {{ $t('howItWorks.filtersDescription') }}
-        </p>
-        <div class="grid md:grid-cols-2 gap-4 mb-4">
-          <div>
-            <h3 class="font-semibold dark:text-gray-300 text-gray-800 mb-2">
-              {{ $t('howItWorks.moodTitle') }}
-            </h3>
-            <ul
-              class="list-disc list-inside space-y-1 text-sm dark:text-gray-300 text-gray-800 ml-4"
+  <AppShell>
+    <PageContainer>
+      <div class="pt-6 pb-6 w-full">
+        <div class="mx-auto max-w-3xl">
+          <div class="mb-6">
+            <h1
+              class="mb-4 text-4xl font-bold text-gray-800 dark:text-gray-300"
             >
-              <li>{{ $t('mood.relaxed') }}</li>
-              <li>{{ $t('mood.light') }}</li>
-              <li>{{ $t('mood.intense') }}</li>
-              <li>{{ $t('mood.emotional') }}</li>
-              <li>{{ $t('mood.reflective') }}</li>
-            </ul>
+              {{ $t('howItWorks.title') }}
+            </h1>
+            <p class="text-lg text-gray-800 dark:text-gray-300">
+              {{ $t('howItWorks.description') }}
+            </p>
           </div>
-          <div>
-            <h3 class="font-semibold dark:text-gray-300 text-gray-800 mb-2">
-              {{ $t('howItWorks.attentionTitle') }}
-            </h3>
-            <ul
-              class="list-disc list-inside space-y-1 text-sm dark:text-gray-300 text-gray-800 ml-4"
+
+          <div class="space-y-6">
+            <!-- Sección 1: Introducción -->
+            <section
+              class="p-6 rounded-2xl border backdrop-blur-xl bg-white/60 dark:bg-gray-900/40 border-gray-300/50 dark:border-white/10"
             >
-              <li>{{ $t('howItWorks.attentionLow') }}</li>
-              <li>{{ $t('howItWorks.attentionMedium') }}</li>
-              <li>{{ $t('howItWorks.attentionHigh') }}</li>
-            </ul>
+              <h2
+                class="mb-4 text-2xl font-semibold text-gray-800 dark:text-gray-300"
+              >
+                {{ $t('howItWorks.whatIsTitle') }}
+              </h2>
+              <p class="mb-4 text-gray-800 dark:text-gray-300">
+                {{ $t('howItWorks.whatIsDescription1') }}
+              </p>
+              <p class="text-gray-800 dark:text-gray-300">
+                {{ $t('howItWorks.whatIsDescription2') }}
+              </p>
+            </section>
+
+            <!-- Sección 2: Onboarding -->
+            <section
+              class="p-6 rounded-2xl border backdrop-blur-xl bg-white/60 dark:bg-gray-900/40 border-gray-300/50 dark:border-white/10"
+            >
+              <h2
+                class="mb-4 text-2xl font-semibold text-gray-800 dark:text-gray-300"
+              >
+                {{ $t('howItWorks.setupTitle') }}
+              </h2>
+              <p class="mb-4 text-gray-800 dark:text-gray-300">
+                {{ $t('howItWorks.setupDescription') }}
+              </p>
+              <div class="p-4 rounded-lg bg-primary/10 dark:bg-primary-500/20">
+                <p class="text-sm text-gray-800 dark:text-gray-300">
+                  {{ $t('howItWorks.setupTip') }}
+                </p>
+              </div>
+            </section>
+
+            <!-- Sección 3: Recomendaciones -->
+            <section
+              class="p-6 rounded-2xl border backdrop-blur-xl bg-white/60 dark:bg-gray-900/40 border-gray-300/50 dark:border-white/10"
+            >
+              <h2
+                class="mb-4 text-2xl font-semibold text-gray-800 dark:text-gray-300"
+              >
+                {{ $t('howItWorks.recommendationsTitle') }}
+              </h2>
+              <p class="mb-4 text-gray-800 dark:text-gray-300">
+                {{ $t('howItWorks.recommendationsDescription1') }}
+              </p>
+              <p class="mb-4 text-gray-800 dark:text-gray-300">
+                {{ $t('howItWorks.recommendationsDescription2') }}
+              </p>
+              <ul
+                class="ml-4 space-y-2 list-disc list-inside text-gray-800 dark:text-gray-300"
+              >
+                <li>{{ $t('howItWorks.recommendationItem1') }}</li>
+                <li>{{ $t('howItWorks.recommendationItem2') }}</li>
+                <li>{{ $t('howItWorks.recommendationItem3') }}</li>
+                <li>{{ $t('howItWorks.recommendationItem4') }}</li>
+              </ul>
+            </section>
+
+            <!-- Sección 4: Filtros -->
+            <section
+              class="p-6 rounded-2xl border backdrop-blur-xl bg-white/60 dark:bg-gray-900/40 border-gray-300/50 dark:border-white/10"
+            >
+              <h2
+                class="mb-4 text-2xl font-semibold text-gray-800 dark:text-gray-300"
+              >
+                {{ $t('howItWorks.filtersTitle') }}
+              </h2>
+              <p class="mb-4 text-gray-800 dark:text-gray-300">
+                {{ $t('howItWorks.filtersDescription') }}
+              </p>
+              <div class="grid gap-4 mb-4 md:grid-cols-2">
+                <div>
+                  <h3
+                    class="mb-2 font-semibold text-gray-800 dark:text-gray-300"
+                  >
+                    {{ $t('howItWorks.moodTitle') }}
+                  </h3>
+                  <ul
+                    class="ml-4 space-y-1 text-sm list-disc list-inside text-gray-800 dark:text-gray-300"
+                  >
+                    <li>{{ $t('mood.relaxed') }}</li>
+                    <li>{{ $t('mood.light') }}</li>
+                    <li>{{ $t('mood.intense') }}</li>
+                    <li>{{ $t('mood.emotional') }}</li>
+                    <li>{{ $t('mood.reflective') }}</li>
+                  </ul>
+                </div>
+                <div>
+                  <h3
+                    class="mb-2 font-semibold text-gray-800 dark:text-gray-300"
+                  >
+                    {{ $t('howItWorks.attentionTitle') }}
+                  </h3>
+                  <ul
+                    class="ml-4 space-y-1 text-sm list-disc list-inside text-gray-800 dark:text-gray-300"
+                  >
+                    <li>{{ $t('howItWorks.attentionLow') }}</li>
+                    <li>{{ $t('howItWorks.attentionMedium') }}</li>
+                    <li>{{ $t('howItWorks.attentionHigh') }}</li>
+                  </ul>
+                </div>
+              </div>
+            </section>
+
+            <!-- Sección 5: Gestión de contenido -->
+            <section
+              class="p-6 rounded-2xl border backdrop-blur-xl bg-white/60 dark:bg-gray-900/40 border-gray-300/50 dark:border-white/10"
+            >
+              <h2
+                class="mb-4 text-2xl font-semibold text-gray-800 dark:text-gray-300"
+              >
+                {{ $t('howItWorks.organizeTitle') }}
+              </h2>
+              <p class="mb-4 text-gray-800 dark:text-gray-300">
+                {{ $t('howItWorks.organizeDescription') }}
+              </p>
+              <div class="space-y-3">
+                <div class="flex gap-3 items-start">
+                  <span class="text-xl text-primary">✓</span>
+                  <div>
+                    <strong class="text-gray-800 dark:text-gray-300">{{
+                      $t('howItWorks.seenLabel')
+                    }}</strong>
+                    <span class="text-gray-800 dark:text-gray-300">
+                      {{ $t('howItWorks.seenDescription') }}
+                    </span>
+                  </div>
+                </div>
+                <div class="flex gap-3 items-start">
+                  <span class="text-xl text-primary">❤️</span>
+                  <div>
+                    <strong class="text-gray-800 dark:text-gray-300">{{
+                      $t('howItWorks.likedLabel')
+                    }}</strong>
+                    <span class="text-gray-800 dark:text-gray-300">
+                      {{ $t('howItWorks.likedDescription') }}
+                    </span>
+                  </div>
+                </div>
+                <div class="flex gap-3 items-start">
+                  <span class="text-xl text-primary">⏰</span>
+                  <div>
+                    <strong class="text-gray-800 dark:text-gray-300">{{
+                      $t('howItWorks.watchLaterLabel')
+                    }}</strong>
+                    <span class="text-gray-800 dark:text-gray-300">
+                      {{ $t('howItWorks.watchLaterDescription') }}
+                    </span>
+                  </div>
+                </div>
+                <div class="flex gap-3 items-start">
+                  <span class="text-xl text-primary">✗</span>
+                  <div>
+                    <strong class="text-gray-800 dark:text-gray-300">{{
+                      $t('howItWorks.notInterestedLabel')
+                    }}</strong>
+                    <span class="text-gray-800 dark:text-gray-300">
+                      {{ $t('howItWorks.notInterestedDescription') }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- Sección 6: Plataformas -->
+            <section
+              class="p-6 rounded-2xl border backdrop-blur-xl bg-white/60 dark:bg-gray-900/40 border-gray-300/50 dark:border-white/10"
+            >
+              <h2
+                class="mb-4 text-2xl font-semibold text-gray-800 dark:text-gray-300"
+              >
+                {{ $t('howItWorks.platformsTitle') }}
+              </h2>
+              <p class="mb-4 text-gray-800 dark:text-gray-300">
+                {{ $t('howItWorks.platformsDescription') }}
+              </p>
+              <ul
+                class="ml-4 space-y-2 list-disc list-inside text-gray-800 dark:text-gray-300"
+              >
+                <li>{{ $t('howItWorks.platformsStreaming') }}</li>
+                <li>{{ $t('howItWorks.platformsRent') }}</li>
+                <li>{{ $t('howItWorks.platformsBuy') }}</li>
+              </ul>
+            </section>
+
+            <!-- Sección 7: Búsqueda -->
+            <section
+              class="p-6 rounded-2xl border backdrop-blur-xl bg-white/60 dark:bg-gray-900/40 border-gray-300/50 dark:border-white/10"
+            >
+              <h2
+                class="mb-4 text-2xl font-semibold text-gray-800 dark:text-gray-300"
+              >
+                {{ $t('howItWorks.searchTitle') }}
+              </h2>
+              <p class="mb-4 text-gray-800 dark:text-gray-300">
+                {{ $t('howItWorks.searchDescription') }}
+              </p>
+            </section>
+
+            <!-- Sección 8: Mejora continua -->
+            <section
+              class="p-6 rounded-2xl border backdrop-blur-xl bg-white/60 dark:bg-gray-900/40 border-gray-300/50 dark:border-white/10"
+            >
+              <h2
+                class="mb-4 text-2xl font-semibold text-gray-800 dark:text-gray-300"
+              >
+                {{ $t('howItWorks.improveTitle') }}
+              </h2>
+              <p class="mb-4 text-gray-800 dark:text-gray-300">
+                {{ $t('howItWorks.improveDescription1') }}
+              </p>
+              <ul
+                class="ml-4 space-y-2 list-disc list-inside text-gray-800 dark:text-gray-300"
+              >
+                <li>{{ $t('howItWorks.improveItem1') }}</li>
+                <li>{{ $t('howItWorks.improveItem2') }}</li>
+                <li>{{ $t('howItWorks.improveItem3') }}</li>
+                <li>{{ $t('howItWorks.improveItem4') }}</li>
+              </ul>
+              <p class="mt-4 text-gray-800 dark:text-gray-300">
+                {{ $t('howItWorks.improveDescription2') }}
+              </p>
+            </section>
+          </div>
+
+          <!-- CTA -->
+          <div class="mt-6 text-center">
+            <nuxt-link
+              to="/"
+              class="inline-block px-6 py-3 font-medium text-white rounded-lg transition-all duration-300 bg-primary-800 dark:bg-primary hover:bg-primary-900 dark:hover:bg-primary-600"
+            >
+              {{ $t('howItWorks.ctaButton') }}
+            </nuxt-link>
           </div>
         </div>
-      </section>
-
-      <!-- Sección 5: Gestión de contenido -->
-      <section
-        class="bg-white/60 dark:bg-gray-900/40 backdrop-blur-xl rounded-2xl p-6 border border-gray-300/50 dark:border-white/10"
-      >
-        <h2
-          class="text-2xl font-semibold dark:text-gray-300 text-gray-800 mb-4"
-        >
-          {{ $t('howItWorks.organizeTitle') }}
-        </h2>
-        <p class="dark:text-gray-300 text-gray-800 mb-4">
-          {{ $t('howItWorks.organizeDescription') }}
-        </p>
-        <div class="space-y-3">
-          <div class="flex items-start gap-3">
-            <span class="text-primary text-xl">✓</span>
-            <div>
-              <strong class="dark:text-gray-300 text-gray-800">{{
-                $t('howItWorks.seenLabel')
-              }}</strong>
-              <span class="dark:text-gray-300 text-gray-800">
-                {{ $t('howItWorks.seenDescription') }}
-              </span>
-            </div>
-          </div>
-          <div class="flex items-start gap-3">
-            <span class="text-primary text-xl">❤️</span>
-            <div>
-              <strong class="dark:text-gray-300 text-gray-800">{{
-                $t('howItWorks.likedLabel')
-              }}</strong>
-              <span class="dark:text-gray-300 text-gray-800">
-                {{ $t('howItWorks.likedDescription') }}
-              </span>
-            </div>
-          </div>
-          <div class="flex items-start gap-3">
-            <span class="text-primary text-xl">⏰</span>
-            <div>
-              <strong class="dark:text-gray-300 text-gray-800">{{
-                $t('howItWorks.watchLaterLabel')
-              }}</strong>
-              <span class="dark:text-gray-300 text-gray-800">
-                {{ $t('howItWorks.watchLaterDescription') }}
-              </span>
-            </div>
-          </div>
-          <div class="flex items-start gap-3">
-            <span class="text-primary text-xl">✗</span>
-            <div>
-              <strong class="dark:text-gray-300 text-gray-800">{{
-                $t('howItWorks.notInterestedLabel')
-              }}</strong>
-              <span class="dark:text-gray-300 text-gray-800">
-                {{ $t('howItWorks.notInterestedDescription') }}
-              </span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Sección 6: Plataformas -->
-      <section
-        class="bg-white/60 dark:bg-gray-900/40 backdrop-blur-xl rounded-2xl p-6 border border-gray-300/50 dark:border-white/10"
-      >
-        <h2
-          class="text-2xl font-semibold dark:text-gray-300 text-gray-800 mb-4"
-        >
-          {{ $t('howItWorks.platformsTitle') }}
-        </h2>
-        <p class="dark:text-gray-300 text-gray-800 mb-4">
-          {{ $t('howItWorks.platformsDescription') }}
-        </p>
-        <ul
-          class="list-disc list-inside space-y-2 dark:text-gray-300 text-gray-800 ml-4"
-        >
-          <li>{{ $t('howItWorks.platformsStreaming') }}</li>
-          <li>{{ $t('howItWorks.platformsRent') }}</li>
-          <li>{{ $t('howItWorks.platformsBuy') }}</li>
-        </ul>
-      </section>
-
-      <!-- Sección 7: Búsqueda -->
-      <section
-        class="bg-white/60 dark:bg-gray-900/40 backdrop-blur-xl rounded-2xl p-6 border border-gray-300/50 dark:border-white/10"
-      >
-        <h2
-          class="text-2xl font-semibold dark:text-gray-300 text-gray-800 mb-4"
-        >
-          {{ $t('howItWorks.searchTitle') }}
-        </h2>
-        <p class="dark:text-gray-300 text-gray-800 mb-4">
-          {{ $t('howItWorks.searchDescription') }}
-        </p>
-      </section>
-
-      <!-- Sección 8: Mejora continua -->
-      <section
-        class="bg-white/60 dark:bg-gray-900/40 backdrop-blur-xl rounded-2xl p-6 border border-gray-300/50 dark:border-white/10"
-      >
-        <h2
-          class="text-2xl font-semibold dark:text-gray-300 text-gray-800 mb-4"
-        >
-          {{ $t('howItWorks.improveTitle') }}
-        </h2>
-        <p class="dark:text-gray-300 text-gray-800 mb-4">
-          {{ $t('howItWorks.improveDescription1') }}
-        </p>
-        <ul
-          class="list-disc list-inside space-y-2 dark:text-gray-300 text-gray-800 ml-4"
-        >
-          <li>{{ $t('howItWorks.improveItem1') }}</li>
-          <li>{{ $t('howItWorks.improveItem2') }}</li>
-          <li>{{ $t('howItWorks.improveItem3') }}</li>
-          <li>{{ $t('howItWorks.improveItem4') }}</li>
-        </ul>
-        <p class="dark:text-gray-300 text-gray-800 mt-4">
-          {{ $t('howItWorks.improveDescription2') }}
-        </p>
-      </section>
-    </div>
-
-    <!-- CTA -->
-    <div class="mt-6 text-center">
-      <nuxt-link
-        to="/"
-        class="inline-block px-6 py-3 bg-primary-800 dark:bg-primary hover:bg-primary-900 dark:hover:bg-primary-600 text-white rounded-lg font-medium transition-all duration-300"
-      >
-        {{ $t('howItWorks.ctaButton') }}
-      </nuxt-link>
-    </div>
-  </div>
+      </div>
+    </PageContainer>
+  </AppShell>
 </template>
 
 <script setup lang="ts">
 import { watchEffect } from 'vue';
+import AppShell from '@/components/layout/AppShell.vue';
+import PageContainer from '@/components/layout/PageContainer.vue';
 
 const { t } = useI18n();
 

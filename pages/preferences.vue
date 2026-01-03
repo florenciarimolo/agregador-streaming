@@ -1,636 +1,676 @@
 <template>
-  <div class="container px-4 pt-6 pb-6 mx-auto max-w-7xl">
-    <!-- Profile Header -->
-    <div class="mb-6">
-      <div class="flex flex-row gap-4 items-center md:gap-6">
-        <!-- Avatar -->
-        <div class="flex flex-shrink-0 items-center">
-          <div
-            class="rounded-full border shadow-md hover:ring-2 hover:ring-primary/50 border-primary"
-          >
-            <Avatar
-              :avatar-url="profile?.avatar_url"
-              :display-name="profile?.display_name"
-              :email="currentUser?.email"
-              :user-id="userId"
-              :size="avatarSize"
-            />
-          </div>
-        </div>
-
-        <!-- Profile Info -->
-        <div class="overflow-hidden flex-1 min-w-0">
-          <div class="space-y-2">
-            <h1
-              class="text-sm font-medium text-gray-800 whitespace-nowrap dark:text-gray-300 font-heading"
-            >
-              {{ displayName || currentUser?.email || $t('profile.user') }}
-            </h1>
-            <p
-              v-if="currentUser?.email"
-              class="text-xs text-gray-500 whitespace-nowrap dark:text-gray-400"
-            >
-              {{ currentUser.email }}
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Undo Toast -->
-    <Toast />
-
-    <!-- Confirmation Dialog for Delete -->
-    <Modal :is-open="!!titleToDelete" @close="titleToDelete = null">
-      <h3 class="mb-2 text-lg font-semibold text-gray-800 dark:text-gray-300">
-        {{ $t('preferences.confirmDelete') }}
-      </h3>
-      <p class="mb-4 text-gray-800 dark:text-gray-300">
-        {{
-          $t('preferences.confirmDeleteMessage', {
-            title: titleToDelete?.title,
-          })
-        }}
-      </p>
-      <div class="flex gap-3 justify-end">
-        <Button size="small" variant="outline" @click="titleToDelete = null">
-          {{ $t('common.cancel') }}
-        </Button>
-        <Button size="small" variant="danger" @click="confirmRemoveLiked">
-          {{ $t('common.delete') }}
-        </Button>
-      </div>
-    </Modal>
-
-    <!-- Tabs for Lists -->
-    <Tabs
-      :default-tab="activeTab"
-      @tab-change="
-        (tab) =>
-          handleTabChange(
-            tab as 'liked' | 'seen' | 'not-interested' | 'content-preferences'
-          )
-      "
-    >
-      <template #buttons="{ activeTab: currentTab, setActiveTab }">
-        <TabButton
-          v-for="tab in tabs"
-          :key="tab.id"
-          :is-active="currentTab === tab.id"
-          :badge="
-            tab.count !== null && tab.count !== undefined
-              ? tab.count
-              : undefined
-          "
-          @click="
-            handleTabButtonClick(
-              tab.id as
-                | 'liked'
-                | 'seen'
-                | 'not-interested'
-                | 'content-preferences',
-              setActiveTab
-            )
-          "
-        >
-          {{ tab.label }}
-        </TabButton>
-      </template>
-      <template #default="{ activeTab: currentTab }">
-        <!-- Liked Tab -->
-        <div v-if="currentTab === 'liked'">
-          <Alert variant="info" custom-class="mb-4" :show-icon="true">
-            {{ $t('preferences.likedTabInfo') }}
-          </Alert>
-          <div class="mb-4">
-            <SearchBar
-              :emit-on-select="true"
-              @title-selected="handleTitleSelected"
-            />
-            <p
-              v-if="likedTitles.length >= 10"
-              class="mt-2 text-xs text-amber-600 dark:text-amber-400"
-            >
-              {{ $t('preferences.limitReached') }}
-            </p>
-          </div>
-
-          <Spinner v-if="isLoading" :message="$t('preferences.loading')" />
-
-          <TitleGrid
-            v-else-if="likedTitles.length > 0"
-            :titles="likedTitles"
-            :on-remove="handleRemoveLikedClick"
-            :remove-label="$t('preferences.removeFromList')"
-          />
-
-          <EmptyState
-            v-else
-            :message="$t('preferences.emptyState')"
-            icon="heart"
-          />
-        </div>
-
-        <!-- Seen Tab -->
-        <div v-if="currentTab === 'seen'">
-          <Spinner v-if="isLoading" :message="$t('seen.loading')" />
-
-          <TitleGrid
-            v-else-if="seenTitles.length > 0"
-            :titles="seenTitles"
-            :on-remove="handleRemoveSeen"
-            :remove-label="$t('seen.removeFromList')"
-            :on-like="handleAddToLiked"
-            :like-label="$t('media.liked')"
-          />
-
-          <EmptyState v-else :message="$t('seen.empty')" icon="eye" />
-        </div>
-
-        <!-- Not Interested Tab -->
-        <div v-if="currentTab === 'not-interested'">
-          <Spinner v-if="isLoading" :message="$t('notInterested.loading')" />
-
-          <TitleGrid
-            v-else-if="notInterestedTitles.length > 0"
-            :titles="notInterestedTitles"
-            :on-remove="handleRemoveNotInterested"
-            :remove-label="$t('undo.undo')"
-          />
-
-          <EmptyState v-else :message="$t('notInterested.empty')" icon="x" />
-        </div>
-
-        <!-- Content Preferences Tab -->
-        <div v-if="currentTab === 'content-preferences'">
-          <div class="space-y-6">
-            <!-- Preferred Languages -->
-            <Card padding="lg" custom-class="relative z-10">
-              <h2
-                class="mb-2 text-xl font-semibold text-gray-800 dark:text-gray-300"
+  <AppShell>
+    <PageContainer>
+      <div class="pt-6 pb-6 w-full">
+        <!-- Profile Header -->
+        <div class="mb-6">
+          <div class="flex flex-row gap-4 items-center md:gap-6">
+            <!-- Avatar -->
+            <div class="flex flex-shrink-0 items-center">
+              <div
+                class="rounded-full border shadow-md hover:ring-2 hover:ring-primary/50 border-primary"
               >
-                {{ $t('preferences.content.preferredLanguage.title') }}
-              </h2>
-              <p class="mb-4 text-sm text-gray-600 dark:text-gray-400">
-                {{ $t('preferences.content.preferredLanguage.description') }}
-              </p>
-
-              <!-- Language Selector -->
-              <div class="relative z-10">
-                <LanguageSelector
-                  v-model="currentLanguageCode"
-                  @update:model-value="handleLanguageChangeFromSelector"
+                <Avatar
+                  :avatar-url="profile?.avatar_url"
+                  :display-name="profile?.display_name"
+                  :email="currentUser?.email"
+                  :user-id="userId"
+                  :size="avatarSize"
                 />
               </div>
-            </Card>
+            </div>
 
-            <!-- Favorite Genres -->
-            <Card padding="lg" custom-class="relative">
-              <h2
-                class="mb-2 text-xl font-semibold text-gray-800 dark:text-gray-300"
-              >
-                {{ $t('preferences.content.favoriteGenres.title') }}
-              </h2>
-              <p class="mb-4 text-sm text-gray-600 dark:text-gray-400">
-                {{ $t('preferences.content.favoriteGenres.description') }}
-              </p>
+            <!-- Profile Info -->
+            <div class="overflow-hidden flex-1 min-w-0">
+              <div class="space-y-2">
+                <h1
+                  class="text-sm font-medium text-gray-800 whitespace-nowrap dark:text-gray-300 font-heading"
+                >
+                  {{ displayName || currentUser?.email || $t('profile.user') }}
+                </h1>
+                <p
+                  v-if="currentUser?.email"
+                  class="text-xs text-gray-500 whitespace-nowrap dark:text-gray-400"
+                >
+                  {{ currentUser.email }}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
 
-              <!-- Genre Search -->
-              <div class="relative mb-4">
-                <div class="relative">
-                  <input
-                    ref="genreInputRef"
-                    v-model="genreSearchQuery"
-                    type="text"
-                    :placeholder="
-                      $t('preferences.content.favoriteGenres.searchPlaceholder')
-                    "
-                    class="px-4 py-2 pr-4 pl-10 w-full text-sm text-gray-800 rounded-lg border-gray-300 opacity-90 transition-all dark:text-gray-300 dark:bg-gray-800/50 bg-white/80 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-transparent focus:border-transparent backdrop-blur-xs hover:opacity-100"
-                    @input="filterGenres"
-                    @focus="handleGenreFocus"
-                    @blur="handleGenreBlur"
-                  />
-                  <!-- Search Icon -->
-                  <div
-                    class="flex absolute inset-y-0 left-0 items-center pl-3 pointer-events-none"
-                  >
-                    <IconSearch icon-class="w-4 h-4 text-gray-400" />
-                  </div>
-                </div>
+        <!-- Undo Toast -->
+        <Toast />
+
+        <!-- Confirmation Dialog for Delete -->
+        <Modal :is-open="!!titleToDelete" @close="titleToDelete = null">
+          <h3
+            class="mb-2 text-lg font-semibold text-gray-800 dark:text-gray-300"
+          >
+            {{ $t('preferences.confirmDelete') }}
+          </h3>
+          <p class="mb-4 text-gray-800 dark:text-gray-300">
+            {{
+              $t('preferences.confirmDeleteMessage', {
+                title: titleToDelete?.title,
+              })
+            }}
+          </p>
+          <div class="flex gap-3 justify-end">
+            <Button
+              size="small"
+              variant="outline"
+              @click="titleToDelete = null"
+            >
+              {{ $t('common.cancel') }}
+            </Button>
+            <Button size="small" variant="danger" @click="confirmRemoveLiked">
+              {{ $t('common.delete') }}
+            </Button>
+          </div>
+        </Modal>
+
+        <!-- Tabs for Lists -->
+        <Tabs
+          :default-tab="activeTab"
+          @tab-change="
+            (tab) =>
+              handleTabChange(
+                tab as
+                  | 'liked'
+                  | 'seen'
+                  | 'not-interested'
+                  | 'content-preferences'
+              )
+          "
+        >
+          <template #buttons="{ activeTab: currentTab, setActiveTab }">
+            <TabButton
+              v-for="tab in tabs"
+              :key="tab.id"
+              :is-active="currentTab === tab.id"
+              :badge="
+                tab.count !== null && tab.count !== undefined
+                  ? tab.count
+                  : undefined
+              "
+              @click="
+                handleTabButtonClick(
+                  tab.id as
+                    | 'liked'
+                    | 'seen'
+                    | 'not-interested'
+                    | 'content-preferences',
+                  setActiveTab
+                )
+              "
+            >
+              {{ tab.label }}
+            </TabButton>
+          </template>
+          <template #default="{ activeTab: currentTab }">
+            <!-- Liked Tab -->
+            <div v-if="currentTab === 'liked'">
+              <Alert variant="info" custom-class="mb-4" :show-icon="true">
+                {{ $t('preferences.likedTabInfo') }}
+              </Alert>
+              <div class="mb-4">
+                <SearchBar
+                  :emit-on-select="true"
+                  @title-selected="handleTitleSelected"
+                />
+                <p
+                  v-if="likedTitles.length >= 10"
+                  class="mt-2 text-xs text-amber-600 dark:text-amber-400"
+                >
+                  {{ $t('preferences.limitReached') }}
+                </p>
               </div>
 
-              <!-- Genre Search Results Dropdown (Teleported) -->
-              <Teleport to="body">
-                <Transition
-                  enter-active-class="transition duration-200 ease-out"
-                  enter-from-class="opacity-0 transform scale-95"
-                  enter-to-class="opacity-100 transform scale-100"
-                  leave-active-class="transition duration-150 ease-in"
-                  leave-from-class="opacity-100 transform scale-100"
-                  leave-to-class="opacity-0 transform scale-95"
-                >
-                  <div
-                    v-if="
-                      showGenreResults &&
-                      filteredGenres.length > 0 &&
-                      genreDropdownPosition
-                    "
-                    class="fixed z-[9999] dark:bg-gray-900/95 bg-white/95 backdrop-blur-sm dark:border-gray-600 border-gray-300 rounded-3xl shadow-xl max-h-64 overflow-y-auto custom-scrollbar"
-                    :style="{
-                      top: `${genreDropdownPosition.top}px`,
-                      left: `${genreDropdownPosition.left}px`,
-                      width: `${genreDropdownPosition.width}px`,
-                    }"
-                    @mousedown.prevent
-                  >
-                    <div class="py-2">
-                      <template
-                        v-for="(genre, index) in filteredGenres"
-                        :key="`${genre.id}-${genre.type}`"
-                      >
-                        <!-- Separator: show only when type changes (first item of each type) -->
-                        <div
-                          v-if="
-                            index === 0 ||
-                            filteredGenres[index - 1].type !== genre.type
-                          "
-                          class="px-4 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider"
-                          :class="index > 0 ? 'border-t border-gray-200 dark:border-gray-700' : ''"
-                        >
-                          {{ genre.type === MediaTypeEnum.movie ? t('preferences.content.contentTypes.movie') : t('preferences.content.contentTypes.tv') }}
-                        </div>
-                        <!-- Genre option -->
-                        <div
-                          class="flex gap-3 items-center px-4 py-3 transition-colors duration-150 cursor-pointer dark:hover:bg-gray-800/50 hover:bg-gray-100/50"
-                          @mousedown.prevent="addGenre(genre)"
-                          @click="addGenre(genre)"
-                        >
-                          <span
-                            class="text-sm text-gray-800 dark:text-gray-300"
-                            >{{ genre.name }}</span
-                          >
-                        </div>
-                      </template>
-                    </div>
-                  </div>
-                </Transition>
-              </Teleport>
+              <Spinner v-if="isLoading" :message="$t('preferences.loading')" />
 
-              <!-- Selected Genres List -->
-              <div v-if="selectedGenres.length > 0" class="mb-4">
-                <p
-                  class="mb-2 text-sm font-medium text-gray-800 dark:text-gray-300"
-                >
-                  {{ $t('preferences.content.favoriteGenres.selected') }}
-                  ({{ selectedGenres.length }})
-                </p>
-                <div class="flex flex-wrap gap-2">
-                  <div
-                    v-for="genre in selectedGenres"
-                    :key="genre.id"
-                    class="flex gap-2 items-center px-4 py-1.5 rounded-full border backdrop-blur-xl md:py-2.5 dark:bg-gray-900/40 bg-gray-100/80 border-gray-300/50 dark:border-white/10"
+              <TitleGrid
+                v-else-if="likedTitles.length > 0"
+                :titles="likedTitles"
+                :on-remove="handleRemoveLikedClick"
+                :remove-label="$t('preferences.removeFromList')"
+              />
+
+              <EmptyState
+                v-else
+                :message="$t('preferences.emptyState')"
+                icon="heart"
+              />
+            </div>
+
+            <!-- Seen Tab -->
+            <div v-if="currentTab === 'seen'">
+              <Spinner v-if="isLoading" :message="$t('seen.loading')" />
+
+              <TitleGrid
+                v-else-if="seenTitles.length > 0"
+                :titles="seenTitles"
+                :on-remove="handleRemoveSeen"
+                :remove-label="$t('seen.removeFromList')"
+                :on-like="handleAddToLiked"
+                :like-label="$t('media.liked')"
+              />
+
+              <EmptyState v-else :message="$t('seen.empty')" icon="eye" />
+            </div>
+
+            <!-- Not Interested Tab -->
+            <div v-if="currentTab === 'not-interested'">
+              <Spinner
+                v-if="isLoading"
+                :message="$t('notInterested.loading')"
+              />
+
+              <TitleGrid
+                v-else-if="notInterestedTitles.length > 0"
+                :titles="notInterestedTitles"
+                :on-remove="handleRemoveNotInterested"
+                :remove-label="$t('undo.undo')"
+              />
+
+              <EmptyState
+                v-else
+                :message="$t('notInterested.empty')"
+                icon="x"
+              />
+            </div>
+
+            <!-- Content Preferences Tab -->
+            <div v-if="currentTab === 'content-preferences'">
+              <div class="space-y-6">
+                <!-- Preferred Languages -->
+                <Card padding="lg" custom-class="relative z-10">
+                  <h2
+                    class="mb-2 text-xl font-semibold text-gray-800 dark:text-gray-300"
                   >
-                    <span
-                      class="text-xs font-medium text-gray-800 md:text-sm dark:text-gray-300"
-                      >{{ genre.name }}</span
-                    >
-                    <CloseButton
-                      custom-class="ml-1"
-                      :aria-label="
-                        $t('preferences.content.favoriteGenres.remove', {
-                          name: genre.name,
-                        })
-                      "
-                      @click="removeGenre(genre.id)"
+                    {{ $t('preferences.content.preferredLanguage.title') }}
+                  </h2>
+                  <p class="mb-4 text-sm text-gray-600 dark:text-gray-400">
+                    {{
+                      $t('preferences.content.preferredLanguage.description')
+                    }}
+                  </p>
+
+                  <!-- Language Selector -->
+                  <div class="relative z-10">
+                    <LanguageSelector
+                      v-model="currentLanguageCode"
+                      @update:model-value="handleLanguageChangeFromSelector"
                     />
                   </div>
-                </div>
-              </div>
+                </Card>
 
-              <!-- Info Message -->
-              <p
-                v-if="selectedGenres.length === 0"
-                class="text-sm italic text-gray-600 dark:text-gray-400"
-              >
-                {{ $t('preferences.content.favoriteGenres.noneSelected') }}
-              </p>
-            </Card>
-
-            <!-- Included Providers -->
-            <Card padding="lg" custom-class="relative">
-              <h2
-                class="mb-2 text-xl font-semibold text-gray-800 dark:text-gray-300"
-              >
-                {{ $t('preferences.content.includedProviders.title') }}
-              </h2>
-              <p class="mb-4 text-sm text-gray-600 dark:text-gray-400">
-                {{ $t('preferences.content.includedProviders.description') }}
-              </p>
-
-              <!-- Provider Search -->
-              <div class="relative mb-4">
-                <div class="relative">
-                  <input
-                    ref="providerInputRef"
-                    v-model="providerSearchQuery"
-                    type="text"
-                    :placeholder="
-                      $t(
-                        'preferences.content.includedProviders.searchPlaceholder'
-                      )
-                    "
-                    class="px-4 py-2 pr-4 pl-10 w-full text-sm text-gray-800 rounded-lg border-gray-300 opacity-90 transition-all dark:text-gray-300 dark:bg-gray-800/50 bg-white/80 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-transparent focus:border-transparent backdrop-blur-xs hover:opacity-100"
-                    @input="filterProviders"
-                    @focus="handleProviderFocus"
-                    @blur="handleProviderBlur"
-                  />
-                  <!-- Search Icon -->
-                  <div
-                    class="flex absolute inset-y-0 left-0 items-center pl-3 pointer-events-none"
+                <!-- Favorite Genres -->
+                <Card padding="lg" custom-class="relative">
+                  <h2
+                    class="mb-2 text-xl font-semibold text-gray-800 dark:text-gray-300"
                   >
-                    <IconSearch icon-class="w-4 h-4 text-gray-400" />
-                  </div>
-                </div>
-              </div>
+                    {{ $t('preferences.content.favoriteGenres.title') }}
+                  </h2>
+                  <p class="mb-4 text-sm text-gray-600 dark:text-gray-400">
+                    {{ $t('preferences.content.favoriteGenres.description') }}
+                  </p>
 
-              <!-- Provider Search Results Dropdown (Teleported) -->
-              <Teleport to="body">
-                <Transition
-                  enter-active-class="transition duration-200 ease-out"
-                  enter-from-class="opacity-0 transform scale-95"
-                  enter-to-class="opacity-100 transform scale-100"
-                  leave-active-class="transition duration-150 ease-in"
-                  leave-from-class="opacity-100 transform scale-100"
-                  leave-to-class="opacity-0 transform scale-95"
-                >
-                  <div
-                    v-if="
-                      showProviderResults &&
-                      filteredProviders.length > 0 &&
-                      providerDropdownPosition
-                    "
-                    class="fixed z-[9999] dark:bg-gray-900/95 bg-white/95 backdrop-blur-sm dark:border-gray-600 border-gray-300 rounded-3xl shadow-xl max-h-64 overflow-y-auto custom-scrollbar"
-                    :style="{
-                      top: `${providerDropdownPosition.top}px`,
-                      left: `${providerDropdownPosition.left}px`,
-                      width: `${providerDropdownPosition.width}px`,
-                    }"
-                    @mousedown.prevent
-                  >
-                    <div class="py-2">
+                  <!-- Genre Search -->
+                  <div class="relative mb-4">
+                    <div class="relative">
+                      <input
+                        ref="genreInputRef"
+                        v-model="genreSearchQuery"
+                        type="text"
+                        :placeholder="
+                          $t(
+                            'preferences.content.favoriteGenres.searchPlaceholder'
+                          )
+                        "
+                        class="px-4 py-2 pr-4 pl-10 w-full text-sm text-gray-800 rounded-lg border-gray-300 opacity-90 transition-all dark:text-gray-300 dark:bg-gray-800/50 bg-white/80 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-transparent focus:border-transparent backdrop-blur-xs hover:opacity-100"
+                        @input="filterGenres"
+                        @focus="handleGenreFocus"
+                        @blur="handleGenreBlur"
+                      />
+                      <!-- Search Icon -->
                       <div
-                        v-for="provider in filteredProviders"
+                        class="flex absolute inset-y-0 left-0 items-center pl-3 pointer-events-none"
+                      >
+                        <IconSearch icon-class="w-4 h-4 text-gray-400" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Genre Search Results Dropdown (Teleported) -->
+                  <Teleport to="body">
+                    <Transition
+                      enter-active-class="transition duration-200 ease-out"
+                      enter-from-class="opacity-0 transform scale-95"
+                      enter-to-class="opacity-100 transform scale-100"
+                      leave-active-class="transition duration-150 ease-in"
+                      leave-from-class="opacity-100 transform scale-100"
+                      leave-to-class="opacity-0 transform scale-95"
+                    >
+                      <div
+                        v-if="
+                          showGenreResults &&
+                          filteredGenres.length > 0 &&
+                          genreDropdownPosition
+                        "
+                        class="fixed z-[9999] dark:bg-gray-900/95 bg-white/95 backdrop-blur-sm dark:border-gray-600 border-gray-300 rounded-3xl shadow-xl max-h-64 overflow-y-auto custom-scrollbar"
+                        :style="{
+                          top: `${genreDropdownPosition.top}px`,
+                          left: `${genreDropdownPosition.left}px`,
+                          width: `${genreDropdownPosition.width}px`,
+                        }"
+                        @mousedown.prevent
+                      >
+                        <div class="py-2">
+                          <template
+                            v-for="(genre, index) in filteredGenres"
+                            :key="`${genre.id}-${genre.type}`"
+                          >
+                            <!-- Separator: show only when type changes (first item of each type) -->
+                            <div
+                              v-if="
+                                index === 0 ||
+                                filteredGenres[index - 1].type !== genre.type
+                              "
+                              class="px-4 py-2 text-xs font-semibold tracking-wider text-gray-500 uppercase dark:text-gray-400"
+                              :class="
+                                index > 0
+                                  ? 'border-t border-gray-200 dark:border-gray-700'
+                                  : ''
+                              "
+                            >
+                              {{
+                                genre.type === MediaTypeEnum.movie
+                                  ? t('preferences.content.contentTypes.movie')
+                                  : t('preferences.content.contentTypes.tv')
+                              }}
+                            </div>
+                            <!-- Genre option -->
+                            <div
+                              class="flex gap-3 items-center px-4 py-3 transition-colors duration-150 cursor-pointer dark:hover:bg-gray-800/50 hover:bg-gray-100/50"
+                              @mousedown.prevent="addGenre(genre)"
+                              @click="addGenre(genre)"
+                            >
+                              <span
+                                class="text-sm text-gray-800 dark:text-gray-300"
+                                >{{ genre.name }}</span
+                              >
+                            </div>
+                          </template>
+                        </div>
+                      </div>
+                    </Transition>
+                  </Teleport>
+
+                  <!-- Selected Genres List -->
+                  <div v-if="selectedGenres.length > 0" class="mb-4">
+                    <p
+                      class="mb-2 text-sm font-medium text-gray-800 dark:text-gray-300"
+                    >
+                      {{ $t('preferences.content.favoriteGenres.selected') }}
+                      ({{ selectedGenres.length }})
+                    </p>
+                    <div class="flex flex-wrap gap-2">
+                      <div
+                        v-for="genre in selectedGenres"
+                        :key="genre.id"
+                        class="flex gap-2 items-center px-4 py-1.5 rounded-full border backdrop-blur-xl md:py-2.5 dark:bg-gray-900/40 bg-gray-100/80 border-gray-300/50 dark:border-white/10"
+                      >
+                        <span
+                          class="text-xs font-medium text-gray-800 md:text-sm dark:text-gray-300"
+                          >{{ genre.name }}</span
+                        >
+                        <CloseButton
+                          custom-class="ml-1"
+                          :aria-label="
+                            $t('preferences.content.favoriteGenres.remove', {
+                              name: genre.name,
+                            })
+                          "
+                          @click="removeGenre(genre.id)"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Info Message -->
+                  <p
+                    v-if="selectedGenres.length === 0"
+                    class="text-sm italic text-gray-600 dark:text-gray-400"
+                  >
+                    {{ $t('preferences.content.favoriteGenres.noneSelected') }}
+                  </p>
+                </Card>
+
+                <!-- Included Providers -->
+                <Card padding="lg" custom-class="relative">
+                  <h2
+                    class="mb-2 text-xl font-semibold text-gray-800 dark:text-gray-300"
+                  >
+                    {{ $t('preferences.content.includedProviders.title') }}
+                  </h2>
+                  <p class="mb-4 text-sm text-gray-600 dark:text-gray-400">
+                    {{
+                      $t('preferences.content.includedProviders.description')
+                    }}
+                  </p>
+
+                  <!-- Provider Search -->
+                  <div class="relative mb-4">
+                    <div class="relative">
+                      <input
+                        ref="providerInputRef"
+                        v-model="providerSearchQuery"
+                        type="text"
+                        :placeholder="
+                          $t(
+                            'preferences.content.includedProviders.searchPlaceholder'
+                          )
+                        "
+                        class="px-4 py-2 pr-4 pl-10 w-full text-sm text-gray-800 rounded-lg border-gray-300 opacity-90 transition-all dark:text-gray-300 dark:bg-gray-800/50 bg-white/80 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-transparent focus:border-transparent backdrop-blur-xs hover:opacity-100"
+                        @input="filterProviders"
+                        @focus="handleProviderFocus"
+                        @blur="handleProviderBlur"
+                      />
+                      <!-- Search Icon -->
+                      <div
+                        class="flex absolute inset-y-0 left-0 items-center pl-3 pointer-events-none"
+                      >
+                        <IconSearch icon-class="w-4 h-4 text-gray-400" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Provider Search Results Dropdown (Teleported) -->
+                  <Teleport to="body">
+                    <Transition
+                      enter-active-class="transition duration-200 ease-out"
+                      enter-from-class="opacity-0 transform scale-95"
+                      enter-to-class="opacity-100 transform scale-100"
+                      leave-active-class="transition duration-150 ease-in"
+                      leave-from-class="opacity-100 transform scale-100"
+                      leave-to-class="opacity-0 transform scale-95"
+                    >
+                      <div
+                        v-if="
+                          showProviderResults &&
+                          filteredProviders.length > 0 &&
+                          providerDropdownPosition
+                        "
+                        class="fixed z-[9999] dark:bg-gray-900/95 bg-white/95 backdrop-blur-sm dark:border-gray-600 border-gray-300 rounded-3xl shadow-xl max-h-64 overflow-y-auto custom-scrollbar"
+                        :style="{
+                          top: `${providerDropdownPosition.top}px`,
+                          left: `${providerDropdownPosition.left}px`,
+                          width: `${providerDropdownPosition.width}px`,
+                        }"
+                        @mousedown.prevent
+                      >
+                        <div class="py-2">
+                          <div
+                            v-for="provider in filteredProviders"
+                            :key="provider.provider_id"
+                            class="flex gap-3 items-center px-4 py-3 transition-colors duration-150 cursor-pointer dark:hover:bg-gray-800/50 hover:bg-gray-100/50"
+                            @mousedown.prevent="addProvider(provider)"
+                            @click="addProvider(provider)"
+                          >
+                            <img
+                              v-if="provider.logo_path"
+                              :src="`https://image.tmdb.org/t/p/w45${provider.logo_path}`"
+                              :alt="provider.provider_name"
+                              class="object-contain flex-shrink-0 w-auto h-8"
+                            />
+                            <div
+                              v-else
+                              class="flex flex-shrink-0 justify-center items-center w-8 h-8 bg-gray-200 rounded dark:bg-gray-700"
+                            >
+                              <span
+                                class="text-xs text-gray-600 dark:text-gray-300"
+                                >{{ provider.provider_name.charAt(0) }}</span
+                              >
+                            </div>
+                            <span
+                              class="text-sm text-gray-800 dark:text-gray-300"
+                              >{{ provider.provider_name }}</span
+                            >
+                          </div>
+                        </div>
+                      </div>
+                    </Transition>
+                  </Teleport>
+
+                  <!-- Selected Providers List -->
+                  <div v-if="selectedProviders.length > 0" class="mb-4">
+                    <p
+                      class="mb-2 text-sm font-medium text-gray-800 dark:text-gray-300"
+                    >
+                      {{ $t('preferences.content.includedProviders.selected') }}
+                      ({{ selectedProviders.length }})
+                    </p>
+                    <div class="flex flex-wrap gap-2">
+                      <div
+                        v-for="provider in selectedProviders"
                         :key="provider.provider_id"
-                        class="flex gap-3 items-center px-4 py-3 transition-colors duration-150 cursor-pointer dark:hover:bg-gray-800/50 hover:bg-gray-100/50"
-                        @mousedown.prevent="addProvider(provider)"
-                        @click="addProvider(provider)"
+                        class="flex gap-2 items-center px-4 py-1.5 rounded-full border backdrop-blur-xl md:py-2.5 dark:bg-gray-900/40 bg-gray-100/80 border-gray-300/50 dark:border-white/10"
                       >
                         <img
                           v-if="provider.logo_path"
                           :src="`https://image.tmdb.org/t/p/w45${provider.logo_path}`"
                           :alt="provider.provider_name"
-                          class="object-contain flex-shrink-0 w-auto h-8"
+                          class="object-contain w-auto h-5"
                         />
-                        <div
-                          v-else
-                          class="flex flex-shrink-0 justify-center items-center w-8 h-8 bg-gray-200 rounded dark:bg-gray-700"
-                        >
-                          <span
-                            class="text-xs text-gray-600 dark:text-gray-300"
-                            >{{ provider.provider_name.charAt(0) }}</span
-                          >
-                        </div>
                         <span
-                          class="text-sm text-gray-800 dark:text-gray-300"
+                          class="text-xs font-medium text-gray-800 md:text-sm dark:text-gray-300"
                           >{{ provider.provider_name }}</span
                         >
+                        <CloseButton
+                          custom-class="ml-1"
+                          :aria-label="
+                            $t('preferences.content.includedProviders.remove', {
+                              name: provider.provider_name,
+                            })
+                          "
+                          @click="removeProvider(provider.provider_id)"
+                        />
                       </div>
                     </div>
                   </div>
-                </Transition>
-              </Teleport>
 
-              <!-- Selected Providers List -->
-              <div v-if="selectedProviders.length > 0" class="mb-4">
-                <p
-                  class="mb-2 text-sm font-medium text-gray-800 dark:text-gray-300"
-                >
-                  {{ $t('preferences.content.includedProviders.selected') }}
-                  ({{ selectedProviders.length }})
-                </p>
-                <div class="flex flex-wrap gap-2">
-                  <div
-                    v-for="provider in selectedProviders"
-                    :key="provider.provider_id"
-                    class="flex gap-2 items-center px-4 py-1.5 rounded-full border backdrop-blur-xl md:py-2.5 dark:bg-gray-900/40 bg-gray-100/80 border-gray-300/50 dark:border-white/10"
+                  <!-- Info Message -->
+                  <p
+                    v-if="selectedProviders.length === 0"
+                    class="text-sm italic text-gray-600 dark:text-gray-400"
                   >
-                    <img
-                      v-if="provider.logo_path"
-                      :src="`https://image.tmdb.org/t/p/w45${provider.logo_path}`"
-                      :alt="provider.provider_name"
-                      class="object-contain w-auto h-5"
-                    />
-                    <span
-                      class="text-xs font-medium text-gray-800 md:text-sm dark:text-gray-300"
-                      >{{ provider.provider_name }}</span
-                    >
-                    <CloseButton
-                      custom-class="ml-1"
-                      :aria-label="
-                        $t('preferences.content.includedProviders.remove', {
-                          name: provider.provider_name,
-                        })
-                      "
-                      @click="removeProvider(provider.provider_id)"
-                    />
-                  </div>
+                    {{
+                      $t('preferences.content.includedProviders.allIncluded')
+                    }}
+                  </p>
+                </Card>
+
+                <!-- Region -->
+                <Card padding="lg">
+                  <h2
+                    class="mb-2 text-xl font-semibold text-gray-800 dark:text-gray-300"
+                  >
+                    {{ $t('preferences.content.region.title') }}
+                  </h2>
+                  <p class="mb-4 text-sm text-gray-600 dark:text-gray-400">
+                    {{ $t('preferences.content.region.description') }}
+                  </p>
+                  <RegionSelector
+                    v-model="contentPreferences.region"
+                    @update:model-value="handleRegionChange"
+                  />
+                </Card>
+
+                <!-- Save Button -->
+                <div class="flex justify-end mt-6">
+                  <Button
+                    variant="primary"
+                    size="medium"
+                    :disabled="!hasUnsavedContentChanges"
+                    @click="saveContentPreferences"
+                  >
+                    {{ $t('common.save') }}
+                  </Button>
                 </div>
               </div>
+            </div>
+          </template>
+        </Tabs>
 
-              <!-- Info Message -->
-              <p
-                v-if="selectedProviders.length === 0"
-                class="text-sm italic text-gray-600 dark:text-gray-400"
+        <!-- Generating Recommendations Modal -->
+        <Modal :is-open="showGeneratingModal" :closeable="false">
+          <div class="flex flex-col gap-4 items-center text-center">
+            <div
+              class="w-12 h-12 rounded-full border-b-2 animate-spin border-primary-600"
+            ></div>
+            <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-300">
+              {{ $t('home.generatingRecommendations') }}
+            </h2>
+            <p class="text-gray-700 dark:text-gray-300">
+              {{ $t('home.generatingRecommendationsDescription') }}
+            </p>
+          </div>
+        </Modal>
+
+        <!-- Save Confirmation Modal -->
+        <Modal
+          :is-open="showSaveConfirmationModal"
+          @close="showSaveConfirmationModal = false"
+        >
+          <div class="flex flex-col gap-4">
+            <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-300">
+              {{ $t('preferences.content.saveConfirmationTitle') }}
+            </h2>
+            <p class="text-gray-700 dark:text-gray-400">
+              {{ $t('preferences.content.saveConfirmationMessage') }}
+            </p>
+            <div class="flex gap-3 justify-end mt-4">
+              <Button
+                variant="outline"
+                size="medium"
+                @click="
+                  showSaveConfirmationModal = false;
+                  revertContentPreferencesChanges();
+                "
               >
-                {{ $t('preferences.content.includedProviders.allIncluded') }}
-              </p>
-            </Card>
-
-            <!-- Region -->
-            <Card padding="lg">
-              <h2
-                class="mb-2 text-xl font-semibold text-gray-800 dark:text-gray-300"
-              >
-                {{ $t('preferences.content.region.title') }}
-              </h2>
-              <p class="mb-4 text-sm text-gray-600 dark:text-gray-400">
-                {{ $t('preferences.content.region.description') }}
-              </p>
-              <RegionSelector
-                v-model="contentPreferences.region"
-                @update:model-value="handleRegionChange"
-              />
-            </Card>
-
-            <!-- Save Button -->
-            <div class="flex justify-end mt-6">
+                {{ $t('common.cancel') }}
+              </Button>
               <Button
                 variant="primary"
                 size="medium"
-                :disabled="!hasUnsavedContentChanges"
-                @click="saveContentPreferences"
+                @click="confirmSaveContentPreferences"
               >
-                {{ $t('common.save') }}
+                {{ $t('common.confirm') }}
               </Button>
             </div>
           </div>
-        </div>
-      </template>
-    </Tabs>
+        </Modal>
 
-    <!-- Generating Recommendations Modal -->
-    <Modal :is-open="showGeneratingModal" :closeable="false">
-      <div class="flex flex-col gap-4 items-center text-center">
-        <div
-          class="w-12 h-12 rounded-full border-b-2 animate-spin border-primary-600"
-        ></div>
-        <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-300">
-          {{ $t('home.generatingRecommendations') }}
-        </h2>
-        <p class="text-gray-700 dark:text-gray-300">
-          {{ $t('home.generatingRecommendationsDescription') }}
-        </p>
-      </div>
-    </Modal>
+        <!-- Unsaved Changes Modal -->
+        <Modal
+          :is-open="showUnsavedChangesModal"
+          @close="showUnsavedChangesModal = false"
+        >
+          <div class="flex flex-col gap-4">
+            <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-300">
+              {{ $t('preferences.content.unsavedChangesTitle') }}
+            </h2>
+            <p class="text-gray-700 dark:text-gray-400">
+              {{ $t('preferences.content.unsavedChangesMessage') }}
+            </p>
+            <div class="flex gap-3 justify-end mt-4">
+              <Button
+                variant="outline"
+                size="medium"
+                @click="
+                  showUnsavedChangesModal = false;
+                  pendingNavigation = null;
+                  pendingTabChange = null;
+                  // Revert changes to saved state from DB
+                  revertContentPreferencesChanges();
+                "
+              >
+                {{ $t('common.cancel') }}
+              </Button>
+              <Button
+                variant="primary"
+                size="medium"
+                @click="
+                  showUnsavedChangesModal = false;
+                  hasUnsavedContentChanges = false;
+                  // Handle pending navigation
+                  if (pendingNavigation) {
+                    pendingNavigation();
+                    pendingNavigation = null;
+                  }
+                  // Handle pending tab change
+                  if (pendingTabChange) {
+                    const tabToChange = pendingTabChange;
+                    pendingTabChange = null;
+                    // Use nextTick to ensure modal is closed before changing tab
+                    nextTick(() => {
+                      activeTab = tabToChange;
+                      const route = useRoute();
+                      navigateTo(
+                        {
+                          path: route.path,
+                          query: { ...route.query, tab: tabToChange },
+                        },
+                        { replace: true }
+                      );
+                    });
+                  }
+                "
+              >
+                {{ $t('common.leave') }}
+              </Button>
+            </div>
+          </div>
+        </Modal>
 
-    <!-- Save Confirmation Modal -->
-    <Modal
-      :is-open="showSaveConfirmationModal"
-      @close="showSaveConfirmationModal = false"
-    >
-      <div class="flex flex-col gap-4">
-        <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-300">
-          {{ $t('preferences.content.saveConfirmationTitle') }}
-        </h2>
-        <p class="text-gray-700 dark:text-gray-400">
-          {{ $t('preferences.content.saveConfirmationMessage') }}
-        </p>
-        <div class="flex gap-3 justify-end mt-4">
-          <Button
-            variant="outline"
-            size="medium"
-            @click="
-              showSaveConfirmationModal = false;
-              revertContentPreferencesChanges();
-            "
-          >
-            {{ $t('common.cancel') }}
-          </Button>
-          <Button
-            variant="primary"
-            size="medium"
-            @click="confirmSaveContentPreferences"
-          >
-            {{ $t('common.confirm') }}
-          </Button>
-        </div>
+        <!-- Modal for removing like -->
+        <Modal
+          :is-open="showRemoveLikeModal"
+          @close="showRemoveLikeModal = false"
+        >
+          <div class="flex flex-col gap-4">
+            <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-300">
+              {{ $t('home.confirmRemoveLikeTitle') }}
+            </h2>
+            <p class="text-gray-700 dark:text-gray-400">
+              {{
+                $t('home.confirmRemoveLikeMessage', {
+                  title: titleToRemoveLike?.title,
+                })
+              }}
+            </p>
+            <div class="flex gap-3 justify-end mt-4">
+              <Button
+                variant="outline"
+                size="medium"
+                @click="showRemoveLikeModal = false"
+              >
+                {{ $t('common.cancel') }}
+              </Button>
+              <Button
+                variant="primary"
+                size="medium"
+                @click="confirmRemoveLikeFromSeen"
+              >
+                {{ $t('common.confirm') }}
+              </Button>
+            </div>
+          </div>
+        </Modal>
       </div>
-    </Modal>
-
-    <!-- Unsaved Changes Modal -->
-    <Modal
-      :is-open="showUnsavedChangesModal"
-      @close="showUnsavedChangesModal = false"
-    >
-      <div class="flex flex-col gap-4">
-        <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-300">
-          {{ $t('preferences.content.unsavedChangesTitle') }}
-        </h2>
-        <p class="text-gray-700 dark:text-gray-400">
-          {{ $t('preferences.content.unsavedChangesMessage') }}
-        </p>
-        <div class="flex gap-3 justify-end mt-4">
-          <Button
-            variant="outline"
-            size="medium"
-            @click="
-              showUnsavedChangesModal = false;
-              pendingNavigation = null;
-              pendingTabChange = null;
-              // Revert changes to saved state from DB
-              revertContentPreferencesChanges();
-            "
-          >
-            {{ $t('common.cancel') }}
-          </Button>
-          <Button
-            variant="primary"
-            size="medium"
-            @click="
-              showUnsavedChangesModal = false;
-              hasUnsavedContentChanges = false;
-              // Handle pending navigation
-              if (pendingNavigation) {
-                pendingNavigation();
-                pendingNavigation = null;
-              }
-              // Handle pending tab change
-              if (pendingTabChange) {
-                const tabToChange = pendingTabChange;
-                pendingTabChange = null;
-                // Use nextTick to ensure modal is closed before changing tab
-                nextTick(() => {
-                  activeTab = tabToChange;
-                  const route = useRoute();
-                  navigateTo(
-                    {
-                      path: route.path,
-                      query: { ...route.query, tab: tabToChange },
-                    },
-                    { replace: true }
-                  );
-                });
-              }
-            "
-          >
-            {{ $t('common.leave') }}
-          </Button>
-        </div>
-      </div>
-    </Modal>
-
-    <!-- Modal for removing like -->
-    <Modal :is-open="showRemoveLikeModal" @close="showRemoveLikeModal = false">
-      <div class="flex flex-col gap-4">
-        <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-300">
-          {{ $t('home.confirmRemoveLikeTitle') }}
-        </h2>
-        <p class="text-gray-700 dark:text-gray-400">
-          {{
-            $t('home.confirmRemoveLikeMessage', {
-              title: titleToRemoveLike?.title,
-            })
-          }}
-        </p>
-        <div class="flex gap-3 justify-end mt-4">
-          <Button
-            variant="outline"
-            size="medium"
-            @click="showRemoveLikeModal = false"
-          >
-            {{ $t('common.cancel') }}
-          </Button>
-          <Button
-            variant="primary"
-            size="medium"
-            @click="confirmRemoveLikeFromSeen"
-          >
-            {{ $t('common.confirm') }}
-          </Button>
-        </div>
-      </div>
-    </Modal>
-  </div>
+    </PageContainer>
+  </AppShell>
 </template>
 
 <script setup lang="ts">
@@ -642,6 +682,8 @@ import CloseButton from '@/components/ui/CloseButton.vue';
 import Button from '@/components/ui/Button.vue';
 import Modal from '@/components/ui/Modal.vue';
 import Tabs from '@/components/ui/Tabs.vue';
+import AppShell from '@/components/layout/AppShell.vue';
+import PageContainer from '@/components/layout/PageContainer.vue';
 import TabButton from '@/components/ui/TabButton.vue';
 import Card from '@/components/ui/Card.vue';
 import Alert from '@/components/ui/Alert.vue';
@@ -1618,9 +1660,11 @@ const selectedLanguage = ref<{
 
 // Computed for current language code (for select value)
 const currentLanguageCode = computed(() => {
-  return selectedLanguage.value?.code || 
-         contentPreferences.value.preferred_language || 
-         LanguageCode.SPANISH;
+  return (
+    selectedLanguage.value?.code ||
+    contentPreferences.value.preferred_language ||
+    LanguageCode.SPANISH
+  );
 });
 
 // Preload genres using useAsyncData (runs during setup, before mount)
@@ -1648,7 +1692,11 @@ const availableGenres = computed(() => {
   if (!genresData.value) return [];
 
   // Combine all genres with their type (movie or tv)
-  const allGenres: Array<{ id: number; name: string; type: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv }> = [];
+  const allGenres: Array<{
+    id: number;
+    name: string;
+    type: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv;
+  }> = [];
 
   // Add movie genres
   genresData.value.movie.genres.forEach((g: { id: number; name: string }) => {
@@ -1993,7 +2041,7 @@ const removeProvider = (providerId: number) => {
 const handleLanguageChangeFromSelector = (code: string) => {
   // Find the language object
   const lang = availableLanguages.find((l) => l.code === code);
-  
+
   if (lang) {
     changeLanguage(lang);
   }
@@ -2016,7 +2064,7 @@ const changeLanguage = (lang: { code: string; name: string }) => {
 // Show all genres when search is empty, filtered when there's a query
 const filterGenres = () => {
   const query = genreSearchQuery.value.toLowerCase().trim();
-  
+
   if (!query) {
     // Show all genres when search is empty
     filteredGenres.value = availableGenres.value.filter(
@@ -2026,17 +2074,20 @@ const filterGenres = () => {
   }
 
   // Filter by search query
-  filteredGenres.value = availableGenres.value
-    .filter(
-      (genre) =>
-        genre.name &&
-        genre.name.toLowerCase().includes(query) &&
-        !selectedGenres.value.some((g) => g.id === genre.id)
-    );
+  filteredGenres.value = availableGenres.value.filter(
+    (genre) =>
+      genre.name &&
+      genre.name.toLowerCase().includes(query) &&
+      !selectedGenres.value.some((g) => g.id === genre.id)
+  );
 };
 
 // Add genre to selected list
-const addGenre = (genre: { id: number; name: string; type?: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv }) => {
+const addGenre = (genre: {
+  id: number;
+  name: string;
+  type?: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv;
+}) => {
   // Check if already selected
   if (selectedGenres.value.some((g) => g.id === genre.id)) {
     return;
@@ -2523,7 +2574,7 @@ watch(
 onMounted(async () => {
   checkMobile();
   window.addEventListener('resize', checkMobile);
-  
+
   // Check if we should open a specific tab from query params
   const route = useRoute();
   const tabFromQuery = route.query.tab as string;

@@ -1,25 +1,28 @@
 <template>
-  <!-- Loading state -->
-  <div v-if="isLoading" class="flex items-center justify-center min-h-screen">
-    <div class="text-xl dark:text-gray-300 text-gray-800">{{
-      $t('media.loadingSeason')
-    }}</div>
-  </div>
+  <AppShell>
+    <PageContainer>
+      <div class="w-full pt-6 pb-6">
+        <!-- Loading state -->
+        <div v-if="isLoading" class="flex items-center justify-center min-h-screen">
+          <div class="text-xl dark:text-gray-300 text-gray-800">{{
+            $t('media.loadingSeason')
+          }}</div>
+        </div>
 
-  <!-- Error state -->
-  <div
-    v-else-if="hasError"
-    class="flex items-center justify-center min-h-screen"
-  >
-    <div class="text-xl text-red-500">{{ $t('media.errorLoadingSeason') }}</div>
-  </div>
+        <!-- Error state -->
+        <div
+          v-else-if="hasError"
+          class="flex items-center justify-center min-h-screen"
+        >
+          <div class="text-xl text-red-500">{{ $t('media.errorLoadingSeason') }}</div>
+        </div>
 
-  <!-- Content -->
-  <div v-else>
-    <!-- Header de temporada -->
-    <section
-      class="relative flex flex-col items-center justify-between gap-16 pb-8 dark:text-gray-300 text-gray-800 w-full min-w-full flex-shrink-0 min-h-[400px] lg:flex-row lg:items-stretch lg:p-16 lg:bg-gray-100/80 dark:lg:bg-gray-900/40 lg:backdrop-blur-xl lg:border lg:gap-7 rounded-3xl lg:border-gray-300/50 lg:dark:border-primary-800 lg:shadow-lg lg:shadow-primary/20 py-16"
-    >
+        <!-- Content -->
+        <div v-else>
+          <!-- Header de temporada -->
+          <section
+            class="relative flex flex-col items-center justify-between gap-16 pb-8 dark:text-gray-300 text-gray-800 w-full flex-shrink-0 min-h-[400px] lg:flex-row lg:items-stretch lg:p-16 lg:bg-gray-100/80 dark:lg:bg-gray-900/40 lg:backdrop-blur-xl lg:border lg:gap-7 rounded-3xl lg:border-gray-300/50 lg:dark:border-primary-800 lg:shadow-lg lg:shadow-primary/20 py-16"
+          >
       <div
         class="absolute inset-0 z-0 hidden lg:block rounded-3xl"
         :style="sectionStyle"
@@ -29,7 +32,7 @@
         style="top: 0px; right: 0px; bottom: 0px; left: 0px"
       ></div>
       <div
-        class="relative w-full max-w-80 lg:w-80 flex-shrink-0 lg:aspect-[2/3]"
+        class="relative w-full lg:w-80 lg:max-w-80 flex-shrink-0 lg:aspect-[2/3]"
         style="
           filter: drop-shadow(0 10px 15px -3px rgb(0 0 0 / 0.1))
             drop-shadow(0 4px 6px -4px rgb(0 0 0 / 0.1))
@@ -48,7 +51,7 @@
         </div>
       </div>
       <div
-        class="z-10 relative flex flex-col flex-1 gap-6 rounded-lg lg:p-6 lg:ml-8 w-full min-w-[300px] flex-shrink-0 min-h-[300px]"
+        class="z-10 relative flex flex-col flex-1 gap-6 rounded-lg lg:p-6 lg:ml-8 w-full flex-shrink-0 min-h-[300px]"
       >
         <div class="text-left relative flex-row">
           <button
@@ -63,10 +66,10 @@
           >
             <!-- Title with Rating inline on desktop large -->
             <div
-              class="flex items-center gap-3 flex-wrap xl:flex-nowrap xl:flex-1 xl:min-w-0"
+              class="flex items-center gap-3 flex-wrap xl:flex-nowrap xl:flex-1"
             >
               <h1
-                class="text-2xl font-bold dark:text-gray-300 text-gray-800 break-words xl:flex-1 xl:min-w-0"
+                class="text-2xl font-bold dark:text-gray-300 text-gray-800 break-words xl:flex-1"
                 >{{ seasonWithProviders?.name }}</h1
               >
               <!-- Rating inline with title on desktop large, hidden on mobile/tablet (shown below) -->
@@ -224,7 +227,10 @@
         <div class="text-xl">{{ $t('media.noEpisodes') }}</div>
       </div>
     </section>
-  </div>
+        </div>
+      </div>
+    </PageContainer>
+  </AppShell>
 </template>
 
 <script setup lang="ts">
@@ -241,6 +247,8 @@ import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 import IconArrowLeft from '@/components/icons/IconArrowLeft.vue';
 import IconCalendar from '@/components/icons/IconCalendar.vue';
 import IconEpisodes from '@/components/icons/IconEpisodes.vue';
+import AppShell from '@/components/layout/AppShell.vue';
+import PageContainer from '@/components/layout/PageContainer.vue';
 
 const route = useRoute();
 const router = useRouter();

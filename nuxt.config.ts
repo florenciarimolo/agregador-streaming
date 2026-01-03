@@ -177,7 +177,6 @@ export default defineNuxtConfig({
     gzip: true,
     trailingSlash: false,
     exclude: [
-      '/search',
       '/auth/**',
       '/auth/callback',
       '/onboarding',

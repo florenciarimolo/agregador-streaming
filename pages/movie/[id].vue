@@ -1,25 +1,31 @@
 <template>
-  <!-- Loading state -->
-  <div v-if="isLoading" class="flex items-center justify-center min-h-screen">
-    <div class="text-xl dark:text-gray-300 text-gray-800">{{ $t('common.loading') }}</div>
-  </div>
+  <AppShell>
+    <PageContainer>
+      <div class="w-full pt-6 pb-6">
+        <!-- Loading state -->
+        <div v-if="isLoading" class="flex items-center justify-center min-h-screen">
+          <div class="text-xl dark:text-gray-300 text-gray-800">{{ $t('common.loading') }}</div>
+        </div>
 
-  <!-- Error state -->
-  <div
-    v-else-if="hasError"
-    class="flex items-center justify-center min-h-screen"
-  >
-    <div class="text-xl text-red-500">{{ $t('media.errorLoadingMovie') }}</div>
-  </div>
+        <!-- Error state -->
+        <div
+          v-else-if="hasError"
+          class="flex items-center justify-center min-h-screen"
+        >
+          <div class="text-xl text-red-500">{{ $t('media.errorLoadingMovie') }}</div>
+        </div>
 
-  <!-- Content -->
-
-  <MediaBannerDetail
-    :media="movieWithProviders as unknown as Media"
-    :media-type="MediaTypeEnum.movie"
-    :in-production="false"
-    :in-theaters="isInTheaters"
-  />
+        <!-- Content -->
+        <MediaBannerDetail
+          v-else
+          :media="movieWithProviders as unknown as Media"
+          :media-type="MediaTypeEnum.movie"
+          :in-production="false"
+          :in-theaters="isInTheaters"
+        />
+      </div>
+    </PageContainer>
+  </AppShell>
 </template>
 
 <script setup lang="ts">
@@ -35,6 +41,8 @@ import type { AlternativeTitlesResponse } from '@/types/AlternativeTitle';
 import { isMovieInTheaters } from '@/utils/movieStatus';
 import { useMovieSchema } from '@/composables/useSchemaOrg';
 import { getMovieSeoExperience } from '@/composables/useSeoExperience';
+import AppShell from '@/components/layout/AppShell.vue';
+import PageContainer from '@/components/layout/PageContainer.vue';
 
 const route = useRoute();
 const movieId = route.params.id as string;

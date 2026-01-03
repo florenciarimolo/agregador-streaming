@@ -1,5 +1,7 @@
 <template>
-  <div class="container px-4 pt-6 pb-6 mx-auto max-w-7xl">
+  <AppShell>
+    <PageContainer>
+    <div class="w-full pt-6 pb-6">
     <div class="mb-8">
       <h1 class="mb-2 text-3xl font-bold text-gray-800 dark:text-gray-300">
         {{ $t('myAccount.title') }}
@@ -178,13 +180,17 @@
         </Button>
       </div>
     </Modal>
-  </div>
+    </div>
+    </PageContainer>
+  </AppShell>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import AvatarUpload from '@/components/AvatarUpload.vue';
+import AppShell from '@/components/layout/AppShell.vue';
+import PageContainer from '@/components/layout/PageContainer.vue';
 import Input from '@/components/ui/Input.vue';
 import Button from '@/components/ui/Button.vue';
 import Modal from '@/components/ui/Modal.vue';

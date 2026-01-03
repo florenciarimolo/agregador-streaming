@@ -1,6 +1,9 @@
 <template>
-  <div class="container mx-auto w-full max-w-7xl px-4 pb-6 pt-6 md:px-0">
-    <div class="mb-8">
+  <AppShell>
+    <PageContainer>
+      <div class="w-full pb-6 pt-6">
+        <div class="mx-auto max-w-3xl">
+          <div class="mb-8">
       <h1 class="text-4xl font-bold dark:text-gray-300 text-gray-800 mb-4">
         {{ $t('privacy.title') }}
       </h1>
@@ -139,12 +142,17 @@
         hello@getupnext.io
       </a>
     </section>
-    </div>
-  </div>
+          </div>
+        </div>
+      </div>
+    </PageContainer>
+  </AppShell>
 </template>
 
 <script setup lang="ts">
 import { watchEffect } from 'vue';
+import AppShell from '@/components/layout/AppShell.vue';
+import PageContainer from '@/components/layout/PageContainer.vue';
 
 const { t } = useI18n();
 

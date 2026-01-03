@@ -1,6 +1,6 @@
 <template>
   <section
-    class="relative flex flex-col items-center justify-between gap-16 dark:text-gray-300 text-gray-800 w-full min-w-full flex-shrink-0 min-h-[400px] lg:flex-row lg:items-stretch lg:p-16 lg:bg-gray-100/80 dark:lg:bg-gray-900/40 lg:backdrop-blur-xl lg:border lg:gap-7 rounded-3xl lg:border-gray-300/50 lg:dark:border-primary-800 lg:shadow-lg lg:shadow-primary/20 py-8"
+    class="relative flex flex-col items-center justify-between gap-16 dark:text-gray-300 text-gray-800 w-full flex-shrink-0 min-h-[400px] lg:flex-row lg:items-stretch lg:p-16 lg:bg-gray-100/80 dark:lg:bg-gray-900/40 lg:backdrop-blur-xl lg:border lg:gap-7 rounded-3xl lg:border-gray-300/50 lg:dark:border-primary-800 lg:shadow-lg lg:shadow-primary/20 py-8"
   >
     <div
       class="hidden absolute inset-0 z-0 rounded-3xl lg:block"
@@ -48,7 +48,7 @@
       </div>
     </div>
     <div
-      class="z-10 relative flex flex-col flex-1 gap-6 rounded-lg lg:p-6 lg:ml-8 w-full min-w-[300px] flex-shrink-0 min-h-[300px]"
+      class="z-10 relative flex flex-col flex-1 gap-6 rounded-lg lg:p-6 lg:ml-8 w-full flex-shrink-0 min-h-[300px]"
     >
       <div class="relative flex-row text-left">
         <button

@@ -18,22 +18,12 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<{
   getStarted: [];
-  scrollToHowItWorks: [];
   authSuccess: [];
   signupSuccess: [];
 }>();
 
 const handleGetStarted = () => {
   emit('getStarted');
-};
-
-const scrollToHowItWorks = () => {
-  if (typeof window !== 'undefined') {
-    const element = document.getElementById('como-funciona');
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  }
 };
 </script>
 
@@ -69,9 +59,11 @@ const scrollToHowItWorks = () => {
         <Button size="medium" variant="primary" @click="handleGetStarted">
           {{ props.buttonText }}
         </Button>
-        <Button size="medium" variant="secondary" @click="scrollToHowItWorks">
-          {{ $t('hero.howItWorksButton') }}
-        </Button>
+        <nuxt-link to="/how-it-works">
+          <Button size="medium" variant="secondary">
+            {{ $t('hero.howItWorksButton') }}
+          </Button>
+        </nuxt-link>
       </div>
     </div>
 

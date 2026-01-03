@@ -1,6 +1,9 @@
 <template>
-  <div class="max-w-4xl mx-auto px-4 pb-6 pt-6">
-    <div class="mb-8">
+  <AppShell>
+    <PageContainer>
+      <div class="w-full pb-6 pt-6">
+        <div class="mx-auto max-w-3xl">
+          <div class="mb-8">
       <h1 class="text-4xl font-bold dark:text-gray-300 text-gray-800 mb-4">
         {{ $t('faq.title') }}
       </h1>
@@ -213,11 +216,16 @@
         {{ $t('faq.contactUs') }}
       </a>
     </div>
-  </div>
+          </div>
+        </div>
+    </PageContainer>
+  </AppShell>
 </template>
 
 <script setup lang="ts">
 import { watchEffect } from 'vue';
+import AppShell from '@/components/layout/AppShell.vue';
+import PageContainer from '@/components/layout/PageContainer.vue';
 
 const { t } = useI18n();
 

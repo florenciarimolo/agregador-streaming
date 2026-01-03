@@ -10,6 +10,8 @@ import Modal from '@/components/ui/Modal.vue';
 import Button from '@/components/ui/Button.vue';
 import Alert from '@/components/ui/Alert.vue';
 import { getUserLikedTitle } from '@/composables/database/userTitleStatus';
+import AppShell from '@/components/layout/AppShell.vue';
+import PageContainer from '@/components/layout/PageContainer.vue';
 
 // Type for Supabase user that may have either 'id' or 'sub' as identifier
 type SupabaseUserWithSub = {
@@ -817,15 +819,6 @@ const confirmRemoveLike = async () => {
   }
 };
 
-const scrollToHowItWorks = () => {
-  if (typeof window !== 'undefined') {
-    const element = document.getElementById('como-funciona');
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  }
-};
-
 const handleAuthSuccess = async () => {
   console.log('[handleAuthSuccess] Starting...');
 
@@ -1084,7 +1077,6 @@ onMounted(() => {
         :initial-profile-loaded="initialProfileLoaded"
         :has-completed-onboarding="userStore.hasCompletedOnboarding"
         @get-started="handleGetStarted"
-        @scroll-to-how-it-works="scrollToHowItWorks"
         @auth-success="handleAuthSuccess"
         @signup-success="handleSignupSuccess"
       />
@@ -1099,9 +1091,9 @@ onMounted(() => {
     <!-- Personalized Recommendations -->
     <ClientOnly>
       <section v-if="isMounted && userStore.authInitialized && effectiveUser">
-        <div
-          class="container flex flex-col gap-6 px-4 pt-6 pb-6 mx-auto w-full max-w-7xl md:px-0"
-        >
+        <AppShell>
+          <PageContainer>
+          <div class="w-full flex flex-col gap-6 pt-6 pb-6">
           <!-- Language Accuracy Alert -->
           <Alert
             v-if="userStore.hasCompletedOnboarding"
@@ -1172,7 +1164,7 @@ onMounted(() => {
             "
             class="py-6 text-center"
           >
-            <div class="mx-auto max-w-md">
+            <div class="w-full max-w-md mx-auto">
               <svg
                 class="mx-auto mb-4 w-16 h-16 text-gray-600 dark:text-gray-500"
                 fill="none"
@@ -1215,7 +1207,7 @@ onMounted(() => {
             "
             class="py-6 text-center"
           >
-            <div class="mx-auto max-w-md">
+            <div class="w-full max-w-md mx-auto">
               <svg
                 class="mx-auto mb-4 w-16 h-16 text-gray-600 dark:text-gray-500"
                 fill="none"
@@ -1262,14 +1254,18 @@ onMounted(() => {
               @mark-watchlist="handleTitleStatus($event, TitleStatus.WATCHLIST)"
             />
           </div>
-        </div>
+          </div>
+          </PageContainer>
+        </AppShell>
       </section>
       <template #fallback>
         <!-- Placeholder section to prevent hydration mismatch -->
         <section>
-          <div
-            class="container flex flex-col gap-6 px-4 pt-6 pb-6 mx-auto w-full max-w-7xl md:px-0"
-          ></div>
+          <AppShell>
+            <PageContainer>
+              <div class="flex flex-col gap-6 pt-6 pb-6"></div>
+            </PageContainer>
+          </AppShell>
         </section>
       </template>
     </ClientOnly>
@@ -1283,14 +1279,16 @@ onMounted(() => {
           (initialProfileLoaded && !userStore.hasCompletedOnboarding))
       "
       id="como-funciona"
-      class="py-6 md:px-4"
+      class="py-6"
     >
-      <div class="container mx-auto max-w-6xl">
-        <h2
-          class="mb-6 text-3xl font-bold text-center text-gray-800 md:text-4xl dark:text-gray-300 font-heading"
-        >
-          {{ $t('home.howItWorksTitle') }}
-        </h2>
+      <AppShell>
+        <PageContainer>
+        <Section>
+          <h2
+            class="mb-6 text-3xl font-bold text-center text-gray-800 md:text-4xl dark:text-gray-300 font-heading"
+          >
+            {{ $t('home.howItWorksTitle') }}
+          </h2>
         <div class="grid gap-4 md:grid-cols-3">
           <Card
             padding="lg"
@@ -1347,16 +1345,20 @@ onMounted(() => {
             </p>
           </Card>
         </div>
-      </div>
+        </Section>
+        </PageContainer>
+      </AppShell>
     </section>
 
     <!-- Value Proposition Section -->
     <!-- Only show when auth is initialized and there's no user -->
     <section
       v-if="userStore.authInitialized && !effectiveUser"
-      class="pb-16 md:pt-16 md:px-4"
+      class="pb-16 md:pt-16"
     >
-      <div class="container mx-auto max-w-4xl text-center">
+      <AppShell>
+        <PageContainer>
+        <div class="w-full text-center">
         <p
           class="mb-6 text-2xl font-semibold leading-relaxed text-gray-900 md:text-3xl dark:text-gray-100"
         >
@@ -1386,7 +1388,9 @@ onMounted(() => {
             >{{ $t('home.tagline5') }}</span
           >{{ $t('home.tagline6') }}
         </p>
-      </div>
+        </div>
+        </PageContainer>
+      </AppShell>
     </section>
 
     <!-- Modal for removing like -->

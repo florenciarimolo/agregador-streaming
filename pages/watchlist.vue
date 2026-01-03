@@ -1,5 +1,7 @@
 <template>
-  <div class="container px-4 pt-6 pb-6 mx-auto max-w-7xl">
+  <AppShell>
+    <PageContainer>
+    <div class="w-full pt-6 pb-6">
     <div class="mb-8">
       <h1
         class="mb-2 text-3xl font-bold text-gray-800 md:text-4xl dark:text-gray-300 font-heading"
@@ -135,7 +137,9 @@
         </div>
       </div>
     </div>
-  </div>
+    </div>
+    </PageContainer>
+  </AppShell>
 </template>
 
 <script setup lang="ts">
@@ -144,6 +148,8 @@ import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 import { getSession } from '@/composables/database/auth';
 import AlertMessage from '@/components/AlertMessage.vue';
 import IconButton from '@/components/ui/IconButton.vue';
+import AppShell from '@/components/layout/AppShell.vue';
+import PageContainer from '@/components/layout/PageContainer.vue';
 
 const { t } = useI18n();
 

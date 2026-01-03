@@ -1,10 +1,11 @@
 <template>
   <!-- Floating Navbar (Desktop/Tablet) -->
-  <header class="container hidden sticky top-4 z-50 mx-auto w-full md:block">
-    <nav
-      class="rounded-3xl border shadow-md backdrop-blur-xl dark:bg-gray-900/40 bg-gray-100/80 border-gray-300/50 dark:border-white/10"
-    >
-      <div class="flex justify-between items-center px-8 py-4">
+  <header class="hidden sticky top-4 z-50 w-full md:block">
+    <AppShell>
+      <nav
+        class="rounded-3xl border shadow-md backdrop-blur-xl dark:bg-gray-900/40 bg-gray-100/80 border-gray-300/50 dark:border-white/10"
+      >
+      <div class="flex justify-between items-center py-4 px-4 md:px-6">
         <!-- Logo -->
         <nuxt-link
           to="/"
@@ -53,7 +54,7 @@
             <ThemeSwitcher />
 
             <!-- User Avatar -->
-            <div class="relative">
+            <div class="relative flex items-center justify-center">
               <Dropdown
                 ref="userMenuDropdownRef"
                 position="right"
@@ -130,17 +131,19 @@
         </div>
       </div>
     </nav>
+    </AppShell>
   </header>
 
   <!-- Mobile Navbar -->
   <header
-    class="fixed left-0 top-4 z-50 container px-4 w-full transition-transform duration-300 md:hidden"
+    class="fixed left-0 top-4 z-50 w-full transition-transform duration-300 md:hidden"
     :style="{ transform: `translateY(${isNavbarVisible ? '0' : '-10px'})` }"
   >
-    <nav
-      class="rounded-3xl border backdrop-blur-xl dark:bg-gray-900/40 bg-gray-100/90 border-gray-300/50 dark:border-white/10"
-    >
-      <div class="flex justify-between items-center px-6 py-3">
+    <AppShell>
+      <nav
+        class="rounded-3xl border backdrop-blur-xl dark:bg-gray-900/40 bg-gray-100/90 border-gray-300/50 dark:border-white/10"
+      >
+      <div class="flex justify-between items-center py-3 px-4">
         <!-- Logo -->
         <nuxt-link to="/" class="flex items-center">
           <img
@@ -180,6 +183,7 @@
         </div>
       </div>
     </nav>
+    </AppShell>
   </header>
 
   <!-- Mobile Search Bar Overlay (Shown when search icon is clicked) -->
@@ -209,12 +213,14 @@
   >
     <div
       v-if="showMobileSearch"
-      class="fixed left-0 top-20 z-[70] container px-4 w-full md:hidden mt-4"
+      class="fixed left-0 top-20 z-[70] w-full md:hidden mt-4"
       @click.stop
     >
-      <div class="rounded-3xl border backdrop-blur-xl dark:bg-gray-900/40 bg-gray-100/90 border-gray-300/50 dark:border-white/10 p-4">
-        <SearchBar ref="mobileSearchBarRef" @closed="closeMobileSearch" />
-      </div>
+      <AppShell>
+        <div class="rounded-3xl border backdrop-blur-xl dark:bg-gray-900/40 bg-gray-100/90 border-gray-300/50 dark:border-white/10 p-4">
+          <SearchBar ref="mobileSearchBarRef" @closed="closeMobileSearch" />
+        </div>
+      </AppShell>
     </div>
   </Transition>
 
@@ -388,6 +394,7 @@ import Button from '@/components/ui/Button.vue';
 import IconButton from '@/components/ui/IconButton.vue';
 import AvatarButton from '@/components/ui/AvatarButton.vue';
 import SearchBar from '@/components/SearchBar.vue';
+import AppShell from '@/components/layout/AppShell.vue';
 import IconMenu from '@/components/icons/IconMenu.vue';
 import IconClose from '@/components/icons/IconClose.vue';
 import IconSearch from '@/components/icons/IconSearch.vue';

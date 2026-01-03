@@ -96,6 +96,13 @@ export default {
       backdropBlur: {
         xs: '2px',
       },
+      spacing: {
+        // Tokens semánticos para el sistema de spacing mobile-first
+        'section-gap-mobile': '2rem', // space-y-8
+        'section-gap-desktop': '3rem', // md:space-y-12
+        'title-gap-mobile': '0.75rem', // mb-3
+        'title-gap-desktop': '1rem', // md:mb-4
+      },
     },
   },
   plugins: [],
