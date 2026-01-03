@@ -344,6 +344,21 @@ const isPasswordValid = computed(() => {
 // Solo verifica que hay una sesión de recovery usando recovery_sent_at
 onMounted(async () => {
   try {
+    // Protección: Verificar que estamos en el flujo de recovery correcto
+    if (typeof window !== 'undefined') {
+      const isRecoveryFlow = localStorage.getItem('auth:recovery') === '1';
+      if (!isRecoveryFlow) {
+        // No estamos en el flujo de recovery - redirigir a login
+        if (process.env.NODE_ENV === 'development') {
+          console.log(
+            '[Reset Password] No recovery flag found, redirecting to login'
+          );
+        }
+        router.replace('/?auth=login');
+        return;
+      }
+    }
+
     // Get the current session
     const { data: sessionData, error: sessionError } =
       await supabase.auth.getSession();
@@ -447,7 +462,12 @@ const handleResetPassword = async () => {
 
     passwordReset.value = true;
 
-    // Step 3: Redirect to login page after 2 seconds
+    // Step 3: Cerrar el flujo de recovery eliminando el flag
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('auth:recovery');
+    }
+
+    // Step 4: Redirect to login page after 2 seconds
     // User needs to log in again with the new password
     // Using ?auth=login to show the login form on homepage
     setTimeout(() => {

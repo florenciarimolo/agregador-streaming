@@ -173,7 +173,7 @@ onMounted(async () => {
       console.log(
         '[AUTH TRACE] callback.vue recovery flow detected via localStorage flag, redirecting to /auth/reset-password'
       );
-      localStorage.removeItem('auth:recovery');
+      // NO eliminar el flag aquí - se eliminará en reset-password.vue después de cambiar la contraseña
       loading.value = false;
       router.replace('/auth/reset-password');
       return;
