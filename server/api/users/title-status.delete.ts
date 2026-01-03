@@ -4,6 +4,7 @@ import { TitleStatus } from '@/types/TitleStatus';
 import {
   TABLES,
   USER_TITLE_STATUS_FIELDS,
+  SCORE_WEIGHTS,
 } from '@/composables/database/constants';
 import { updatePoolScore } from '@/composables/database/recommendationPool';
 
@@ -125,15 +126,33 @@ export default defineEventHandler(async (event) => {
     }
 
     // Update recommendation pool score based on deleted status
+    // Official reversal logic: score -= SCORE_WEIGHTS[state]
     try {
-      // If status was 'seen', revert the score decrease (+50)
-      if (previousStatus?.status === TitleStatus.SEEN) {
-        await updatePoolScore(userId, tmdbIdNumber, 50, supabase);
+      const deletedStatus = previousStatus?.status as TitleStatus | undefined;
+      const deletedLiked = previousStatus?.liked ?? false;
+
+      // Revert status impact (if status was not watchlist)
+      if (
+        deletedStatus &&
+        deletedStatus !== TitleStatus.WATCHLIST
+      ) {
+        // Revert: score -= SCORE_WEIGHTS[deletedStatus]
+        const deletedWeight =
+          SCORE_WEIGHTS[deletedStatus as keyof typeof SCORE_WEIGHTS];
+        if (deletedWeight !== 0) {
+          await updatePoolScore(userId, tmdbIdNumber, -deletedWeight, supabase);
+        }
       }
 
-      // If liked was true, revert the score increase (-30)
-      if (previousStatus?.liked === true) {
-        await updatePoolScore(userId, tmdbIdNumber, -30, supabase);
+      // Revert liked impact (if liked was true)
+      if (deletedLiked === true) {
+        // Revert: score -= SCORE_WEIGHTS.liked
+        await updatePoolScore(
+          userId,
+          tmdbIdNumber,
+          -SCORE_WEIGHTS.liked,
+          supabase
+        );
       }
     } catch (poolError) {
       // Don't fail the request if pool update fails

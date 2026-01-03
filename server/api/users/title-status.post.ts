@@ -5,6 +5,7 @@ import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 import {
   TABLES,
   USER_TITLE_STATUS_FIELDS,
+  SCORE_WEIGHTS,
 } from '@/composables/database/constants';
 import {
   updatePoolScore,
@@ -158,22 +159,63 @@ export default defineEventHandler(async (event) => {
     }
 
     // Update recommendation pool score based on status changes
+    // Official scoring logic: each signal is applied independently and reversibly
     try {
-      // If status changed to 'not_interested', remove from pool
-      if (status === TitleStatus.NOT_INTERESTED) {
-        await removeFromPool(userId, tmdb_id, supabase);
-      } else if (status === TitleStatus.SEEN) {
-        // If status changed to 'seen', decrease score by 50
-        // Only if it wasn't already 'seen'
-        if (previousStatus?.status !== TitleStatus.SEEN) {
-          await updatePoolScore(userId, tmdb_id, -50, supabase);
+      const previousStatusValue = previousStatus?.status as
+        | TitleStatus
+        | undefined;
+      const previousLiked = previousStatus?.liked ?? false;
+      // Only consider liked change if it was explicitly provided in the request
+      const likedWasProvided = typeof liked === 'boolean';
+      const newLiked = likedWasProvided ? liked : previousLiked;
+
+      // 1. Revert previous status impact (if status changed)
+      if (
+        previousStatusValue &&
+        previousStatusValue !== status &&
+        previousStatusValue !== TitleStatus.WATCHLIST
+      ) {
+        // Revert: score -= SCORE_WEIGHTS[previousStatus]
+        const previousWeight = SCORE_WEIGHTS[
+          previousStatusValue as keyof typeof SCORE_WEIGHTS
+        ];
+        if (previousWeight !== 0) {
+          await updatePoolScore(userId, tmdb_id, -previousWeight, supabase);
         }
       }
 
-      // If liked changed to true, increase score by 30
-      // Only if it wasn't already liked
-      if (liked === true && previousStatus?.liked !== true) {
-        await updatePoolScore(userId, tmdb_id, 30, supabase);
+      // 2. Revert previous liked impact (if liked changed from true to false)
+      if (likedWasProvided && previousLiked === true && newLiked === false) {
+        // Revert: score -= SCORE_WEIGHTS.liked
+        await updatePoolScore(
+          userId,
+          tmdb_id,
+          -SCORE_WEIGHTS.liked,
+          supabase
+        );
+      }
+
+      // 3. Apply new status impact (if status changed and not watchlist)
+      if (
+        previousStatusValue !== status &&
+        status !== TitleStatus.WATCHLIST
+      ) {
+        const newWeight =
+          SCORE_WEIGHTS[status as keyof typeof SCORE_WEIGHTS];
+        if (newWeight !== 0) {
+          await updatePoolScore(userId, tmdb_id, newWeight, supabase);
+        }
+      }
+
+      // 4. Apply new liked impact (if liked changed from false to true)
+      if (likedWasProvided && previousLiked === false && newLiked === true) {
+        // Apply: score += SCORE_WEIGHTS.liked
+        await updatePoolScore(userId, tmdb_id, SCORE_WEIGHTS.liked, supabase);
+      }
+
+      // 5. Handle not_interested: remove from pool after score update
+      if (status === TitleStatus.NOT_INTERESTED) {
+        await removeFromPool(userId, tmdb_id, supabase);
       }
     } catch (poolError) {
       // Don't fail the request if pool update fails
