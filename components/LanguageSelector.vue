@@ -1,5 +1,5 @@
 <template>
-  <Dropdown
+  <SelectMenu
     ref="dropdownRef"
     position="left"
     width="w-full"
@@ -32,7 +32,7 @@
       </Button>
     </template>
     <div
-      class="flex overflow-hidden flex-col max-h-64 border border-gray-300 backdrop-blur-sm dark:bg-gray-900/95 bg-white/95 dark:border-gray-600 rounded-lg"
+      class="flex overflow-hidden flex-col max-h-64 rounded-lg border border-gray-300 backdrop-blur-sm dark:bg-gray-900/95 bg-white/95 dark:border-gray-600"
     >
       <!-- Options List -->
       <div class="overflow-y-auto flex-1 custom-scrollbar">
@@ -55,13 +55,13 @@
         </div>
       </div>
     </div>
-  </Dropdown>
+  </SelectMenu>
 </template>
 
 <script setup lang="ts">
 import { ref, watch } from 'vue';
-import { AVAILABLE_LANGUAGES, type Language } from '@/constants/languages';
-import Dropdown from '@/components/ui/Dropdown.vue';
+import { AVAILABLE_LANGUAGES } from '@/constants/languages';
+import SelectMenu from '@/components/ui/SelectMenu.vue';
 import Button from '@/components/ui/Button.vue';
 import IconChevronDown from '@/components/icons/IconChevronDown.vue';
 
@@ -74,15 +74,11 @@ const emit = defineEmits<{
   'update:modelValue': [value: string];
 }>();
 
-const { t } = useI18n();
-
-const selectedLanguage = ref<string | null>(
-  props.modelValue || null
-);
+const selectedLanguage = ref<string | null>(props.modelValue || null);
 
 const availableLanguages = AVAILABLE_LANGUAGES;
 
-const dropdownRef = ref<InstanceType<typeof Dropdown> | null>(null);
+const dropdownRef = ref<InstanceType<typeof SelectMenu> | null>(null);
 
 const handleDropdownOpen = () => {
   // No search needed for languages
@@ -102,4 +98,3 @@ watch(
   }
 );
 </script>
-

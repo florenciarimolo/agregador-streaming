@@ -94,7 +94,7 @@
               :in-theaters="inTheaters"
             />
             <!-- Actions Menu (only show if user has session) -->
-            <Dropdown
+            <ActionMenu
               v-if="hasSession"
               ref="dropdownRef"
               position="right"
@@ -212,7 +212,7 @@
                   {{ $t('media.removeFromWatchlist') }}
                 </Button>
               </div>
-            </Dropdown>
+            </ActionMenu>
           </div>
         </div>
       </div>
@@ -357,7 +357,7 @@ import IconClock from './icons/IconClock.vue';
 import { TitleStatus } from '@/types/TitleStatus';
 import { getSession } from '@/composables/database/auth';
 import { useUndoToast } from '@/composables/useUndoToast';
-import Dropdown from '@/components/ui/Dropdown.vue';
+import ActionMenu from '@/components/ui/ActionMenu.vue';
 import IconButton from '@/components/ui/IconButton.vue';
 import Button from '@/components/ui/Button.vue';
 import Modal from '@/components/ui/Modal.vue';
@@ -414,7 +414,7 @@ const alternativeTitles = computed(() => {
 });
 
 const isMobile = ref(false);
-const dropdownRef = ref<InstanceType<typeof Dropdown> | null>(null);
+const dropdownRef = ref<InstanceType<typeof ActionMenu> | null>(null);
 const showRemoveLikeModal = ref(false);
 const titleToRemoveLike = ref<{
   id: number;

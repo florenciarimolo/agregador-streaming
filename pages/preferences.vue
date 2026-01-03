@@ -217,95 +217,66 @@
                   </p>
 
                   <!-- Genre Search -->
-                  <div class="relative mb-4">
-                    <div class="relative">
-                      <input
-                        ref="genreInputRef"
-                        v-model="genreSearchQuery"
-                        type="text"
-                        :placeholder="
-                          $t(
-                            'preferences.content.favoriteGenres.searchPlaceholder'
-                          )
-                        "
-                        class="px-4 py-2 pr-4 pl-10 w-full text-sm text-gray-800 rounded-lg border-gray-300 opacity-90 transition-all dark:text-gray-300 dark:bg-gray-800/50 bg-white/80 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-transparent focus:border-transparent backdrop-blur-xs hover:opacity-100"
-                        @input="filterGenres"
-                        @focus="handleGenreFocus"
-                        @blur="handleGenreBlur"
-                      />
-                      <!-- Search Icon -->
-                      <div
-                        class="flex absolute inset-y-0 left-0 items-center pl-3 pointer-events-none"
+                  <SearchableSelect
+                    :options="availableGenres"
+                    :selected-items="selectedGenres"
+                    :placeholder="
+                      $t('preferences.content.favoriteGenres.searchPlaceholder')
+                    "
+                    :get-item-key="(genre: any) => `${genre.id}-${genre.type}`"
+                    :get-item-label="(genre: any) => genre.name || ''"
+                    :is-item-selected="
+                      (genre: any, selected: any[]) =>
+                        selected.some((g: any) => g.id === genre.id)
+                    "
+                    :filter-item="
+                      (genre: any, query: string) =>
+                        genre.name &&
+                        String(genre.name)
+                          .toLowerCase()
+                          .includes(query.toLowerCase())
+                    "
+                    @select="(item: any) => addGenre(item)"
+                  >
+                    <template #items="{ filteredOptions: genres, selectItem }">
+                      <template
+                        v-for="(genre, index) in genres"
+                        :key="`${(genre as any).id}-${(genre as any).type}`"
                       >
-                        <IconSearch icon-class="w-4 h-4 text-gray-400" />
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Genre Search Results Dropdown (Teleported) -->
-                  <Teleport to="body">
-                    <Transition
-                      enter-active-class="transition duration-200 ease-out"
-                      enter-from-class="opacity-0 transform scale-95"
-                      enter-to-class="opacity-100 transform scale-100"
-                      leave-active-class="transition duration-150 ease-in"
-                      leave-from-class="opacity-100 transform scale-100"
-                      leave-to-class="opacity-0 transform scale-95"
-                    >
-                      <div
-                        v-if="
-                          showGenreResults &&
-                          filteredGenres.length > 0 &&
-                          genreDropdownPosition
-                        "
-                        class="fixed z-[9999] dark:bg-gray-900/95 bg-white/95 backdrop-blur-sm dark:border-gray-600 border-gray-300 rounded-3xl shadow-xl max-h-64 overflow-y-auto custom-scrollbar"
-                        :style="{
-                          top: `${genreDropdownPosition.top}px`,
-                          left: `${genreDropdownPosition.left}px`,
-                          width: `${genreDropdownPosition.width}px`,
-                        }"
-                        @mousedown.prevent
-                      >
-                        <div class="py-2">
-                          <template
-                            v-for="(genre, index) in filteredGenres"
-                            :key="`${genre.id}-${genre.type}`"
-                          >
-                            <!-- Separator: show only when type changes (first item of each type) -->
-                            <div
-                              v-if="
-                                index === 0 ||
-                                filteredGenres[index - 1].type !== genre.type
-                              "
-                              class="px-4 py-2 text-xs font-semibold tracking-wider text-gray-500 uppercase dark:text-gray-400"
-                              :class="
-                                index > 0
-                                  ? 'border-t border-gray-200 dark:border-gray-700'
-                                  : ''
-                              "
-                            >
-                              {{
-                                genre.type === MediaTypeEnum.movie
-                                  ? t('preferences.content.contentTypes.movie')
-                                  : t('preferences.content.contentTypes.tv')
-                              }}
-                            </div>
-                            <!-- Genre option -->
-                            <div
-                              class="flex gap-3 items-center px-4 py-3 transition-colors duration-150 cursor-pointer dark:hover:bg-gray-800/50 hover:bg-gray-100/50"
-                              @mousedown.prevent="addGenre(genre)"
-                              @click="addGenre(genre)"
-                            >
-                              <span
-                                class="text-sm text-gray-800 dark:text-gray-300"
-                                >{{ genre.name }}</span
-                              >
-                            </div>
-                          </template>
+                        <!-- Separator: show only when type changes (first item of each type) -->
+                        <div
+                          v-if="
+                            Number(index) === 0 ||
+                            (genres[Number(index) - 1] as any)?.type !==
+                              (genre as any).type
+                          "
+                          class="px-4 py-2 text-xs font-semibold tracking-wider text-gray-500 uppercase dark:text-gray-400"
+                          :class="
+                            Number(index) > 0
+                              ? 'border-t border-gray-200 dark:border-gray-700'
+                              : ''
+                          "
+                        >
+                          {{
+                            (genre as any).type === MediaTypeEnum.movie
+                              ? t('preferences.content.contentTypes.movie')
+                              : t('preferences.content.contentTypes.tv')
+                          }}
                         </div>
-                      </div>
-                    </Transition>
-                  </Teleport>
+                        <!-- Genre option -->
+                        <div
+                          class="flex gap-3 items-center px-4 py-3 transition-colors duration-150 cursor-pointer dark:hover:bg-gray-800/50 hover:bg-gray-100/50"
+                          @mousedown.prevent="selectItem(genre)"
+                          @click="selectItem(genre)"
+                        >
+                          <span
+                            class="text-sm text-gray-800 dark:text-gray-300"
+                            >{{ (genre as any).name }}</span
+                          >
+                        </div>
+                      </template>
+                    </template>
+                  </SearchableSelect>
 
                   <!-- Selected Genres List -->
                   <div v-if="selectedGenres.length > 0" class="mb-4">
@@ -361,87 +332,70 @@
                   </p>
 
                   <!-- Provider Search -->
-                  <div class="relative mb-4">
-                    <div class="relative">
-                      <input
-                        ref="providerInputRef"
-                        v-model="providerSearchQuery"
-                        type="text"
-                        :placeholder="
-                          $t(
-                            'preferences.content.includedProviders.searchPlaceholder'
-                          )
-                        "
-                        class="px-4 py-2 pr-4 pl-10 w-full text-sm text-gray-800 rounded-lg border-gray-300 opacity-90 transition-all dark:text-gray-300 dark:bg-gray-800/50 bg-white/80 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-transparent focus:border-transparent backdrop-blur-xs hover:opacity-100"
-                        @input="filterProviders"
-                        @focus="handleProviderFocus"
-                        @blur="handleProviderBlur"
-                      />
-                      <!-- Search Icon -->
-                      <div
-                        class="flex absolute inset-y-0 left-0 items-center pl-3 pointer-events-none"
-                      >
-                        <IconSearch icon-class="w-4 h-4 text-gray-400" />
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Provider Search Results Dropdown (Teleported) -->
-                  <Teleport to="body">
-                    <Transition
-                      enter-active-class="transition duration-200 ease-out"
-                      enter-from-class="opacity-0 transform scale-95"
-                      enter-to-class="opacity-100 transform scale-100"
-                      leave-active-class="transition duration-150 ease-in"
-                      leave-from-class="opacity-100 transform scale-100"
-                      leave-to-class="opacity-0 transform scale-95"
+                  <SearchableSelect
+                    :options="availableProviders"
+                    :selected-items="selectedProviders"
+                    :placeholder="
+                      $t(
+                        'preferences.content.includedProviders.searchPlaceholder'
+                      )
+                    "
+                    :get-item-key="(provider: any) => provider.provider_id"
+                    :get-item-label="
+                      (provider: any) => provider.provider_name || ''
+                    "
+                    :is-item-selected="
+                      (provider: any, selected: any[]) =>
+                        selected.some(
+                          (p: any) => p.provider_id === provider.provider_id
+                        )
+                    "
+                    :filter-item="
+                      (provider: any, query: string) =>
+                        provider.provider_name &&
+                        String(provider.provider_name)
+                          .toLowerCase()
+                          .includes(query.toLowerCase())
+                    "
+                    :max-results="10"
+                    @select="(item: any) => addProvider(item)"
+                  >
+                    <template
+                      #items="{ filteredOptions: providers, selectItem }"
                     >
                       <div
-                        v-if="
-                          showProviderResults &&
-                          filteredProviders.length > 0 &&
-                          providerDropdownPosition
-                        "
-                        class="fixed z-[9999] dark:bg-gray-900/95 bg-white/95 backdrop-blur-sm dark:border-gray-600 border-gray-300 rounded-3xl shadow-xl max-h-64 overflow-y-auto custom-scrollbar"
-                        :style="{
-                          top: `${providerDropdownPosition.top}px`,
-                          left: `${providerDropdownPosition.left}px`,
-                          width: `${providerDropdownPosition.width}px`,
-                        }"
-                        @mousedown.prevent
+                        v-for="provider in providers"
+                        :key="(provider as any).provider_id"
+                        class="flex gap-3 items-center px-4 py-3 transition-colors duration-150 cursor-pointer dark:hover:bg-gray-800/50 hover:bg-gray-100/50"
+                        @mousedown.prevent="selectItem(provider)"
+                        @click="selectItem(provider)"
                       >
-                        <div class="py-2">
-                          <div
-                            v-for="provider in filteredProviders"
-                            :key="provider.provider_id"
-                            class="flex gap-3 items-center px-4 py-3 transition-colors duration-150 cursor-pointer dark:hover:bg-gray-800/50 hover:bg-gray-100/50"
-                            @mousedown.prevent="addProvider(provider)"
-                            @click="addProvider(provider)"
+                        <img
+                          v-if="(provider as any).logo_path"
+                          :src="`https://image.tmdb.org/t/p/w45${(provider as any).logo_path}`"
+                          :alt="(provider as any).provider_name"
+                          class="object-contain flex-shrink-0 w-auto h-8"
+                        />
+                        <div
+                          v-else
+                          class="flex flex-shrink-0 justify-center items-center w-8 h-8 bg-gray-200 rounded dark:bg-gray-700"
+                        >
+                          <span
+                            class="text-xs text-gray-600 dark:text-gray-300"
+                            >{{
+                              String(
+                                (provider as any).provider_name || ''
+                              ).charAt(0)
+                            }}</span
                           >
-                            <img
-                              v-if="provider.logo_path"
-                              :src="`https://image.tmdb.org/t/p/w45${provider.logo_path}`"
-                              :alt="provider.provider_name"
-                              class="object-contain flex-shrink-0 w-auto h-8"
-                            />
-                            <div
-                              v-else
-                              class="flex flex-shrink-0 justify-center items-center w-8 h-8 bg-gray-200 rounded dark:bg-gray-700"
-                            >
-                              <span
-                                class="text-xs text-gray-600 dark:text-gray-300"
-                                >{{ provider.provider_name.charAt(0) }}</span
-                              >
-                            </div>
-                            <span
-                              class="text-sm text-gray-800 dark:text-gray-300"
-                              >{{ provider.provider_name }}</span
-                            >
-                          </div>
                         </div>
+                        <span
+                          class="text-sm text-gray-800 dark:text-gray-300"
+                          >{{ (provider as any).provider_name }}</span
+                        >
                       </div>
-                    </Transition>
-                  </Teleport>
+                    </template>
+                  </SearchableSelect>
 
                   <!-- Selected Providers List -->
                   <div v-if="selectedProviders.length > 0" class="mb-4">
@@ -455,7 +409,7 @@
                       <div
                         v-for="provider in selectedProviders"
                         :key="provider.provider_id"
-                        class="flex gap-2 items-center px-4 py-1.5 rounded-full border backdrop-blur-xl md:py-2.5 dark:bg-gray-900/40 bg-gray-100/80 border-gray-300/50 dark:border-white/10"
+                        class="flex gap-2 items-center px-4 py-1.5 rounded-full border backdrop-blur-xl dark:bg-gray-900/40 bg-gray-100/80 border-gray-300/50 dark:border-white/10"
                       >
                         <img
                           v-if="provider.logo_path"
@@ -464,7 +418,7 @@
                           class="object-contain w-auto h-5"
                         />
                         <span
-                          class="text-xs font-medium text-gray-800 md:text-sm dark:text-gray-300"
+                          class="text-xs font-semibold text-gray-800 dark:text-gray-300"
                           >{{ provider.provider_name }}</span
                         >
                         <CloseButton
@@ -716,9 +670,9 @@ import TitleGrid from '@/components/TitleGrid.vue';
 import EmptyState from '@/components/EmptyState.vue';
 import Spinner from '@/components/Spinner.vue';
 import Toast from '@/components/ui/Toast.vue';
-import IconSearch from '@/components/icons/IconSearch.vue';
 import LanguageSelector from '@/components/LanguageSelector.vue';
 import RegionSelector from '@/components/RegionSelector.vue';
+import SearchableSelect from '@/components/ui/SearchableSelect.vue';
 import { useUndoToast } from '@/composables/useUndoToast';
 import type { TMDBSearchResult } from '@/types/tmdb/Search';
 import { AVAILABLE_LANGUAGES, LanguageCode } from '@/constants/languages';
@@ -1726,27 +1680,12 @@ const availableGenres = computed(() => {
 });
 
 // Genre selector state
-const genreSearchQuery = ref('');
-const showGenreResults = ref(false);
-const filteredGenres = ref<
-  Array<{
-    id: number;
-    name: string;
-    type: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv;
-  }>
->([]);
 const selectedGenres = ref<
   Array<{
     id: number;
     name: string;
   }>
 >([]);
-const genreInputRef = ref<HTMLInputElement | null>(null);
-const genreDropdownPosition = ref<{
-  top: number;
-  left: number;
-  width: number;
-} | null>(null);
 
 // Preload providers using useAsyncData (runs during setup, before mount)
 // Include credentials to ensure user session is sent for region detection
@@ -1797,15 +1736,6 @@ const availableProviders = computed(() => {
 });
 
 // Provider selector state
-const providerSearchQuery = ref('');
-const showProviderResults = ref(false);
-const filteredProviders = ref<
-  Array<{
-    provider_id: number;
-    provider_name: string;
-    logo_path: string | null;
-  }>
->([]);
 const selectedProviders = ref<
   Array<{
     provider_id: number;
@@ -1813,12 +1743,6 @@ const selectedProviders = ref<
     logo_path: string | null;
   }>
 >([]);
-const providerInputRef = ref<HTMLInputElement | null>(null);
-const providerDropdownPosition = ref<{
-  top: number;
-  left: number;
-  width: number;
-} | null>(null);
 
 // Fetch content preferences
 const fetchContentPreferences = async () => {
@@ -1949,61 +1873,6 @@ const fetchContentPreferences = async () => {
 
 // Genres and providers are now preloaded using useLazyFetch above
 
-// Filter providers based on search query
-const filterProviders = () => {
-  if (!providerSearchQuery.value.trim()) {
-    filteredProviders.value = [];
-    return;
-  }
-
-  const query = providerSearchQuery.value.toLowerCase().trim();
-
-  filteredProviders.value = availableProviders.value
-    .filter(
-      (provider) =>
-        provider.provider_name.toLowerCase().includes(query) &&
-        !selectedProviders.value.some(
-          (p) => p.provider_id === provider.provider_id
-        )
-    )
-    .slice(0, 10);
-
-  nextTick(() => {
-    updateProviderDropdownPosition();
-  });
-};
-
-// Calculate dropdown position for providers
-const updateProviderDropdownPosition = () => {
-  if (providerInputRef.value) {
-    const rect = providerInputRef.value.getBoundingClientRect();
-    providerDropdownPosition.value = {
-      top: rect.bottom + 8,
-      left: rect.left,
-      width: rect.width,
-    };
-  }
-};
-
-// Handle provider search focus
-const handleProviderFocus = () => {
-  showProviderResults.value = true;
-  if (providerSearchQuery.value.trim()) {
-    filterProviders();
-  }
-  nextTick(() => {
-    updateProviderDropdownPosition();
-  });
-};
-
-// Handle provider search blur
-const handleProviderBlur = () => {
-  setTimeout(() => {
-    showProviderResults.value = false;
-    providerDropdownPosition.value = null;
-  }, 200);
-};
-
 // Add provider to selected list
 const addProvider = (provider: {
   provider_id: number;
@@ -2021,8 +1890,6 @@ const addProvider = (provider: {
   contentPreferences.value.included_providers = selectedProviders.value.map(
     (p) => p.provider_id
   );
-  providerSearchQuery.value = '';
-  filteredProviders.value = [];
   markContentPreferencesChanged();
 };
 
@@ -2060,28 +1927,6 @@ const changeLanguage = (lang: { code: string; name: string }) => {
   markContentPreferencesChanged();
 };
 
-// Filter genres based on search query
-// Show all genres when search is empty, filtered when there's a query
-const filterGenres = () => {
-  const query = genreSearchQuery.value.toLowerCase().trim();
-
-  if (!query) {
-    // Show all genres when search is empty
-    filteredGenres.value = availableGenres.value.filter(
-      (genre) => !selectedGenres.value.some((g) => g.id === genre.id)
-    );
-    return;
-  }
-
-  // Filter by search query
-  filteredGenres.value = availableGenres.value.filter(
-    (genre) =>
-      genre.name &&
-      genre.name.toLowerCase().includes(query) &&
-      !selectedGenres.value.some((g) => g.id === genre.id)
-  );
-};
-
 // Add genre to selected list
 const addGenre = (genre: {
   id: number;
@@ -2098,8 +1943,6 @@ const addGenre = (genre: {
   contentPreferences.value.favorite_genres = selectedGenres.value.map(
     (g) => g.id
   );
-  genreSearchQuery.value = '';
-  showGenreResults.value = false;
   markContentPreferencesChanged();
 };
 
@@ -2110,40 +1953,6 @@ const removeGenre = (genreId: number) => {
     (g) => g.id
   );
   markContentPreferencesChanged();
-};
-
-// Calculate dropdown position for genres
-const updateGenreDropdownPosition = () => {
-  if (genreInputRef.value) {
-    const rect = genreInputRef.value.getBoundingClientRect();
-    genreDropdownPosition.value = {
-      top: rect.bottom + 8, // 8px for mt-2, fixed position is relative to viewport
-      left: rect.left,
-      width: rect.width,
-    };
-  }
-};
-
-// Handle genre search focus
-const handleGenreFocus = () => {
-  showGenreResults.value = true;
-  // Initialize filtered genres with all available genres when opening
-  if (!genreSearchQuery.value.trim()) {
-    filteredGenres.value = availableGenres.value.filter(
-      (genre) => !selectedGenres.value.some((g) => g.id === genre.id)
-    );
-  }
-  nextTick(() => {
-    updateGenreDropdownPosition();
-  });
-};
-
-// Handle genre search blur
-const handleGenreBlur = () => {
-  setTimeout(() => {
-    showGenreResults.value = false;
-    genreDropdownPosition.value = null;
-  }, 200);
 };
 
 // Handle region change
@@ -2398,24 +2207,6 @@ const confirmSaveContentPreferences = async () => {
   }
 };
 
-watch(showGenreResults, (isVisible) => {
-  if (isVisible) {
-    nextTick(() => {
-      updateGenreDropdownPosition();
-    });
-  }
-});
-
-// Update positions on scroll and resize
-const updateAllDropdownPositions = () => {
-  if (showGenreResults.value) {
-    updateGenreDropdownPosition();
-  }
-  if (showProviderResults.value) {
-    updateProviderDropdownPosition();
-  }
-};
-
 // Watch for when genres and providers are loaded to map selected items
 // This handles the case where genres/providers load before preferences
 watch(
@@ -2601,8 +2392,6 @@ onMounted(async () => {
   await fetchAllLists();
 
   // Add scroll and resize listeners
-  window.addEventListener('scroll', updateAllDropdownPositions, true);
-  window.addEventListener('resize', updateAllDropdownPositions);
 });
 
 // Handle navigation away with unsaved changes
@@ -2617,8 +2406,6 @@ onBeforeRouteLeave((_to, _from, next) => {
 
 onUnmounted(() => {
   window.removeEventListener('resize', checkMobile);
-  window.removeEventListener('scroll', updateAllDropdownPositions, true);
-  window.removeEventListener('resize', updateAllDropdownPositions);
 });
 
 // Page meta

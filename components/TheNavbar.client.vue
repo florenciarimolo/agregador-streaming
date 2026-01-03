@@ -55,7 +55,7 @@
 
             <!-- User Avatar -->
             <div class="relative flex items-center justify-center">
-              <Dropdown
+              <ActionMenu
                 ref="userMenuDropdownRef"
                 position="right"
                 width="w-64"
@@ -122,7 +122,7 @@
                     {{ $t('navbar.logout') }}
                   </Button>
                 </div>
-              </Dropdown>
+              </ActionMenu>
             </div>
           </template>
 
@@ -388,7 +388,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed } from 'vue';
 import Avatar from './Avatar.vue';
-import Dropdown from '@/components/ui/Dropdown.vue';
+import ActionMenu from '@/components/ui/ActionMenu.vue';
 import Modal from '@/components/ui/Modal.vue';
 import Button from '@/components/ui/Button.vue';
 import IconButton from '@/components/ui/IconButton.vue';
@@ -407,7 +407,7 @@ const { signOut } = useAuth();
 const router = useRouter();
 const showMobileMenu = ref(false);
 const showMobileSearch = ref(false);
-const userMenuDropdownRef = ref<InstanceType<typeof Dropdown> | null>(null);
+const userMenuDropdownRef = ref<InstanceType<typeof ActionMenu> | null>(null);
 const mobileSearchBarRef = ref<InstanceType<typeof SearchBar> | null>(null);
 
 // Use computed to ensure user is available after hydration

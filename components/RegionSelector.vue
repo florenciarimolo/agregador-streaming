@@ -1,5 +1,5 @@
 <template>
-  <Dropdown
+  <SelectMenu
     ref="dropdownRef"
     position="left"
     width="w-full"
@@ -90,13 +90,13 @@
         </div>
       </div>
     </div>
-  </Dropdown>
+  </SelectMenu>
 </template>
 
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue';
 import type { Region } from '@/constants/regions';
-import Dropdown from '@/components/ui/Dropdown.vue';
+import SelectMenu from '@/components/ui/SelectMenu.vue';
 import Button from '@/components/ui/Button.vue';
 import IconChevronDown from '@/components/icons/IconChevronDown.vue';
 import IconSearch from '@/components/icons/IconSearch.vue';
@@ -199,7 +199,7 @@ const filterRegions = () => {
     .sort((a: Region, b: Region) => a.name.localeCompare(b.name));
 };
 
-const dropdownRef = ref<InstanceType<typeof Dropdown> | null>(null);
+const dropdownRef = ref<InstanceType<typeof SelectMenu> | null>(null);
 
 const handleDropdownOpen = () => {
   // Reset search and show all regions when opening

@@ -1,7 +1,6 @@
 <template>
   <article
     class="overflow-visible relative rounded-lg border backdrop-blur-xl transition-all duration-300 group dark:bg-gray-900/40 bg-gray-100/80 border-gray-300/50 dark:border-white/10 hover:border-gray-400/50 dark:hover:border-white/20 hover:shadow-lg hover:shadow-gray-900/20"
-    :class="{ 'z-50': isOpen, 'z-10': !isOpen }"
     :aria-label="$t('media.recommendationLabel', { title: props.title.title })"
   >
     <!-- Poster Container -->
@@ -12,7 +11,6 @@
         :to="`/${mediaType}/${props.title.tmdb_id}`"
         :aria-label="$t('media.viewDetailsOf', { title: props.title.title })"
         class="block overflow-hidden relative w-full h-full rounded-t-lg focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-        :class="{ 'pointer-events-none': isOpen }"
       >
         <div
           v-if="props.title.poster_path"
@@ -65,90 +63,70 @@
       </nuxt-link>
 
       <!-- Actions Menu (top-right) - Outside the link to prevent hover activation -->
-      <div
-        ref="menuButtonRef"
-        class="overflow-visible absolute top-2 right-2 z-30"
-        :data-dropdown-id="dropdownId"
-      >
-        <IconButton
-          :icon="IconMoreVertical"
-          :aria-label="$t('media.actionsMenuFor', { title: props.title.title })"
-          size="small"
-          variant="default"
-          custom-class="menu-button p-2 rounded-full bg-black/50 hover:bg-gray-700/80 backdrop-blur-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-black/50 [&>svg]:text-white"
-          @click.stop.prevent="toggle()"
-        />
-
-        <!-- Dropdown Menu -->
-        <Teleport to="body">
-          <Transition
-            enter-active-class="transition duration-200 ease-out"
-            enter-from-class="opacity-0 transform scale-95"
-            enter-to-class="opacity-100 transform scale-100"
-            leave-active-class="transition duration-150 ease-in"
-            leave-from-class="opacity-100 transform scale-100"
-            leave-to-class="opacity-0 transform scale-95"
-          >
-            <div
-              v-if="isOpen"
-              :data-dropdown-id="dropdownId"
-              class="fixed z-[10000] w-48 rounded-3xl border backdrop-blur-xl dark:bg-gray-900/95 bg-gray-100/80 border-gray-300/50 dark:border-white/10 shadow-xl"
-              :style="dropdownStyle"
-              @click.stop
+      <div class="overflow-visible absolute top-2 right-2 z-30">
+        <ActionMenu ref="dropdownRef" width="w-48" position="right">
+          <template #trigger>
+            <IconButton
+              :icon="IconMoreVertical"
+              :aria-label="
+                $t('media.actionsMenuFor', { title: props.title.title })
+              "
+              size="small"
+              variant="default"
+              custom-class="menu-button p-2 rounded-full bg-black/50 hover:bg-gray-700/80 backdrop-blur-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-black/50 [&>svg]:text-white"
+            />
+          </template>
+          <div class="p-4">
+            <Button
+              type="button"
+              variant="ghost"
+              size="small"
+              custom-class="justify-start mb-2 w-full text-left"
+              @click.stop.prevent="handleAction(TitleStatus.SEEN)"
             >
-              <div class="p-4">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="small"
-                  custom-class="justify-start mb-2 w-full text-left"
-                  @click.stop.prevent="handleAction(TitleStatus.SEEN)"
-                >
-                  <template #icon>
-                    <IconCheck icon-class="w-4 h-4" />
-                  </template>
-                  {{ $t('media.seen') }}
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="small"
-                  custom-class="justify-start mb-2 w-full text-left"
-                  @click.stop.prevent="handleAction('liked')"
-                >
-                  <template #icon>
-                    <IconHeart icon-class="w-4 h-4" />
-                  </template>
-                  {{ $t('media.liked') }}
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="small"
-                  custom-class="justify-start mb-2 w-full text-left"
-                  @click.stop.prevent="handleAction(TitleStatus.NOT_INTERESTED)"
-                >
-                  <template #icon>
-                    <IconX icon-class="w-4 h-4" />
-                  </template>
-                  {{ $t('media.notInterested') }}
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="small"
-                  custom-class="justify-start w-full text-left"
-                  @click.stop.prevent="handleAction(TitleStatus.WATCHLIST)"
-                >
-                  <template #icon>
-                    <IconClock icon-class="w-4 h-4" />
-                  </template>
-                  {{ $t('media.watchLater') }}
-                </Button>
-              </div>
-            </div>
-          </Transition>
-        </Teleport>
+              <template #icon>
+                <IconCheck icon-class="w-4 h-4" />
+              </template>
+              {{ $t('media.seen') }}
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="small"
+              custom-class="justify-start mb-2 w-full text-left"
+              @click.stop.prevent="handleAction('liked')"
+            >
+              <template #icon>
+                <IconHeart icon-class="w-4 h-4" />
+              </template>
+              {{ $t('media.liked') }}
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="small"
+              custom-class="justify-start mb-2 w-full text-left"
+              @click.stop.prevent="handleAction(TitleStatus.NOT_INTERESTED)"
+            >
+              <template #icon>
+                <IconX icon-class="w-4 h-4" />
+              </template>
+              {{ $t('media.notInterested') }}
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="small"
+              custom-class="justify-start w-full text-left"
+              @click.stop.prevent="handleAction(TitleStatus.WATCHLIST)"
+            >
+              <template #icon>
+                <IconClock icon-class="w-4 h-4" />
+              </template>
+              {{ $t('media.watchLater') }}
+            </Button>
+          </div>
+        </ActionMenu>
       </div>
     </div>
 
@@ -200,7 +178,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, computed, ref, watch, nextTick } from 'vue';
+import { computed, ref } from 'vue';
 import RatingBadge from './RatingBadge.vue';
 import IconMoreVertical from './icons/IconMoreVertical.vue';
 import IconClock from './icons/IconClock.vue';
@@ -213,72 +191,13 @@ import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 import type { Recommendation } from '@/types/Recommendation';
 import IconButton from '@/components/ui/IconButton.vue';
 import Button from '@/components/ui/Button.vue';
-import { useDropdownManager } from '@/composables/useDropdownManager';
+import ActionMenu from '@/components/ui/ActionMenu.vue';
 
 interface Props {
   title: Recommendation;
 }
 
 const props = defineProps<Props>();
-
-// Generate unique ID for this dropdown
-const dropdownId = `recommendation-${props.title.tmdb_id}-${props.title.type}`;
-const { isOpen, toggle, close, handleClickOutside } =
-  useDropdownManager(dropdownId);
-
-// Dropdown anchor state
-const dropdownAnchor = ref<'left' | 'right'>('right');
-const menuButtonRef = ref<HTMLElement | null>(null);
-const dropdownStyle = ref<{ top: string; left?: string; right?: string }>({
-  top: '0',
-});
-
-// Calculate dropdown alignment based on overflow detection
-const calculateDropdownAlignment = () => {
-  if (!menuButtonRef.value || typeof window === 'undefined') {
-    return;
-  }
-
-  nextTick(() => {
-    const rect = menuButtonRef.value?.getBoundingClientRect();
-    if (!rect) return;
-
-    const dropdownWidth = 192; // w-48 = 12rem = 192px
-    const viewportWidth = window.innerWidth;
-    const spacing = 8; // mt-2 = 8px
-
-    // Calculate position
-    const top = rect.bottom + spacing;
-    const right = viewportWidth - rect.right;
-    const left = rect.left;
-
-    const overflowRight = rect.right + dropdownWidth > viewportWidth;
-    const overflowLeft = rect.left - dropdownWidth < 0;
-
-    // If there's overflow on the right but not on the left, anchor to the right
-    // Otherwise, anchor to the left
-    if (overflowRight && !overflowLeft) {
-      dropdownAnchor.value = 'right';
-      dropdownStyle.value = {
-        top: `${top}px`,
-        right: `${right}px`,
-      };
-    } else {
-      dropdownAnchor.value = 'left';
-      dropdownStyle.value = {
-        top: `${top}px`,
-        left: `${left}px`,
-      };
-    }
-  });
-};
-
-// Watch for dropdown opening to calculate alignment
-watch(isOpen, (newValue) => {
-  if (newValue) {
-    calculateDropdownAlignment();
-  }
-});
 
 const emit = defineEmits<{
   'mark-seen': [title: Recommendation];
@@ -287,8 +206,12 @@ const emit = defineEmits<{
   'mark-watchlist': [title: Recommendation];
 }>();
 
+const dropdownRef = ref<InstanceType<typeof ActionMenu> | null>(null);
+
 const handleAction = (action: TitleStatus | 'liked') => {
-  close();
+  // Close dropdown when action is triggered
+  dropdownRef.value?.close();
+
   if (action === TitleStatus.SEEN) {
     emit('mark-seen', props.title);
   } else if (action === 'liked') {
@@ -299,14 +222,6 @@ const handleAction = (action: TitleStatus | 'liked') => {
     emit('mark-watchlist', props.title);
   }
 };
-
-onMounted(() => {
-  document.addEventListener('click', handleClickOutside);
-});
-
-onUnmounted(() => {
-  document.removeEventListener('click', handleClickOutside);
-});
 
 const mediaType = computed(() =>
   props.title.type === MediaTypeEnum.movie ? 'movie' : 'tv-show'
