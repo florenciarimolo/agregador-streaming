@@ -403,6 +403,7 @@
   "footer": {
     "howItWorks": "Cómo funciona",
     "faq": "FAQ",
+    "privacy": "Política de Privacidad",
     "copyright": "© 2025 UpNext. Todos los derechos reservados.",
     "developedBy": "Desarrollado por",
     "contact": "Contacto:"
@@ -702,5 +703,38 @@
       "deleted": "Cuenta eliminada correctamente",
       "error": "Error al eliminar la cuenta"
     }
+  },
+  "cookies": {
+    "message": "Utilizamos cookies para mejorar tu experiencia. Al continuar navegando, aceptas nuestro uso de cookies. ",
+    "privacyLink": "Política de privacidad",
+    "accept": "Aceptar",
+    "reject": "Rechazar"
+  },
+  "privacy": {
+    "title": "Política de Privacidad",
+    "pageTitle": "Política de Privacidad | UpNext",
+    "description": "En UpNext respetamos tu privacidad y nos comprometemos a proteger tus datos personales.",
+    "dataCollectionTitle": "Información que recopilamos",
+    "dataCollectionDescription": "Recopilamos información que nos proporcionas directamente, como tu dirección de correo electrónico, preferencias de contenido y actividad en la plataforma.",
+    "dataUsageTitle": "Uso de la información",
+    "dataUsageDescription": "Utilizamos la información recopilada para proporcionarte recomendaciones personalizadas, mejorar nuestros servicios y comunicarnos contigo cuando sea necesario.",
+    "cookiesTitle": "Política de Cookies",
+    "cookiesWhatAreTitle": "¿Qué son las cookies?",
+    "cookiesWhatAreDescription": "Las cookies son pequeños archivos de texto que se almacenan en tu dispositivo cuando visitas un sitio web. Estas cookies permiten que el sitio web recuerde tus acciones y preferencias durante un período de tiempo, por lo que no tienes que volver a configurarlas cada vez que regresas al sitio o navegas de una página a otra.",
+    "cookiesTypesTitle": "Tipos de cookies que utilizamos",
+    "cookiesTechnicalTitle": "Cookies técnicas (necesarias)",
+    "cookiesTechnicalDescription": "Estas cookies son esenciales para el funcionamiento del sitio web y no pueden desactivarse. Permiten funciones básicas como la navegación segura y el acceso a áreas protegidas del sitio.",
+    "cookiesTechnicalNote": "Importante: Estas cookies técnicas siempre están activas, incluso si rechazas el uso de cookies, ya que son necesarias para el correcto funcionamiento de la plataforma.",
+    "cookiesTechnicalItem1": "Almacenamiento de preferencias de consentimiento de cookies",
+    "cookiesTechnicalItem2": "Gestión de sesión y autenticación de usuarios",
+    "cookiesPreferencesTitle": "Cookies de preferencias",
+    "cookiesPreferencesDescription": "Estas cookies permiten que el sitio web recuerde información que cambia la forma en que se comporta o se ve el sitio, como tu idioma preferido o la región en la que te encuentras.",
+    "cookiesPreferencesItem1": "Preferencias de idioma y región",
+    "cookiesPreferencesItem2": "Configuración de tema (modo claro/oscuro)",
+    "cookiesManagementTitle": "Gestión de cookies",
+    "cookiesManagementDescription": "Puedes gestionar tus preferencias de cookies en cualquier momento a través del banner de cookies que aparece cuando visitas nuestro sitio por primera vez. Puedes aceptar o rechazar las cookies de preferencias, pero ten en cuenta que las cookies técnicas siempre estarán activas.",
+    "cookiesManagementNote": "Si rechazas las cookies de preferencias, algunas funcionalidades del sitio pueden no estar disponibles o no funcionar correctamente.",
+    "contactTitle": "Contacto",
+    "contactDescription": "Si tienes preguntas sobre esta política de privacidad, puedes contactarnos en:"
   }
 }

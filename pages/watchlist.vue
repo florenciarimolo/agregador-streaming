@@ -296,6 +296,12 @@ onMounted(() => {
   z-index: 10000;
 }
 
+/* Ensure the card container has higher z-index when tooltip is hovered */
+.group:has(.tooltip-container:hover) {
+  z-index: 10002;
+  position: relative;
+}
+
 .tooltip {
   position: absolute;
   top: calc(100% + 8px);
@@ -312,7 +318,7 @@ onMounted(() => {
   transition:
     opacity 0.2s ease-in-out,
     transform 0.2s ease-in-out;
-  z-index: 9999;
+  z-index: 10003;
   margin-top: 0;
 }
 

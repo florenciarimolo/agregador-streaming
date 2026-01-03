@@ -91,7 +91,7 @@
           <div
             v-if="isOpen"
             :data-dropdown-id="dropdownId"
-            class="absolute z-[100] mt-2 w-48 max-w-[calc(100vw-2rem)] rounded-lg border backdrop-blur-xl dark:bg-gray-900/40 bg-gray-100/80 border-gray-300/50 dark:border-white/10 shadow-xl"
+            class="absolute z-[100] mt-2 w-48 max-w-[calc(100vw-2rem)] rounded-lg border backdrop-blur-xl dark:bg-gray-900/95 bg-gray-100/80 border-gray-300/50 dark:border-white/10 shadow-xl"
             :class="
               dropdownAnchor === 'right'
                 ? 'right-0 left-auto'

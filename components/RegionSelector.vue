@@ -27,9 +27,9 @@
               "
             />
             <span class="text-sm truncate">{{
-              selectedRegion
+              selectedRegion && regions.length > 0
                 ? regions.find((r: Region) => r.code === selectedRegion)
-                    ?.name || selectedRegion
+                    ?.name || t('preferences.content.region.default')
                 : t('preferences.content.region.default')
             }}</span>
           </div>
@@ -42,7 +42,7 @@
       </Button>
     </template>
     <div
-      class="flex overflow-hidden flex-col max-h-64 border-gray-300 backdrop-blur-sm dark:bg-gray-900/95 bg-white/95 dark:border-gray-600"
+      class="flex overflow-hidden flex-col max-h-64 border border-gray-300 backdrop-blur-sm dark:bg-gray-900/95 bg-white/95 dark:border-gray-600 rounded-lg"
     >
       <!-- Search Input -->
       <div class="p-2 border-b border-gray-300/50 dark:border-white/10">
@@ -63,18 +63,6 @@
       <!-- Options List -->
       <div class="overflow-y-auto flex-1 custom-scrollbar">
         <div class="py-2">
-          <!-- Default Option -->
-          <div
-            class="flex gap-3 items-center px-4 py-3 transition-colors duration-150 cursor-pointer dark:hover:bg-gray-800/50 hover:bg-gray-100/50"
-            :class="{
-              'dark:bg-gray-800/30 bg-gray-100/50': !selectedRegion,
-            }"
-            @click="selectRegion(null)"
-          >
-            <span class="text-sm text-gray-800 dark:text-gray-300">{{
-              t('preferences.content.region.default')
-            }}</span>
-          </div>
           <!-- Region Options -->
           <div
             v-for="region in filteredRegions"
@@ -130,7 +118,7 @@ const filteredRegions = ref<Region[]>([]);
 
 // Fetch regions from TMDB API with cache
 // Cache is handled server-side, but we use useAsyncData for client-side caching
-const { data: regionsData } = await useAsyncData(
+const { data: regionsData, error: regionsError } = await useAsyncData(
   'tmdb-regions',
   async () => {
     try {
@@ -140,11 +128,17 @@ const { data: regionsData } = await useAsyncData(
         cached?: boolean;
       }>('/api/tmdb/regions');
 
-      if (!response.success || !response.regions) {
-        console.error('[RegionSelector] Failed to fetch regions');
+      if (!response || !response.success || !response.regions) {
+        console.error('[RegionSelector] Failed to fetch regions:', response);
         return [];
       }
 
+      if (import.meta.dev) {
+        console.log(
+          '[RegionSelector] Loaded regions:',
+          response.regions.length
+        );
+      }
       return response.regions;
     } catch (error) {
       console.error('[RegionSelector] Error fetching regions:', error);
@@ -159,6 +153,11 @@ const { data: regionsData } = await useAsyncData(
   }
 );
 
+// Log error if any
+if (regionsError.value) {
+  console.error('[RegionSelector] Regions fetch error:', regionsError.value);
+}
+
 // Use regions from TMDB API
 const regions = computed(() => regionsData.value || []);
 
@@ -166,14 +165,23 @@ const regions = computed(() => regionsData.value || []);
 watch(
   regions,
   (newRegions) => {
-    filteredRegions.value = [...newRegions].sort((a, b) =>
-      a.name.localeCompare(b.name)
-    );
+    if (newRegions && newRegions.length > 0) {
+      filteredRegions.value = [...newRegions].sort((a, b) =>
+        a.name.localeCompare(b.name)
+      );
+    } else {
+      filteredRegions.value = [];
+    }
   },
   { immediate: true }
 );
 
 const filterRegions = () => {
+  if (!regions.value || regions.value.length === 0) {
+    filteredRegions.value = [];
+    return;
+  }
+
   if (!searchQuery.value.trim()) {
     filteredRegions.value = [...regions.value].sort((a, b) =>
       a.name.localeCompare(b.name)
@@ -196,12 +204,17 @@ const dropdownRef = ref<InstanceType<typeof Dropdown> | null>(null);
 const handleDropdownOpen = () => {
   // Reset search and show all regions when opening
   searchQuery.value = '';
-  filteredRegions.value = [...regions.value].sort((a, b) =>
-    a.name.localeCompare(b.name)
-  );
+  if (regions.value && regions.value.length > 0) {
+    filteredRegions.value = [...regions.value].sort((a, b) =>
+      a.name.localeCompare(b.name)
+    );
+  } else {
+    filteredRegions.value = [];
+  }
 };
 
-const selectRegion = (code: string | null) => {
+const selectRegion = (code: string) => {
+  if (!code) return; // Prevent selecting null/empty
   selectedRegion.value = code;
   emit('update:modelValue', code);
   dropdownRef.value?.close();

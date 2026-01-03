@@ -8,16 +8,16 @@
     <!-- Dropdown Content -->
     <Transition
       enter-active-class="transition duration-200 ease-out"
-      enter-from-class="transform scale-95 opacity-0"
-      enter-to-class="transform scale-100 opacity-100"
+      enter-from-class="opacity-0 transform scale-95"
+      enter-to-class="opacity-100 transform scale-100"
       leave-active-class="transition duration-150 ease-in"
-      leave-from-class="transform scale-100 opacity-100"
-      leave-to-class="transform scale-95 opacity-0"
+      leave-from-class="opacity-100 transform scale-100"
+      leave-to-class="opacity-0 transform scale-95"
     >
       <div
         v-if="isOpen"
         :class="[
-          'absolute z-50 mt-2 dark:bg-gray-900/40 bg-gray-100/80 rounded-3xl border border-gray-300/50 dark:border-white/10 shadow-xl overflow-hidden',
+          'absolute z-[10000] md:z-50 mt-2 dark:bg-gray-900/40 bg-gray-100/80 rounded-3xl border border-gray-300/50 dark:border-white/10 shadow-xl overflow-hidden',
           widthClass,
           positionClass,
           'max-w-[calc(100vw-2rem)]',

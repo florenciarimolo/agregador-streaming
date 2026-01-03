@@ -3,6 +3,7 @@
     <NuxtPage />
   </NuxtLayout>
   <LoadingSpinner />
+  <CookieBanner />
 </template>
 
 <script setup lang="ts">

@@ -3,6 +3,7 @@ import { ref, readonly } from 'vue';
 export interface UndoAction {
   label: string;
   action: () => void | Promise<void>;
+  variant?: 'primary' | 'secondary' | 'outline' | 'danger' | 'ghost';
 }
 
 const toast = ref<{

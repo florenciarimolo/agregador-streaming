@@ -31,6 +31,13 @@
           >
             {{ $t('footer.faq') }}
           </nuxt-link>
+          <span class="text-gray-400">•</span>
+          <nuxt-link
+            to="/privacy"
+            class="text-sm text-gray-800 no-underline transition-colors dark:text-gray-300 hover:text-primary dark:hover:text-primary-400"
+          >
+            {{ $t('footer.privacy') }}
+          </nuxt-link>
         </div>
         <p class="mb-2 text-sm text-gray-800 dark:text-gray-300">
           {{ $t('footer.copyright') }}

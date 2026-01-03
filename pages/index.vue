@@ -540,6 +540,7 @@ const handleTitleStatus = async (
         t('home.titleMarkedNotInterested', { title: title.title }),
         {
           label: t('undo.undo'),
+          variant: 'secondary',
           action: async () => {
             // Undo: delete the not_interested status
             await $fetch('/api/users/title-status', {
@@ -562,6 +563,7 @@ const handleTitleStatus = async (
         t('home.titleMarkedSeen', { title: title.title }),
         {
           label: t('home.viewSeen'),
+          variant: 'secondary',
           action: async () => {
             await navigateTo('/preferences?tab=seen');
           },
@@ -573,6 +575,7 @@ const handleTitleStatus = async (
         t('home.titleSavedWatchlist', { title: title.title }),
         {
           label: t('home.viewList'),
+          variant: 'secondary',
           action: async () => {
             await navigateTo('/watchlist');
           },

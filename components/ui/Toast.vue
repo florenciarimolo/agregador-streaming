@@ -24,7 +24,7 @@
           <slot name="actions">
             <Button
               v-if="toast?.undoAction"
-              variant="ghost"
+              :variant="toast.undoAction.variant || 'secondary'"
               size="small"
               @click="handleUndo"
             >

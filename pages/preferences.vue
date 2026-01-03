@@ -165,7 +165,7 @@
         <div v-if="currentTab === 'content-preferences'">
           <div class="space-y-6">
             <!-- Preferred Languages -->
-            <Card padding="lg" custom-class="relative">
+            <Card padding="lg" custom-class="relative z-10">
               <h2
                 class="mb-2 text-xl font-semibold text-gray-800 dark:text-gray-300"
               >
@@ -176,10 +176,12 @@
               </p>
 
               <!-- Language Selector -->
-              <LanguageSelector
-                v-model="currentLanguageCode"
-                @update:model-value="handleLanguageChangeFromSelector"
-              />
+              <div class="relative z-10">
+                <LanguageSelector
+                  v-model="currentLanguageCode"
+                  @update:model-value="handleLanguageChangeFromSelector"
+                />
+              </div>
             </Card>
 
             <!-- Favorite Genres -->
