@@ -131,3 +131,4 @@ Once Phase 1 is complete and tested:
 - ✅ Data is stored in Supabase
 
 You're ready for **Phase 2: Basic Recommendations**!
+

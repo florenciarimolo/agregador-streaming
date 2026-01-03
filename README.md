@@ -1,203 +1,203 @@
 # UpNext
 
-**¿No sabes qué ver ahora?** UpNext te recomienda películas y series según tu momento, tu energía y el tiempo que tienes. Menos decidir, más ver.
+**Don't know what to watch now?** UpNext recommends movies and series based on your moment, your energy, and the time you have. Less deciding, more watching.
 
-Una aplicación web moderna de recomendaciones personalizadas de películas y series de televisión que utiliza inteligencia basada en tus gustos para sugerirte contenido que realmente te va a encantar.
+A modern web application for personalized movie and TV series recommendations that uses intelligence based on your tastes to suggest content you'll really love.
 
-## 🚀 Características Principales
+## 🚀 Main Features
 
-### Sistema de Recomendaciones Personalizadas
-- **Recomendado para ti**: Contenido seleccionado especialmente para ti basado en tus gustos
-- **Fácil de ver**: Recomendaciones de baja atención para esos momentos en los que quieres ver algo sin complicarte
-- **Basado en lo que te gusta**: Títulos similares a los que ya has marcado como favoritos
+### Personalized Recommendation System
+- **Recommended for you**: Content specially selected for you based on your tastes
+- **Easy to watch**: Low-attention recommendations for those moments when you want to watch something without complications
+- **Based on what you like**: Titles similar to those you've already marked as favorites
 
-### Gestión de Preferencias
-- **Onboarding inicial**: Selecciona hasta 10 películas o series que disfrutas para personalizar tus recomendaciones
-- **Editar preferencias**: Gestiona tus títulos favoritos en cualquier momento (agregar/eliminar)
-- **Historial**: 
-  - Lista de títulos que ya has visto
-  - Lista de títulos que no te interesan
-  - Opción de eliminar títulos de ambas listas
+### Preference Management
+- **Initial onboarding**: Select up to 10 movies or series you enjoy to personalize your recommendations
+- **Edit preferences**: Manage your favorite titles at any time (add/remove)
+- **History**: 
+  - List of titles you've already watched
+  - List of titles you're not interested in
+  - Option to remove titles from both lists
 
-### Autenticación y Perfil
-- **Registro e inicio de sesión**: Email/password o magic link (sin contraseña)
-- **Recuperación de contraseña**: Sistema completo de reset de contraseña
-- **Perfil de usuario**: Gestión de preferencias y configuración personal
+### Authentication and Profile
+- **Sign up and login**: Email/password or magic link (passwordless)
+- **Password recovery**: Complete password reset system
+- **User profile**: Preference management and personal configuration
 
-### Exploración de Contenido
-- **Búsqueda avanzada**: Busca películas y series por título
-- **Detalles completos**: Páginas detalladas con información completa, calificaciones, y proveedores de streaming
-- **Proveedores de streaming**: Encuentra dónde ver cada título en diferentes plataformas
-- **Temporadas y episodios**: Navegación completa para series de televisión
+### Content Exploration
+- **Advanced search**: Search for movies and series by title
+- **Complete details**: Detailed pages with complete information, ratings, and streaming providers
+- **Streaming providers**: Find where to watch each title on different platforms
+- **Seasons and episodes**: Complete navigation for TV series
 
-### Experiencia de Usuario
-- **Tema claro/oscuro**: Interfaz adaptable con soporte para modo claro y oscuro
-- **Diseño responsive**: Optimizado para todos los dispositivos (móvil, tablet, desktop)
-- **Interfaz intuitiva**: Diseño moderno y fácil de usar
+### User Experience
+- **Light/dark theme**: Adaptive interface with support for light and dark mode
+- **Responsive design**: Optimized for all devices (mobile, tablet, desktop)
+- **Intuitive interface**: Modern and easy-to-use design
 
-## 🛠️ Tecnologías
+## 🛠️ Technologies
 
-- **Nuxt 3**: Framework Vue.js con SSR/SSG
-- **Vue 3**: Framework JavaScript progresivo
-- **TypeScript**: Tipado estático para JavaScript
-- **Tailwind CSS**: Framework CSS utility-first
-- **Pinia**: Gestión de estado para Vue
-- **Supabase**: Backend como servicio (autenticación, base de datos)
-- **TMDB API**: Integración con The Movie Database para datos de películas y series
+- **Nuxt 3**: Vue.js framework with SSR/SSG
+- **Vue 3**: Progressive JavaScript framework
+- **TypeScript**: Static typing for JavaScript
+- **Tailwind CSS**: Utility-first CSS framework
+- **Pinia**: State management for Vue
+- **Supabase**: Backend as a service (authentication, database)
+- **TMDB API**: Integration with The Movie Database for movie and series data
 
-## 📋 Requisitos Previos
+## 📋 Prerequisites
 
-- Node.js (versión 20 o superior, < 25)
-- npm o yarn
-- API Key de TMDB ([obtener aquí](https://www.themoviedb.org/settings/api))
-- Proyecto de Supabase ([crear aquí](https://supabase.com))
+- Node.js (version 20 or higher, < 25)
+- npm or yarn
+- TMDB API Key ([get it here](https://www.themoviedb.org/settings/api))
+- Supabase project ([create here](https://supabase.com))
 
-## 🔧 Instalación
+## 🔧 Installation
 
-1. Clona el repositorio:
+1. Clone the repository:
 
 ```bash
 git clone <repository-url>
 cd agregador-streaming
 ```
 
-2. Instala las dependencias:
+2. Install dependencies:
 
 ```bash
 npm install
 ```
 
-3. Configura las variables de entorno. Crea un archivo `.env.local` en la raíz del proyecto:
+3. Configure environment variables. Create a `.env.local` file in the project root:
 
 ```env
 # TMDB API
-NUXT_TMDB_API_KEY=tu_api_key_aqui
+NUXT_TMDB_API_KEY=your_api_key_here
 NUXT_TMDB_BASE_URL=https://api.themoviedb.org/3
 
 # Supabase
-NUXT_PUBLIC_SUPABASE_URL=tu_url_de_supabase
-NUXT_PUBLIC_SUPABASE_ANON_KEY=tu_anon_key_de_supabase
+NUXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NUXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 
-# Base URL (para producción)
+# Base URL (for production)
 NUXT_PUBLIC_BASE_URL=http://localhost:3000
 ```
 
-4. Configura la base de datos de Supabase:
-   - Ejecuta el schema SQL en el SQL Editor de Supabase (ver `supabase/schema.sql`)
-   - Configura las URLs de redirección en Authentication > URL Configuration
+4. Configure Supabase database:
+   - Run the SQL schema in Supabase SQL Editor (see `supabase/schema.sql`)
+   - Configure redirect URLs in Authentication > URL Configuration
 
-5. Inicia el servidor de desarrollo:
+5. Start the development server:
 
 ```bash
 npm run dev
 ```
 
-La aplicación estará disponible en `http://localhost:3000`
+The application will be available at `http://localhost:3000`
 
-## 📜 Scripts Disponibles
+## 📜 Available Scripts
 
-- `npm run dev` - Inicia el servidor de desarrollo
-- `npm run build` - Construye la aplicación para producción
-- `npm run generate` - Genera una versión estática de la aplicación
-- `npm run preview` - Previsualiza la versión de producción
-- `npm run lint` - Ejecuta el linter para verificar el código
-- `npm run typecheck` - Verifica los tipos de TypeScript
+- `npm run dev` - Start development server
+- `npm run build` - Build application for production
+- `npm run generate` - Generate static version of the application
+- `npm run preview` - Preview production version
+- `npm run lint` - Run linter to verify code
+- `npm run typecheck` - Verify TypeScript types
 
-## 📁 Estructura del Proyecto
+## 📁 Project Structure
 
 ```
 agregador-streaming/
-├── components/          # Componentes Vue reutilizables
-│   ├── AuthForm.vue    # Formulario de autenticación
-│   ├── RecommendationCard.vue  # Tarjeta de recomendación
-│   ├── RecommendationSection.vue  # Sección de recomendaciones
-│   ├── SearchBar.vue   # Barra de búsqueda
+├── components/          # Reusable Vue components
+│   ├── AuthForm.vue    # Authentication form
+│   ├── RecommendationCard.vue  # Recommendation card
+│   ├── RecommendationSection.vue  # Recommendation section
+│   ├── SearchBar.vue   # Search bar
 │   └── ...
-├── composables/        # Composables reutilizables
-│   ├── useAuth.ts      # Autenticación
-│   └── useTheme.ts     # Gestión de tema
-├── layouts/            # Layouts de la aplicación
-├── middleware/         # Middleware de rutas
-│   ├── auth.ts         # Protección de rutas autenticadas
-│   └── guest.ts        # Rutas solo para invitados
-├── pages/              # Páginas y rutas
-│   ├── auth/           # Páginas de autenticación
-│   ├── onboarding.vue  # Flujo de onboarding
-│   ├── preferences.vue # Gestión de preferencias
-│   ├── history.vue     # Historial de títulos
-│   ├── pelicula/       # Páginas de películas
-│   └── serie/          # Páginas de series
-├── plugins/            # Plugins de Nuxt
-│   ├── supabase.client.ts  # Inicialización de Supabase
-│   └── theme-init.client.ts  # Inicialización de tema
-├── server/             # API routes y utilidades del servidor
-│   └── api/            # Endpoints de la API
-│       ├── recommendations.get.ts  # Recomendaciones personalizadas
-│       ├── user-history.get.ts     # Historial del usuario
-│       └── tmdb/       # Integración con TMDB
-├── stores/             # Stores de Pinia
-│   └── user.ts         # Estado del usuario
-├── types/              # Definiciones de TypeScript
-└── utils/               # Utilidades y funciones auxiliares
+├── composables/        # Reusable composables
+│   ├── useAuth.ts      # Authentication
+│   └── useTheme.ts     # Theme management
+├── layouts/            # Application layouts
+├── middleware/         # Route middleware
+│   ├── auth.ts         # Authenticated route protection
+│   └── guest.ts        # Guest-only routes
+├── pages/              # Pages and routes
+│   ├── auth/           # Authentication pages
+│   ├── onboarding.vue   # Onboarding flow
+│   ├── preferences.vue # Preference management
+│   ├── history.vue     # Title history
+│   ├── pelicula/       # Movie pages
+│   └── serie/          # Series pages
+├── plugins/            # Nuxt plugins
+│   ├── supabase.client.ts  # Supabase initialization
+│   └── theme-init.client.ts  # Theme initialization
+├── server/             # API routes and server utilities
+│   └── api/            # API endpoints
+│       ├── recommendations.get.ts  # Personalized recommendations
+│       ├── user-history.get.ts     # User history
+│       └── tmdb/       # TMDB integration
+├── stores/             # Pinia stores
+│   └── user.ts         # User state
+├── types/              # TypeScript definitions
+└── utils/               # Utilities and helper functions
 ```
 
-## 🌐 API Routes Principales
+## 🌐 Main API Routes
 
-### Recomendaciones
-- `/api/recommendations` - Recomendaciones personalizadas basadas en gustos del usuario
+### Recommendations
+- `/api/recommendations` - Personalized recommendations based on user tastes
 
-### Historial del Usuario
-- `/api/user-history` - Obtiene el historial de títulos vistos y no interesados
-- `/api/user-title-status` - Marca títulos como vistos o no interesados
+### User History
+- `/api/user-history` - Gets history of watched and not interested titles
+- `/api/user-title-status` - Marks titles as watched or not interested
 
 ### TMDB Integration
-- `/api/tmdb/search/multi` - Búsqueda multi-tipo (películas y series)
-- `/api/tmdb/movies/[id]` - Detalles de película
-- `/api/tmdb/tvshows/[id]` - Detalles de serie
-- `/api/tmdb/movies/[id]/providers` - Proveedores de streaming para películas
-- `/api/tmdb/tvshows/[id]/providers` - Proveedores de streaming para series
+- `/api/tmdb/search/multi` - Multi-type search (movies and series)
+- `/api/tmdb/movies/[id]` - Movie details
+- `/api/tmdb/tvshows/[id]` - Series details
+- `/api/tmdb/movies/[id]/providers` - Streaming providers for movies
+- `/api/tmdb/tvshows/[id]/providers` - Streaming providers for series
 
-## 🎨 Componentes Principales
+## 🎨 Main Components
 
-- `AuthForm` - Formulario de autenticación (login, registro, recuperación de contraseña)
-- `RecommendationCard` - Tarjeta individual de recomendación con acciones (marcar como visto/no interesado)
-- `RecommendationSection` - Sección de recomendaciones con descripción
-- `MediaBannerDetail` - Banner con detalles completos de película/serie
-- `SearchBar` - Barra de búsqueda con resultados en tiempo real
-- `ProviderList` - Lista de proveedores de streaming
-- `RatingBadge` - Badge de calificación
-- `MediaStatusBagde` - Badge de estado del contenido
-- `ThemeSwitcher` - Selector de tema claro/oscuro
+- `AuthForm` - Authentication form (login, signup, password recovery)
+- `RecommendationCard` - Individual recommendation card with actions (mark as watched/not interested)
+- `RecommendationSection` - Recommendation section with description
+- `MediaBannerDetail` - Banner with complete movie/series details
+- `SearchBar` - Search bar with real-time results
+- `ProviderList` - Streaming provider list
+- `RatingBadge` - Rating badge
+- `MediaStatusBagde` - Content status badge
+- `ThemeSwitcher` - Light/dark theme selector
 
-## 🔐 Autenticación
+## 🔐 Authentication
 
-La aplicación utiliza Supabase para la autenticación con soporte para:
+The application uses Supabase for authentication with support for:
 
-- **Registro con email/password**: Validación de contraseña en el frontend
-- **Inicio de sesión con email/password**
-- **Magic link**: Autenticación sin contraseña
-- **Recuperación de contraseña**: Flujo completo de reset con redirección automática
+- **Email/password signup**: Password validation on frontend
+- **Email/password login**
+- **Magic link**: Passwordless authentication
+- **Password recovery**: Complete reset flow with automatic redirect
 
-## 🎯 Flujo de Usuario
+## 🎯 User Flow
 
-1. **Primera visita**: El usuario puede explorar la página de inicio sin autenticarse
-2. **Registro/Login**: El usuario se registra o inicia sesión
-3. **Onboarding**: Si es nuevo usuario, selecciona hasta 10 títulos que le gustan
-4. **Recomendaciones**: Una vez completado el onboarding, ve recomendaciones personalizadas
-5. **Gestión**: Puede editar preferencias, ver historial, y marcar títulos como vistos/no interesados
+1. **First visit**: User can explore the home page without authentication
+2. **Signup/Login**: User signs up or logs in
+3. **Onboarding**: If new user, selects up to 10 titles they like
+4. **Recommendations**: Once onboarding is complete, sees personalized recommendations
+5. **Management**: Can edit preferences, view history, and mark titles as watched/not interested
 
-## 🚀 Despliegue
+## 🚀 Deployment
 
-La aplicación está configurada para desplegarse en Vercel:
+The application is configured to deploy on Vercel:
 
-- Configuración automática de Nuxt 3
-- Variables de entorno configuradas en el dashboard de Vercel
-- Build automático en cada push
+- Automatic Nuxt 3 configuration
+- Environment variables configured in Vercel dashboard
+- Automatic build on each push
 
-## 📝 Licencia
+## 📝 License
 
-Este proyecto es privado.
+This project is private.
 
-## 🤝 Contribuciones
+## 🤝 Contributions
 
-Las contribuciones son bienvenidas. Por favor, abre un issue o pull request para discutir los cambios propuestos.
+Contributions are welcome. Please open an issue or pull request to discuss proposed changes.
