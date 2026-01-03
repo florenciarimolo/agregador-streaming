@@ -95,6 +95,9 @@
 
 html {
   background-color: #011627; /* Default dark background */
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100vw;
 }
 
 .dark html {
@@ -107,12 +110,16 @@ html {
 
 body {
   margin: 0;
+  padding: 0;
   display: flex;
   place-items: center;
   min-width: 320px;
   min-height: 100vh;
   background-color: transparent;
   position: relative;
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100vw;
 }
 
 h1,
@@ -393,10 +400,14 @@ label.custom-checkbox-label {
 #__nuxt {
   margin: 0 auto;
   background-color: inherit;
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
 }
 
 @media screen and (width < 1024px) {
   #__nuxt {
     width: 100%;
+    max-width: 100vw;
   }
 }

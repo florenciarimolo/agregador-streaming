@@ -1,6 +1,6 @@
 <template>
   <div
-    class="animated-background fixed inset-0 w-screen h-screen overflow-hidden pointer-events-none"
+    class="animated-background fixed inset-0 w-full h-screen overflow-hidden pointer-events-none"
   >
     <!-- Animated gradient orbs -->
     <div class="orb orb-1"></div>
@@ -177,10 +177,12 @@ const getCardStyle = (index: number) => {
   position: fixed;
   top: 0;
   left: 0;
-  width: 100vw;
+  width: 100%;
+  max-width: 100vw;
   height: 100vh;
   z-index: 0;
   opacity: 0.8;
+  overflow: hidden;
 }
 
 /* Animated gradient orbs */
@@ -273,9 +275,11 @@ const getCardStyle = (index: number) => {
   position: absolute;
   top: 0;
   left: 0;
-  width: 100vw;
+  width: 100%;
+  max-width: 100vw;
   height: 100vh;
   z-index: 1;
+  overflow: hidden;
 }
 
 .particle {
@@ -307,10 +311,12 @@ const getCardStyle = (index: number) => {
   position: absolute;
   top: 0;
   left: 0;
-  width: 100vw;
+  width: 100%;
+  max-width: 100vw;
   height: 100vh;
   z-index: 2;
   opacity: 0.4;
+  overflow: hidden;
 }
 
 .dark .neural-network {
@@ -363,9 +369,11 @@ const getCardStyle = (index: number) => {
   position: absolute;
   top: 0;
   left: 0;
-  width: 100vw;
+  width: 100%;
+  max-width: 100vw;
   height: 100vh;
   z-index: 1;
+  overflow: hidden;
 }
 
 .data-card {
@@ -410,7 +418,8 @@ const getCardStyle = (index: number) => {
   position: absolute;
   top: 0;
   left: 0;
-  width: 100vw;
+  width: 100%;
+  max-width: 100vw;
   height: 100vh;
   background-image:
     linear-gradient(rgba(33, 24, 110, 0.05) 1px, transparent 1px),
@@ -419,6 +428,7 @@ const getCardStyle = (index: number) => {
   opacity: 0.6;
   animation: gridMove 20s linear infinite;
   z-index: 0;
+  overflow: hidden;
 }
 
 @keyframes gridMove {

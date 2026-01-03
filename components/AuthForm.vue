@@ -8,6 +8,8 @@ import TabButton from '@/components/ui/TabButton.vue';
 import IconButton from '@/components/ui/IconButton.vue';
 import IconEye from '@/components/icons/IconEye.vue';
 import IconEyeSlash from '@/components/icons/IconEyeSlash.vue';
+import IconCheck from '@/components/icons/IconCheck.vue';
+import IconX from '@/components/icons/IconX.vue';
 
 // Type for Supabase user that may have either 'id' or 'sub' as identifier
 type SupabaseUserWithSub = {

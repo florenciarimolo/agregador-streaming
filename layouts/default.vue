@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen relative overflow-hidden">
+  <div class="min-h-screen relative overflow-x-hidden w-full max-w-full">
     <!-- Simple Background -->
 
     <!-- Navbar -->

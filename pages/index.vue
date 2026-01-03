@@ -1136,30 +1136,29 @@ onMounted(() => {
     <!-- Hero Section -->
     <!-- Only show HeroSection when auth is initialized and there's no user, or user hasn't completed onboarding -->
     <ClientOnly>
-      <HeroSection
-        v-if="
-          userStore.authInitialized &&
-          (!effectiveUser ||
-            (initialProfileLoaded && !userStore.hasCompletedOnboarding))
-        "
-        :button-text="
-          !effectiveUser
-            ? $t('hero.discoverButton')
-            : $t('hero.recommendationsButton')
-        "
-        :show-auth-form="showAuthForm"
-        :is-authenticated="!!effectiveUser"
-        :initial-profile-loaded="initialProfileLoaded"
-        :has-completed-onboarding="userStore.hasCompletedOnboarding"
-        @get-started="handleGetStarted"
-        @auth-success="handleAuthSuccess"
-        @signup-success="handleSignupSuccess"
-      />
+      <template #default>
+        <HeroSection
+          v-if="
+            userStore.authInitialized &&
+            (!effectiveUser ||
+              (initialProfileLoaded && !userStore.hasCompletedOnboarding))
+          "
+          :button-text="
+            !effectiveUser
+              ? $t('hero.discoverButton')
+              : $t('hero.recommendationsButton')
+          "
+          :show-auth-form="showAuthForm"
+          :is-authenticated="!!effectiveUser"
+          :initial-profile-loaded="initialProfileLoaded"
+          :has-completed-onboarding="userStore.hasCompletedOnboarding"
+          @get-started="handleGetStarted"
+          @auth-success="handleAuthSuccess"
+          @signup-success="handleSignupSuccess"
+        />
+      </template>
       <template #fallback>
-        <!-- Placeholder during SSR to maintain layout -->
-        <section
-          class="relative py-16 px-4 overflow-hidden min-h-[400px]"
-        ></section>
+        <!-- Placeholder during SSR - empty to avoid hydration mismatch -->
       </template>
     </ClientOnly>
 
