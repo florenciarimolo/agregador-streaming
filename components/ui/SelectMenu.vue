@@ -1,7 +1,7 @@
 <template>
   <div ref="selectRef" class="relative">
     <!-- Trigger Slot -->
-    <div @click="toggleSelect">
+    <div @mousedown.prevent="toggleSelect">
       <slot name="trigger" :is-open="isOpen" />
     </div>
 

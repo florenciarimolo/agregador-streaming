@@ -462,7 +462,7 @@
                 <div class="flex justify-end mt-6">
                   <Button
                     variant="primary"
-                    size="medium"
+                    size="small"
                     :disabled="!hasUnsavedContentChanges"
                     @click="saveContentPreferences"
                   >
@@ -504,7 +504,7 @@
             <div class="flex gap-3 justify-end mt-4">
               <Button
                 variant="outline"
-                size="medium"
+                size="small"
                 @click="
                   showSaveConfirmationModal = false;
                   revertContentPreferencesChanges();
@@ -514,7 +514,7 @@
               </Button>
               <Button
                 variant="primary"
-                size="medium"
+                size="small"
                 @click="confirmSaveContentPreferences"
               >
                 {{ $t('common.confirm') }}
@@ -538,7 +538,7 @@
             <div class="flex gap-3 justify-end mt-4">
               <Button
                 variant="outline"
-                size="medium"
+                size="small"
                 @click="
                   showUnsavedChangesModal = false;
                   pendingNavigation = null;
@@ -551,7 +551,7 @@
               </Button>
               <Button
                 variant="primary"
-                size="medium"
+                size="small"
                 @click="
                   showUnsavedChangesModal = false;
                   hasUnsavedContentChanges = false;
@@ -604,14 +604,14 @@
             <div class="flex gap-3 justify-end mt-4">
               <Button
                 variant="outline"
-                size="medium"
+                size="small"
                 @click="showRemoveLikeModal = false"
               >
                 {{ $t('common.cancel') }}
               </Button>
               <Button
                 variant="primary"
-                size="medium"
+                size="small"
                 @click="confirmRemoveLikeFromSeen"
               >
                 {{ $t('common.confirm') }}

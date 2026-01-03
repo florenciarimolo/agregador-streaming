@@ -217,7 +217,7 @@ function calculateBoosts(
  *
  * Strategy:
  * - Read from recommendation_pool (not TMDB)
- * - Exclude titles with status 'seen' or 'not_interested'
+ * - Exclude titles with status 'seen', 'not_interested', or 'watchlist'
  * - Order by score DESC, created_at DESC
  * - Support mood/attention reordering (no recalculation)
  */
@@ -303,7 +303,8 @@ export default defineEventHandler(async (event) => {
   });
 
   try {
-    // Get excluded titles (seen + not_interested)
+    // Get excluded titles (seen + not_interested + watchlist)
+    // Watchlist titles should NOT appear in recommendations
     const { data: excludedStatuses, error: statusError } = await supabase
       .from(TABLES.USER_TITLE_STATUS)
       .select(USER_TITLE_STATUS_FIELDS.TMDB_ID)
@@ -311,6 +312,7 @@ export default defineEventHandler(async (event) => {
       .in(USER_TITLE_STATUS_FIELDS.STATUS, [
         TitleStatus.SEEN,
         TitleStatus.NOT_INTERESTED,
+        TitleStatus.WATCHLIST,
       ]);
 
     if (statusError) {
@@ -323,26 +325,6 @@ export default defineEventHandler(async (event) => {
     if (excludedStatuses) {
       excludedStatuses.forEach((status) => {
         excludedTmdbIds.add(status.tmdb_id);
-      });
-    }
-
-    // Get watchlist titles to mark them in recommendations
-    const { data: watchlistStatuses, error: watchlistError } = await supabase
-      .from(TABLES.USER_TITLE_STATUS)
-      .select(USER_TITLE_STATUS_FIELDS.TMDB_ID)
-      .eq(USER_TITLE_STATUS_FIELDS.USER_ID, userId)
-      .eq(USER_TITLE_STATUS_FIELDS.STATUS, TitleStatus.WATCHLIST);
-
-    if (watchlistError) {
-      safeError('Error fetching watchlist statuses', watchlistError);
-      // Don't throw - continue without watchlist info if there's an error
-    }
-
-    // Build set of watchlist tmdb_ids
-    const watchlistTmdbIds = new Set<number>();
-    if (watchlistStatuses) {
-      watchlistStatuses.forEach((status) => {
-        watchlistTmdbIds.add(status.tmdb_id);
       });
     }
 
@@ -611,17 +593,23 @@ export default defineEventHandler(async (event) => {
           (entry) => entry.type === MediaTypeEnum.tv
         );
 
+        // Take exactly 10 of each type (or available amount if less)
+        const moviesToTake = Math.min(10, movies.length);
+        const tvShowsToTake = Math.min(10, tvShows.length);
+        const topMovies = movies.slice(0, moviesToTake);
+        const topTvShows = tvShows.slice(0, tvShowsToTake);
+
         // Interleave to achieve 50/50 balance
         const balanced: typeof validEntries = [];
-        const maxLength = Math.max(movies.length, tvShows.length);
+        const maxLength = Math.max(topMovies.length, topTvShows.length);
 
         for (let i = 0; i < maxLength; i++) {
           // Alternate between movie and TV show
-          if (i < movies.length) {
-            balanced.push(movies[i]);
+          if (i < topMovies.length) {
+            balanced.push(topMovies[i]);
           }
-          if (i < tvShows.length) {
-            balanced.push(tvShows[i]);
+          if (i < topTvShows.length) {
+            balanced.push(topTvShows[i]);
           }
         }
 
@@ -708,7 +696,7 @@ export default defineEventHandler(async (event) => {
           explanation,
           explanation_code: entry.explanation_code || null,
           providers,
-          in_watchlist: watchlistTmdbIds.has(entry.tmdb_id),
+          in_watchlist: false, // Watchlist titles are excluded, so this is always false
         });
 
         tmdbIdsToTrack.push(entry.tmdb_id);

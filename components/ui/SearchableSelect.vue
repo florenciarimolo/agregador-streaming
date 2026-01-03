@@ -7,7 +7,7 @@
       :close-on-click-outside="false"
     >
       <template #trigger>
-        <div class="relative">
+        <div class="relative" @mousedown.stop>
           <input
             ref="inputRef"
             v-model="searchQuery"
@@ -16,7 +16,7 @@
             class="px-4 py-2 pr-4 pl-10 w-full text-sm text-gray-800 rounded-lg border-gray-300 opacity-90 transition-all dark:text-gray-300 dark:bg-gray-800/50 bg-white/80 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-transparent focus:border-transparent backdrop-blur-xs hover:opacity-100"
             @input="handleInput"
             @focus="handleFocus"
-            @click="handleFocus"
+            @mousedown.stop.prevent="handleFocus"
             @blur="handleBlur"
           />
           <!-- Search Icon -->
@@ -30,6 +30,8 @@
       <div
         v-if="filteredOptions.length > 0"
         class="overflow-y-auto max-h-64 border-gray-300 backdrop-blur-sm custom-scrollbar dark:bg-gray-900/95 bg-white/95 dark:border-gray-600"
+        @mousedown="clickInsideMenu = true"
+        @click="clickInsideMenu = true"
       >
         <div class="py-2">
           <slot
@@ -120,6 +122,7 @@ const searchQuery = ref('');
 const selectMenuRef = ref<InstanceType<typeof SelectMenu> | null>(null);
 const inputRef = ref<HTMLInputElement | null>(null);
 const filteredOptions = ref<Array<Record<string, unknown>>>([]);
+const clickInsideMenu = ref(false);
 
 // Default filterItem function (needs to be defined after props)
 const defaultFilterItem = (item: Record<string, unknown>, query: string) => {
@@ -175,15 +178,46 @@ const handleFocus = () => {
   }
 };
 
-// Handle blur - close dropdown after a delay
-const handleBlur = () => {
+// Handle blur - close dropdown after a delay, but only if click was outside
+const handleBlur = (event: FocusEvent) => {
+  // Check if the related target (where focus is going) is inside the select menu
+  const relatedTarget = event.relatedTarget as HTMLElement | null;
+  const selectMenuElement = selectMenuRef.value?.$el as HTMLElement | null;
+
+  // If focus is moving to an element inside the menu, don't close
+  if (
+    relatedTarget &&
+    selectMenuElement &&
+    selectMenuElement.contains(relatedTarget)
+  ) {
+    clickInsideMenu.value = false;
+    return;
+  }
+
+  // Delay closing to allow click events to process first
   setTimeout(() => {
-    selectMenuRef.value?.close();
+    // If click was inside menu, don't close
+    if (clickInsideMenu.value) {
+      clickInsideMenu.value = false;
+      // Restore focus to input
+      inputRef.value?.focus();
+      return;
+    }
+
+    // Double-check that focus is still not on the input or menu
+    const activeElement = document.activeElement;
+    if (
+      activeElement !== inputRef.value &&
+      (!selectMenuElement || !selectMenuElement.contains(activeElement))
+    ) {
+      selectMenuRef.value?.close();
+    }
   }, 200);
 };
 
 // Select an item
 const selectItem = (item: Record<string, unknown>) => {
+  clickInsideMenu.value = false;
   emit('select', item);
   searchQuery.value = '';
   selectMenuRef.value?.close();
