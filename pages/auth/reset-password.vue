@@ -346,7 +346,29 @@ onMounted(async () => {
   try {
     // Protección: Verificar que estamos en el flujo de recovery correcto
     if (typeof window !== 'undefined') {
-      const isRecoveryFlow = localStorage.getItem('auth:recovery') === '1';
+      const recoveryFlag = localStorage.getItem('auth:recovery');
+      let isRecoveryFlow = false;
+
+      if (recoveryFlag) {
+        try {
+          // New format: { value: 1, ts: timestamp }
+          const parsed = JSON.parse(recoveryFlag);
+          // Check if flag is valid (not older than 24 hours)
+          const maxAge = 24 * 60 * 60 * 1000; // 24 hours
+          if (parsed.value === 1 && Date.now() - parsed.ts < maxAge) {
+            isRecoveryFlow = true;
+          } else {
+            // Flag expired, remove it
+            localStorage.removeItem('auth:recovery');
+          }
+        } catch {
+          // Legacy format: '1' (string)
+          if (recoveryFlag === '1') {
+            isRecoveryFlow = true;
+          }
+        }
+      }
+
       if (!isRecoveryFlow) {
         // No estamos en el flujo de recovery - redirigir a login
         if (process.env.NODE_ENV === 'development') {
@@ -444,10 +466,12 @@ const handleResetPassword = async () => {
       return;
     }
 
-    // Step 2: Sign out from all active sessions
-    // This ensures that all other devices/sessions are logged out for security
-    // After password change, we want to force re-authentication everywhere
-    // signOut() without parameters closes all sessions globally
+    // Step 2: Sign out from the recovery session
+    // When the user clicks the recovery link, Supabase creates a temporary recovery session
+    // After updating the password, this recovery session becomes a regular session
+    // We need to sign out to close this session and force the user to log in with their new password
+    // Note: The user didn't have a session before requesting password recovery, but Supabase
+    // creates this temporary recovery session when processing the recovery link
     const { error: signOutError } = await supabase.auth.signOut();
 
     if (signOutError) {
@@ -460,19 +484,25 @@ const handleResetPassword = async () => {
       // Continue with the flow even if signOut fails
     }
 
+    // Step 3: Reset user store to ensure clean state
+    // This ensures the store is properly cleared before redirect
+    const userStore = useUserStore();
+    userStore.reset();
+
     passwordReset.value = true;
 
-    // Step 3: Cerrar el flujo de recovery eliminando el flag
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('auth:recovery');
-    }
+    // Step 4: NO eliminar el flag auth:recovery aquí
+    // Se eliminará cuando el usuario inicie sesión manualmente después de recuperar la contraseña
+    // Esto evita problemas de estado donde el usuario aparece logueado pero el middleware no lo detecta
 
-    // Step 4: Redirect to login page after 2 seconds
+    // Step 5: Wait a bit to ensure signOut is fully processed
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    // Step 6: Redirect to login page
     // User needs to log in again with the new password
     // Using ?auth=login to show the login form on homepage
-    setTimeout(() => {
-      router.push('/?auth=login');
-    }, 2000);
+    // Use replace to avoid adding to history
+    router.replace('/?auth=login');
   } catch (err: unknown) {
     console.error('[Client] Reset password error:', err);
     error.value = t('media.unexpectedError');

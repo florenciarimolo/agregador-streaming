@@ -942,6 +942,29 @@ const handleAuthSuccess = async () => {
       hasCompletedOnboarding: userStore.hasCompletedOnboarding,
     });
 
+    // Step: Eliminar el flag auth:recovery si existe (después de recuperar contraseña)
+    // Esto se hace cuando el usuario inicia sesión manualmente después de recuperar la contraseña
+    if (typeof window !== 'undefined') {
+      const recoveryFlag = localStorage.getItem('auth:recovery');
+      if (recoveryFlag) {
+        // Check both new format (JSON) and legacy format (string '1')
+        let hasRecoveryFlag = false;
+        try {
+          const parsed = JSON.parse(recoveryFlag);
+          hasRecoveryFlag = parsed.value === 1;
+        } catch {
+          hasRecoveryFlag = recoveryFlag === '1';
+        }
+        
+        if (hasRecoveryFlag) {
+          console.log(
+            '[handleAuthSuccess] Removing auth:recovery flag after successful login'
+          );
+          localStorage.removeItem('auth:recovery');
+        }
+      }
+    }
+
     // Navigate based on onboarding status - use replace: true to trigger middleware
     if (userStore.hasCompletedOnboarding) {
       console.log(

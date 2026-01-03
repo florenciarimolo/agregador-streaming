@@ -3,7 +3,7 @@ import { getUserTMDBParams, getUserTMDBParamsByUserId } from '../../../utils/use
 import { createError, getRouterParams } from 'h3';
 import { createClient } from '@supabase/supabase-js';
 import { TABLES, TITLES_FIELDS } from '@/composables/database/constants';
-import { getTitleInLanguage, type MultiLanguageText } from '@/composables/database/titles';
+import { type MultiLanguageText } from '@/composables/database/titles';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 
 export default defineEventHandler(async (event) => {
@@ -140,17 +140,24 @@ export default defineEventHandler(async (event) => {
           }).catch(() => null),
         ]);
 
-      // Extract language-specific text from JSONB (now with all languages)
-      const titleText = getTitleInLanguage(titleJsonb, userLangCode, region);
-      const overviewText = getTitleInLanguage(overviewJsonb, userLangCode, region);
-      const posterPathText = getTitleInLanguage(posterPathJsonb, userLangCode, region, true);
+      // Use unified extraction function with TMDB fallback
+      const { extractTitleDataWithFallback } = await import('../../../utils/title-extraction');
+      
+      const extracted = await extractTitleDataWithFallback({
+        tmdbId,
+        type: MediaTypeEnum.movie,
+        language: userLanguage,
+        region,
+        supabase,
+        config,
+      });
 
       // Map DB title to Movie format
       const movie: any = {
         id: titleFromDb.tmdb_id,
-        title: titleText || fullMovieResponse?.title,
-        overview: overviewText || fullMovieResponse?.overview,
-        poster_path: posterPathText || fullMovieResponse?.poster_path,
+        title: extracted.title || fullMovieResponse?.title || '',
+        overview: extracted.overview || fullMovieResponse?.overview || '',
+        poster_path: extracted.poster_path || fullMovieResponse?.poster_path || null,
         backdrop_path: titleFromDb.backdrop_path,
         release_date: titleFromDb.release_date,
         vote_average: titleFromDb.vote_average,

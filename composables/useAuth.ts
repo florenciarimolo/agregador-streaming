@@ -151,8 +151,12 @@ export const useAuth = () => {
       });
 
       // Set recovery flag in localStorage to detect recovery flow in callback
+      // Flag includes timestamp to prevent indefinite persistence if user abandons flow
       if (!error && typeof window !== 'undefined') {
-        localStorage.setItem('auth:recovery', '1');
+        localStorage.setItem(
+          'auth:recovery',
+          JSON.stringify({ value: 1, ts: Date.now() })
+        );
       }
 
       if (error) {

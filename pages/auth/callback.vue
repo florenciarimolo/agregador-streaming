@@ -160,12 +160,34 @@ onMounted(async () => {
   // Check for recovery flow flag BEFORE any other logic
   // This must be the first thing we check, even before checking session
   if (typeof window !== 'undefined') {
-    const isRecoveryFlow = localStorage.getItem('auth:recovery') === '1';
+    const recoveryFlag = localStorage.getItem('auth:recovery');
+    let isRecoveryFlow = false;
+
+    if (recoveryFlag) {
+      try {
+        // New format: { value: 1, ts: timestamp }
+        const parsed = JSON.parse(recoveryFlag);
+        // Check if flag is valid (not older than 24 hours)
+        const maxAge = 24 * 60 * 60 * 1000; // 24 hours
+        if (parsed.value === 1 && Date.now() - parsed.ts < maxAge) {
+          isRecoveryFlow = true;
+        } else {
+          // Flag expired, remove it
+          localStorage.removeItem('auth:recovery');
+        }
+      } catch {
+        // Legacy format: '1' (string)
+        if (recoveryFlag === '1') {
+          isRecoveryFlow = true;
+        }
+      }
+    }
+
     console.log(
       '[AUTH TRACE] callback.vue checking localStorage auth:recovery',
       {
         isRecoveryFlow,
-        localStorageValue: localStorage.getItem('auth:recovery'),
+        localStorageValue: recoveryFlag,
       }
     );
 

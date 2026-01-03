@@ -375,82 +375,45 @@ export default defineEventHandler(async (event) => {
       const ensureTitleData = async (
         entry: (typeof filteredEntries)[0]
       ): Promise<TitleData | null> => {
-        // If title_data exists, use it
+        // If title_data exists, use it with fallback to TMDB if needed
         if (entry.title_data) {
           const titleData = entry.title_data as TitleData & {
             title?: string | MultiLanguageText;
             overview?: string | MultiLanguageText;
+            poster_path?: string | MultiLanguageText | null;
           };
 
-          // Use getTitleInLanguage to extract title and overview with alphabet detection
-          const { getTitleInLanguage } =
-            await import('@/composables/database/titles');
+          // Use unified extraction function with TMDB fallback
+          const { extractTitleDataFromPoolWithFallback } = await import(
+            '../../utils/title-extraction'
+          );
 
-          // Extract title with alphabet detection and fallback
-          // getTitleInLanguage handles both string and multi-language object formats
-          let extractedTitle = '';
-          if (typeof titleData.title === 'string') {
-            // If it's a string, we need to check if it contains non-Latin characters
-            // Convert to multi-language object format for getTitleInLanguage
-            const titleAsMultiLanguage: MultiLanguageText = {
-              [language]: titleData.title,
-            };
-            extractedTitle = getTitleInLanguage(
-              titleAsMultiLanguage,
+          const extracted = await extractTitleDataFromPoolWithFallback(
+            {
+              title: titleData.title,
+              overview: titleData.overview,
+              poster_path: titleData.poster_path,
+            },
+            {
+              tmdbId: entry.tmdb_id,
+              type: entry.type,
               language,
               region,
-              false // isImagePath = false
-            );
-            // If getTitleInLanguage returns empty (needs primary language from TMDB),
-            // use the original string as fallback for now
-            if (!extractedTitle) {
-              extractedTitle = titleData.title;
+              supabase,
+              config: {
+                public: {
+                  supabaseUrl: config.public.supabaseUrl,
+                  supabaseAnonKey: config.public.supabaseAnonKey,
+                },
+              },
             }
-          } else if (titleData.title && typeof titleData.title === 'object') {
-            // Multi-language object, use getTitleInLanguage with alphabet detection
-            extractedTitle = getTitleInLanguage(
-              titleData.title,
-              language,
-              region,
-              false // isImagePath = false
-            );
-          }
-
-          // Extract overview with alphabet detection and fallback
-          let extractedOverview = '';
-          if (typeof titleData.overview === 'string') {
-            // If it's a string, convert to multi-language object format for getTitleInLanguage
-            const overviewAsMultiLanguage: MultiLanguageText = {
-              [language]: titleData.overview,
-            };
-            extractedOverview = getTitleInLanguage(
-              overviewAsMultiLanguage,
-              language,
-              region,
-              false // isImagePath = false
-            );
-            // If getTitleInLanguage returns empty (needs primary language from TMDB),
-            // use the original string as fallback for now
-            if (!extractedOverview) {
-              extractedOverview = titleData.overview;
-            }
-          } else if (
-            titleData.overview &&
-            typeof titleData.overview === 'object'
-          ) {
-            // Multi-language object, use getTitleInLanguage with alphabet detection
-            extractedOverview = getTitleInLanguage(
-              titleData.overview,
-              language,
-              region,
-              false // isImagePath = false
-            );
-          }
+          );
 
           return {
             ...titleData,
-            title: extractedTitle || '',
-            overview: extractedOverview || '',
+            title: extracted.title,
+            overview: extracted.overview,
+            poster_path: extracted.poster_path || titleData.poster_path || null,
           } as TitleData;
         }
 

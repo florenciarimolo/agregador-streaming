@@ -539,6 +539,80 @@ Defined in `composables/database/constants.ts`:
 
 ---
 
+## Password Recovery Flow
+
+### `auth:recovery` Flag Lifecycle
+
+The `auth:recovery` flag is a localStorage flag used to track the password recovery flow and prevent false authentication states.
+
+#### Flag Format
+
+**New format (with timestamp):**
+```json
+{ "value": 1, "ts": 1234567890123 }
+```
+
+**Legacy format (backward compatible):**
+```
+"1"
+```
+
+The flag includes a timestamp to prevent indefinite persistence if the user abandons the recovery flow. Flags older than 24 hours are automatically considered invalid and removed.
+
+#### Lifecycle
+
+1. **Set**: When user requests password reset
+   - Location: `composables/useAuth.ts` → `resetPassword()`
+   - Format: `{ value: 1, ts: Date.now() }`
+
+2. **Persists through**:
+   - `auth/callback.vue`: Detects recovery flow and redirects to reset-password
+   - `auth/reset-password.vue`: Validates recovery session and allows password change
+
+3. **Cleared**: Only after manual login
+   - Locations:
+     - `components/AuthForm.vue` → After successful password login
+     - `pages/index.vue` → `handleAuthSuccess()` after successful authentication
+   - Condition: User has real session, store is populated, middleware can detect it
+
+#### Why This Flow?
+
+**Problem**: When Supabase processes a recovery link, it creates a temporary recovery session. After changing the password, this session becomes a regular session, but the middleware may not detect it correctly, causing "home without detected session" bugs.
+
+**Solution**: Keep the flag until the user manually logs in with their new password. This ensures:
+- The store is properly populated
+- The middleware can detect the session
+- No false authentication states occur
+
+#### Important Rules
+
+❌ **DO NOT** remove the flag in `auth/callback.vue`  
+❌ **DO NOT** remove the flag immediately after changing password  
+✅ **DO** remove the flag only after successful manual login  
+✅ **DO** validate flag age (24 hours max) to prevent indefinite persistence
+
+#### Flow Diagram
+
+```
+User requests password reset
+  ↓
+Flag set: { value: 1, ts: timestamp }
+  ↓
+User clicks recovery link → callback.vue
+  ↓
+Flag detected → redirect to reset-password.vue
+  ↓
+User changes password → signOut() → redirect to login
+  ↓
+Flag persists (NOT removed)
+  ↓
+User logs in manually → store updated
+  ↓
+Flag removed → normal navigation
+```
+
+---
+
 ## References
 
 - `types/TitleStatus.ts`: State definitions
@@ -546,3 +620,4 @@ Defined in `composables/database/constants.ts`:
 - `server/api/users/title-status.post.ts`: Update logic
 - `server/api/users/title-status.delete.ts`: Delete logic
 - `supabase/schema.sql`: Database schema
+- `composables/useAuth.ts`: Password recovery flag management

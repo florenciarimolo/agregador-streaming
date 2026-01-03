@@ -195,6 +195,12 @@ export default defineEventHandler(async (event) => {
       });
     }
 
+    // Note: Cache invalidation is not needed when language changes because:
+    // 1. The titles table stores multi-language JSONB (covers all languages)
+    // 2. The recommendation pool is regenerated when language changes (handled in frontend)
+    // 3. The extractTitleDataWithFallback function automatically fetches from TMDB if missing
+    // The cache in titles table is language-agnostic and accumulates all languages over time
+
     return {
       success: true,
       preferences: data,

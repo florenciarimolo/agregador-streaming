@@ -12,6 +12,7 @@ import CloseButton from '@/components/ui/CloseButton.vue';
 import Card from '@/components/ui/Card.vue';
 import Spinner from '@/components/Spinner.vue';
 import Button from '@/components/ui/Button.vue';
+import AppShell from '@/components/layout/AppShell.vue';
 
 definePageMeta({
   middleware: 'auth',
@@ -334,8 +335,8 @@ const saveSelections = async () => {
 };
 </script>
 <template>
-  <div class="pt-6 pb-6 md:pt-12 md:pb-12 w-[80%] mx-auto">
-    <div class="w-full px-4 md:px-0">
+  <AppShell>
+    <div class="pt-6 pb-6 md:pt-12 md:pb-12">
       <!-- Header -->
       <div class="text-center mb-6">
         <h1 class="text-3xl font-bold dark:text-gray-300 text-gray-800 mb-2">
@@ -622,5 +623,5 @@ const saveSelections = async () => {
         "
       />
     </div>
-  </div>
+  </AppShell>
 </template>
