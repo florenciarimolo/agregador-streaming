@@ -320,7 +320,6 @@
     "invalidMediaType": "Tipo de medio no válido.",
     "removeFromList": "Eliminar",
     "removeTitle": "Eliminar {title}",
-    "likedTabInfo": "Al añadir o eliminar un título de esta lista, se regenerarán automáticamente tus recomendaciones en segundo plano.",
     "tabs": {
       "favorites": "Me gusta",
       "content": "Preferencias de contenido"

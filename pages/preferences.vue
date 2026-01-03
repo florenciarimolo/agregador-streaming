@@ -111,9 +111,6 @@
           <template #default="{ activeTab: currentTab }">
             <!-- Liked Tab -->
             <div v-if="currentTab === 'liked'">
-              <Alert variant="info" custom-class="mb-4" :show-icon="true">
-                {{ $t('preferences.likedTabInfo') }}
-              </Alert>
               <div class="mb-4">
                 <SearchBar
                   :emit-on-select="true"
@@ -640,7 +637,6 @@ import AppShell from '@/components/layout/AppShell.vue';
 import PageContainer from '@/components/layout/PageContainer.vue';
 import TabButton from '@/components/ui/TabButton.vue';
 import Card from '@/components/ui/Card.vue';
-import Alert from '@/components/ui/Alert.vue';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 import {
   getUserLikedTitles,
