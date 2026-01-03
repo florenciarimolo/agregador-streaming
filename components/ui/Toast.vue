@@ -9,7 +9,7 @@
   >
     <div
       v-if="shouldShow"
-      class="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 max-w-md w-full mx-4"
+      class="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-md md:bottom-6 md:w-full md:mx-4"
     >
       <div
         :class="[

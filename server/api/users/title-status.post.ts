@@ -16,6 +16,16 @@ import {
  * Update user title status (seen, not_interested, or watchlist)
  * Body: { tmdb_id: number, type: 'movie' | 'tv', status: TitleStatus, liked?: boolean }
  * Note: Single active status - setting a new status replaces the old one
+ *
+ * IMPORTANT: Product Decision - Liked Dependency
+ * ==============================================
+ * `liked` is an ATTRIBUTE of `seen`, not an independent status:
+ * - `liked: true` can ONLY be set when `status === 'seen'`
+ * - When marking as liked, automatically set `status: 'seen'` and `liked: true`
+ * - `liked` cannot exist without `seen`
+ * - When `seen` is deleted, the entire record (including `liked`) is deleted
+ *
+ * This ensures data consistency and prevents orphaned states.
  */
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig();
@@ -113,6 +123,36 @@ export default defineEventHandler(async (event) => {
   });
 
   try {
+    // Ensure title exists in database (especially important for watchlist)
+    // Check if title exists
+    const { data: existingTitle } = await supabase
+      .from(TABLES.TITLES)
+      .select('tmdb_id')
+      .eq('tmdb_id', tmdb_id)
+      .maybeSingle();
+
+    // If title doesn't exist, fetch it from TMDB endpoint (this will auto-create it)
+    if (!existingTitle) {
+      try {
+        const endpoint = type === MediaTypeEnum.movie ? 'movie' : 'tv';
+        
+        // Call internal TMDB endpoint which will fetch and create the title
+        await $fetch(`/api/tmdb/${endpoint}s/${tmdb_id}`, {
+          query: {
+            language: 'es-ES', // Default language, will be updated with user preferences later
+          },
+        });
+      } catch (tmdbError) {
+        // Don't fail if TMDB fetch fails - title might be created later when watchlist is fetched
+        if (process.env.NODE_ENV === 'development') {
+          console.warn(
+            `[Title Status] Could not fetch title ${tmdb_id} from TMDB:`,
+            tmdbError
+          );
+        }
+      }
+    }
+
     // Upsert user title status (insert or update)
     const upsertData: {
       user_id: string;
@@ -128,6 +168,8 @@ export default defineEventHandler(async (event) => {
     };
 
     // Only include liked if provided
+    // IMPORTANT: `liked` can only be true when status is 'seen'
+    // This is enforced by the product logic: liked is an attribute of seen
     if (typeof liked === 'boolean') {
       upsertData.liked = liked;
     }

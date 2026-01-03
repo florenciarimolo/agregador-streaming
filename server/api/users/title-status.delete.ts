@@ -11,6 +11,16 @@ import { updatePoolScore } from '@/composables/database/recommendationPool';
 /**
  * Delete user title status (remove from seen or not_interested)
  * Query params: { tmdb_id: number }
+ *
+ * IMPORTANT: Product Decision - Liked Dependency
+ * ==============================================
+ * When deleting a title status (typically `seen`), the ENTIRE record is deleted.
+ * This includes `liked: true` if it was present, because:
+ * - `liked` is an attribute of `seen`, not an independent status
+ * - `liked` cannot exist without `seen`
+ * - This behavior is CORRECT and must be maintained
+ *
+ * Do NOT attempt to preserve `liked` when removing `seen`.
  */
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig();
@@ -109,6 +119,8 @@ export default defineEventHandler(async (event) => {
       .maybeSingle();
 
     // Delete user title status
+    // NOTE: This deletes the ENTIRE record, including `liked: true` if present.
+    // This is correct behavior: `liked` is an attribute of `seen`, not independent.
     const { error } = await supabase
       .from(TABLES.USER_TITLE_STATUS)
       .delete()

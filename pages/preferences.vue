@@ -1310,6 +1310,12 @@ const confirmRemoveLiked = async () => {
   }
 };
 
+/**
+ * Remove title from seen list
+ * IMPORTANT: This deletes the ENTIRE user_title_status record, including `liked: true` if present.
+ * This is correct behavior: `liked` is an attribute of `seen`, not an independent status.
+ * Do NOT attempt to preserve `liked` when removing `seen`.
+ */
 const handleRemoveSeen = async (title: {
   id: string;
   title: string;
