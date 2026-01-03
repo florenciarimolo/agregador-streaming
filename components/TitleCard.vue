@@ -45,11 +45,6 @@
           <IconImage icon-class="w-12 h-12" />
         </div>
 
-        <!-- Top-left badges slot -->
-        <div class="flex absolute top-2 left-2 z-10 flex-col gap-2">
-          <slot name="top-left-badges" />
-        </div>
-
         <!-- Hover Overlay -->
         <div
           class="flex absolute bottom-0 left-0 flex-col justify-center items-center px-4 w-full h-full opacity-0 backdrop-blur-md transition-all duration-300 pointer-events-none group-hover:opacity-100 dark:bg-black/80 bg-white/80"
@@ -60,36 +55,28 @@
         </div>
       </nuxt-link>
 
+      <!-- Top-left badges slot and type badge - Outside the link to allow tooltips to escape -->
+      <div
+        class="flex overflow-visible absolute top-2 left-2 z-10 flex-col gap-2 items-start"
+      >
+        <div class="relative z-20">
+          <slot name="top-left-badges" />
+        </div>
+        <MediaTypeBadge v-if="showType" :type="type" />
+      </div>
+
       <!-- Top-right actions slot - Outside the link to prevent navigation -->
       <div class="overflow-visible absolute top-2 right-2 z-30">
         <slot name="top-right-actions" />
       </div>
     </div>
-
-    <!-- Content -->
-    <div class="p-4">
-      <slot name="content">
-        <!-- Default content: title and type -->
-        <h3
-          class="mb-1 text-sm font-semibold text-gray-800 truncate dark:text-gray-300"
-        >
-          {{ title }}
-        </h3>
-        <p
-          v-if="showType"
-          class="mb-2 text-xs text-gray-700 dark:text-gray-300"
-        >
-          {{ typeLabel }}
-        </p>
-      </slot>
-    </div>
   </article>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 import IconImage from './icons/IconImage.vue';
+import MediaTypeBadge from './MediaTypeBadge.vue';
 
 interface Props {
   // Required
@@ -111,7 +98,7 @@ interface Props {
   hoverText?: string;
 }
 
-const props = withDefaults(defineProps<Props>(), {
+withDefaults(defineProps<Props>(), {
   posterPath: null,
   aspectRatio: 'poster',
   showType: true,
@@ -122,14 +109,6 @@ const props = withDefaults(defineProps<Props>(), {
   imageAlt: undefined,
   noImageAriaLabel: undefined,
   hoverText: undefined,
-});
-
-const typeLabel = computed(() => {
-  if (!props.type) return '';
-  const { t } = useI18n();
-  return props.type === MediaTypeEnum.movie
-    ? t('media.movie')
-    : t('media.series');
 });
 </script>
 
@@ -146,7 +125,7 @@ article > div:first-child {
   overflow: visible;
 }
 
-/* Poster link - overflow-hidden to contain image but allow dropdown to escape */
+/* Poster link - overflow-hidden to contain image but allow tooltips to escape */
 article > div:first-child > a {
   border-radius: 0.5rem 0.5rem 0 0;
   position: relative;
@@ -159,9 +138,12 @@ article > div:first-child > a > div:first-of-type {
   border-radius: 0.5rem 0.5rem 0 0;
 }
 
-/* Ensure content area also has proper overflow and rounded corners */
-article > div:last-child {
-  overflow: hidden;
-  border-radius: 0 0 0.5rem 0.5rem;
+/* Poster container should have rounded corners on all sides since there's no content area */
+article > div:first-child {
+  border-radius: 0.5rem;
+}
+
+article > div:first-child > a {
+  border-radius: 0.5rem;
 }
 </style>

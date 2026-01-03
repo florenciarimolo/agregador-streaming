@@ -16,40 +16,40 @@
     >
       <!-- Top-left: Like Button -->
       <template #top-left-badges>
-        <IconButton
-          v-if="onLike"
-          :aria-label="likeLabel || $t('media.liked')"
-          size="small"
-          variant="default"
-          :custom-class="`tooltip-container p-2 rounded-full backdrop-blur-sm pointer-events-auto ${
-            title.liked === true
-              ? 'bg-primary-800 text-white border border-gray-700/50 dark:bg-primary-600/70 dark:border-primary-800 hover:bg-primary-900 dark:hover:bg-primary-600'
-              : 'bg-black/50 hover:bg-primary-900 dark:hover:bg-primary-600'
-          }`"
-          @click.stop.prevent="onLike(title)"
-        >
-          <IconHeartFilled
-            v-if="title.liked === true"
-            icon-class="w-4 h-4 text-white"
-          />
-          <IconHeart v-else icon-class="w-4 h-4 text-white" />
-          <span class="tooltip">{{ likeLabel || $t('media.liked') }}</span>
-        </IconButton>
+        <Tooltip v-if="onLike" :text="likeLabel || $t('media.liked')">
+          <IconButton
+            :aria-label="likeLabel || $t('media.liked')"
+            size="small"
+            variant="default"
+            :custom-class="`p-2 rounded-full backdrop-blur-sm pointer-events-auto w-fit h-fit ${
+              title.liked === true
+                ? 'bg-primary-800 text-white border border-gray-700/50 dark:bg-primary-600/70 dark:border-primary-800 hover:bg-primary-900 dark:hover:bg-primary-600'
+                : 'bg-black/50 hover:bg-primary-900 dark:hover:bg-primary-600'
+            }`"
+            @click.stop.prevent="onLike(title)"
+          >
+            <IconHeartFilled
+              v-if="title.liked === true"
+              icon-class="w-4 h-4 text-white"
+            />
+            <IconHeart v-else icon-class="w-4 h-4 text-white" />
+          </IconButton>
+        </Tooltip>
       </template>
 
       <!-- Top-right: Remove Button -->
       <template #top-right-actions>
-        <IconButton
-          v-if="onRemove"
-          :aria-label="removeLabel || $t('common.delete')"
-          size="small"
-          variant="default"
-          custom-class="tooltip-container p-2 rounded-full backdrop-blur-sm pointer-events-auto bg-black/50 hover:bg-red-600/80"
-          @click.stop.prevent="onRemove(title)"
-        >
-          <IconX icon-class="w-4 h-4 text-white" />
-          <span class="tooltip">{{ removeLabel || $t('common.delete') }}</span>
-        </IconButton>
+        <Tooltip v-if="onRemove" :text="removeLabel || $t('common.delete')">
+          <IconButton
+            :aria-label="removeLabel || $t('common.delete')"
+            size="small"
+            variant="default"
+            custom-class="p-2 rounded-full backdrop-blur-sm pointer-events-auto w-fit h-fit bg-black/50 hover:bg-red-600/80"
+            @click.stop.prevent="onRemove(title)"
+          >
+            <IconX icon-class="w-4 h-4 text-white" />
+          </IconButton>
+        </Tooltip>
       </template>
     </TitleCard>
   </div>
@@ -63,6 +63,7 @@ import IconHeart from './icons/IconHeart.vue';
 import IconHeartFilled from './icons/IconHeartFilled.vue';
 import IconX from './icons/IconX.vue';
 import TitleCard from './TitleCard.vue';
+import Tooltip from './ui/Tooltip.vue';
 
 interface Title {
   id: string;
@@ -107,52 +108,7 @@ if (import.meta.dev && props.onLike) {
 </script>
 
 <style scoped>
-.tooltip-container:hover,
-.tooltip-container:focus {
-  z-index: 10000;
-}
-
-.tooltip {
-  position: absolute;
-  top: calc(100% + 8px);
-  left: 50%;
-  transform: translateX(-50%) translateY(4px);
-  background-color: rgba(0, 0, 0, 0.95);
-  color: white;
-  padding: 6px 10px;
-  border-radius: 6px;
-  font-size: 12px;
-  white-space: nowrap;
-  pointer-events: none;
-  opacity: 0;
-  transition:
-    opacity 0.2s ease-in-out,
-    transform 0.2s ease-in-out;
-  z-index: 9999;
-  margin-top: 0;
-}
-
-.tooltip::after {
-  content: '';
-  position: absolute;
-  bottom: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  border: 4px solid transparent;
-  border-bottom-color: rgba(0, 0, 0, 0.95);
-}
-
-.tooltip-container:hover .tooltip,
-.tooltip-container:focus .tooltip {
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
-}
-
-.tooltip-container:focus-visible .tooltip {
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
-}
-
+/* Ensure tooltips can escape overflow containers */
 div[class*='group relative'] {
   overflow: visible;
 }

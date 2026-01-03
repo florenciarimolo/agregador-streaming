@@ -57,16 +57,17 @@
         >
           <!-- Top-right: Remove Button -->
           <template #top-right-actions>
-            <IconButton
-              :aria-label="$t('watchlist.removeTitle', { title: title.title })"
-              size="small"
-              variant="default"
-              custom-class="tooltip-container p-2 rounded-full backdrop-blur-sm pointer-events-auto bg-black/50 hover:bg-red-600/80"
-              @click.stop.prevent="handleRemoveTitle(title)"
-            >
-              <IconX icon-class="w-4 h-4 text-white" />
-              <span class="tooltip">{{ $t('watchlist.removeTooltip') }}</span>
-            </IconButton>
+            <Tooltip :text="$t('watchlist.removeTooltip')">
+              <IconButton
+                :aria-label="$t('watchlist.removeTitle', { title: title.title })"
+                size="small"
+                variant="default"
+                custom-class="p-2 rounded-full backdrop-blur-sm pointer-events-auto w-fit h-fit bg-black/50 hover:bg-red-600/80"
+                @click.stop.prevent="handleRemoveTitle(title)"
+              >
+                <IconX icon-class="w-4 h-4 text-white" />
+              </IconButton>
+            </Tooltip>
           </template>
         </TitleCard>
       </div>
@@ -86,6 +87,7 @@ import AppShell from '@/components/layout/AppShell.vue';
 import PageContainer from '@/components/layout/PageContainer.vue';
 import TitleCard from '@/components/TitleCard.vue';
 import IconX from '@/components/icons/IconX.vue';
+import Tooltip from '@/components/ui/Tooltip.vue';
 
 const { t } = useI18n();
 
@@ -232,56 +234,9 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* Ensure tooltips can escape overflow containers */
-.tooltip-container:hover,
-.tooltip-container:focus {
-  z-index: 10000;
-}
-
 /* Ensure the card container has higher z-index when tooltip is hovered */
 .group:has(.tooltip-container:hover) {
   z-index: 10002;
   position: relative;
-}
-
-.tooltip {
-  position: absolute;
-  top: calc(100% + 8px);
-  left: 50%;
-  transform: translateX(-50%) translateY(4px);
-  background-color: rgba(0, 0, 0, 0.95);
-  color: white;
-  padding: 6px 10px;
-  border-radius: 6px;
-  font-size: 12px;
-  white-space: nowrap;
-  pointer-events: none;
-  opacity: 0;
-  transition:
-    opacity 0.2s ease-in-out,
-    transform 0.2s ease-in-out;
-  z-index: 10003;
-  margin-top: 0;
-}
-
-.tooltip::after {
-  content: '';
-  position: absolute;
-  bottom: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  border: 4px solid transparent;
-  border-bottom-color: rgba(0, 0, 0, 0.95);
-}
-
-.tooltip-container:hover .tooltip,
-.tooltip-container:focus .tooltip {
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
-}
-
-.tooltip-container:focus-visible .tooltip {
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
 }
 </style>

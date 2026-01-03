@@ -98,19 +98,6 @@
 
     <!-- Content: Custom content with overview and providers -->
     <template #content>
-      <h3
-        class="mb-1 text-sm font-semibold text-gray-800 truncate dark:text-gray-300"
-      >
-        {{ props.title.title }}
-      </h3>
-      <p class="mb-2 text-xs text-gray-700 dark:text-gray-300">
-        {{
-          props.title.type === MediaTypeEnum.movie
-            ? $t('media.movie')
-            : $t('media.series')
-        }}
-      </p>
-
       <!-- Overview -->
       <p
         v-if="props.title.overview"
@@ -132,7 +119,7 @@
           :key="provider.provider_id"
           :src="`https://image.tmdb.org/t/p/w45${provider.logo_path}`"
           :alt="provider.provider_name"
-          class="object-contain w-8 h-8 rounded"
+          class="object-contain w-5 h-5 md:w-8 md:h-8 rounded"
           :title="provider.provider_name"
         />
       </div>
