@@ -1158,7 +1158,7 @@ onMounted(() => {
       <template #fallback>
         <!-- Placeholder during SSR to maintain layout -->
         <section
-          class="relative py-16 x-4 overflow-hidden min-h-[400px]"
+          class="relative py-16 px-4 overflow-hidden min-h-[400px]"
         ></section>
       </template>
     </ClientOnly>

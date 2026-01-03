@@ -28,7 +28,7 @@ const handleGetStarted = () => {
 </script>
 
 <template>
-  <section class="overflow-hidden relative py-16 x-4">
+  <section class="overflow-hidden relative py-16 px-4">
     <!-- Animated Background -->
     <AnimatedBackground />
 
