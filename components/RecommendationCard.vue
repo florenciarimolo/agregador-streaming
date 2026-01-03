@@ -80,77 +80,75 @@
         />
 
         <!-- Dropdown Menu -->
-        <Transition
-          enter-active-class="transition duration-200 ease-out"
-          enter-from-class="opacity-0 transform scale-95"
-          enter-to-class="opacity-100 transform scale-100"
-          leave-active-class="transition duration-150 ease-in"
-          leave-from-class="opacity-100 transform scale-100"
-          leave-to-class="opacity-0 transform scale-95"
-        >
-          <div
-            v-if="isOpen"
-            :data-dropdown-id="dropdownId"
-            class="absolute z-[100] mt-2 w-48 max-w-[calc(100vw-2rem)] rounded-lg border backdrop-blur-xl dark:bg-gray-900/95 bg-gray-100/80 border-gray-300/50 dark:border-white/10 shadow-xl"
-            :class="
-              dropdownAnchor === 'right'
-                ? 'right-0 left-auto'
-                : 'left-0 right-auto'
-            "
-            @click.stop
+        <Teleport to="body">
+          <Transition
+            enter-active-class="transition duration-200 ease-out"
+            enter-from-class="opacity-0 transform scale-95"
+            enter-to-class="opacity-100 transform scale-100"
+            leave-active-class="transition duration-150 ease-in"
+            leave-from-class="opacity-100 transform scale-100"
+            leave-to-class="opacity-0 transform scale-95"
           >
-            <div class="p-4">
-              <Button
-                type="button"
-                variant="ghost"
-                size="small"
-                custom-class="justify-start mb-2 w-full text-left"
-                @click.stop.prevent="handleAction(TitleStatus.SEEN)"
-              >
-                <template #icon>
-                  <IconCheck icon-class="w-4 h-4" />
-                </template>
-                {{ $t('media.seen') }}
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="small"
-                custom-class="justify-start mb-2 w-full text-left"
-                @click.stop.prevent="handleAction('liked')"
-              >
-                <template #icon>
-                  <IconHeart icon-class="w-4 h-4" />
-                </template>
-                {{ $t('media.liked') }}
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="small"
-                custom-class="justify-start mb-2 w-full text-left"
-                @click.stop.prevent="handleAction(TitleStatus.NOT_INTERESTED)"
-              >
-                <template #icon>
-                  <IconX icon-class="w-4 h-4" />
-                </template>
-                {{ $t('media.notInterested') }}
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="small"
-                custom-class="justify-start w-full text-left"
-                @click.stop.prevent="handleAction(TitleStatus.WATCHLIST)"
-              >
-                <template #icon>
-                  <IconClock icon-class="w-4 h-4" />
-                </template>
-                {{ $t('media.watchLater') }}
-              </Button>
+            <div
+              v-if="isOpen"
+              :data-dropdown-id="dropdownId"
+              class="fixed z-[10000] w-48 rounded-3xl border backdrop-blur-xl dark:bg-gray-900/95 bg-gray-100/80 border-gray-300/50 dark:border-white/10 shadow-xl"
+              :style="dropdownStyle"
+              @click.stop
+            >
+              <div class="p-4">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="small"
+                  custom-class="justify-start mb-2 w-full text-left"
+                  @click.stop.prevent="handleAction(TitleStatus.SEEN)"
+                >
+                  <template #icon>
+                    <IconCheck icon-class="w-4 h-4" />
+                  </template>
+                  {{ $t('media.seen') }}
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="small"
+                  custom-class="justify-start mb-2 w-full text-left"
+                  @click.stop.prevent="handleAction('liked')"
+                >
+                  <template #icon>
+                    <IconHeart icon-class="w-4 h-4" />
+                  </template>
+                  {{ $t('media.liked') }}
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="small"
+                  custom-class="justify-start mb-2 w-full text-left"
+                  @click.stop.prevent="handleAction(TitleStatus.NOT_INTERESTED)"
+                >
+                  <template #icon>
+                    <IconX icon-class="w-4 h-4" />
+                  </template>
+                  {{ $t('media.notInterested') }}
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="small"
+                  custom-class="justify-start w-full text-left"
+                  @click.stop.prevent="handleAction(TitleStatus.WATCHLIST)"
+                >
+                  <template #icon>
+                    <IconClock icon-class="w-4 h-4" />
+                  </template>
+                  {{ $t('media.watchLater') }}
+                </Button>
+              </div>
             </div>
-          </div>
-        </Transition>
+          </Transition>
+        </Teleport>
       </div>
     </div>
 
@@ -231,6 +229,9 @@ const { isOpen, toggle, close, handleClickOutside } =
 // Dropdown anchor state
 const dropdownAnchor = ref<'left' | 'right'>('right');
 const menuButtonRef = ref<HTMLElement | null>(null);
+const dropdownStyle = ref<{ top: string; left?: string; right?: string }>({
+  top: '0',
+});
 
 // Calculate dropdown alignment based on overflow detection
 const calculateDropdownAlignment = () => {
@@ -244,6 +245,12 @@ const calculateDropdownAlignment = () => {
 
     const dropdownWidth = 192; // w-48 = 12rem = 192px
     const viewportWidth = window.innerWidth;
+    const spacing = 8; // mt-2 = 8px
+
+    // Calculate position
+    const top = rect.bottom + spacing;
+    const right = viewportWidth - rect.right;
+    const left = rect.left;
 
     const overflowRight = rect.right + dropdownWidth > viewportWidth;
     const overflowLeft = rect.left - dropdownWidth < 0;
@@ -252,8 +259,16 @@ const calculateDropdownAlignment = () => {
     // Otherwise, anchor to the left
     if (overflowRight && !overflowLeft) {
       dropdownAnchor.value = 'right';
+      dropdownStyle.value = {
+        top: `${top}px`,
+        right: `${right}px`,
+      };
     } else {
       dropdownAnchor.value = 'left';
+      dropdownStyle.value = {
+        top: `${top}px`,
+        left: `${left}px`,
+      };
     }
   });
 };
