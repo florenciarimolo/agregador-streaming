@@ -11,19 +11,26 @@
     <!-- Poster Container -->
     <div
       :class="[
-        'relative bg-gray-800 rounded-t-lg overflow-visible',
+        'relative bg-gray-800 overflow-visible',
+        showContent ? 'rounded-t-lg' : 'rounded-lg',
         aspectRatio === 'video' ? 'aspect-video' : 'aspect-[2/3]',
       ]"
     >
       <nuxt-link
         :to="linkTo"
         :aria-label="linkAriaLabel"
-        class="block overflow-hidden relative w-full h-full rounded-t-lg focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+        :class="[
+          'block overflow-hidden relative w-full h-full focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2',
+          showContent ? 'rounded-t-lg' : 'rounded-lg',
+        ]"
       >
         <!-- Image or Placeholder -->
         <div
           v-if="posterPath"
-          class="overflow-hidden w-full h-full rounded-t-lg"
+          :class="[
+            'overflow-hidden w-full h-full',
+            showContent ? 'rounded-t-lg' : 'rounded-lg',
+          ]"
         >
           <img
             :src="`https://image.tmdb.org/t/p/w500${posterPath}`"
@@ -36,8 +43,9 @@
         <div
           v-else
           :class="[
-            'flex overflow-hidden justify-center items-center w-full h-full rounded-t-lg',
+            'flex overflow-hidden justify-center items-center w-full h-full',
             'text-gray-600 dark:text-gray-500',
+            showContent ? 'rounded-t-lg' : 'rounded-lg',
           ]"
           role="img"
           :aria-label="noImageAriaLabel"
@@ -70,6 +78,11 @@
         <slot name="top-right-actions" />
       </div>
     </div>
+
+    <!-- Content slot - Optional content area below the poster -->
+    <div v-if="showContent" class="p-4">
+      <slot name="content" />
+    </div>
   </article>
 </template>
 
@@ -88,6 +101,7 @@ interface Props {
   aspectRatio?: 'poster' | 'video';
   showType?: boolean;
   type?: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv;
+  showContent?: boolean;
 
   // Optional customization
   customClass?: string;
@@ -103,6 +117,7 @@ withDefaults(defineProps<Props>(), {
   aspectRatio: 'poster',
   showType: true,
   type: undefined,
+  showContent: false,
   customClass: '',
   ariaLabel: undefined,
   linkAriaLabel: undefined,
@@ -127,7 +142,6 @@ article > div:first-child {
 
 /* Poster link - overflow-hidden to contain image but allow tooltips to escape */
 article > div:first-child > a {
-  border-radius: 0.5rem 0.5rem 0 0;
   position: relative;
   overflow: hidden;
 }
@@ -135,15 +149,5 @@ article > div:first-child > a {
 /* Image container needs overflow-hidden to contain scaled image */
 article > div:first-child > a > div:first-of-type {
   overflow: hidden;
-  border-radius: 0.5rem 0.5rem 0 0;
-}
-
-/* Poster container should have rounded corners on all sides since there's no content area */
-article > div:first-child {
-  border-radius: 0.5rem;
-}
-
-article > div:first-child > a {
-  border-radius: 0.5rem;
 }
 </style>

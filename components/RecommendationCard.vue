@@ -9,6 +9,7 @@
       $t('media.noPosterAvailableFor', { title: props.title.title })
     "
     :type="props.title.type"
+    :show-content="true"
     :aria-label="$t('media.recommendationLabel', { title: props.title.title })"
   >
     <!-- Top-left: Rating Badge and Watchlist Badge -->
@@ -119,7 +120,7 @@
           :key="provider.provider_id"
           :src="`https://image.tmdb.org/t/p/w45${provider.logo_path}`"
           :alt="provider.provider_name"
-          class="object-contain w-5 h-5 md:w-8 md:h-8 rounded"
+          class="object-contain w-4 h-4 md:w-8 md:h-8 rounded"
           :title="provider.provider_name"
         />
       </div>
