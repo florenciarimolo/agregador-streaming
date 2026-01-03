@@ -3,335 +3,396 @@
     <section
       class="relative flex flex-col items-center justify-between gap-16 dark:text-gray-300 text-gray-800 w-full flex-shrink-0 min-h-[400px] lg:flex-row lg:items-stretch lg:p-16 lg:bg-gray-100/80 dark:lg:bg-gray-900/40 lg:backdrop-blur-xl lg:border lg:gap-7 rounded-3xl lg:border-gray-300/50 lg:dark:border-primary-800 lg:shadow-lg lg:shadow-primary/20 py-8"
     >
-    <div
-      class="hidden absolute inset-0 z-0 rounded-3xl lg:block"
-      :style="sectionStyle"
-    ></div>
-    <div
-      class="hidden absolute z-0 rounded-3xl lg:block bg-gray-100/90 dark:bg-gray-900/90"
-      style="top: 0px; right: 0px; bottom: 0px; left: 0px"
-    ></div>
-    <div
-      class="relative w-full max-w-80 lg:w-80 flex-shrink-0 lg:aspect-[2/3]"
-      style="
-        filter: drop-shadow(0 10px 15px -3px rgb(0 0 0 / 0.1))
-          drop-shadow(0 4px 6px -4px rgb(0 0 0 / 0.1))
-          drop-shadow(0 0 20px rgb(var(--color-primary) / 0.3));
-      "
-    >
       <div
-        class="relative overflow-hidden rounded-3xl w-full max-h-[400px] lg:h-full lg:max-h-[500px]"
+        class="hidden absolute inset-0 z-0 rounded-3xl lg:block"
+        :style="sectionStyle"
+      ></div>
+      <div
+        class="hidden absolute z-0 rounded-3xl lg:block bg-gray-100/90 dark:bg-gray-900/90"
+        style="top: 0px; right: 0px; bottom: 0px; left: 0px"
+      ></div>
+      <div
+        class="relative w-full max-w-80 lg:w-80 flex-shrink-0 lg:aspect-[2/3]"
+        style="
+          filter: drop-shadow(0 10px 15px -3px rgb(0 0 0 / 0.1))
+            drop-shadow(0 4px 6px -4px rgb(0 0 0 / 0.1))
+            drop-shadow(0 0 20px rgb(var(--color-primary) / 0.3));
+        "
       >
-        <img
-          :src="
-            `https://image.tmdb.org/t/p/w780` + mediaWithProviders.poster_path
-          "
-          :alt="mediaWithProviders.title"
-          class="w-full h-full rounded-3xl object-contain lg:object-cover"
-        />
-        <!-- Informative icons overlay (only show if user has session) -->
-        <div v-if="hasSession" class="flex absolute top-2 right-2 gap-2">
-          <div
-            v-if="isLiked"
-            class="flex justify-center items-center w-8 h-8 rounded-full backdrop-blur-sm bg-primary-600/90"
-            :title="$t('media.liked')"
-          >
-            <IconHeartFilled icon-class="w-5 h-5 text-white" />
-          </div>
-          <div
-            v-if="isInWatchlist"
-            class="flex justify-center items-center w-8 h-8 rounded-full backdrop-blur-sm bg-primary-600/90"
-            :title="$t('media.watchLater')"
-          >
-            <IconClock icon-class="w-5 h-5 text-white" />
+        <div
+          class="relative overflow-hidden rounded-3xl w-full max-h-[400px] lg:h-full lg:max-h-[500px]"
+        >
+          <img
+            :src="
+              `https://image.tmdb.org/t/p/w780` + mediaWithProviders.poster_path
+            "
+            :alt="mediaWithProviders.title"
+            class="object-contain w-full h-full rounded-3xl lg:object-cover"
+          />
+          <!-- Informative icons overlay (only show if user has session) -->
+          <div v-if="hasSession" class="flex absolute top-2 right-2 gap-2">
+            <div
+              v-if="isLiked"
+              class="flex justify-center items-center w-8 h-8 rounded-full backdrop-blur-sm bg-primary-600/90"
+              :title="$t('media.liked')"
+            >
+              <IconHeartFilled icon-class="w-5 h-5 text-white" />
+            </div>
+            <div
+              v-if="isSeen && !isLiked"
+              class="flex justify-center items-center w-8 h-8 rounded-full backdrop-blur-sm bg-primary-600/90"
+              :title="$t('media.seen')"
+            >
+              <IconCheck icon-class="w-5 h-5 text-white" />
+            </div>
+            <div
+              v-if="isNotInterested"
+              class="flex justify-center items-center w-8 h-8 rounded-full backdrop-blur-sm bg-primary-600/90"
+              :title="$t('media.notInterested')"
+            >
+              <IconX icon-class="w-5 h-5 text-white" />
+            </div>
+            <div
+              v-if="isInWatchlist"
+              class="flex justify-center items-center w-8 h-8 rounded-full backdrop-blur-sm bg-primary-600/90"
+              :title="$t('media.watchLater')"
+            >
+              <IconClock icon-class="w-5 h-5 text-white" />
+            </div>
           </div>
         </div>
       </div>
-    </div>
-    <div
-      class="z-10 relative flex flex-col flex-1 gap-6 rounded-lg lg:p-6 lg:ml-8 w-full flex-shrink-0 min-h-[300px]"
-    >
-      <div class="relative flex-row text-left">
-        <button
-          class="inline-flex gap-2 items-center mb-4 text-sm font-medium text-gray-700 transition-colors dark:text-gray-300 hover:dark:text-white hover:text-gray-900"
-          @click="handleBack"
-        >
-          <IconArrowLeft icon-class="w-4 h-4" />
-          {{ $t('media.back') }}
-        </button>
-        <div
-          class="flex flex-col gap-2 w-full xl:flex-row xl:items-center xl:justify-between"
-        >
-          <!-- Title with Rating inline on desktop large -->
-          <div
-            class="flex flex-wrap gap-3 items-center xl:flex-nowrap xl:flex-1 xl:min-w-0"
+      <div
+        class="z-10 relative flex flex-col flex-1 gap-6 rounded-lg lg:p-6 lg:ml-8 w-full flex-shrink-0 min-h-[300px]"
+      >
+        <div class="relative flex-row text-left">
+          <button
+            class="inline-flex gap-2 items-center mb-4 text-sm font-medium text-gray-700 transition-colors dark:text-gray-300 hover:dark:text-white hover:text-gray-900"
+            @click="handleBack"
           >
-            <h1
-              class="text-2xl font-bold text-gray-800 break-words dark:text-gray-300 xl:flex-1 xl:min-w-0"
-              >{{
-                mediaWithProviders.title || (mediaWithProviders as any).name
-              }}</h1
+            <IconArrowLeft icon-class="w-4 h-4" />
+            {{ $t('media.back') }}
+          </button>
+          <div
+            class="flex flex-col gap-2 w-full xl:flex-row xl:items-center xl:justify-between"
+          >
+            <!-- Title with Rating inline on desktop large -->
+            <div
+              class="flex flex-wrap gap-3 items-center xl:flex-nowrap xl:flex-1 xl:min-w-0"
             >
-            <!-- Rating inline with title on desktop large, hidden on mobile/tablet (shown below) -->
-            <div class="hidden xl:block xl:flex-shrink-0">
+              <h1
+                class="text-2xl font-bold text-gray-800 break-words dark:text-gray-300 xl:flex-1 xl:min-w-0"
+                >{{
+                  mediaWithProviders.title || (mediaWithProviders as any).name
+                }}</h1
+              >
+              <!-- Rating inline with title on desktop large, hidden on mobile/tablet (shown below) -->
+              <div class="hidden xl:block xl:flex-shrink-0">
+                <RatingBadge
+                  v-if="mediaWithProviders.vote_average"
+                  :rating="mediaWithProviders.vote_average"
+                />
+              </div>
+            </div>
+            <!-- Rating, Status, Menu row (mobile/tablet) or Status, Menu (desktop large) -->
+            <div class="flex flex-shrink-0 gap-3 items-center xl:gap-2">
+              <!-- Rating only on mobile/tablet (hidden on desktop large, already shown above) -->
               <RatingBadge
                 v-if="mediaWithProviders.vote_average"
                 :rating="mediaWithProviders.vote_average"
+                class="xl:hidden"
               />
+              <!-- MediaStatusBagde -->
+              <MediaStatusBagde
+                v-if="mediaType === MediaTypeEnum.tv || inTheaters"
+                :in-production="inProduction"
+                :in-theaters="inTheaters"
+              />
+              <!-- Actions Menu (only show if user has session) -->
+              <ActionMenu
+                v-if="hasSession"
+                ref="dropdownRef"
+                position="right"
+                width="w-48"
+                custom-class="left-0 right-auto backdrop-blur-xl dark:bg-gray-900/40 bg-gray-100/80 border-gray-300/50 dark:border-white/10 md:right-0 md:left-auto"
+              >
+                <template #trigger>
+                  <IconButton
+                    :icon="IconMoreVertical"
+                    :aria-label="
+                      $t('media.actionsMenuFor', {
+                        title:
+                          mediaWithProviders.title ||
+                          (mediaWithProviders as any).name,
+                      })
+                    "
+                    size="small"
+                    variant="default"
+                    custom-class="menu-button p-2 rounded-full bg-black/50 hover:bg-gray-700/80 backdrop-blur-sm [&>svg]:text-white"
+                  />
+                </template>
+                <div class="p-4">
+                  <Button
+                    v-if="!isSeen"
+                    type="button"
+                    variant="ghost"
+                    size="small"
+                    custom-class="justify-start mb-2 w-full text-left"
+                    @click.stop.prevent="
+                      dropdownRef?.close();
+                      handleAction(TitleStatus.SEEN);
+                    "
+                  >
+                    <template #icon>
+                      <IconCheck icon-class="w-4 h-4" />
+                    </template>
+                    {{ $t('media.seen') }}
+                  </Button>
+                  <Button
+                    v-else-if="isSeen && !isLiked"
+                    type="button"
+                    variant="ghost"
+                    size="small"
+                    custom-class="justify-start mb-2 w-full text-left"
+                    @click.stop.prevent="
+                      dropdownRef?.close();
+                      handleAction(TitleStatus.SEEN);
+                    "
+                  >
+                    <template #icon>
+                      <IconCheck icon-class="w-4 h-4" />
+                    </template>
+                    {{ $t('media.removeFromSeen') }}
+                  </Button>
+                  <Button
+                    v-if="!isLiked"
+                    type="button"
+                    variant="ghost"
+                    size="small"
+                    custom-class="justify-start mb-2 w-full text-left"
+                    @click.stop.prevent="
+                      dropdownRef?.close();
+                      handleAction('liked');
+                    "
+                  >
+                    <template #icon>
+                      <IconHeart icon-class="w-4 h-4" />
+                    </template>
+                    {{ $t('media.liked') }}
+                  </Button>
+                  <Button
+                    v-else
+                    type="button"
+                    variant="ghost"
+                    size="small"
+                    custom-class="justify-start mb-2 w-full text-left"
+                    @click.stop.prevent="
+                      dropdownRef?.close();
+                      handleRemoveLike();
+                    "
+                  >
+                    <template #icon>
+                      <IconHeart icon-class="w-4 h-4" />
+                    </template>
+                    {{ $t('media.removeFromLiked') }}
+                  </Button>
+                  <Button
+                    v-if="!isNotInterested"
+                    type="button"
+                    variant="ghost"
+                    size="small"
+                    custom-class="justify-start mb-2 w-full text-left"
+                    @click.stop.prevent="
+                      dropdownRef?.close();
+                      handleAction(TitleStatus.NOT_INTERESTED);
+                    "
+                  >
+                    <template #icon>
+                      <IconX icon-class="w-4 h-4" />
+                    </template>
+                    {{ $t('media.notInterested') }}
+                  </Button>
+                  <Button
+                    v-else
+                    type="button"
+                    variant="ghost"
+                    size="small"
+                    custom-class="justify-start mb-2 w-full text-left"
+                    @click.stop.prevent="
+                      dropdownRef?.close();
+                      handleAction(TitleStatus.NOT_INTERESTED);
+                    "
+                  >
+                    <template #icon>
+                      <IconX icon-class="w-4 h-4" />
+                    </template>
+                    {{ $t('media.removeFromNotInterested') }}
+                  </Button>
+                  <Button
+                    v-if="!isInWatchlist"
+                    type="button"
+                    variant="ghost"
+                    size="small"
+                    custom-class="justify-start w-full text-left"
+                    @click.stop.prevent="
+                      dropdownRef?.close();
+                      handleAction(TitleStatus.WATCHLIST);
+                    "
+                  >
+                    <template #icon>
+                      <IconClock icon-class="w-4 h-4" />
+                    </template>
+                    {{ $t('media.watchLater') }}
+                  </Button>
+                  <Button
+                    v-else
+                    type="button"
+                    variant="ghost"
+                    size="small"
+                    custom-class="justify-start w-full text-left"
+                    @click.stop.prevent="
+                      dropdownRef?.close();
+                      handleRemoveFromWatchlist();
+                    "
+                  >
+                    <template #icon>
+                      <IconClock icon-class="w-4 h-4" />
+                    </template>
+                    {{ $t('media.removeFromWatchlist') }}
+                  </Button>
+                </div>
+              </ActionMenu>
             </div>
           </div>
-          <!-- Rating, Status, Menu row (mobile/tablet) or Status, Menu (desktop large) -->
-          <div class="flex flex-shrink-0 gap-3 items-center xl:gap-2">
-            <!-- Rating only on mobile/tablet (hidden on desktop large, already shown above) -->
-            <RatingBadge
-              v-if="mediaWithProviders.vote_average"
-              :rating="mediaWithProviders.vote_average"
-              class="xl:hidden"
+        </div>
+
+        <p
+          :class="[
+            'dark:text-gray-300 text-gray-800',
+            { italic: !mediaWithProviders.overview },
+          ]"
+          >{{ mediaWithProviders.overview || $t('media.noDescription') }}</p
+        >
+        <div
+          class="flex gap-2 items-center mt-2 text-gray-800 dark:text-gray-300"
+        >
+          <IconCalendar icon-class="w-5 h-5" />
+          <span>{{
+            formatDateToSpanish(
+              mediaWithProviders.release_date ||
+                (mediaWithProviders as any).first_air_date ||
+                ''
+            )
+          }}</span>
+        </div>
+        <div class="flex gap-2 items-center text-gray-800 dark:text-gray-300">
+          <IconTag icon-class="w-5 h-5" />
+          <span>{{
+            mediaWithProviders?.genres
+              ?.map((genre: Genre) => genre.name)
+              .join(', ') || $t('media.notAvailable')
+          }}</span>
+        </div>
+        <!-- Displaying watch providers with their logos-->
+        <section class="flex flex-col gap-6">
+          <section v-if="hasAvailableProviders" class="flex flex-col gap-8">
+            <ProviderList
+              :media-provider-prop-list="
+                mediaWithProviders.providers?.flatrate || []
+              "
+              :watch-type-prop="$t('media.watchIn')"
+              :media-title="
+                mediaWithProviders.title ||
+                (mediaWithProviders as any).name ||
+                ''
+              "
+              :original-title="
+                mediaWithProviders.original_title ||
+                (mediaWithProviders as any).original_name ||
+                ''
+              "
+              :alternative-titles="alternativeTitles"
+              :media-type="mediaType"
+              :tmdb-id="mediaWithProviders.id"
             />
-            <!-- MediaStatusBagde -->
-            <MediaStatusBagde
-              v-if="mediaType === MediaTypeEnum.tv || inTheaters"
-              :in-production="inProduction"
-              :in-theaters="inTheaters"
+
+            <ProviderList
+              :media-provider-prop-list="
+                mediaWithProviders.providers?.buy || []
+              "
+              :watch-type-prop="$t('media.buyIn')"
+              :media-title="
+                mediaWithProviders.title ||
+                (mediaWithProviders as any).name ||
+                ''
+              "
+              :original-title="
+                mediaWithProviders.original_title ||
+                (mediaWithProviders as any).original_name ||
+                ''
+              "
+              :alternative-titles="alternativeTitles"
+              :media-type="mediaType"
+              :tmdb-id="mediaWithProviders.id"
             />
-            <!-- Actions Menu (only show if user has session) -->
-            <ActionMenu
-              v-if="hasSession"
-              ref="dropdownRef"
-              position="right"
-              width="w-48"
-              custom-class="left-0 right-auto backdrop-blur-xl dark:bg-gray-900/40 bg-gray-100/80 border-gray-300/50 dark:border-white/10 md:right-0 md:left-auto"
+
+            <ProviderList
+              :media-provider-prop-list="
+                mediaWithProviders.providers?.rent || []
+              "
+              :watch-type-prop="$t('media.rentIn')"
+              :media-title="
+                mediaWithProviders.title ||
+                (mediaWithProviders as any).name ||
+                ''
+              "
+              :original-title="
+                mediaWithProviders.original_title ||
+                (mediaWithProviders as any).original_name ||
+                ''
+              "
+              :alternative-titles="alternativeTitles"
+              :media-type="mediaType"
+              :tmdb-id="mediaWithProviders.id"
+            />
+          </section>
+          <section v-else class="text-gray-600 dark:text-gray-400">
+            <p class="italic">{{ $t('media.noPlatforms') }}</p>
+          </section>
+        </section>
+      </div>
+
+      <!-- Modal for removing like -->
+      <Modal
+        :is-open="showRemoveLikeModal"
+        @close="showRemoveLikeModal = false"
+      >
+        <div class="flex flex-col gap-4">
+          <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-300">
+            {{ $t('home.confirmRemoveLikeTitle') }}
+          </h2>
+          <p class="text-gray-700 dark:text-gray-300">
+            {{
+              $t('home.removeLikeMessage', {
+                title: titleToRemoveLike?.title || '',
+              }) ||
+              `¿Estás seguro de que quieres quitar "${titleToRemoveLike?.title}" de tus favoritos? Se recalcularán tus recomendaciones.`
+            }}
+          </p>
+          <div class="flex gap-3 justify-end mt-4">
+            <Button
+              variant="outline"
+              size="medium"
+              @click="showRemoveLikeModal = false"
             >
-              <template #trigger>
-                <IconButton
-                  :icon="IconMoreVertical"
-                  :aria-label="
-                    $t('media.actionsMenuFor', {
-                      title:
-                        mediaWithProviders.title ||
-                        (mediaWithProviders as any).name,
-                    })
-                  "
-                  size="small"
-                  variant="default"
-                  custom-class="menu-button p-2 rounded-full bg-black/50 hover:bg-gray-700/80 backdrop-blur-sm [&>svg]:text-white"
-                />
-              </template>
-              <div class="p-4">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="small"
-                  custom-class="justify-start mb-2 w-full text-left"
-                  @click.stop.prevent="
-                    dropdownRef?.close();
-                    handleAction(TitleStatus.SEEN);
-                  "
-                >
-                  <template #icon>
-                    <IconCheck icon-class="w-4 h-4" />
-                  </template>
-                  {{ $t('media.seen') }}
-                </Button>
-                <Button
-                  v-if="!isLiked"
-                  type="button"
-                  variant="ghost"
-                  size="small"
-                  custom-class="justify-start mb-2 w-full text-left"
-                  @click.stop.prevent="
-                    dropdownRef?.close();
-                    handleAction('liked');
-                  "
-                >
-                  <template #icon>
-                    <IconHeart icon-class="w-4 h-4" />
-                  </template>
-                  {{ $t('media.liked') }}
-                </Button>
-                <Button
-                  v-else
-                  type="button"
-                  variant="ghost"
-                  size="small"
-                  custom-class="justify-start mb-2 w-full text-left"
-                  @click.stop.prevent="
-                    dropdownRef?.close();
-                    handleRemoveLike();
-                  "
-                >
-                  <template #icon>
-                    <IconHeart icon-class="w-4 h-4" />
-                  </template>
-                  {{ $t('media.removeFromLiked') }}
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="small"
-                  custom-class="justify-start mb-2 w-full text-left"
-                  @click.stop.prevent="
-                    dropdownRef?.close();
-                    handleAction(TitleStatus.NOT_INTERESTED);
-                  "
-                >
-                  <template #icon>
-                    <IconX icon-class="w-4 h-4" />
-                  </template>
-                  {{ $t('media.notInterested') }}
-                </Button>
-                <Button
-                  v-if="!isInWatchlist"
-                  type="button"
-                  variant="ghost"
-                  size="small"
-                  custom-class="justify-start w-full text-left"
-                  @click.stop.prevent="
-                    dropdownRef?.close();
-                    handleAction(TitleStatus.WATCHLIST);
-                  "
-                >
-                  <template #icon>
-                    <IconClock icon-class="w-4 h-4" />
-                  </template>
-                  {{ $t('media.watchLater') }}
-                </Button>
-                <Button
-                  v-else
-                  type="button"
-                  variant="ghost"
-                  size="small"
-                  custom-class="justify-start w-full text-left"
-                  @click.stop.prevent="
-                    dropdownRef?.close();
-                    handleRemoveFromWatchlist();
-                  "
-                >
-                  <template #icon>
-                    <IconClock icon-class="w-4 h-4" />
-                  </template>
-                  {{ $t('media.removeFromWatchlist') }}
-                </Button>
-              </div>
-            </ActionMenu>
+              {{ $t('common.cancel') }}
+            </Button>
+            <Button variant="primary" size="medium" @click="confirmRemoveLike">
+              {{ $t('common.confirm') }}
+            </Button>
           </div>
         </div>
-      </div>
-
-      <p
-        :class="[
-          'dark:text-gray-300 text-gray-800',
-          { italic: !mediaWithProviders.overview },
-        ]"
-        >{{ mediaWithProviders.overview || $t('media.noDescription') }}</p
-      >
-      <div
-        class="flex gap-2 items-center mt-2 text-gray-800 dark:text-gray-300"
-      >
-        <IconCalendar icon-class="w-5 h-5" />
-        <span>{{
-          formatDateToSpanish(
-            mediaWithProviders.release_date ||
-              (mediaWithProviders as any).first_air_date ||
-              ''
-          )
-        }}</span>
-      </div>
-      <div class="flex gap-2 items-center text-gray-800 dark:text-gray-300">
-        <IconTag icon-class="w-5 h-5" />
-        <span>{{
-          mediaWithProviders?.genres
-            ?.map((genre: Genre) => genre.name)
-            .join(', ') || $t('media.notAvailable')
-        }}</span>
-      </div>
-      <!-- Displaying watch providers with their logos-->
-      <section class="flex flex-col gap-6">
-        <section v-if="hasAvailableProviders" class="flex flex-col gap-8">
-          <ProviderList
-            :media-provider-prop-list="
-              mediaWithProviders.providers?.flatrate || []
-            "
-            :watch-type-prop="$t('media.watchIn')"
-            :media-title="
-              mediaWithProviders.title || (mediaWithProviders as any).name || ''
-            "
-            :original-title="
-              mediaWithProviders.original_title ||
-              (mediaWithProviders as any).original_name ||
-              ''
-            "
-            :alternative-titles="alternativeTitles"
-            :media-type="mediaType"
-            :tmdb-id="mediaWithProviders.id"
-          />
-
-          <ProviderList
-            :media-provider-prop-list="mediaWithProviders.providers?.buy || []"
-            :watch-type-prop="$t('media.buyIn')"
-            :media-title="
-              mediaWithProviders.title || (mediaWithProviders as any).name || ''
-            "
-            :original-title="
-              mediaWithProviders.original_title ||
-              (mediaWithProviders as any).original_name ||
-              ''
-            "
-            :alternative-titles="alternativeTitles"
-            :media-type="mediaType"
-            :tmdb-id="mediaWithProviders.id"
-          />
-
-          <ProviderList
-            :media-provider-prop-list="mediaWithProviders.providers?.rent || []"
-            :watch-type-prop="$t('media.rentIn')"
-            :media-title="
-              mediaWithProviders.title || (mediaWithProviders as any).name || ''
-            "
-            :original-title="
-              mediaWithProviders.original_title ||
-              (mediaWithProviders as any).original_name ||
-              ''
-            "
-            :alternative-titles="alternativeTitles"
-            :media-type="mediaType"
-            :tmdb-id="mediaWithProviders.id"
-          />
-        </section>
-        <section v-else class="text-gray-600 dark:text-gray-400">
-          <p class="italic">{{ $t('media.noPlatforms') }}</p>
-        </section>
-      </section>
-    </div>
-
-    <!-- Modal for removing like -->
-    <Modal :is-open="showRemoveLikeModal" @close="showRemoveLikeModal = false">
-      <div class="flex flex-col gap-4">
-        <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-300">
-          {{ $t('home.confirmRemoveLikeTitle') }}
-        </h2>
-        <p class="text-gray-700 dark:text-gray-300">
-          {{
-            $t('home.removeLikeMessage', {
-              title: titleToRemoveLike?.title || '',
-            }) ||
-            `¿Estás seguro de que quieres quitar "${titleToRemoveLike?.title}" de tus favoritos? Se recalcularán tus recomendaciones.`
-          }}
-        </p>
-        <div class="flex gap-3 justify-end mt-4">
-          <Button
-            variant="outline"
-            size="medium"
-            @click="showRemoveLikeModal = false"
-          >
-            {{ $t('common.cancel') }}
-          </Button>
-          <Button variant="primary" size="medium" @click="confirmRemoveLike">
-            {{ $t('common.confirm') }}
-          </Button>
-        </div>
-      </div>
-    </Modal>
+      </Modal>
     </section>
   </Section>
 </template>
@@ -426,6 +487,8 @@ const titleToRemoveLike = ref<{
 } | null>(null);
 const isLiked = ref(false);
 const isInWatchlist = ref(false);
+const isSeen = ref(false);
+const isNotInterested = ref(false);
 const router = useRouter();
 
 // Check if user has session
@@ -475,6 +538,8 @@ const fetchTitleStatus = async () => {
     if (titleStatus) {
       isLiked.value = titleStatus.liked === true;
       isInWatchlist.value = titleStatus.status === TitleStatus.WATCHLIST;
+      isSeen.value = titleStatus.status === TitleStatus.SEEN;
+      isNotInterested.value = titleStatus.status === TitleStatus.NOT_INTERESTED;
     }
   } catch (error) {
     console.error('Error fetching title status:', error);
@@ -706,21 +771,12 @@ const confirmRemoveLike = async () => {
 
     console.log('[UNLIKE DEBUG] Remove like response', { response });
 
-    // Show toast about regenerating recommendations
-    showToast(t('home.regeneratingRecommendations'), null, 5000);
+    // Note: Title remains as "seen" (not liked), so it should NOT be in recommendations
+    // The title was already removed from recommendations when it was marked as "liked"
+    // No pool regeneration needed - only score is adjusted, pool remains stable
 
-    // Regenerate recommendation pool in background
-    try {
-      await $fetch('/api/recommendations/populate-pool', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      });
-    } catch (poolError) {
-      console.error('[handleAction] Error regenerating pool:', poolError);
-      // Don't show error to user, pool regeneration is background task
-    }
+    // Show success toast
+    showToast(t('home.likeRemoved', { title: title.title }), null, 3000);
 
     titleToRemoveLike.value = null;
 

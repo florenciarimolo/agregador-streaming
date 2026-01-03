@@ -131,7 +131,18 @@ Result:
   - Delete entire record
 ```
 
-#### Scenario 4: Mark as "not_interested"
+#### Scenario 4: Remove "liked" (keeping "seen")
+```
+Initial state: status = 'seen', liked = true (score = -20)
+Action: liked = false (keeping seen)
+Result:
+  - Revert liked: score -= 30 → score = -50
+  - Title remains as 'seen' (not eligible for recommendations)
+  - Title does NOT return to recommendations
+  - Pool is NOT regenerated (only score is adjusted)
+```
+
+#### Scenario 5: Mark as "not_interested"
 ```
 Initial state: status = 'seen', liked = true (score = -20)
 Action: status = 'not_interested'
@@ -149,6 +160,12 @@ Result:
 ### Concept
 
 The recommendation pool is a persistent table (`recommendation_pool`) that stores candidate titles to recommend to the user, with their calculated scores.
+
+**IMPORTANT: Pool vs Score Separation**
+
+The system clearly separates:
+- **Pool**: The universe of possible titles (defines what content is available)
+- **Score**: Priority/relevance within that universe (defines ranking)
 
 ### Structure
 
@@ -176,6 +193,38 @@ CREATE TABLE recommendation_pool (
 - `easy`: Easy-to-watch content
 - `mood`: Based on selected mood
 
+### Pool Regeneration
+
+**IMPORTANT: Pool regeneration only occurs when structural preferences change**
+
+The pool should **only** be regenerated when the user's structural preferences change, as these define the universe of available content.
+
+#### Changes that trigger pool regeneration:
+
+- **Language preference** (`preferred_language`)
+- **Region** (`region`)
+- **Favorite genres** (`favorite_genres`)
+- **Included providers** (`included_providers`)
+
+When preferences change:
+1. The previous pool is discarded
+2. A new pool is generated
+3. Rankings and diversity are recalculated
+
+#### Changes that do NOT trigger pool regeneration:
+
+- Marking/unmarking titles as `liked`
+- Marking/unmarking titles as `seen`
+- Marking/unmarking titles as `not_interested`
+- Adding/removing titles from `watchlist`
+
+These actions:
+- Adjust the score (weight/relevance)
+- Affect the order of titles
+- Affect similar titles
+- May exclude or rehabilitate titles
+- **Do NOT invalidate the pool**
+
 ### Score Update
 
 The score is updated when the user:
@@ -186,14 +235,103 @@ The score is updated when the user:
 1. Get the previous state of the title
 2. Revert the impact of the previous state (if applicable)
 3. Apply the impact of the new state (if applicable)
-4. If `not_interested`, remove from pool
+4. If `not_interested`, remove from pool (but don't regenerate pool)
+
+**Key principle**: Changing the score does not invalidate the pool. Only changing structural preferences invalidates the pool.
 
 ### Pool Removal
 
 A title is removed from the pool when:
 - It is marked as `not_interested`
 - The user has already watched it (`seen`)
-- The pool is manually regenerated
+- The pool is manually regenerated (when preferences change)
+
+### Neutral Exploration Mode
+
+**IMPORTANT: Product Decision - Content Type Balance**
+
+When no filters are active (neither mood nor attention level), the algorithm enters a **neutral exploration mode** that guarantees a balanced mix of content types.
+
+#### Rules:
+
+1. **No filters active → 50/50 balance**
+   - When `mood === undefined` AND `attention === undefined`
+   - The algorithm ensures a 50% movies / 50% TV shows distribution
+   - Results are interleaved to maintain balance throughout the list
+   - The final result cannot be dominated by a single content type
+
+2. **Any filter active → Relevance priority**
+   - When `mood !== undefined` OR `attention !== undefined`
+   - The balance is **disabled**
+   - Priority is given to relevance according to filters
+   - The system can return any proportion (even 100% of one type)
+   - This allows filters to work naturally without artificial constraints
+
+#### Implementation:
+
+- After sorting by score (with boosts applied), the algorithm checks if filters are active
+- If no filters: separates movies and TV shows, then interleaves them
+- If filters active: uses the sorted list directly (no balance applied)
+
+This ensures that:
+- Users exploring without preferences see a diverse mix
+- Users with specific preferences get results tailored to their filters
+- The base ranking bias (if any) is corrected in neutral mode
+
+### Automatic Replacement System
+
+**IMPORTANT: Product Decision - Always 20 Recommendations**
+
+The recommendation list must always maintain exactly 20 visible recommendations. When a title is removed, it is automatically replaced with a new one.
+
+#### Rules:
+
+1. **Always 20 recommendations visible**
+   - The list never reduces in size
+   - When a title is removed, a replacement is fetched immediately
+   - No page reloads or filter resets required
+
+2. **Titles that disappear from recommendations:**
+   - Titles marked as `seen` (with or without `liked`)
+   - Titles marked as `not_interested`
+   - Titles added to `watchlist` (also disappear from recommendations)
+
+3. **Replacement logic - No filters active:**
+   - **Mode**: Exploration mode
+   - **Strategy**: Replace with same type to maintain 50/50 balance
+   - If a movie is removed → replace with another movie
+   - If a TV show is removed → replace with another TV show
+   - This ensures the balance is maintained even after removals
+
+4. **Replacement logic - Filters active:**
+   - **Mode**: Intention mode
+   - **Strategy**: Replace with next most relevant title that matches filters
+   - Can be any type (movie or TV show)
+   - Priority is relevance, not type balance
+
+#### Implementation:
+
+- When a title is removed via `handleTitleStatus` or `handleMarkLiked`:
+  1. The title is removed from the UI immediately
+  2. A request is sent to `/api/recommendations/replacement` with:
+     - `excluded_tmdb_id`: The removed title's ID
+     - `excluded_type`: The removed title's type (movie/tv)
+     - `mood`: Current mood filter (if any)
+     - `attention`: Current attention filter (if any)
+  3. The replacement endpoint:
+     - Excludes the removed title and all other excluded titles (seen, not_interested, watchlist)
+     - Applies mood/attention boosts if filters are active
+     - Returns a replacement title:
+       - Same type if no filters (to maintain balance)
+       - Most relevant if filters active (any type)
+  4. The replacement is added to the list immediately
+
+#### State Reversal and Recommendations:
+
+When a title's state is reversed (e.g., removing `seen` or `not_interested`):
+- The title becomes eligible for recommendations again
+- It may appear in future recommendations
+- The replacement system continues to work normally
 
 ---
 
@@ -296,10 +434,10 @@ Stores user preferences.
 ### 5. Pool Regeneration
 
 - The pool is automatically regenerated when:
-  - The user marks titles as "liked"
-  - The user removes titles from "liked"
-  - The user changes their preferences
+  - The user changes their structural preferences (language, region, genres, providers)
 - It can also be manually regenerated
+
+**IMPORTANT**: Marking/unmarking titles as "liked" does NOT regenerate the pool. Only the score is adjusted.
 
 ### 6. Security (RLS)
 
@@ -328,8 +466,27 @@ Stores user preferences.
 4. Backend reverts impact of previous state (if applicable)
 5. Backend applies impact of `seen` (-50) and `liked` (+30)
 6. Backend does `upsert` in `user_title_status`
-7. Backend regenerates recommendation pool in background
-8. Frontend shows success toast
+7. Backend updates score in recommendation pool (does NOT regenerate pool)
+8. Frontend removes title from recommendations (if visible) and fetches replacement
+9. Frontend shows success toast
+
+**Note**: The pool is NOT regenerated. Only the score is adjusted, maintaining pool stability.
+
+### Flow: Remove "Liked" (keeping "Seen")
+
+1. User clicks "Remove from favorites" (title is already marked as "seen")
+2. Frontend calls `POST /api/users/title-status` with `status: 'seen'`, `liked: false`
+3. Backend gets previous state
+4. Backend reverts impact of `liked`: score -= 30
+5. Backend does `upsert` in `user_title_status` (keeps `status: 'seen'`, sets `liked: false`)
+6. Backend updates score in recommendation pool (does NOT regenerate pool)
+7. Frontend shows success toast
+
+**Important behaviors:**
+- Title remains as `seen` (not eligible for recommendations)
+- Title does NOT return to recommendations
+- Only the score is adjusted (pool remains stable)
+- To make the title eligible again, user must explicitly remove "seen"
 
 ### Flow: Remove from "Seen"
 
@@ -340,7 +497,8 @@ Stores user preferences.
    - If it had `seen`: reverts -50
    - If it had `liked`: reverts +30
 5. Backend **deletes entire record** (including `liked` if it existed)
-6. Frontend updates UI
+6. Backend updates score in recommendation pool (does NOT regenerate pool)
+7. Frontend updates UI
 
 ### Flow: Mark as "Not Interested"
 

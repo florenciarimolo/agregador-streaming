@@ -8,7 +8,6 @@ import { nextTick, onMounted, computed, watch, watchEffect, ref } from 'vue';
 import Card from '@/components/ui/Card.vue';
 import Modal from '@/components/ui/Modal.vue';
 import Button from '@/components/ui/Button.vue';
-import Alert from '@/components/ui/Alert.vue';
 import { getUserLikedTitle } from '@/composables/database/userTitleStatus';
 import AppShell from '@/components/layout/AppShell.vue';
 import PageContainer from '@/components/layout/PageContainer.vue';
@@ -504,19 +503,13 @@ const handleTitleStatus = async (
       return;
     }
 
-    // Optimistically update in_watchlist for watchlist status
-    if (status === TitleStatus.WATCHLIST) {
-      originalTitleIndex = recommendations.value.findIndex(
-        (r: Recommendation) => r.tmdb_id === title.tmdb_id
-      );
-      if (originalTitleIndex !== -1) {
-        originalInWatchlist =
-          recommendations.value[originalTitleIndex].in_watchlist;
-        recommendations.value[originalTitleIndex] = {
-          ...recommendations.value[originalTitleIndex],
-          in_watchlist: true,
-        };
-      }
+    // Store original state for rollback (watchlist titles also disappear from recommendations)
+    originalTitleIndex = recommendations.value.findIndex(
+      (r: Recommendation) => r.tmdb_id === title.tmdb_id
+    );
+    if (originalTitleIndex !== -1 && status === TitleStatus.WATCHLIST) {
+      originalInWatchlist =
+        recommendations.value[originalTitleIndex].in_watchlist;
     }
 
     // Update status in backend
@@ -587,22 +580,86 @@ const handleTitleStatus = async (
       );
     }
 
-    // Optimistically remove from UI (except watchlist which stays)
-    if (status !== TitleStatus.WATCHLIST) {
+    // Remove from UI and get replacement
+    // Watchlist titles also disappear from recommendations
+    const removedIndex = allRecommendations.value.findIndex(
+      (r: Recommendation) => r.tmdb_id === title.tmdb_id
+    );
+
+    if (removedIndex !== -1) {
+      // Remove the title
       allRecommendations.value = allRecommendations.value.filter(
         (r: Recommendation) => r.tmdb_id !== title.tmdb_id
       );
+
+      // Get replacement recommendation
+      try {
+        const queryParams: Record<string, string> = {
+          excluded_tmdb_id: title.tmdb_id.toString(),
+          excluded_type: title.type,
+        };
+        if (route.query.mood) queryParams.mood = route.query.mood as string;
+        if (route.query.attention)
+          queryParams.attention = route.query.attention as string;
+
+        const replacement = await $fetch<Recommendation | null>(
+          '/api/recommendations/replacement',
+          {
+            headers: {
+              Authorization: `Bearer ${session.access_token}`,
+            },
+            credentials: 'include',
+            query: queryParams,
+          }
+        );
+
+        if (replacement) {
+          // Add replacement to maintain 20 recommendations
+          allRecommendations.value.push(replacement);
+          recommendations.value = filterRecommendationsByType(
+            allRecommendations.value
+          );
+        } else {
+          // No replacement available, just update filtered list
+          recommendations.value = filterRecommendationsByType(
+            allRecommendations.value
+          );
+        }
+      } catch (error) {
+        // If replacement fails, just update filtered list
+        console.error('[handleTitleStatus] Error fetching replacement:', error);
+        recommendations.value = filterRecommendationsByType(
+          allRecommendations.value
+        );
+      }
+    } else {
+      // Title not in list, just update filtered list
       recommendations.value = filterRecommendationsByType(
         allRecommendations.value
       );
     }
   } catch (error) {
     // Rollback optimistic update if error occurred
-    if (status === TitleStatus.WATCHLIST && originalTitleIndex !== -1) {
-      recommendations.value[originalTitleIndex] = {
-        ...recommendations.value[originalTitleIndex],
-        in_watchlist: originalInWatchlist,
-      };
+    if (originalTitleIndex !== -1) {
+      // Restore original state
+      if (status === TitleStatus.WATCHLIST) {
+        recommendations.value[originalTitleIndex] = {
+          ...recommendations.value[originalTitleIndex],
+          in_watchlist: originalInWatchlist,
+        };
+      } else {
+        // Restore removed title
+        const originalTitle = allRecommendations.value.find(
+          (r) => r.tmdb_id === title.tmdb_id
+        );
+        if (!originalTitle) {
+          // Re-add the title that was removed
+          allRecommendations.value.push(title);
+          recommendations.value = filterRecommendationsByType(
+            allRecommendations.value
+          );
+        }
+      }
     }
 
     if (process.env.NODE_ENV === 'development') {
@@ -706,13 +763,63 @@ const handleMarkLiked = async (title: Recommendation) => {
       5000
     );
 
-    // Optimistically remove from UI (liked titles are seen, not in recommendations)
-    allRecommendations.value = allRecommendations.value.filter(
-      (r) => r.tmdb_id !== title.tmdb_id
+    // Remove from UI and get replacement (liked titles are seen, not in recommendations)
+    const removedIndex = allRecommendations.value.findIndex(
+      (r) => r.tmdb_id === title.tmdb_id
     );
-    recommendations.value = filterRecommendationsByType(
-      allRecommendations.value
-    );
+
+    if (removedIndex !== -1) {
+      // Remove the title
+      allRecommendations.value = allRecommendations.value.filter(
+        (r) => r.tmdb_id !== title.tmdb_id
+      );
+
+      // Get replacement recommendation
+      try {
+        const queryParams: Record<string, string> = {
+          excluded_tmdb_id: title.tmdb_id.toString(),
+          excluded_type: title.type,
+        };
+        if (route.query.mood) queryParams.mood = route.query.mood as string;
+        if (route.query.attention)
+          queryParams.attention = route.query.attention as string;
+
+        const replacement = await $fetch<Recommendation | null>(
+          '/api/recommendations/replacement',
+          {
+            headers: {
+              Authorization: `Bearer ${session.access_token}`,
+            },
+            credentials: 'include',
+            query: queryParams,
+          }
+        );
+
+        if (replacement) {
+          // Add replacement to maintain 20 recommendations
+          allRecommendations.value.push(replacement);
+          recommendations.value = filterRecommendationsByType(
+            allRecommendations.value
+          );
+        } else {
+          // No replacement available, just update filtered list
+          recommendations.value = filterRecommendationsByType(
+            allRecommendations.value
+          );
+        }
+      } catch (error) {
+        // If replacement fails, just update filtered list
+        console.error('[handleMarkLiked] Error fetching replacement:', error);
+        recommendations.value = filterRecommendationsByType(
+          allRecommendations.value
+        );
+      }
+    } else {
+      // Title not in list, just update filtered list
+      recommendations.value = filterRecommendationsByType(
+        allRecommendations.value
+      );
+    }
   } catch (error) {
     if (process.env.NODE_ENV === 'development') {
       console.error('[handleMarkLiked] Error:', error);
@@ -724,6 +831,13 @@ const handleMarkLiked = async (title: Recommendation) => {
       3000
     );
   }
+};
+
+// Handle removing like from recommendation card
+const handleRemoveLiked = async (title: Recommendation) => {
+  // Show confirmation modal
+  titleToRemoveLike.value = title;
+  showRemoveLikeModal.value = true;
 };
 
 // Handle removing like after confirmation
@@ -778,33 +892,12 @@ const confirmRemoveLike = async () => {
 
     console.log('[UNLIKE DEBUG] Remove like response', { response });
 
-    // Update frontend state - mark as not liked
-    const titleIndex = recommendations.value.findIndex(
-      (r) => r.tmdb_id === title.tmdb_id
-    );
-    if (titleIndex !== -1) {
-      // Update the title to reflect it's no longer liked
-      recommendations.value[titleIndex] = {
-        ...recommendations.value[titleIndex],
-        liked: false,
-      };
-    }
+    // Note: Title remains as "seen" (not liked), so it should NOT be in recommendations
+    // The title was already removed from recommendations when it was marked as "liked"
+    // No need to update recommendations list - title stays excluded because status is still "seen"
 
-    // Show toast about regenerating recommendations
-    showToast(t('home.regeneratingRecommendations'), null, 5000);
-
-    // Regenerate recommendation pool in background
-    try {
-      await $fetch('/api/recommendations/populate-pool', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      });
-    } catch (poolError) {
-      console.error('[handleMarkLiked] Error regenerating pool:', poolError);
-      // Don't show error to user, pool regeneration is background task
-    }
+    // Show success toast
+    showToast(t('home.likeRemoved', { title: title.title }), null, 3000);
 
     titleToRemoveLike.value = null;
   } catch (error) {
@@ -1094,163 +1187,172 @@ onMounted(() => {
       <section v-if="isMounted && userStore.authInitialized && effectiveUser">
         <AppShell>
           <PageContainer>
-          <div class="w-full pt-6 pb-6">
-          <!-- Filtros Section -->
-          <Section v-if="userStore.hasCompletedOnboarding">
-            <div class="flex flex-col gap-4">
-              <!-- Mood Selector -->
-              <MoodSelector />
+            <div class="pt-6 pb-6 w-full">
+              <!-- Filtros Section -->
+              <Section v-if="userStore.hasCompletedOnboarding">
+                <div class="flex flex-col gap-4">
+                  <!-- Mood Selector -->
+                  <MoodSelector />
 
-              <!-- Content Type Filter -->
+                  <!-- Content Type Filter -->
+                  <div
+                    class="p-6 rounded-3xl border backdrop-blur-xl bg-white/60 dark:bg-gray-900/40 border-gray-300/50 dark:border-white/10 md:p-8"
+                  >
+                    <div class="flex flex-col gap-2">
+                      <label
+                        class="text-xs font-semibold tracking-wide text-gray-800 uppercase dark:text-gray-300"
+                      >
+                        {{ $t('home.contentTypeFilter') }}
+                      </label>
+                      <div class="flex flex-wrap gap-2">
+                        <button
+                          v-for="typeOption in [
+                            { value: 'all', label: $t('home.contentTypeAll') },
+                            {
+                              value: 'movie',
+                              label: $t('home.contentTypeMovie'),
+                            },
+                            { value: 'tv', label: $t('home.contentTypeTv') },
+                          ]"
+                          :key="typeOption.value"
+                          :class="[
+                            'px-3 py-1.5 rounded-full font-medium transition-all text-xs',
+                            selectedContentType === typeOption.value
+                              ? 'bg-primary-800 text-white border border-gray-700/50 dark:border-gray-600/50'
+                              : 'bg-gray-100/50 dark:bg-gray-800/50 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700/50 hover:bg-gray-200 dark:hover:bg-gray-700/50 hover:border-primary/50 dark:hover:border-purple-500/30',
+                          ]"
+                          @click="
+                            selectedContentType = typeOption.value as
+                              | 'all'
+                              | 'movie'
+                              | 'tv'
+                          "
+                        >
+                          {{ typeOption.label }}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Section>
+
+              <!-- Loading State -->
               <div
-                class="p-6 rounded-3xl border backdrop-blur-xl bg-white/60 dark:bg-gray-900/40 border-gray-300/50 dark:border-white/10 md:p-8"
+                v-if="loadingRecommendations || populatingPool"
+                class="w-full"
               >
-            <div class="flex flex-col gap-2">
-              <label
-                class="text-xs font-semibold tracking-wide text-gray-800 uppercase dark:text-gray-300"
-              >
-                {{ $t('home.contentTypeFilter') }}
-              </label>
-              <div class="flex flex-wrap gap-2">
-                <button
-                  v-for="typeOption in [
-                    { value: 'all', label: $t('home.contentTypeAll') },
-                    { value: 'movie', label: $t('home.contentTypeMovie') },
-                    { value: 'tv', label: $t('home.contentTypeTv') },
-                  ]"
-                  :key="typeOption.value"
-                  :class="[
-                    'px-3 py-1.5 rounded-full font-medium transition-all text-xs',
-                    selectedContentType === typeOption.value
-                      ? 'bg-primary-800 text-white border border-gray-700/50 dark:border-gray-600/50'
-                      : 'bg-gray-100/50 dark:bg-gray-800/50 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700/50 hover:bg-gray-200 dark:hover:bg-gray-700/50 hover:border-primary/50 dark:hover:border-purple-500/30',
-                  ]"
-                  @click="
-                    selectedContentType = typeOption.value as
-                      | 'all'
-                      | 'movie'
-                      | 'tv'
+                <Spinner
+                  :message="
+                    populatingPool
+                      ? $t('home.generatingButton')
+                      : $t('home.loadingRecommendations')
                   "
-                >
-                  {{ typeOption.label }}
-                </button>
+                />
               </div>
-            </div>
-            </div>
-            </div>
-          </Section>
 
-          <!-- Loading State -->
-          <div v-if="loadingRecommendations || populatingPool" class="w-full">
-            <Spinner
-              :message="
-                populatingPool
-                  ? $t('home.generatingButton')
-                  : $t('home.loadingRecommendations')
-              "
-            />
-          </div>
-
-          <!-- No Preferred Languages State -->
-          <div
-            v-else-if="
-              !populatingPool &&
-              hasAttemptedLoad &&
-              hasPreferredLanguage === false
-            "
-            class="py-6 text-center"
-          >
-            <div class="w-full max-w-md mx-auto">
-              <svg
-                class="mx-auto mb-4 w-16 h-16 text-gray-600 dark:text-gray-500"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+              <!-- No Preferred Languages State -->
+              <div
+                v-else-if="
+                  !populatingPool &&
+                  hasAttemptedLoad &&
+                  hasPreferredLanguage === false
+                "
+                class="py-6 text-center"
               >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"
+                <div class="mx-auto w-full max-w-md">
+                  <svg
+                    class="mx-auto mb-4 w-16 h-16 text-gray-600 dark:text-gray-500"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"
+                    />
+                  </svg>
+                  <h3
+                    class="mb-2 text-xl font-semibold text-gray-800 dark:text-gray-300 font-heading"
+                  >
+                    {{ $t('home.noPreferredLanguage') }}
+                  </h3>
+                  <p class="mb-6 text-gray-800 dark:text-gray-300">
+                    {{ $t('home.noPreferredLanguageDescription') }}
+                  </p>
+                  <nuxt-link
+                    to="/preferences?tab=content-preferences"
+                    class="inline-block px-6 py-3 text-base font-medium text-white rounded-lg border shadow-lg backdrop-blur-sm transition-all duration-300 bg-primary-800 dark:bg-primary hover:bg-primary-900 dark:hover:bg-primary-600 border-primary-600/50"
+                  >
+                    {{ $t('home.setPreferredLanguage') }}
+                  </nuxt-link>
+                </div>
+              </div>
+
+              <!-- Empty State (only show if not populating and user has no likes) -->
+              <!-- When pool is empty and user has likes, we automatically generate, so we don't show this -->
+              <div
+                v-else-if="
+                  !populatingPool &&
+                  hasAttemptedLoad &&
+                  recommendations.length === 0 &&
+                  hasPreferredLanguage !== false &&
+                  !userStore.hasLikes
+                "
+                class="py-6 text-center"
+              >
+                <div class="mx-auto w-full max-w-md">
+                  <svg
+                    class="mx-auto mb-4 w-16 h-16 text-gray-600 dark:text-gray-500"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+                    />
+                  </svg>
+                  <h3
+                    class="mb-2 text-xl font-semibold text-gray-800 dark:text-gray-300 font-heading"
+                  >
+                    {{ $t('home.noRecommendations') }}
+                  </h3>
+                  <p class="mb-6 text-gray-800 dark:text-gray-300">
+                    {{ $t('home.noRecommendationsDescription') }}
+                  </p>
+                  <nuxt-link
+                    to="/onboarding"
+                    class="inline-block px-6 py-3 text-base font-medium text-white rounded-lg border shadow-lg backdrop-blur-sm transition-all duration-300 bg-primary-800 dark:bg-primary hover:bg-primary-900 dark:hover:bg-primary-600 border-primary-600/50"
+                  >
+                    {{ $t('home.addFavorites') }}
+                  </nuxt-link>
+                </div>
+              </div>
+
+              <!-- Recommendations Section -->
+              <Section v-else>
+                <RecommendationSection
+                  v-if="recommendations && recommendations.length > 0"
+                  :key="`rec-${recommendations.length}`"
+                  :title="$t('home.recommendationsTitle')"
+                  :description="$t('home.recommendationsDescription')"
+                  :recommendations="recommendations"
+                  @mark-seen="handleTitleStatus($event, TitleStatus.SEEN)"
+                  @mark-not-interested="
+                    handleTitleStatus($event, TitleStatus.NOT_INTERESTED)
+                  "
+                  @mark-liked="handleMarkLiked($event)"
+                  @remove-liked="handleRemoveLiked($event)"
+                  @mark-watchlist="
+                    handleTitleStatus($event, TitleStatus.WATCHLIST)
+                  "
                 />
-              </svg>
-              <h3
-                class="mb-2 text-xl font-semibold text-gray-800 dark:text-gray-300 font-heading"
-              >
-                {{ $t('home.noPreferredLanguage') }}
-              </h3>
-              <p class="mb-6 text-gray-800 dark:text-gray-300">
-                {{ $t('home.noPreferredLanguageDescription') }}
-              </p>
-              <nuxt-link
-                to="/preferences?tab=content-preferences"
-                class="inline-block px-6 py-3 text-base font-medium text-white rounded-lg border shadow-lg backdrop-blur-sm transition-all duration-300 bg-primary-800 dark:bg-primary hover:bg-primary-900 dark:hover:bg-primary-600 border-primary-600/50"
-              >
-                {{ $t('home.setPreferredLanguage') }}
-              </nuxt-link>
+              </Section>
             </div>
-          </div>
-
-          <!-- Empty State (only show if not populating and user has no likes) -->
-          <!-- When pool is empty and user has likes, we automatically generate, so we don't show this -->
-          <div
-            v-else-if="
-              !populatingPool &&
-              hasAttemptedLoad &&
-              recommendations.length === 0 &&
-              hasPreferredLanguage !== false &&
-              !userStore.hasLikes
-            "
-            class="py-6 text-center"
-          >
-            <div class="w-full max-w-md mx-auto">
-              <svg
-                class="mx-auto mb-4 w-16 h-16 text-gray-600 dark:text-gray-500"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
-                />
-              </svg>
-              <h3
-                class="mb-2 text-xl font-semibold text-gray-800 dark:text-gray-300 font-heading"
-              >
-                {{ $t('home.noRecommendations') }}
-              </h3>
-              <p class="mb-6 text-gray-800 dark:text-gray-300">
-                {{ $t('home.noRecommendationsDescription') }}
-              </p>
-              <nuxt-link
-                to="/onboarding"
-                class="inline-block px-6 py-3 text-base font-medium text-white rounded-lg border shadow-lg backdrop-blur-sm transition-all duration-300 bg-primary-800 dark:bg-primary hover:bg-primary-900 dark:hover:bg-primary-600 border-primary-600/50"
-              >
-                {{ $t('home.addFavorites') }}
-              </nuxt-link>
-            </div>
-          </div>
-
-          <!-- Recommendations Section -->
-          <Section v-else>
-            <RecommendationSection
-              v-if="recommendations && recommendations.length > 0"
-              :key="`rec-${recommendations.length}`"
-              :title="$t('home.recommendationsTitle')"
-              :description="$t('home.recommendationsDescription')"
-              :recommendations="recommendations"
-              @mark-seen="handleTitleStatus($event, TitleStatus.SEEN)"
-              @mark-not-interested="
-                handleTitleStatus($event, TitleStatus.NOT_INTERESTED)
-              "
-              @mark-liked="handleMarkLiked($event)"
-              @mark-watchlist="handleTitleStatus($event, TitleStatus.WATCHLIST)"
-            />
-          </Section>
-          </div>
           </PageContainer>
         </AppShell>
       </section>
@@ -1279,69 +1381,69 @@ onMounted(() => {
     >
       <AppShell>
         <PageContainer>
-        <Section>
-          <h2
-            class="mb-6 text-3xl font-bold text-center text-gray-800 md:text-4xl dark:text-gray-300 font-heading"
-          >
-            {{ $t('home.howItWorksTitle') }}
-          </h2>
-        <div class="grid gap-4 md:grid-cols-3">
-          <Card
-            padding="lg"
-            custom-class="!bg-white/60 dark:!bg-gray-900/40 md:p-8 relative overflow-hidden group hover:border-primary/50 dark:hover:border-purple-500/30 transition-colors flex flex-col text-center"
-          >
-            <div
-              class="flex justify-center items-center mx-auto mb-4 w-16 h-16 bg-gradient-to-r rounded-full from-primary to-accent"
+          <Section>
+            <h2
+              class="mb-6 text-3xl font-bold text-center text-gray-800 md:text-4xl dark:text-gray-300 font-heading"
             >
-              <span class="text-2xl font-bold text-white">1</span>
+              {{ $t('home.howItWorksTitle') }}
+            </h2>
+            <div class="grid gap-4 md:grid-cols-3">
+              <Card
+                padding="lg"
+                custom-class="!bg-white/60 dark:!bg-gray-900/40 md:p-8 relative overflow-hidden group hover:border-primary/50 dark:hover:border-purple-500/30 transition-colors flex flex-col text-center"
+              >
+                <div
+                  class="flex justify-center items-center mx-auto mb-4 w-16 h-16 bg-gradient-to-r rounded-full from-primary to-accent"
+                >
+                  <span class="text-2xl font-bold text-white">1</span>
+                </div>
+                <h3
+                  class="mb-2 text-xl font-semibold text-gray-800 dark:text-gray-300 font-heading"
+                >
+                  {{ $t('home.step1Title') }}
+                </h3>
+                <p class="text-gray-800 dark:text-gray-300">
+                  {{ $t('home.step1Description') }}
+                </p>
+              </Card>
+              <Card
+                padding="lg"
+                custom-class="!bg-white/60 dark:!bg-gray-900/40 md:p-8 relative overflow-hidden group hover:border-primary/50 dark:hover:border-purple-500/30 transition-colors flex flex-col text-center"
+              >
+                <div
+                  class="flex justify-center items-center mx-auto mb-4 w-16 h-16 bg-gradient-to-r rounded-full from-accent to-secondary"
+                >
+                  <span class="text-2xl font-bold text-white">2</span>
+                </div>
+                <h3
+                  class="mb-2 text-xl font-semibold text-gray-800 dark:text-gray-300 font-heading"
+                >
+                  {{ $t('home.step2Title') }}
+                </h3>
+                <p class="text-gray-800 dark:text-gray-300">
+                  {{ $t('home.step2Description') }}
+                </p>
+              </Card>
+              <Card
+                padding="lg"
+                custom-class="!bg-white/60 dark:!bg-gray-900/40 md:p-8 relative overflow-hidden group hover:border-primary/50 dark:hover:border-purple-500/30 transition-colors flex flex-col text-center"
+              >
+                <div
+                  class="flex justify-center items-center mx-auto mb-4 w-16 h-16 bg-gradient-to-r rounded-full from-secondary to-pink"
+                >
+                  <span class="text-2xl font-bold text-white">3</span>
+                </div>
+                <h3
+                  class="mb-2 text-xl font-semibold text-gray-800 dark:text-gray-300 font-heading"
+                >
+                  {{ $t('home.step3Title') }}
+                </h3>
+                <p class="text-gray-800 dark:text-gray-300">
+                  {{ $t('home.step3Description') }}
+                </p>
+              </Card>
             </div>
-            <h3
-              class="mb-2 text-xl font-semibold text-gray-800 dark:text-gray-300 font-heading"
-            >
-              {{ $t('home.step1Title') }}
-            </h3>
-            <p class="text-gray-800 dark:text-gray-300">
-              {{ $t('home.step1Description') }}
-            </p>
-          </Card>
-          <Card
-            padding="lg"
-            custom-class="!bg-white/60 dark:!bg-gray-900/40 md:p-8 relative overflow-hidden group hover:border-primary/50 dark:hover:border-purple-500/30 transition-colors flex flex-col text-center"
-          >
-            <div
-              class="flex justify-center items-center mx-auto mb-4 w-16 h-16 bg-gradient-to-r rounded-full from-accent to-secondary"
-            >
-              <span class="text-2xl font-bold text-white">2</span>
-            </div>
-            <h3
-              class="mb-2 text-xl font-semibold text-gray-800 dark:text-gray-300 font-heading"
-            >
-              {{ $t('home.step2Title') }}
-            </h3>
-            <p class="text-gray-800 dark:text-gray-300">
-              {{ $t('home.step2Description') }}
-            </p>
-          </Card>
-          <Card
-            padding="lg"
-            custom-class="!bg-white/60 dark:!bg-gray-900/40 md:p-8 relative overflow-hidden group hover:border-primary/50 dark:hover:border-purple-500/30 transition-colors flex flex-col text-center"
-          >
-            <div
-              class="flex justify-center items-center mx-auto mb-4 w-16 h-16 bg-gradient-to-r rounded-full from-secondary to-pink"
-            >
-              <span class="text-2xl font-bold text-white">3</span>
-            </div>
-            <h3
-              class="mb-2 text-xl font-semibold text-gray-800 dark:text-gray-300 font-heading"
-            >
-              {{ $t('home.step3Title') }}
-            </h3>
-            <p class="text-gray-800 dark:text-gray-300">
-              {{ $t('home.step3Description') }}
-            </p>
-          </Card>
-        </div>
-        </Section>
+          </Section>
         </PageContainer>
       </AppShell>
     </section>
@@ -1354,37 +1456,37 @@ onMounted(() => {
     >
       <AppShell>
         <PageContainer>
-        <div class="w-full text-center">
-        <p
-          class="mb-6 text-2xl font-semibold leading-relaxed text-gray-900 md:text-3xl dark:text-gray-100"
-        >
-          {{ $t('home.tagline1') }}
-        </p>
-        <p
-          class="text-3xl font-semibold leading-relaxed text-gray-900 md:text-5xl dark:text-gray-100"
-        >
-          {{ $t('home.tagline2') }}
-          <span
-            class="text-transparent bg-clip-text bg-gradient-to-r from-primary-700 via-primary-800 to-primary-900 dark:from-primary-400 dark:via-primary-500 dark:to-primary-600"
-            style="
-              background-clip: text;
-              -webkit-background-clip: text;
-              -webkit-text-fill-color: transparent;
-            "
-            >{{ $t('home.tagline3') }}</span
-          >
-          {{ $t('home.tagline4') }}
-          <span
-            class="text-transparent bg-clip-text bg-gradient-to-r from-primary-700 via-primary-800 to-primary-900 dark:from-primary-400 dark:via-primary-500 dark:to-primary-600"
-            style="
-              background-clip: text;
-              -webkit-background-clip: text;
-              -webkit-text-fill-color: transparent;
-            "
-            >{{ $t('home.tagline5') }}</span
-          >{{ $t('home.tagline6') }}
-        </p>
-        </div>
+          <div class="w-full text-center">
+            <p
+              class="mb-6 text-2xl font-semibold leading-relaxed text-gray-900 md:text-3xl dark:text-gray-100"
+            >
+              {{ $t('home.tagline1') }}
+            </p>
+            <p
+              class="text-3xl font-semibold leading-relaxed text-gray-900 md:text-5xl dark:text-gray-100"
+            >
+              {{ $t('home.tagline2') }}
+              <span
+                class="text-transparent bg-clip-text bg-gradient-to-r from-primary-700 via-primary-800 to-primary-900 dark:from-primary-400 dark:via-primary-500 dark:to-primary-600"
+                style="
+                  background-clip: text;
+                  -webkit-background-clip: text;
+                  -webkit-text-fill-color: transparent;
+                "
+                >{{ $t('home.tagline3') }}</span
+              >
+              {{ $t('home.tagline4') }}
+              <span
+                class="text-transparent bg-clip-text bg-gradient-to-r from-primary-700 via-primary-800 to-primary-900 dark:from-primary-400 dark:via-primary-500 dark:to-primary-600"
+                style="
+                  background-clip: text;
+                  -webkit-background-clip: text;
+                  -webkit-text-fill-color: transparent;
+                "
+                >{{ $t('home.tagline5') }}</span
+              >{{ $t('home.tagline6') }}
+            </p>
+          </div>
         </PageContainer>
       </AppShell>
     </section>

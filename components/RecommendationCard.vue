@@ -57,6 +57,7 @@
               {{ $t('media.seen') }}
             </Button>
             <Button
+              v-if="!props.title.liked"
               type="button"
               variant="ghost"
               size="small"
@@ -67,6 +68,19 @@
                 <IconHeart icon-class="w-4 h-4" />
               </template>
               {{ $t('media.liked') }}
+            </Button>
+            <Button
+              v-else
+              type="button"
+              variant="ghost"
+              size="small"
+              custom-class="justify-start mb-2 w-full text-left"
+              @click.stop.prevent="handleAction('remove-liked')"
+            >
+              <template #icon>
+                <IconHeart icon-class="w-4 h-4" />
+              </template>
+              {{ $t('media.removeFromLiked') }}
             </Button>
             <Button
               type="button"
@@ -157,12 +171,13 @@ const emit = defineEmits<{
   'mark-seen': [title: Recommendation];
   'mark-not-interested': [title: Recommendation];
   'mark-liked': [title: Recommendation];
+  'remove-liked': [title: Recommendation];
   'mark-watchlist': [title: Recommendation];
 }>();
 
 const dropdownRef = ref<InstanceType<typeof ActionMenu> | null>(null);
 
-const handleAction = (action: TitleStatus | 'liked') => {
+const handleAction = (action: TitleStatus | 'liked' | 'remove-liked') => {
   // Close dropdown when action is triggered
   dropdownRef.value?.close();
 
@@ -170,6 +185,8 @@ const handleAction = (action: TitleStatus | 'liked') => {
     emit('mark-seen', props.title);
   } else if (action === 'liked') {
     emit('mark-liked', props.title);
+  } else if (action === 'remove-liked') {
+    emit('remove-liked', props.title);
   } else if (action === TitleStatus.NOT_INTERESTED) {
     emit('mark-not-interested', props.title);
   } else if (action === TitleStatus.WATCHLIST) {

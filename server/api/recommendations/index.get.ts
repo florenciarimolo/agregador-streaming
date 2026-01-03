@@ -598,11 +598,41 @@ export default defineEventHandler(async (event) => {
         return bCreated - aCreated;
       });
 
+      // Apply 50/50 balance between movies and TV shows when no filters are active
+      const hasFilters = mood !== undefined || attention !== undefined;
+      let balancedEntries = validEntries;
+
+      if (!hasFilters) {
+        // Separate movies and TV shows
+        const movies = validEntries.filter(
+          (entry) => entry.type === MediaTypeEnum.movie
+        );
+        const tvShows = validEntries.filter(
+          (entry) => entry.type === MediaTypeEnum.tv
+        );
+
+        // Interleave to achieve 50/50 balance
+        const balanced: typeof validEntries = [];
+        const maxLength = Math.max(movies.length, tvShows.length);
+
+        for (let i = 0; i < maxLength; i++) {
+          // Alternate between movie and TV show
+          if (i < movies.length) {
+            balanced.push(movies[i]);
+          }
+          if (i < tvShows.length) {
+            balanced.push(tvShows[i]);
+          }
+        }
+
+        balancedEntries = balanced;
+      }
+
       // Transform sorted pool entries to recommendations
       const recommendations: Recommendation[] = [];
       const tmdbIdsToTrack: number[] = [];
 
-      for (const entry of validEntries.slice(0, MAX_RECOMMENDATIONS)) {
+      for (const entry of balancedEntries.slice(0, MAX_RECOMMENDATIONS)) {
         const titleData = entry.titleData;
 
         // Fetch providers from TMDB (still need this for display)
