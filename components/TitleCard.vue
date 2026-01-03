@@ -112,9 +112,16 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
+  posterPath: null,
   aspectRatio: 'poster',
   showType: true,
+  type: undefined,
   customClass: '',
+  ariaLabel: undefined,
+  linkAriaLabel: undefined,
+  imageAlt: undefined,
+  noImageAriaLabel: undefined,
+  hoverText: undefined,
 });
 
 const typeLabel = computed(() => {
