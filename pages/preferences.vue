@@ -170,7 +170,7 @@
                 v-else-if="notInterestedTitles.length > 0"
                 :titles="notInterestedTitles"
                 :on-remove="handleRemoveNotInterested"
-                :remove-label="$t('undo.undo')"
+                :remove-label="$t('common.delete')"
               />
 
               <EmptyState

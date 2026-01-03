@@ -182,6 +182,7 @@
     "generateError": "Error al generar recomendaciones. Por favor, intenta de nuevo.",
     "titleMarkedNotInterested": "\"{title}\" marcado como no me interesa",
     "titleMarkedSeen": "\"{title}\" marcado como visto",
+    "titleRemovedFromSeen": "\"{title}\" eliminado de vistos",
     "titleSavedWatchlist": "\"{title}\" guardado en la Watchlist",
     "titleRemovedFromWatchlist": "\"{title}\" eliminado de watchlist",
     "titleAddedFavorites": "\"{title}\" agregado a tus favoritos",
@@ -192,8 +193,6 @@
     "errorMarkingSeen": "Error al marcar \"{title}\" como visto",
     "errorUpdatingStatus": "Error al actualizar el estado de \"{title}\"",
     "errorAddingFavorites": "Error al agregar \"{title}\" a favoritos",
-    "confirmRemoveLikeTitle": "Quitar de favoritos",
-    "confirmRemoveLikeMessage": "¿Estás seguro de que quieres quitar \"{title}\" de tus favoritos? Se recalcularán tus recomendaciones.",
     "regeneratingRecommendations": "Se están regenerando las recomendaciones",
     "likeRemoved": "\"{title}\" eliminado de 'Me gusta'",
     "errorRemovingFavorites": "Error al quitar \"{title}\" de favoritos"

@@ -6,8 +6,6 @@ import { getSession } from '@/composables/database/auth';
 import { useUndoToast } from '@/composables/useUndoToast';
 import { nextTick, onMounted, computed, watch, watchEffect, ref } from 'vue';
 import Card from '@/components/ui/Card.vue';
-import Modal from '@/components/ui/Modal.vue';
-import Button from '@/components/ui/Button.vue';
 import { getUserLikedTitle } from '@/composables/database/userTitleStatus';
 import AppShell from '@/components/layout/AppShell.vue';
 import PageContainer from '@/components/layout/PageContainer.vue';
@@ -676,10 +674,6 @@ const handleTitleStatus = async (
   }
 };
 
-// Modal state for removing like
-const showRemoveLikeModal = ref(false);
-const titleToRemoveLike = ref<Recommendation | null>(null);
-
 // Handle marking as liked (implies seen, removes from watchlist)
 // Or removing like if already liked
 const handleMarkLiked = async (title: Recommendation) => {
@@ -724,10 +718,9 @@ const handleMarkLiked = async (title: Recommendation) => {
     });
 
     if (likedTitle) {
-      console.log('[UNLIKE DEBUG] Title is already liked, showing modal');
-      // Title is already liked, show confirmation modal
-      titleToRemoveLike.value = title;
-      showRemoveLikeModal.value = true;
+      console.log('[UNLIKE DEBUG] Title is already liked, removing it');
+      // Title is already liked, remove it directly (no modal needed)
+      await confirmRemoveLike(title);
       return;
     }
 
@@ -835,24 +828,15 @@ const handleMarkLiked = async (title: Recommendation) => {
 
 // Handle removing like from recommendation card
 const handleRemoveLiked = async (title: Recommendation) => {
-  // Show confirmation modal
-  titleToRemoveLike.value = title;
-  showRemoveLikeModal.value = true;
+  // Remove like directly (no modal needed - just updates score)
+  await confirmRemoveLike(title);
 };
 
-// Handle removing like after confirmation
-const confirmRemoveLike = async () => {
+// Handle removing like (no modal needed - just updates score)
+const confirmRemoveLike = async (title: Recommendation) => {
   console.log('[UNLIKE DEBUG] confirmRemoveLike called', {
-    title: titleToRemoveLike.value,
+    title: title.title,
   });
-
-  if (!titleToRemoveLike.value) {
-    console.warn('[UNLIKE DEBUG] No title to remove like');
-    return;
-  }
-
-  const title = titleToRemoveLike.value;
-  showRemoveLikeModal.value = false;
 
   try {
     const {
@@ -898,8 +882,6 @@ const confirmRemoveLike = async () => {
 
     // Show success toast
     showToast(t('home.likeRemoved', { title: title.title }), null, 3000);
-
-    titleToRemoveLike.value = null;
   } catch (error) {
     if (process.env.NODE_ENV === 'development') {
       console.error('[confirmRemoveLike] Error:', error);
@@ -909,7 +891,6 @@ const confirmRemoveLike = async () => {
       null,
       3000
     );
-    titleToRemoveLike.value = null;
   }
 };
 
@@ -1490,34 +1471,5 @@ onMounted(() => {
         </PageContainer>
       </AppShell>
     </section>
-
-    <!-- Modal for removing like -->
-    <Modal :is-open="showRemoveLikeModal" @close="showRemoveLikeModal = false">
-      <div class="flex flex-col gap-4">
-        <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-300">
-          {{ $t('home.removeLikeTitle') || 'Quitar de favoritos' }}
-        </h2>
-        <p class="text-gray-700 dark:text-gray-300">
-          {{
-            $t('home.removeLikeMessage', {
-              title: titleToRemoveLike?.title || '',
-            }) ||
-            `¿Estás seguro de que quieres quitar "${titleToRemoveLike?.title}" de tus favoritos? Se recalcularán tus recomendaciones.`
-          }}
-        </p>
-        <div class="flex gap-3 justify-end mt-4">
-          <Button
-            variant="outline"
-            size="medium"
-            @click="showRemoveLikeModal = false"
-          >
-            {{ $t('common.cancel') || 'Cancelar' }}
-          </Button>
-          <Button variant="primary" size="medium" @click="confirmRemoveLike">
-            {{ $t('common.confirm') || 'Confirmar' }}
-          </Button>
-        </div>
-      </div>
-    </Modal>
   </div>
 </template>

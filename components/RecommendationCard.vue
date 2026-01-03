@@ -44,37 +44,13 @@
             />
           </template>
           <div class="p-4">
+            <!-- If title has a state, only show option to remove that state -->
             <Button
+              v-if="props.title.liked"
               type="button"
               variant="ghost"
               size="small"
-              custom-class="justify-start mb-2 w-full text-left"
-              @click.stop.prevent="handleAction(TitleStatus.SEEN)"
-            >
-              <template #icon>
-                <IconCheck icon-class="w-4 h-4" />
-              </template>
-              {{ $t('media.seen') }}
-            </Button>
-            <Button
-              v-if="!props.title.liked"
-              type="button"
-              variant="ghost"
-              size="small"
-              custom-class="justify-start mb-2 w-full text-left"
-              @click.stop.prevent="handleAction('liked')"
-            >
-              <template #icon>
-                <IconHeart icon-class="w-4 h-4" />
-              </template>
-              {{ $t('media.liked') }}
-            </Button>
-            <Button
-              v-else
-              type="button"
-              variant="ghost"
-              size="small"
-              custom-class="justify-start mb-2 w-full text-left"
+              custom-class="justify-start w-full text-left"
               @click.stop.prevent="handleAction('remove-liked')"
             >
               <template #icon>
@@ -83,18 +59,7 @@
               {{ $t('media.removeFromLiked') }}
             </Button>
             <Button
-              type="button"
-              variant="ghost"
-              size="small"
-              custom-class="justify-start mb-2 w-full text-left"
-              @click.stop.prevent="handleAction(TitleStatus.NOT_INTERESTED)"
-            >
-              <template #icon>
-                <IconX icon-class="w-4 h-4" />
-              </template>
-              {{ $t('media.notInterested') }}
-            </Button>
-            <Button
+              v-else-if="props.title.in_watchlist"
               type="button"
               variant="ghost"
               size="small"
@@ -104,8 +69,59 @@
               <template #icon>
                 <IconClock icon-class="w-4 h-4" />
               </template>
-              {{ $t('media.watchLater') }}
+              {{ $t('media.removeFromWatchlist') }}
             </Button>
+            <!-- If title has no state, show all options to add states -->
+            <template v-else>
+              <Button
+                type="button"
+                variant="ghost"
+                size="small"
+                custom-class="justify-start mb-2 w-full text-left"
+                @click.stop.prevent="handleAction(TitleStatus.SEEN)"
+              >
+                <template #icon>
+                  <IconCheck icon-class="w-4 h-4" />
+                </template>
+                {{ $t('media.seen') }}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="small"
+                custom-class="justify-start mb-2 w-full text-left"
+                @click.stop.prevent="handleAction('liked')"
+              >
+                <template #icon>
+                  <IconHeart icon-class="w-4 h-4" />
+                </template>
+                {{ $t('media.liked') }}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="small"
+                custom-class="justify-start mb-2 w-full text-left"
+                @click.stop.prevent="handleAction(TitleStatus.NOT_INTERESTED)"
+              >
+                <template #icon>
+                  <IconX icon-class="w-4 h-4" />
+                </template>
+                {{ $t('media.notInterested') }}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="small"
+                custom-class="justify-start w-full text-left"
+                @click.stop.prevent="handleAction(TitleStatus.WATCHLIST)"
+              >
+                <template #icon>
+                  <IconClock icon-class="w-4 h-4" />
+                </template>
+                {{ $t('media.watchLater') }}
+              </Button>
+            </template>
           </div>
         </ActionMenu>
       </div>
