@@ -230,73 +230,18 @@
                   </p>
 
                   <!-- Provider Search -->
-                  <SearchableSelect
-                    ref="providerSelectRef"
-                    select-id="provider-selector"
-                    :close-on-click-outside="true"
-                    :options="availableProviders"
-                    :selected-items="selectedProviders"
+                  <ProviderSelector
+                    v-model="selectedProviderForSelector"
+                    :available-providers="availableProviders"
+                    :selected-providers="selectedProviders"
                     :placeholder="
                       $t(
                         'preferences.content.includedProviders.searchPlaceholder'
                       )
                     "
-                    :get-item-key="(provider: any) => provider.provider_id"
-                    :get-item-label="
-                      (provider: any) => provider.provider_name || ''
-                    "
-                    :is-item-selected="
-                      (provider: any, selected: any[]) =>
-                        selected.some(
-                          (p: any) => p.provider_id === provider.provider_id
-                        )
-                    "
-                    :filter-item="
-                      (provider: any, query: string) =>
-                        provider.provider_name &&
-                        String(provider.provider_name)
-                          .toLowerCase()
-                          .includes(query.toLowerCase())
-                    "
                     :max-results="10"
-                    @select="(item: any) => addProvider(item)"
-                  >
-                    <template
-                      #items="{ filteredOptions: providers, selectItem }"
-                    >
-                      <div
-                        v-for="provider in providers"
-                        :key="(provider as any).provider_id"
-                        class="flex gap-3 items-center px-4 py-3 transition-colors duration-150 cursor-pointer dark:hover:bg-gray-800/50 hover:bg-gray-100/50"
-                        @mousedown.prevent="selectItem(provider)"
-                        @click="selectItem(provider)"
-                      >
-                        <img
-                          v-if="(provider as any).logo_path"
-                          :src="`https://image.tmdb.org/t/p/w45${(provider as any).logo_path}`"
-                          :alt="(provider as any).provider_name"
-                          class="object-contain flex-shrink-0 w-auto h-8"
-                        />
-                        <div
-                          v-else
-                          class="flex flex-shrink-0 justify-center items-center w-8 h-8 bg-gray-200 rounded dark:bg-gray-700"
-                        >
-                          <span
-                            class="text-xs text-gray-600 dark:text-gray-300"
-                            >{{
-                              String(
-                                (provider as any).provider_name || ''
-                              ).charAt(0)
-                            }}</span
-                          >
-                        </div>
-                        <span
-                          class="text-sm text-gray-800 dark:text-gray-300 whitespace-nowrap"
-                          >{{ (provider as any).provider_name }}</span
-                        >
-                      </div>
-                    </template>
-                  </SearchableSelect>
+                    @select="(provider: any) => addProvider(provider)"
+                  />
 
                   <!-- Selected Providers List -->
                   <div v-if="selectedProviders.length > 0" class="mb-4">
@@ -358,69 +303,12 @@
                   </p>
 
                   <!-- Genre Search -->
-                  <SearchableSelect
-                    ref="genreSelectRef"
-                    select-id="genre-selector"
-                    :close-on-click-outside="true"
-                    :options="availableGenres"
-                    :selected-items="selectedGenres"
-                    :placeholder="
-                      $t('preferences.content.favoriteGenres.searchPlaceholder')
-                    "
-                    :get-item-key="(genre: any) => `${genre.id}-${genre.type}`"
-                    :get-item-label="(genre: any) => genre.name || ''"
-                    :is-item-selected="
-                      (genre: any, selected: any[]) =>
-                        selected.some((g: any) => g.id === genre.id)
-                    "
-                    :filter-item="
-                      (genre: any, query: string) =>
-                        genre.name &&
-                        String(genre.name)
-                          .toLowerCase()
-                          .includes(query.toLowerCase())
-                    "
-                    @select="(item: any) => addGenre(item)"
-                  >
-                    <template #items="{ filteredOptions: genres, selectItem }">
-                      <template
-                        v-for="(genre, index) in genres"
-                        :key="`${(genre as any).id}-${(genre as any).type}`"
-                      >
-                        <!-- Separator: show only when type changes (first item of each type) -->
-                        <div
-                          v-if="
-                            Number(index) === 0 ||
-                            (genres[Number(index) - 1] as any)?.type !==
-                              (genre as any).type
-                          "
-                          class="px-4 py-2 text-xs font-semibold tracking-wider text-gray-500 uppercase dark:text-gray-400"
-                          :class="
-                            Number(index) > 0
-                              ? 'border-t border-gray-200 dark:border-gray-700'
-                              : ''
-                          "
-                        >
-                          {{
-                            (genre as any).type === MediaTypeEnum.movie
-                              ? t('preferences.content.contentTypes.movie')
-                              : t('preferences.content.contentTypes.tv')
-                          }}
-                        </div>
-                        <!-- Genre option -->
-                        <div
-                          class="flex gap-3 items-center px-4 py-3 transition-colors duration-150 cursor-pointer dark:hover:bg-gray-800/50 hover:bg-gray-100/50"
-                          @mousedown.prevent="selectItem(genre)"
-                          @click="selectItem(genre)"
-                        >
-                          <span
-                            class="text-sm text-gray-800 dark:text-gray-300 whitespace-nowrap"
-                            >{{ (genre as any).name }}</span
-                          >
-                        </div>
-                      </template>
-                    </template>
-                  </SearchableSelect>
+                  <GenreSelector
+                    v-model="selectedGenreForSelector"
+                    :available-genres="availableGenres"
+                    :selected-genres="selectedGenres"
+                    @select="(genre: any) => addGenre(genre)"
+                  />
 
                   <!-- Selected Genres List -->
                   <div v-if="selectedGenres.length > 0" class="mb-4">
@@ -672,7 +560,8 @@ import Spinner from '@/components/Spinner.vue';
 import Toast from '@/components/ui/Toast.vue';
 import LanguageSelector from '@/components/LanguageSelector.vue';
 import RegionSelector from '@/components/RegionSelector.vue';
-import SearchableSelect from '@/components/ui/SearchableSelect.vue';
+import GenreSelector from '@/components/GenreSelector.vue';
+import ProviderSelector from '@/components/ProviderSelector.vue';
 import { useUndoToast } from '@/composables/useUndoToast';
 import type { TMDBSearchResult } from '@/types/tmdb/Search';
 import {
@@ -1697,6 +1586,14 @@ const selectedGenres = ref<
   }>
 >([]);
 
+// Selected genre for GenreSelector (temporary state for the selector)
+// Selected genre for GenreSelector (temporary state for the selector)
+const selectedGenreForSelector = ref<{
+  id: number;
+  name: string;
+  type?: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv;
+} | null>(null);
+
 // Preload providers using useAsyncData (runs during setup, before mount)
 // Include credentials to ensure user session is sent for region detection
 const { data: providersData } = useAsyncData(
@@ -1754,11 +1651,13 @@ const selectedProviders = ref<
   }>
 >([]);
 
-// Refs for SearchableSelect components (kept for potential future use)
-const providerSelectRef = ref<InstanceType<typeof SearchableSelect> | null>(
-  null
-);
-const genreSelectRef = ref<InstanceType<typeof SearchableSelect> | null>(null);
+// Selected provider for ProviderSelector (temporary state for the selector)
+const selectedProviderForSelector = ref<{
+  provider_id: number;
+  provider_name: string;
+  logo_path: string | null;
+} | null>(null);
+
 
 // Fetch content preferences
 const fetchContentPreferences = async () => {

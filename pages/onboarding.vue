@@ -14,7 +14,7 @@ import Spinner from '@/components/Spinner.vue';
 import Button from '@/components/ui/Button.vue';
 import AppShell from '@/components/layout/AppShell.vue';
 import MediaTypeBadge from '@/components/MediaTypeBadge.vue';
-import SearchableSelect from '@/components/ui/SearchableSelect.vue';
+import GenreSelector from '@/components/GenreSelector.vue';
 
 definePageMeta({
   middleware: 'auth',
@@ -67,6 +67,13 @@ const preferencesSaved = ref(false);
 const selectedLanguage = ref<Language | null>(null);
 const selectedRegion = ref<string | null>(null);
 const selectedGenres = ref<Array<{ id: number; name: string }>>([]);
+
+// Selected genre for GenreSelector (temporary state for the selector)
+const selectedGenreForSelector = ref<{
+  id: number;
+  name: string;
+  type?: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv;
+} | null>(null);
 const savingPreferences = ref(false);
 
 // Titles state
@@ -511,63 +518,12 @@ const saveSelections = async () => {
           </p>
 
           <!-- Genre Search -->
-          <SearchableSelect
-            :options="availableGenres"
-            :selected-items="selectedGenres"
-            :placeholder="
-              $t('preferences.content.favoriteGenres.searchPlaceholder')
-            "
-            :get-item-key="(genre: any) => `${genre.id}-${genre.type}`"
-            :get-item-label="(genre: any) => genre.name || ''"
-            :is-item-selected="
-              (genre: any, selected: any[]) =>
-                selected.some((g: any) => g.id === genre.id)
-            "
-            :filter-item="
-              (genre: any, query: string) =>
-                genre.name &&
-                String(genre.name).toLowerCase().includes(query.toLowerCase())
-            "
-            @select="(item: any) => addGenre(item)"
-          >
-            <template #items="{ filteredOptions: genres, selectItem }">
-              <template
-                v-for="(genre, index) in genres"
-                :key="`${(genre as any).id}-${(genre as any).type}`"
-              >
-                <!-- Separator: show only when type changes (first item of each type) -->
-                <div
-                  v-if="
-                    Number(index) === 0 ||
-                    (genres[Number(index) - 1] as any)?.type !==
-                      (genre as any).type
-                  "
-                  class="px-4 py-2 text-xs font-semibold tracking-wider text-gray-500 uppercase dark:text-gray-400"
-                  :class="
-                    Number(index) > 0
-                      ? 'border-t border-gray-200 dark:border-gray-700'
-                      : ''
-                  "
-                >
-                  {{
-                    (genre as any).type === MediaTypeEnum.movie
-                      ? t('preferences.content.contentTypes.movie')
-                      : t('preferences.content.contentTypes.tv')
-                  }}
-                </div>
-                <!-- Genre option -->
-                <div
-                  class="flex gap-3 items-center px-4 py-3 transition-colors duration-150 cursor-pointer dark:hover:bg-gray-800/50 hover:bg-gray-100/50"
-                  @mousedown.prevent="selectItem(genre)"
-                  @click="selectItem(genre)"
-                >
-                  <span class="text-sm text-gray-800 dark:text-gray-300">{{
-                    (genre as any).name
-                  }}</span>
-                </div>
-              </template>
-            </template>
-          </SearchableSelect>
+          <GenreSelector
+            v-model="selectedGenreForSelector"
+            :available-genres="availableGenres"
+            :selected-genres="selectedGenres"
+            @select="(genre: any) => addGenre(genre)"
+          />
 
           <!-- Selected Genres List -->
           <div v-if="selectedGenres.length > 0" class="mt-4">
