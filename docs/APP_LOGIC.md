@@ -102,6 +102,109 @@ export const SCORE_WEIGHTS = {
    - Neither when adding nor removing
    - Weight = 0
 
+### Recommendation Filtering and Boosting
+
+#### Minimum Quality Threshold
+
+**IMPORTANT**: All recommendations must meet a minimum quality threshold:
+- **Minimum vote average**: 6.5 (enforced during pool population)
+- This ensures all recommendations in the pool are of acceptable quality
+- The filtering system respects this threshold and never reduces scores below it
+
+#### Mood and Attention Filtering System
+
+The recommendation system uses **multiplicative boost factors** to reorder recommendations based on user's mood and attention level, while respecting the minimum quality threshold.
+
+##### Boost Calculation
+
+**Formula:**
+```
+finalScore = baseScore * Math.max(1 + combinedFactor, 0.4)
+```
+
+Where:
+- `baseScore`: The original score from the recommendation pool (already filtered by 6.5 minimum)
+- `combinedFactor`: Weighted combination of attention and mood factors
+- `0.4`: Protection factor ensuring scores never drop below 40% of base (maintains quality)
+
+**Factor Combination:**
+```
+combinedFactor = attentionFactor * 0.6 + moodFactor * 0.4
+```
+
+- **Attention weight**: 60% (higher priority)
+- **Mood weight**: 40%
+
+##### Boost Factors (Multiplicative)
+
+Boost factors are expressed as percentages (e.g., `0.10` = +10%, `-0.15` = -15%):
+
+**Attention Levels:**
+
+- **LOW** (Baja atención):
+  - +10%: Películas < 100 min, Series con 1 episodio
+  - -15%: Thriller, Mystery, Sci-Fi (atenuado al 50% si voteAverage < 7.0)
+
+- **MEDIUM** (Atención media):
+  - +5%: Family, Comedy
+
+- **HIGH** (Alta atención):
+  - +10%: Drama, Thriller, Sci-Fi (atenuado al 50% si voteAverage < 7.0)
+  - +15%: Mystery, Thriller (narrativas complejas)
+  - -10%: Comedy, Animation (atenuado al 50% si voteAverage < 7.0)
+
+**Mood Types:**
+
+- **RELAX** (Relajado):
+  - +10%: Comedy, Animation, Family
+  - -10%: Thriller, Horror (atenuado al 50% si voteAverage < 7.0)
+  - -10%: Drama denso < 7.0 (atenuado al 50%)
+
+- **LIGERO** (Ligero):
+  - +10%: Comedy
+  - +5%: Adventure, Family
+  - -5%: Drama pesado < 6.5 (atenuado al 50%)
+
+- **INTENSO** (Intenso):
+  - +10%: Thriller, Action, Crime
+  - +5%: Votación alta (≥ 7.5)
+  - -10%: Animación infantil < 7.0 (atenuado al 50%)
+
+- **EMOCIONAL** (Emocional):
+  - +10%: Drama, Romance
+  - +5%: Drama (historias humanas)
+  - -10%: Action vacía < 6.0 (atenuado al 50%)
+
+- **REFLEXIVO** (Reflexivo):
+  - +10%: Sci-Fi, Mystery
+  - +5%: Documentary
+  - -10%: Comedy simple < 6.5 (atenuado al 50%)
+
+##### Attenuation Logic
+
+Given that all titles already meet the 6.5 minimum threshold, boost factors are **attenuated** for lower-rated titles to avoid:
+- Over-boosting mediocre titles
+- Over-penalizing acceptable quality titles
+
+**Attenuation rules:**
+- If `voteAverage < 7.0`: Penalties and some boosts are reduced by 50%
+- This ensures the system **reorders** rather than **expels** valid recommendations
+- Maintains diversity even with extreme filter combinations
+
+##### Content Type Filtering
+
+- **Server-side filtering**: When `contentType !== 'all'`, the `type` parameter is sent to the server
+- Filtering happens **before** calculating boosts, ensuring the candidate pool is appropriate
+- Client-side filtering is only used when `contentType === 'all'` (for display purposes)
+
+##### Benefits of Multiplicative System
+
+1. **Proportional impact**: Boosts affect titles proportionally to their base score
+2. **Quality preservation**: Protection factor (0.4) ensures no title drops below acceptable quality
+3. **Natural ranking**: Higher-scored titles benefit more from positive boosts
+4. **Stability**: System reorders rather than expels, maintaining list diversity
+5. **Respects minimum threshold**: The 6.5 minimum is never violated
+
 ### Calculation Examples
 
 #### Scenario 1: Mark as "liked"
@@ -250,33 +353,40 @@ A title is removed from the pool when:
 
 **IMPORTANT: Product Decision - Content Type Balance**
 
-When no filters are active (neither mood nor attention level), the algorithm enters a **neutral exploration mode** that guarantees a balanced mix of content types.
+When no filters are active (neither mood, attention level, nor content type), the algorithm enters a **neutral exploration mode** that guarantees a balanced mix of content types.
 
 #### Rules:
 
 1. **No filters active → 50/50 balance**
-   - When `mood === undefined` AND `attention === undefined`
+   - When `mood === undefined` AND `attention === undefined` AND `contentType === 'all'`
    - The algorithm ensures a 50% movies / 50% TV shows distribution
    - Results are interleaved to maintain balance throughout the list
    - The final result cannot be dominated by a single content type
 
 2. **Any filter active → Relevance priority**
-   - When `mood !== undefined` OR `attention !== undefined`
+   - When `mood !== undefined` OR `attention !== undefined` OR `contentType !== 'all'`
    - The balance is **disabled**
    - Priority is given to relevance according to filters
    - The system can return any proportion (even 100% of one type)
    - This allows filters to work naturally without artificial constraints
+
+3. **Content Type Filtering**
+   - When `contentType !== 'all'`, filtering is done **on the server** before calculating boosts
+   - This ensures the pool of candidates is appropriate before applying mood/attention filters
+   - Client-side filtering is only used when `contentType === 'all'` (for display purposes)
 
 #### Implementation:
 
 - After sorting by score (with boosts applied), the algorithm checks if filters are active
 - If no filters: separates movies and TV shows, then interleaves them
 - If filters active: uses the sorted list directly (no balance applied)
+- Content type filtering happens on server when `type` query param is provided
 
 This ensures that:
 - Users exploring without preferences see a diverse mix
 - Users with specific preferences get results tailored to their filters
 - The base ranking bias (if any) is corrected in neutral mode
+- Server-side filtering reduces unnecessary processing
 
 ### Automatic Replacement System
 
@@ -320,10 +430,10 @@ The recommendation list must always maintain exactly 20 visible recommendations.
      - `attention`: Current attention filter (if any)
   3. The replacement endpoint:
      - Excludes the removed title and all other excluded titles (seen, not_interested, watchlist)
-     - Applies mood/attention boosts if filters are active
+     - Applies mood/attention boosts using multiplicative factors if filters are active
      - Returns a replacement title:
        - Same type if no filters (to maintain balance)
-       - Most relevant if filters active (any type)
+       - Most relevant if filters active (any type, respecting content type filter if set)
   4. The replacement is added to the list immediately
 
 #### State Reversal and Recommendations:

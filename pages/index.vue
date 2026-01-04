@@ -178,11 +178,15 @@ const fetchRecommendations = async (): Promise<Recommendation[]> => {
       return [];
     }
 
-    // Get mood and attention from query params
+    // Get mood, attention, and content type from query params
     const query = route.query;
     const queryParams: Record<string, string> = {};
     if (query.mood) queryParams.mood = query.mood as string;
     if (query.attention) queryParams.attention = query.attention as string;
+    // Send content type to server when not 'all' (server-side filtering)
+    if (selectedContentType.value !== 'all') {
+      queryParams.type = selectedContentType.value;
+    }
 
     const data = await $fetch<Recommendation[]>('/api/recommendations', {
       headers: {

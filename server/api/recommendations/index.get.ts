@@ -25,6 +25,15 @@ import {
 } from '@/composables/database/constants';
 import type { MultiLanguageText } from '@/composables/database/titles';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
+import {
+  BOOST_WEIGHTS,
+  PROTECTION_FACTOR,
+  ATTENTION_BOOSTS,
+  MOOD_BOOSTS,
+  ATTENUATION,
+  RATING_THRESHOLDS,
+  DURATION_THRESHOLDS,
+} from '@/constants/recommendations';
 
 /**
  * Maximum number of recommendations to return
@@ -52,10 +61,14 @@ const GENRE_IDS = {
 } as const;
 
 /**
- * Calculate mood and attention boosts for a recommendation
- * Priority: Attention > Mood
+ * Calculate mood and attention boost factors for a recommendation
+ * Returns multiplicative factors (e.g., 0.1 = +10%, -0.15 = -15%)
+ * Priority: Attention > Mood (weighted combination)
+ * Uses constants from @/constants/recommendations for all boost values
+ *
+ * @returns { attentionFactor: number, moodFactor: number }
  */
-function calculateBoosts(
+function calculateBoostFactors(
   genreIds: number[],
   voteAverage: number | null,
   runtime: number | null, // For movies
@@ -63,153 +76,201 @@ function calculateBoosts(
   type: 'movie' | 'tv',
   mood?: MoodEnumType,
   attention?: AttentionEnumType
-): number {
-  let boost = 0;
+): { attentionFactor: number; moodFactor: number } {
+  let attentionFactor = 0;
+  let moodFactor = 0;
 
-  // Attention boosts (priority)
+  // Attention boost factors (priority)
   if (attention === AttentionEnum.LOW) {
-    // +10 runtime corto, +10 episodios autoconclusivos, -15 tramas complejas
-    if (type === 'movie' && runtime && runtime < 100) {
-      boost += 10;
-    } else if (type === 'tv' && episodeCount && episodeCount <= 1) {
-      boost += 10;
+    // Short runtime/single episode boosts
+    if (
+      type === 'movie' &&
+      runtime &&
+      runtime < DURATION_THRESHOLDS.SHORT_MOVIE_MINUTES
+    ) {
+      attentionFactor += ATTENTION_BOOSTS.LOW.SHORT_RUNTIME;
+    } else if (
+      type === 'tv' &&
+      episodeCount &&
+      episodeCount <= DURATION_THRESHOLDS.SINGLE_EPISODE
+    ) {
+      attentionFactor += ATTENTION_BOOSTS.LOW.SINGLE_EPISODE;
     }
-    // Penalize complex genres
+    // Penalize complex genres (attenuated if baseScore is lower)
     if (
       genreIds.includes(GENRE_IDS.THRILLER) ||
       genreIds.includes(GENRE_IDS.MYSTERY) ||
       genreIds.includes(GENRE_IDS.SCI_FI)
     ) {
-      boost -= 15;
+      // Attenuate penalty for lower-rated titles (they're already filtered by 6.5 minimum)
+      const attenuationFactor =
+        voteAverage && voteAverage < ATTENUATION.THRESHOLD
+          ? ATTENUATION.FACTOR
+          : 1.0;
+      attentionFactor +=
+        ATTENTION_BOOSTS.LOW.COMPLEX_GENRES_PENALTY * attenuationFactor;
     }
   } else if (attention === AttentionEnum.HIGH) {
-    // +15 narrativa compleja, +10 drama/thriller/sci-fi, -10 contenido trivial
+    // Complex genres boost
     if (
       genreIds.includes(GENRE_IDS.DRAMA) ||
       genreIds.includes(GENRE_IDS.THRILLER) ||
       genreIds.includes(GENRE_IDS.SCI_FI)
     ) {
-      boost += 10;
+      // Attenuate boost for lower-rated titles
+      const attenuationFactor =
+        voteAverage && voteAverage < ATTENUATION.THRESHOLD
+          ? ATTENUATION.FACTOR
+          : 1.0;
+      attentionFactor +=
+        ATTENTION_BOOSTS.HIGH.COMPLEX_GENRES * attenuationFactor;
     }
     // Boost complex narratives
     if (
       genreIds.includes(GENRE_IDS.MYSTERY) ||
       genreIds.includes(GENRE_IDS.THRILLER)
     ) {
-      boost += 15;
+      attentionFactor += ATTENTION_BOOSTS.HIGH.COMPLEX_NARRATIVES;
     }
-    // Penalize trivial content
+    // Penalize trivial content (attenuated)
     if (
       genreIds.includes(GENRE_IDS.COMEDY) ||
       genreIds.includes(GENRE_IDS.ANIMATION)
     ) {
-      boost -= 10;
+      const attenuationFactor =
+        voteAverage && voteAverage < ATTENUATION.THRESHOLD
+          ? ATTENUATION.FACTOR
+          : 1.0;
+      attentionFactor +=
+        ATTENTION_BOOSTS.HIGH.TRIVIAL_CONTENT_PENALTY * attenuationFactor;
     }
   } else if (attention === AttentionEnum.MEDIUM) {
-    // +5 géneros familiares, sin penalizaciones fuertes
+    // Family genres boost
     if (
       genreIds.includes(GENRE_IDS.FAMILY) ||
       genreIds.includes(GENRE_IDS.COMEDY)
     ) {
-      boost += 5;
+      attentionFactor += ATTENTION_BOOSTS.MEDIUM.FAMILY_GENRES;
     }
   }
 
-  // Mood boosts (applied after attention)
+  // Mood boost factors (applied after attention)
   if (mood === MoodEnum.RELAX) {
-    // +10 comedia, animación, +10 easy/ligero, -10 thriller/terror, -10 drama denso
+    // Comedy, animation, family boosts
     if (
       genreIds.includes(GENRE_IDS.COMEDY) ||
       genreIds.includes(GENRE_IDS.ANIMATION)
     ) {
-      boost += 10;
+      moodFactor += MOOD_BOOSTS.RELAX.COMEDY_ANIMATION;
     }
     if (genreIds.includes(GENRE_IDS.FAMILY)) {
-      boost += 10;
+      moodFactor += MOOD_BOOSTS.RELAX.FAMILY;
     }
+    // Thriller/horror penalty (attenuated)
     if (
       genreIds.includes(GENRE_IDS.THRILLER) ||
       genreIds.includes(GENRE_IDS.HORROR)
     ) {
-      boost -= 10;
+      const attenuationFactor =
+        voteAverage && voteAverage < ATTENUATION.THRESHOLD
+          ? ATTENUATION.FACTOR
+          : 1.0;
+      moodFactor +=
+        MOOD_BOOSTS.RELAX.THRILLER_HORROR_PENALTY * attenuationFactor;
     }
-    if (genreIds.includes(GENRE_IDS.DRAMA) && voteAverage && voteAverage < 7) {
-      boost -= 10; // Dense drama
+    // Dense drama penalty (attenuated)
+    if (
+      genreIds.includes(GENRE_IDS.DRAMA) &&
+      voteAverage &&
+      voteAverage < RATING_THRESHOLDS.DENSE_DRAMA
+    ) {
+      moodFactor += MOOD_BOOSTS.RELAX.DENSE_DRAMA_PENALTY * ATTENUATION.FACTOR;
     }
   } else if (mood === MoodEnum.LIGERO) {
-    // +10 comedia, +5 aventura/familia, -5 drama pesado
+    // Comedy boost
     if (genreIds.includes(GENRE_IDS.COMEDY)) {
-      boost += 10;
+      moodFactor += MOOD_BOOSTS.LIGERO.COMEDY;
     }
+    // Adventure, family boost
     if (
       genreIds.includes(GENRE_IDS.ADVENTURE) ||
       genreIds.includes(GENRE_IDS.FAMILY)
     ) {
-      boost += 5;
+      moodFactor += MOOD_BOOSTS.LIGERO.ADVENTURE_FAMILY;
     }
+    // Heavy drama penalty (attenuated)
     if (
       genreIds.includes(GENRE_IDS.DRAMA) &&
       voteAverage &&
-      voteAverage < 6.5
+      voteAverage < RATING_THRESHOLDS.HEAVY_DRAMA
     ) {
-      boost -= 5; // Heavy drama
+      moodFactor += MOOD_BOOSTS.LIGERO.HEAVY_DRAMA_PENALTY * ATTENUATION.FACTOR;
     }
   } else if (mood === MoodEnum.INTENSO) {
-    // +10 thriller/acción/crimen, +5 voto alto, -10 animación infantil
+    // Thriller, action, crime boost
     if (
       genreIds.includes(GENRE_IDS.THRILLER) ||
       genreIds.includes(GENRE_IDS.ACTION) ||
       genreIds.includes(GENRE_IDS.CRIME)
     ) {
-      boost += 10;
+      moodFactor += MOOD_BOOSTS.INTENSO.THRILLER_ACTION_CRIME;
     }
-    if (voteAverage && voteAverage >= 7.5) {
-      boost += 5;
+    // High rating boost
+    if (voteAverage && voteAverage >= RATING_THRESHOLDS.HIGH_RATING) {
+      moodFactor += MOOD_BOOSTS.INTENSO.HIGH_RATING;
     }
+    // Child animation penalty (attenuated)
     if (
       genreIds.includes(GENRE_IDS.ANIMATION) &&
       voteAverage &&
-      voteAverage < 7
+      voteAverage < RATING_THRESHOLDS.CHILD_ANIMATION
     ) {
-      boost -= 10; // Child animation
+      moodFactor +=
+        MOOD_BOOSTS.INTENSO.CHILD_ANIMATION_PENALTY * ATTENUATION.FACTOR;
     }
   } else if (mood === MoodEnum.EMOCIONAL) {
-    // +10 drama/romance, +5 historias humanas, -10 acción vacía
+    // Drama, romance boost
     if (
       genreIds.includes(GENRE_IDS.DRAMA) ||
       genreIds.includes(GENRE_IDS.ROMANCE)
     ) {
-      boost += 10;
+      moodFactor += MOOD_BOOSTS.EMOCIONAL.DRAMA_ROMANCE;
     }
+    // Human stories boost
     if (genreIds.includes(GENRE_IDS.DRAMA)) {
-      boost += 5; // Human stories
+      moodFactor += MOOD_BOOSTS.EMOCIONAL.HUMAN_STORIES;
     }
+    // Empty action penalty (attenuated)
     if (
       genreIds.includes(GENRE_IDS.ACTION) &&
-      (!voteAverage || voteAverage < 6)
+      (!voteAverage || voteAverage < RATING_THRESHOLDS.EMPTY_ACTION)
     ) {
-      boost -= 10; // Empty action
+      moodFactor +=
+        MOOD_BOOSTS.EMOCIONAL.EMPTY_ACTION_PENALTY * ATTENUATION.FACTOR;
     }
   } else if (mood === MoodEnum.REFLEXIVO) {
-    // +10 sci-fi/misterio, +5 documentales, -10 comedia simple
+    // Sci-Fi, mystery boost
     if (
       genreIds.includes(GENRE_IDS.SCI_FI) ||
       genreIds.includes(GENRE_IDS.MYSTERY)
     ) {
-      boost += 10;
+      moodFactor += MOOD_BOOSTS.REFLEXIVO.SCI_FI_MYSTERY;
     }
+    // Documentary boost
     if (genreIds.includes(GENRE_IDS.DOCUMENTARY)) {
-      boost += 5;
+      moodFactor += MOOD_BOOSTS.REFLEXIVO.DOCUMENTARY;
     }
+    // Simple comedy penalty (attenuated)
     if (
       genreIds.includes(GENRE_IDS.COMEDY) &&
-      (!voteAverage || voteAverage < 6.5)
+      (!voteAverage || voteAverage < RATING_THRESHOLDS.SIMPLE_COMEDY)
     ) {
-      boost -= 10; // Simple comedy
+      moodFactor +=
+        MOOD_BOOSTS.REFLEXIVO.SIMPLE_COMEDY_PENALTY * ATTENUATION.FACTOR;
     }
   }
 
-  return boost;
+  return { attentionFactor, moodFactor };
 }
 
 /**
@@ -226,10 +287,11 @@ export default defineEventHandler(async (event) => {
   let user = null;
   let userId: string | null = null;
 
-  // Get query params for mood and attention
+  // Get query params for mood, attention, and content type
   const query = getQuery(event);
   const mood = query.mood as MoodEnumType | undefined;
   const attention = query.attention as AttentionEnumType | undefined;
+  const contentType = query.type as 'movie' | 'tv' | undefined; // Filter by content type on server
 
   // Try to get user from cookies first (default Supabase behavior)
   const userFromCookies = await serverSupabaseUser(event);
@@ -363,9 +425,16 @@ export default defineEventHandler(async (event) => {
       }
 
       // Filter out excluded titles in JavaScript (more reliable than .not() with large arrays)
-      const filteredEntries = poolEntries.filter(
+      let filteredEntries = poolEntries.filter(
         (entry) => !excludedTmdbIds.has(entry.tmdb_id)
       );
+
+      // Filter by content type on server if specified
+      if (contentType) {
+        filteredEntries = filteredEntries.filter(
+          (entry) => entry.type === contentType
+        );
+      }
 
       // Get user preferences for language and region (needed for TMDB fallback)
       const { language, region } = await getUserTMDBParams(event);
@@ -384,9 +453,8 @@ export default defineEventHandler(async (event) => {
           };
 
           // Use unified extraction function with TMDB fallback
-          const { extractTitleDataFromPoolWithFallback } = await import(
-            '../../utils/title-extraction'
-          );
+          const { extractTitleDataFromPoolWithFallback } =
+            await import('../../utils/title-extraction');
 
           const extracted = await extractTitleDataFromPoolWithFallback(
             {
@@ -485,10 +553,10 @@ export default defineEventHandler(async (event) => {
           const genreIds = titleData.genres.map((g) => g.id);
           const voteAverage = titleData.vote_average;
 
-          // Calculate boosts using the complete logic
+          // Calculate boost factors using multiplicative logic
           // Note: runtime and episodeCount not available in title_data,
           // so we'll use genre-based heuristics for attention
-          const boost = calculateBoosts(
+          const { attentionFactor, moodFactor } = calculateBoostFactors(
             genreIds,
             voteAverage,
             null, // runtime not available
@@ -498,9 +566,16 @@ export default defineEventHandler(async (event) => {
             attention
           );
 
-          // Calculate final score
+          // Combine factors with explicit weights
+          const combinedFactor =
+            attentionFactor * BOOST_WEIGHTS.ATTENTION +
+            moodFactor * BOOST_WEIGHTS.MOOD;
+
+          // Calculate final score using multiplicative formula
+          // Apply protection: never reduce below PROTECTION_FACTOR of base score
           const baseScore = entry.score || 0;
-          const finalScore = baseScore + boost;
+          const finalScore =
+            baseScore * Math.max(1 + combinedFactor, PROTECTION_FACTOR);
 
           return {
             ...entry,
@@ -544,7 +619,11 @@ export default defineEventHandler(async (event) => {
       });
 
       // Apply 50/50 balance between movies and TV shows when no filters are active
-      const hasFilters = mood !== undefined || attention !== undefined;
+      // Note: contentType filter is applied on server, so we don't need to balance here
+      const hasFilters =
+        mood !== undefined ||
+        attention !== undefined ||
+        contentType !== undefined;
       let balancedEntries = validEntries;
 
       if (!hasFilters) {
