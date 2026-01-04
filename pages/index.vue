@@ -98,6 +98,7 @@ const loadingRecommendations = ref(false);
 const hasAttemptedLoad = ref(false); // Track if we've attempted to load recommendations at least once
 const populatingPool = ref(false);
 const updatingLanguage = ref(false); // Track language update in progress
+const fetchingReplacement = ref(false); // Track replacement fetching in progress
 // Track loading state for individual title actions
 const loadingTitles = ref<Set<number>>(new Set());
 const recommendations = ref<Recommendation[]>([]);
@@ -323,8 +324,8 @@ watch(
     const effectiveUserId = newValue.userId || newValue.storeUserId;
     const oldEffectiveUserId = oldValue?.userId || oldValue?.storeUserId;
 
-    // Skip if we're already fetching
-    if (isFetchingProfile.value) {
+    // Skip if we're already fetching or fetching replacement
+    if (isFetchingProfile.value || fetchingReplacement.value) {
       return;
     }
 
@@ -569,6 +570,7 @@ const handleTitleStatus = async (
       );
 
       // Get replacement recommendation
+      fetchingReplacement.value = true;
       try {
         const queryParams: Record<string, string> = {
           excluded_tmdb_id: title.tmdb_id.toString(),
@@ -592,11 +594,14 @@ const handleTitleStatus = async (
         if (replacement) {
           // Add replacement to maintain 20 recommendations
           allRecommendations.value.push(replacement);
+          // Use nextTick to ensure reactive updates complete before updating UI
+          await nextTick();
           recommendations.value = filterRecommendationsByType(
             allRecommendations.value
           );
         } else {
           // No replacement available, just update filtered list
+          await nextTick();
           recommendations.value = filterRecommendationsByType(
             allRecommendations.value
           );
@@ -604,9 +609,14 @@ const handleTitleStatus = async (
       } catch (error) {
         // If replacement fails, just update filtered list
         console.error('[handleTitleStatus] Error fetching replacement:', error);
+        await nextTick();
         recommendations.value = filterRecommendationsByType(
           allRecommendations.value
         );
+      } finally {
+        // Ensure loading is cleared after nextTick to avoid hydration issues
+        await nextTick();
+        fetchingReplacement.value = false;
       }
     } else {
       // Title not in list, just update filtered list
@@ -649,6 +659,9 @@ const handleTitleStatus = async (
           ? t('home.errorMarkingSeen', { title: title.title })
           : t('home.errorUpdatingStatus', { title: title.title });
     showToast(errorMessage, null, 3000);
+  } finally {
+    // Always clear loading state for this title
+    loadingTitles.value.delete(title.tmdb_id);
   }
 };
 
@@ -749,6 +762,7 @@ const handleMarkLiked = async (title: Recommendation) => {
       );
 
       // Get replacement recommendation
+      fetchingReplacement.value = true;
       try {
         const queryParams: Record<string, string> = {
           excluded_tmdb_id: title.tmdb_id.toString(),
@@ -772,11 +786,14 @@ const handleMarkLiked = async (title: Recommendation) => {
         if (replacement) {
           // Add replacement to maintain 20 recommendations
           allRecommendations.value.push(replacement);
+          // Use nextTick to ensure reactive updates complete before updating UI
+          await nextTick();
           recommendations.value = filterRecommendationsByType(
             allRecommendations.value
           );
         } else {
           // No replacement available, just update filtered list
+          await nextTick();
           recommendations.value = filterRecommendationsByType(
             allRecommendations.value
           );
@@ -784,9 +801,14 @@ const handleMarkLiked = async (title: Recommendation) => {
       } catch (error) {
         // If replacement fails, just update filtered list
         console.error('[handleMarkLiked] Error fetching replacement:', error);
+        await nextTick();
         recommendations.value = filterRecommendationsByType(
           allRecommendations.value
         );
+      } finally {
+        // Ensure loading is cleared after nextTick to avoid hydration issues
+        await nextTick();
+        fetchingReplacement.value = false;
       }
     } else {
       // Title not in list, just update filtered list
@@ -1236,7 +1258,28 @@ onMounted(() => {
       <section v-if="isMounted && userStore.authInitialized && effectiveUser">
         <AppShell>
           <PageContainer>
-            <div class="pt-6 pb-6 w-full">
+            <!-- Loading State - Applied to entire content -->
+            <div
+              v-if="loadingRecommendations || populatingPool || updatingLanguage || fetchingReplacement"
+              class="w-full pt-6 pb-6"
+            >
+              <Spinner
+                :message="
+                  populatingPool
+                    ? $t('home.generatingButton')
+                    : updatingLanguage
+                    ? $t('home.updatingLanguage')
+                    : fetchingReplacement
+                    ? $t('home.loadingRecommendations')
+                    : $t('home.loadingRecommendations')
+                "
+              />
+            </div>
+
+            <div
+              v-else
+              class="pt-6 pb-6 w-full"
+            >
               <!-- Filtros Section -->
               <Section v-if="userStore.hasCompletedOnboarding">
                 <div class="flex flex-col gap-4">
@@ -1285,26 +1328,10 @@ onMounted(() => {
                 </div>
               </Section>
 
-              <!-- Loading State -->
-              <div
-                v-if="loadingRecommendations || populatingPool || updatingLanguage"
-                class="w-full"
-              >
-                <Spinner
-                  :message="
-                    populatingPool
-                      ? $t('home.generatingButton')
-                      : updatingLanguage
-                      ? $t('home.updatingLanguage')
-                      : $t('home.loadingRecommendations')
-                  "
-                />
-              </div>
-
               <!-- Empty State (only show if not populating and user has no likes) -->
               <!-- When pool is empty and user has likes, we automatically generate, so we don't show this -->
               <div
-                v-else-if="
+                v-if="
                   !populatingPool &&
                   hasAttemptedLoad &&
                   recommendations.length === 0 &&

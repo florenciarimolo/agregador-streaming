@@ -921,7 +921,7 @@ export default defineEventHandler(async (event) => {
           (entry) => entry.type === MediaTypeEnum.tv
         );
 
-        // Take exactly 10 of each type (or available amount if less)
+        // Try to get 10 of each type, but fill up to MAX_RECOMMENDATIONS (20) total
         const moviesToTake = Math.min(10, movies.length);
         const tvShowsToTake = Math.min(10, tvShows.length);
         const topMovies = movies.slice(0, moviesToTake);
@@ -938,6 +938,42 @@ export default defineEventHandler(async (event) => {
           }
           if (i < topTvShows.length) {
             balanced.push(topTvShows[i]);
+          }
+        }
+
+        // If we don't have 20 results yet, fill with remaining entries from the type that has more
+        if (balanced.length < MAX_RECOMMENDATIONS) {
+          const remaining = MAX_RECOMMENDATIONS - balanced.length;
+          const usedMovieIds = new Set(topMovies.map((m) => m.tmdb_id));
+          const usedTvShowIds = new Set(topTvShows.map((t) => t.tmdb_id));
+
+          // Determine which type has more unused entries
+          const remainingMovies = movies.filter(
+            (m) => !usedMovieIds.has(m.tmdb_id)
+          );
+          const remainingTvShows = tvShows.filter(
+            (t) => !usedTvShowIds.has(t.tmdb_id)
+          );
+
+          // Fill with the type that has more remaining entries, or alternate if both have some
+          let movieIndex = 0;
+          let tvShowIndex = 0;
+          for (let i = 0; i < remaining && balanced.length < MAX_RECOMMENDATIONS; i++) {
+            // Alternate between types if both have remaining entries
+            if (movieIndex < remainingMovies.length && tvShowIndex < remainingTvShows.length) {
+              // Alternate based on current balance
+              if (balanced.length % 2 === 0 && movieIndex < remainingMovies.length) {
+                balanced.push(remainingMovies[movieIndex++]);
+              } else if (tvShowIndex < remainingTvShows.length) {
+                balanced.push(remainingTvShows[tvShowIndex++]);
+              }
+            } else if (movieIndex < remainingMovies.length) {
+              balanced.push(remainingMovies[movieIndex++]);
+            } else if (tvShowIndex < remainingTvShows.length) {
+              balanced.push(remainingTvShows[tvShowIndex++]);
+            } else {
+              break; // No more entries available
+            }
           }
         }
 
