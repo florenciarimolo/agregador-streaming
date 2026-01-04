@@ -12,6 +12,11 @@ This document describes the design guidelines, UI components, spacing, and visua
 6. [Title Cards](#title-cards)
 7. [Toasts and Notifications](#toasts-and-notifications)
 8. [Flags and Icons](#flags-and-icons)
+9. [Best Practices](#best-practices)
+10. [Non-goals (Explicitly Out of Scope)](#non-goals-explicitly-out-of-scope)
+11. [Pages vs Components](#pages-vs-components)
+12. [Refactoring Rule of Thumb](#refactoring-rule-of-thumb)
+13. [References](#references)
 
 ---
 
@@ -24,14 +29,17 @@ This document describes the design guidelines, UI components, spacing, and visua
 **Purpose:** Single source of truth for shared application width.
 
 **Behavior:**
+
 - **Mobile:** `px-4` (1rem lateral padding)
 - **Desktop (md+):** `max-w-7xl mx-auto px-6` (centered max width with padding)
 
 **Usage:**
+
 - Used in: Navbar, Main, Footer
 - **NOT used in:** PageContainer (only handles vertical spacing)
 
 **Example:**
+
 ```vue
 <AppShell>
   <div>Content with controlled width</div>
@@ -45,14 +53,17 @@ This document describes the design guidelines, UI components, spacing, and visua
 **Purpose:** Only handles vertical page spacing.
 
 **Behavior:**
+
 - `w-full`: Full width
 - **Does NOT define width** (that's done by AppShell)
 
 **Usage:**
+
 - Used inside AppShell for consistent vertical spacing
 - **Do NOT use in:** landing, auth, onboarding (special layouts)
 
 **Example:**
+
 ```vue
 <AppShell>
   <PageContainer>
@@ -68,20 +79,24 @@ This document describes the design guidelines, UI components, spacing, and visua
 **Purpose:** Standard container for content sections.
 
 **Behavior:**
+
 - **Mobile:** `space-y-12` (3rem vertical separation between sections)
 - **Tablet (md):** `space-y-16` (4rem separation)
 - **Desktop (lg):** `space-y-24` (6rem separation)
 
 **Special features:**
+
 - Automatically reduces space between `SectionTitle` and its content
 - Reduces space between descriptions (`<p>`) and following content
 - This creates better visual hierarchy (content is closer to its title than to other sections)
 
 **Internal spacing:**
+
 - Between title and content: `1rem` (mobile), `1.25rem` (tablet), `1.5rem` (desktop)
 - Between sections: `3rem` (mobile), `4rem` (tablet), `6rem` (desktop)
 
 **Example:**
+
 ```vue
 <Section>
   <SectionTitle>Section Title</SectionTitle>
@@ -102,16 +117,19 @@ This document describes the design guidelines, UI components, spacing, and visua
 **Purpose:** Standardized section titles (H2).
 
 **Behavior:**
+
 - **Mobile:** `text-2xl font-semibold pt-8 mb-2`
 - **Tablet (md):** `text-3xl pt-10 mb-2`
 - **Desktop (lg):** `pt-12 mb-3`
 
 **Characteristics:**
+
 - Top padding for separation from previous sections
 - Reduced bottom margin (`Section` handles spacing with content)
 - Uses `font-heading` for consistent typography
 
 **Example:**
+
 ```vue
 <Section>
   <SectionTitle>My Section</SectionTitle>
@@ -149,6 +167,7 @@ Spacing must respect **visual hierarchy**: content should be closer to its title
 **Unified rule:** All card grids use `gap-4` (1rem).
 
 **Application:**
+
 - Recommendation cards
 - Season cards
 - Episode cards
@@ -158,6 +177,7 @@ Spacing must respect **visual hierarchy**: content should be closer to its title
 - "Not interested" cards
 
 **Example:**
+
 ```vue
 <div class="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-5">
   <!-- Cards -->
@@ -175,6 +195,7 @@ Spacing must respect **visual hierarchy**: content should be closer to its title
 **Purpose:** Unified base component for all title cards.
 
 **Features:**
+
 - Poster/image with placeholder
 - Configurable slots:
   - `top-left-badges`: Rating, watchlist badge, etc.
@@ -187,6 +208,7 @@ Spacing must respect **visual hierarchy**: content should be closer to its title
   - `customClass`: Additional classes
 
 **Structure:**
+
 ```vue
 <TitleCard>
   <template #top-left-badges>
@@ -204,10 +226,12 @@ Spacing must respect **visual hierarchy**: content should be closer to its title
 ```
 
 **Important:**
+
 - Actions (`top-right-actions`) are **outside the `<nuxt-link>`** to prevent accidental navigation
 - The `<nuxt-link>` only wraps the poster/navigable area
 
 **Components using TitleCard:**
+
 - `RecommendationCard`: Recommendation cards (with overview, providers, action menu)
 - `TitleGrid`: Simple cards for lists (watchlist, liked, seen, not_interested)
 - Inline cards in `watchlist.vue`
@@ -219,6 +243,7 @@ Spacing must respect **visual hierarchy**: content should be closer to its title
 **Purpose:** Recommendation card with complete information.
 
 **Features:**
+
 - Uses `TitleCard` as base
 - Shows: rating badge, watchlist badge, action menu, overview, providers
 - Custom slots for additional content
@@ -230,6 +255,7 @@ Spacing must respect **visual hierarchy**: content should be closer to its title
 **Purpose:** Grid of simple cards for lists.
 
 **Features:**
+
 - Uses `TitleCard` as base
 - Shows: title, type, action buttons (like, remove)
 - Responsive grid: `grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6`
@@ -259,8 +285,11 @@ All styles are defined first for mobile and then adjusted with breakpoints:
 ### Responsive Grids
 
 **Standard pattern:**
+
 ```vue
-<div class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+<div
+  class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
+>
   <!-- 
     Mobile: 2 columns
     Small: 3 columns
@@ -317,6 +346,7 @@ Content should be **closer to its title** than to other sections.
 ### Unified Structure
 
 All title cards share:
+
 - Poster/image with hover overlay
 - Title and type
 - Similar base styles (rounded-lg, backdrop-blur, etc.)
@@ -325,6 +355,7 @@ All title cards share:
 ### Variations
 
 **RecommendationCard:**
+
 - Rating badge (top-left)
 - Watchlist badge (top-left, below rating)
 - Action menu (top-right)
@@ -332,17 +363,20 @@ All title cards share:
 - Providers (logos) in content
 
 **TitleGrid (simple lists):**
+
 - Like button (top-left, optional)
 - Remove button (top-right, optional)
 - Only title and type in content
 
 **Season/episode cards:**
+
 - Custom structure (don't use TitleCard)
 - Different proportions and content
 
 ### Hover Overlay
 
 All cards show an overlay on hover:
+
 - Text: "View details" (or customized)
 - Background: `backdrop-blur-md` with `bg-black/80` (dark) or `bg-white/80` (light)
 - Smooth transition: `opacity-0` → `opacity-100`
@@ -360,17 +394,21 @@ All cards show an overlay on hover:
 ### Positioning
 
 **Mobile:**
+
 - `bottom-4`: 1rem from bottom
 - `w-[calc(100%-2rem)]`: Width respecting viewport (1rem margin on each side)
 - `left-1/2 transform -translate-x-1/2`: Horizontally centered
 
 **Desktop:**
+
 - `bottom-6`: 1.5rem from bottom
 - `w-full max-w-md mx-4`: Full width with maximum and margins
 
 **Final class:**
+
 ```vue
-class="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-md md:bottom-6 md:w-full md:mx-4"
+class="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50
+w-[calc(100%-2rem)] max-w-md md:bottom-6 md:w-full md:mx-4"
 ```
 
 ### Usage
@@ -400,6 +438,7 @@ showToast(
 **Location:** `composables/useUndoToast.ts`
 
 **Features:**
+
 - Single global toast (only one visible at a time)
 - Configurable auto-dismiss
 - Optional undo action
@@ -432,6 +471,7 @@ Flags are used directly as images in components:
 ```
 
 **Standard classes:**
+
 - `object-contain`: Maintain aspect ratio
 - `flex-shrink-0`: Prevent shrinking in flex layouts
 - `w-5 h-4`: Standard size (20px × 16px)
@@ -450,15 +490,16 @@ For language selectors (`AppLanguageSelector`, `LanguageSelector`), the followin
 - `gb.svg` - United Kingdom (English UK)
 
 **Mapping function:**
+
 ```typescript
 const getFlagFileName = (flagCode: string): string => {
   const flagMap: Record<string, string> = {
-    'ES': 'es',
-    'CAT': 'cat',
-    'GAL': 'gal',
-    'EUS': 'eus',
-    'US': 'us',
-    'GB': 'gb',
+    ES: 'es',
+    CAT: 'cat',
+    GAL: 'gal',
+    EUS: 'eus',
+    US: 'us',
+    GB: 'gb',
   };
   return flagMap[flagCode] || flagCode.toLowerCase();
 };
@@ -487,6 +528,7 @@ The region selector automatically loads flags from `/icons/flags/${regionCode.to
    - API to download SVG flags
 
 **Format:**
+
 - File name: lowercase ISO code (e.g., `es.svg`, `us.svg`)
 - Format: SVG
 - ViewBox: Recommended `0 0 640 480` or `0 0 1 1` for square flags
@@ -499,6 +541,7 @@ The region selector automatically loads flags from `/icons/flags/${regionCode.to
 ### Dark Mode
 
 The application supports dark mode using Tailwind classes:
+
 - `dark:bg-gray-900`: Dark backgrounds
 - `dark:text-gray-300`: Light text
 - `dark:border-white/10`: Subtle borders
@@ -516,6 +559,7 @@ The application supports dark mode using Tailwind classes:
 ### ARIA Labels
 
 All interactive elements must have appropriate `aria-label`:
+
 - Action buttons: `aria-label="Action on title"`
 - Links: `aria-label="View details of {title}"`
 - Images: Descriptive `alt`
@@ -562,6 +606,54 @@ Always use `Section`, `SectionTitle`, `PageContainer`, `AppShell` instead of cre
 - Maintain the principle: content closer to its title than to other sections
 - Use `Section` and `SectionTitle` for consistent structure
 - Adjust spacing only when necessary
+
+---
+
+## Non-goals (Explicitly Out of Scope)
+
+The following are intentional decisions and **MUST NOT** be refactored:
+
+- **Do NOT remove layout primitives** (`Section`, `PageContainer`, `AppShell`) to inline classes
+- **Do NOT regenerate the recommendation pool** on score changes
+- **Do NOT split components further** "for clarity" if it harms page readability
+- **Do NOT abstract UI logic** into services
+- **Do NOT introduce global state** for recommendations
+- **Do NOT refactor flows** that are documented here as product decisions
+
+These are architectural choices that balance readability, performance, and maintainability. Refactoring them would introduce unnecessary complexity or break existing patterns.
+
+---
+
+## Pages vs Components
+
+### Pages are allowed to:
+
+- Orchestrate multiple composables
+- Contain declarative empty states
+- Express full UI flows
+- Be longer than components if readability is preserved
+
+### Do NOT extract components from pages unless:
+
+- The extracted part has its own responsibility
+- It improves understanding of the page
+- It will be reused meaningfully
+
+**Principle:** Pages should be readable and express complete flows. Atomization for its own sake reduces clarity.
+
+---
+
+## Refactoring Rule of Thumb
+
+If a refactor:
+
+- Does not reduce cognitive load
+- Does not remove duplication
+- Does not clarify responsibility
+
+→ **Do NOT do it.**
+
+**Refactoring is not a goal by itself.** It must serve a clear purpose: improving readability, reducing duplication, or clarifying responsibilities. If none of these apply, leave the code as is.
 
 ---
 
