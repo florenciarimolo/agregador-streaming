@@ -150,9 +150,6 @@
     "noRecommendations": "Aún no hay recomendaciones",
     "generatingDescription": "Estamos preparando recomendaciones personalizadas basadas en tus gustos. Esto puede tardar unos momentos.",
     "noRecommendationsDescription": "Para recibir recomendaciones personalizadas, primero necesitas agregar filmak y telesailak que te gusten. Esto nos ayuda a conocerte mejor y sugerirte contenido que realmente disfrutarás.",
-    "noPreferredLanguage": "Configura tu idioma preferido",
-    "noPreferredLanguageDescription": "Para generar recomendaciones, necesitas configurar tu idioma preferido. Esto nos ayuda a mostrarte contenido en el idioma que prefieres.",
-    "setPreferredLanguage": "Configurar idioma preferido",
     "generateButton": "Generar recomendaciones",
     "generatingButton": "Generando recomendaciones...",
     "loadingRecommendations": "Kargatzen recomendaciones...",
@@ -365,16 +362,8 @@
       "saved": "Preferencias guardadas correctamente",
       "errorSaving": "Errorea al guardar las preferencias. Mesedez, saiatu berriro.",
       "preferredLanguage": {
-        "title": "Idioma preferido",
-        "description": "Selecciona el idioma en el que prefieres ver contenido.",
-        "confirmChangeTitle": "Cambiar idioma preferido",
-        "confirmChangeMessage": "Al cambiar el idioma preferido, se actualizarán todas las recomendaciones actuales con el nuevo idioma. ¿Estás seguro de que quieres continuar?",
-        "poolRegenerated": "Recomendaciones actualizadas correctamente.",
-        "languageUpdatedAndRegenerating": "Idioma actualizado correctamente. Se están regenerando las recomendaciones...",
-        "errorRegenerating": "Errorea al actualizar las recomendaciones. Inténtalo berriro más tarde.",
-        "saving": "Guardando cambios...",
-        "selected": "Idioma seleccionado",
-        "noneSelected": "No has seleccionado un idioma todavía."
+        "title": "Aplikazioaren hizkuntza",
+        "description": "Aukera ezazu aplikazioa erabili nahi duzun hizkuntza."
       },
       "loading": "Kargatzen preferencias..."
     }

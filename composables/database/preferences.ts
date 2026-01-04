@@ -2,7 +2,6 @@
 
 export interface UserPreferences {
   favorite_genres?: number[];
-  preferred_language?: string; // ISO 639-1 code (e.g., 'es', 'ca', 'eu', 'gl', 'en')
   included_providers?: number[];
   region?: string; // ISO 3166-1 alpha-2 country code
   exploration_mode?: 'similar' | 'balanced' | 'surprise';

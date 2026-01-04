@@ -80,19 +80,13 @@ export async function getUserTMDBParamsByUserId(userId: string): Promise<{
   };
 
   try {
-    // Get preferences (for content language) and settings (for app language/region)
-    const [preferencesResult, settingsResult] = await Promise.all([
-      getUserPreferencesServer(userId),
-      getSettingsServer(userId),
-    ]);
+    // Get settings (for app language/region)
+    const settingsResult = await getSettingsServer(userId);
 
-    // Priority: preferences.preferred_language > settings.language > default
+    // Priority: settings.language > default
     let language = defaults.language;
-    if (preferencesResult.data?.preferred_language) {
-      // Use preferred language (should already be in TMDB format)
-      language = toTMDBLanguageCode(preferencesResult.data.preferred_language);
-    } else if (settingsResult.data?.language) {
-      // Fallback to app language setting
+    if (settingsResult.data?.language) {
+      // Use app language setting
       const lang = String(settingsResult.data.language);
       language = toTMDBLanguageCode(lang);
     }

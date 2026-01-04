@@ -5,8 +5,6 @@ import { getTitleByTmdbId } from '@/composables/database/titles';
 import { upsertUserTitleStatus } from '@/composables/database/userTitleStatus';
 import { getSession } from '@/composables/database/auth';
 import { isUniqueViolationError } from '@/composables/database/errorCodes';
-import { AVAILABLE_LANGUAGES } from '@/constants/languages';
-import type { Language } from '@/constants/languages';
 import RegionSelector from '@/components/RegionSelector.vue';
 import CloseButton from '@/components/ui/CloseButton.vue';
 import Card from '@/components/ui/Card.vue';
@@ -15,6 +13,9 @@ import Button from '@/components/ui/Button.vue';
 import AppShell from '@/components/layout/AppShell.vue';
 import MediaTypeBadge from '@/components/MediaTypeBadge.vue';
 import GenreSelector from '@/components/GenreSelector.vue';
+import ProviderSelector from '@/components/ProviderSelector.vue';
+import GenrePill from '@/components/GenrePill.vue';
+import ProviderPill from '@/components/ProviderPill.vue';
 
 definePageMeta({
   middleware: 'auth',
@@ -64,7 +65,6 @@ const currentStep = ref<'preferences' | 'titles'>('preferences');
 const preferencesSaved = ref(false);
 
 // Preferences state
-const selectedLanguage = ref<Language | null>(null);
 const selectedRegion = ref<string | null>(null);
 const selectedGenres = ref<Array<{ id: number; name: string }>>([]);
 
@@ -74,6 +74,23 @@ const selectedGenreForSelector = ref<{
   name: string;
   type?: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv;
 } | null>(null);
+
+// Selected providers
+const selectedProviders = ref<
+  Array<{
+    provider_id: number;
+    provider_name: string;
+    logo_path: string | null;
+  }>
+>([]);
+
+// Selected provider for ProviderSelector (temporary state for the selector)
+const selectedProviderForSelector = ref<{
+  provider_id: number;
+  provider_name: string;
+  logo_path: string | null;
+} | null>(null);
+
 const savingPreferences = ref(false);
 
 // Titles state
@@ -207,6 +224,48 @@ const availableGenres = computed(() => {
     });
 });
 
+// Preload providers using useAsyncData
+const { data: providersData } = useAsyncData(
+  'onboarding-providers',
+  async () => {
+    const response = await $fetch<{
+      results: Array<{
+        provider_id: number;
+        provider_name: string;
+        logo_path: string | null;
+      }>;
+    }>('/api/tmdb/watch-providers', {
+      credentials: 'include',
+    });
+
+    return response;
+  },
+  {
+    server: false, // Only fetch on client
+    default: () => ({ results: [] }),
+  }
+);
+
+const availableProviders = computed(() => {
+  if (!providersData.value) {
+    return [];
+  }
+
+  if (!providersData.value.results) {
+    return [];
+  }
+
+  if (!Array.isArray(providersData.value.results)) {
+    return [];
+  }
+
+  return providersData.value.results.map((p) => ({
+    provider_id: p.provider_id,
+    provider_name: p.provider_name,
+    logo_path: p.logo_path,
+  }));
+});
+
 // Add genre to selected list
 const addGenre = (genre: {
   id: number;
@@ -227,13 +286,32 @@ const removeGenre = (genreId: number) => {
   selectedGenres.value = selectedGenres.value.filter((g) => g.id !== genreId);
 };
 
-// Save preferences (language and region) first
-const savePreferences = async () => {
-  if (!selectedLanguage.value) {
-    error.value = t('onboarding.languageRequired');
+// Add provider to selected list
+const addProvider = (provider: {
+  provider_id: number;
+  provider_name: string;
+  logo_path: string | null;
+}) => {
+  // Check if already selected
+  if (
+    selectedProviders.value.some((p) => p.provider_id === provider.provider_id)
+  ) {
     return;
   }
 
+  // Add provider
+  selectedProviders.value.push(provider);
+};
+
+// Remove provider from selected list
+const removeProvider = (providerId: number) => {
+  selectedProviders.value = selectedProviders.value.filter(
+    (p) => p.provider_id !== providerId
+  );
+};
+
+// Save preferences (region) first
+const savePreferences = async () => {
   savingPreferences.value = true;
   error.value = null;
 
@@ -263,12 +341,11 @@ const savePreferences = async () => {
       return;
     }
 
-    // Save preferences with language, region, and optional genres
+    // Save preferences with region and optional genres and providers
     const preferencesToSave = {
-      preferred_language: selectedLanguage.value.code,
       region: selectedRegion.value || null,
       favorite_genres: selectedGenres.value.map((g) => g.id),
-      included_providers: [],
+      included_providers: selectedProviders.value.map((p) => p.provider_id),
     };
 
     const saveResponse = await $fetch<{
@@ -465,44 +542,6 @@ const saveSelections = async () => {
           <RegionSelector v-model="selectedRegion" />
         </Card>
 
-        <!-- Preferred Language -->
-        <Card padding="lg">
-          <h2
-            class="text-xl font-semibold dark:text-gray-300 text-gray-800 mb-2"
-          >
-            {{ $t('preferences.content.preferredLanguage.title') }}
-          </h2>
-          <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
-            {{ $t('preferences.content.preferredLanguage.description') }}
-          </p>
-
-          <!-- Language Radio Buttons -->
-          <div class="space-y-2">
-            <label
-              v-for="lang in AVAILABLE_LANGUAGES"
-              :key="lang.code"
-              class="flex items-center gap-3 p-3 rounded-lg dark:hover:bg-gray-800/50 hover:bg-gray-100/50 transition-colors duration-150 cursor-pointer custom-radio-label"
-              :class="{
-                'dark:bg-gray-800/30 bg-gray-100/50':
-                  selectedLanguage?.code === lang.code,
-              }"
-            >
-              <input
-                :id="`lang-${lang.code}`"
-                type="radio"
-                name="preferred-language"
-                :value="lang.code"
-                :checked="selectedLanguage?.code === lang.code"
-                class="custom-radio"
-                @change="selectedLanguage = lang"
-              />
-              <span class="text-sm dark:text-gray-300 text-gray-800 flex-1">
-                {{ `${lang.name} (${lang.code})` }}
-              </span>
-            </label>
-          </div>
-        </Card>
-
         <!-- Favorite Genres (Optional) -->
         <Card padding="lg">
           <h2
@@ -534,27 +573,77 @@ const saveSelections = async () => {
               ({{ selectedGenres.length }})
             </p>
             <div class="flex flex-wrap gap-2">
-              <div
+              <GenrePill
                 v-for="genre in selectedGenres"
                 :key="genre.id"
-                class="flex gap-2 items-center px-4 py-1.5 rounded-full border backdrop-blur-xl md:py-2.5 dark:bg-gray-900/40 bg-gray-100/80 border-gray-300/50 dark:border-white/10"
-              >
-                <span
-                  class="text-xs font-medium text-gray-800 md:text-sm dark:text-gray-300"
-                  >{{ genre.name }}</span
-                >
-                <CloseButton
-                  custom-class="ml-1"
-                  :aria-label="
-                    $t('preferences.content.favoriteGenres.remove', {
-                      name: genre.name,
-                    })
-                  "
-                  @click="removeGenre(genre.id)"
-                />
-              </div>
+                :genre="genre"
+                :aria-label="
+                  $t('preferences.content.favoriteGenres.remove', {
+                    name: genre.name,
+                  })
+                "
+                @remove="removeGenre(genre.id)"
+              />
             </div>
           </div>
+        </Card>
+
+        <!-- Included Providers (Optional) -->
+        <Card padding="lg">
+          <h2
+            class="text-xl font-semibold dark:text-gray-300 text-gray-800 mb-2"
+          >
+            {{ $t('preferences.content.includedProviders.title') }}
+            <span class="text-sm font-normal text-gray-500 dark:text-gray-400">
+              ({{ $t('common.optional') }})
+            </span>
+          </h2>
+          <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+            {{ $t('preferences.content.includedProviders.description') }}
+          </p>
+
+          <!-- Provider Search -->
+          <ProviderSelector
+            v-model="selectedProviderForSelector"
+            :available-providers="availableProviders"
+            :selected-providers="selectedProviders"
+            :placeholder="
+              $t('preferences.content.includedProviders.searchPlaceholder')
+            "
+            :max-results="0"
+            @select="(provider: any) => addProvider(provider)"
+          />
+
+          <!-- Selected Providers List -->
+          <div v-if="selectedProviders.length > 0" class="mt-4">
+            <p
+              class="mb-2 text-sm font-medium text-gray-800 dark:text-gray-300"
+            >
+              {{ $t('preferences.content.includedProviders.selected') }}
+              ({{ selectedProviders.length }})
+            </p>
+            <div class="flex flex-wrap gap-2">
+              <ProviderPill
+                v-for="provider in selectedProviders"
+                :key="provider.provider_id"
+                :provider="provider"
+                :aria-label="
+                  $t('preferences.content.includedProviders.remove', {
+                    name: provider.provider_name,
+                  })
+                "
+                @remove="removeProvider(provider.provider_id)"
+              />
+            </div>
+          </div>
+
+          <!-- Info Message -->
+          <p
+            v-if="selectedProviders.length === 0"
+            class="text-xs mt-2 italic text-gray-600 dark:text-gray-400"
+          >
+            {{ $t('preferences.content.includedProviders.allIncluded') }}
+          </p>
         </Card>
 
         <!-- Continue Button -->
@@ -562,9 +651,7 @@ const saveSelections = async () => {
           <Button
             size="medium"
             variant="primary"
-            :disabled="
-              !selectedLanguage || !selectedRegion || savingPreferences
-            "
+            :disabled="!selectedRegion || savingPreferences"
             @click="savePreferences"
           >
             {{

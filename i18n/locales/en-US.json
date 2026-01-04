@@ -150,9 +150,6 @@
     "noRecommendations": "No recommendations yet",
     "generatingDescription": "We're preparing personalized recommendations based on your preferences. This may take a moment.",
     "noRecommendationsDescription": "To receive personalized recommendations, you first need to add movies and TV shows you like. This helps us get to know you better and suggest content you'll really enjoy.",
-    "noPreferredLanguage": "Set your preferred language",
-    "noPreferredLanguageDescription": "To generate recommendations, you need to set your preferred language. This helps us show you content in your preferred language.",
-    "setPreferredLanguage": "Set preferred language",
     "generateButton": "Generate recommendations",
     "generatingButton": "Generating recommendations...",
     "loadingRecommendations": "Loading recommendations...",
@@ -365,16 +362,8 @@
       "saved": "Preferences saved successfully",
       "errorSaving": "Error saving preferences. Please try again.",
       "preferredLanguage": {
-        "title": "Preferred language",
-        "description": "Select the language in which you prefer to watch content.",
-        "confirmChangeTitle": "Change preferred language",
-        "confirmChangeMessage": "Changing the preferred language will update all current recommendations with the new language. Are you sure you want to continue?",
-        "poolRegenerated": "Recommendations updated successfully.",
-        "languageUpdatedAndRegenerating": "Language updated successfully. Recommendations are being regenerated...",
-        "errorRegenerating": "Error updating recommendations. Try again later.",
-        "saving": "Saving changes...",
-        "selected": "Selected language",
-        "noneSelected": "You haven't selected a language yet."
+        "title": "Application language",
+        "description": "Select the language in which you want to use the application."
       },
       "loading": "Loading preferences..."
     }

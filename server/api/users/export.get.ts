@@ -1,5 +1,4 @@
 import { getProfile } from '@/composables/database/profiles';
-import { getUserPreferences } from '@/composables/database/preferences';
 import {
   getUserLikedTitles,
   getUserSeenTitles,
@@ -9,7 +8,7 @@ import {
 import { getUserActivity } from '@/composables/database/activity';
 import { getSession } from '@/composables/database/auth';
 import { getTitlesByTmdbIds, getTitleInLanguage, type MultiLanguageText } from '@/composables/database/titles';
-import { DEFAULT_LANGUAGE } from '@/constants/languages';
+import { getUserTMDBParams } from '../../utils/user-preferences';
 
 export default defineEventHandler(async (event) => {
   try {
@@ -35,9 +34,8 @@ export default defineEventHandler(async (event) => {
     }
 
     // Fetch all user data
-    const [profile, preferences, likedStatuses, seenStatuses, notInterestedStatuses, watchlistStatuses, activity] = await Promise.all([
+    const [profile, likedStatuses, seenStatuses, notInterestedStatuses, watchlistStatuses, activity] = await Promise.all([
       getProfile(userId),
-      getUserPreferences(userId),
       getUserLikedTitles(userId),
       getUserSeenTitles(userId),
       getUserNotInterestedTitles(userId),
@@ -53,8 +51,9 @@ export default defineEventHandler(async (event) => {
 
     const { data: titlesData } = await getTitlesByTmdbIds(Array.from(allTmdbIds));
     
-    // Get user's preferred language
-    const userLanguage = preferences.data?.preferred_language || DEFAULT_LANGUAGE;
+    // Get user's language from app settings
+    const { language } = await getUserTMDBParams(event);
+    const userLanguage = language;
     
     // Extract language-specific text from JSONB and create map
     const titleMap = new Map(

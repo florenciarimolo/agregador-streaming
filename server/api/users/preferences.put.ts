@@ -82,15 +82,6 @@ export default defineEventHandler(async (event) => {
       );
     }
 
-    // Handle preferred_language (single string value in TMDB format)
-    if (typeof body.preferred_language === 'string') {
-      // Convert to TMDB format (handles both legacy and TMDB codes)
-      preferences.preferred_language = toTMDBLanguageCode(body.preferred_language);
-    } else if (body.preferred_language === null || body.preferred_language === undefined) {
-      // Default to Spanish if not provided
-      preferences.preferred_language = LanguageCode.SPANISH;
-    }
-
     if (Array.isArray(body.included_providers)) {
       preferences.included_providers = body.included_providers.filter(
         (p: unknown) => Number.isInteger(p)
@@ -153,24 +144,17 @@ export default defineEventHandler(async (event) => {
 
     // Merge with existing or create new
     // Important: Explicitly set all fields to ensure they're updated
-    // If preferred_language is explicitly provided, use it; otherwise keep current or default
     const mergedPreferences = current
       ? {
           ...current,
           ...preferences,
-          // Explicitly set preferred_language if provided in body, otherwise keep current or default
-          preferred_language:
-            body.preferred_language !== undefined
-              ? preferences.preferred_language
-              : current.preferred_language || DEFAULT_LANGUAGE,
         }
-      : { user_id: userId, preferred_language: DEFAULT_LANGUAGE, ...preferences };
+      : { user_id: userId, ...preferences };
 
     // Log for debugging
     if (import.meta.dev) {
       console.log('[Preferences PUT] Saving preferences:', {
         userId,
-        preferred_language: mergedPreferences.preferred_language,
         allPreferences: mergedPreferences,
       });
     }
@@ -195,7 +179,7 @@ export default defineEventHandler(async (event) => {
     // Log for debugging
     if (import.meta.dev) {
       console.log('[Preferences PUT] Successfully saved:', {
-        preferred_language: data?.preferred_language,
+        preferences: data,
       });
     }
 

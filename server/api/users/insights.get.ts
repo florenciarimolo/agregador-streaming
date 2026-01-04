@@ -5,8 +5,7 @@ import {
 } from '@/composables/database/userTitleStatus';
 import { getTitlesByTmdbIds, getTitleInLanguage, type MultiLanguageText } from '@/composables/database/titles';
 import { getSession } from '@/composables/database/auth';
-import { getUserPreferences } from '@/composables/database/preferences';
-import { DEFAULT_LANGUAGE } from '@/constants/languages';
+import { getUserTMDBParams } from '../../utils/user-preferences';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 
 export default defineEventHandler(async (event) => {
@@ -49,9 +48,9 @@ export default defineEventHandler(async (event) => {
       };
     }
 
-    // Get user preferences for language
-    const { data: userPreferences } = await getUserPreferences(userId);
-    const userLanguage = userPreferences?.preferred_language || DEFAULT_LANGUAGE;
+    // Get user language from app settings
+    const { language } = await getUserTMDBParams(event);
+    const userLanguage = language;
 
     // Get title data
     const tmdbIds = seenStatuses.map((s) => s.tmdb_id);

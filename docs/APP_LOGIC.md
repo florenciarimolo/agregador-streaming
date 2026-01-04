@@ -304,10 +304,11 @@ The pool should **only** be regenerated when the user's structural preferences c
 
 #### Changes that trigger pool regeneration:
 
-- **Language preference** (`preferred_language`)
 - **Region** (`region`)
 - **Favorite genres** (`favorite_genres`)
 - **Included providers** (`included_providers`)
+
+**Note:** Language is now managed through app settings and does not trigger pool regeneration. The app always uses the user's app language for TMDB API calls.
 
 When preferences change:
 1. The previous pool is discarded
@@ -508,11 +509,12 @@ Stores user preferences.
 
 **Main fields:**
 - `favorite_genres`: Favorite genres
-- `preferred_language`: Preferred language (ISO/TMDB format: 'es-ES', 'ca-ES', etc.)
 - `included_providers`: Included streaming providers
 - `region`: User region
 - `exploration_mode`: Exploration mode
 - `prioritize_content`: Prioritized content type
+
+**Note:** Language is now managed through app settings (`profiles.settings.language`), not through user preferences. The app always uses the user's app language for TMDB API calls.
 
 ---
 

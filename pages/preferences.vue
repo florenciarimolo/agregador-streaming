@@ -196,26 +196,6 @@
                   />
                 </Card>
 
-                <!-- Preferred Languages -->
-                <Card padding="lg">
-                  <h2
-                    class="mb-2 text-xl font-semibold text-gray-800 dark:text-gray-300"
-                  >
-                    {{ $t('preferences.content.preferredLanguage.title') }}
-                  </h2>
-                  <p class="mb-6 text-sm text-gray-600 dark:text-gray-400">
-                    {{
-                      $t('preferences.content.preferredLanguage.description')
-                    }}
-                  </p>
-
-                  <!-- Language Selector -->
-                  <LanguageSelector
-                    v-model="currentLanguageCode"
-                    @update:model-value="handleLanguageChangeFromSelector"
-                  />
-                </Card>
-
                 <!-- Included Providers -->
                 <Card padding="lg">
                   <h2
@@ -535,7 +515,6 @@ import TitleGrid from '@/components/TitleGrid.vue';
 import EmptyState from '@/components/EmptyState.vue';
 import Spinner from '@/components/Spinner.vue';
 import Toast from '@/components/ui/Toast.vue';
-import LanguageSelector from '@/components/LanguageSelector.vue';
 import RegionSelector from '@/components/RegionSelector.vue';
 import GenreSelector from '@/components/GenreSelector.vue';
 import ProviderSelector from '@/components/ProviderSelector.vue';
@@ -543,19 +522,19 @@ import GenrePill from '@/components/GenrePill.vue';
 import ProviderPill from '@/components/ProviderPill.vue';
 import { useUndoToast } from '@/composables/useUndoToast';
 import type { TMDBSearchResult } from '@/types/tmdb/Search';
-import {
-  AVAILABLE_LANGUAGES,
-  LanguageCode,
-  DEFAULT_LANGUAGE,
-} from '@/constants/languages';
-import type { Language } from '@/constants/languages';
+import { DEFAULT_LANGUAGE, toTMDBLanguageCode } from '@/constants/languages';
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore - Auto-imported
 const currentUser = useSupabaseUser();
 const userStore = useUserStore();
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const { showToast } = useUndoToast();
+
+// Get app language for TMDB API calls
+const getAppLanguage = () => {
+  return toTMDBLanguageCode(locale.value || DEFAULT_LANGUAGE);
+};
 
 // State
 const profile = ref<{
@@ -583,7 +562,6 @@ const pendingTabChange = ref<
   'liked' | 'seen' | 'not-interested' | 'content-preferences' | null
 >(null);
 const savedContentPreferences = ref<{
-  preferred_language?: string;
   favorite_genres?: number[];
   included_providers?: number[];
   region?: string;
@@ -596,10 +574,6 @@ const savedSelectedProviders = ref<
     logo_path: string | null;
   }>
 >([]);
-const savedSelectedLanguage = ref<{
-  code: string;
-  name: string;
-} | null>(null);
 
 const likedTitles = ref<
   Array<{
@@ -786,10 +760,8 @@ const fetchLikedTitles = async () => {
       likedStatuses.map((s) => [s.tmdb_id, s.type])
     );
 
-    // Use preferred language in ISO/TMDB format (e.g., 'ca-ES', 'es-ES')
-    // This ensures consistency with the format stored in JSONB fields
-    const preferredLang =
-      contentPreferences.value.preferred_language || LanguageCode.SPANISH;
+    // Use app language in ISO/TMDB format (e.g., 'ca-ES', 'es-ES')
+    const preferredLang = getAppLanguage();
 
     const { data: titlesData, error: titlesError } = await getTitlesByTmdbIds(
       tmdbIds,
@@ -841,10 +813,8 @@ const fetchSeenTitles = async () => {
     const tmdbIds = seenStatuses.map((s) => s.tmdb_id);
     // Create a map of tmdb_id to type for titles that might not exist in database
     const titleTypesMap = new Map(seenStatuses.map((s) => [s.tmdb_id, s.type]));
-    // Use preferred language in ISO/TMDB format (e.g., 'ca-ES', 'es-ES')
-    // This ensures consistency with the format stored in JSONB fields
-    const preferredLang =
-      contentPreferences.value.preferred_language || LanguageCode.SPANISH;
+    // Use app language in ISO/TMDB format (e.g., 'ca-ES', 'es-ES')
+    const preferredLang = getAppLanguage();
     const { data: titlesData, error: titlesError } = await getTitlesByTmdbIds(
       tmdbIds,
       preferredLang,
@@ -893,10 +863,8 @@ const fetchNotInterestedTitles = async () => {
     const titleTypesMap = new Map(
       notInterestedStatuses.map((s) => [s.tmdb_id, s.type])
     );
-    // Use preferred language in ISO/TMDB format (e.g., 'ca-ES', 'es-ES')
-    // This ensures consistency with the format stored in JSONB fields
-    const preferredLang =
-      contentPreferences.value.preferred_language || LanguageCode.SPANISH;
+    // Use app language in ISO/TMDB format (e.g., 'ca-ES', 'es-ES')
+    const preferredLang = getAppLanguage();
     const { data: titlesData, error: titlesError } = await getTitlesByTmdbIds(
       tmdbIds,
       preferredLang,
@@ -943,10 +911,8 @@ const fetchWatchlistTitles = async () => {
     const titleTypesMap = new Map(
       watchlistStatuses.map((s) => [s.tmdb_id, s.type])
     );
-    // Use preferred language in ISO/TMDB format (e.g., 'ca-ES', 'es-ES')
-    // This ensures consistency with the format stored in JSONB fields
-    const preferredLang =
-      contentPreferences.value.preferred_language || LanguageCode.SPANISH;
+    // Use app language in ISO/TMDB format (e.g., 'ca-ES', 'es-ES')
+    const preferredLang = getAppLanguage();
     const { data: titlesData, error: titlesError } = await getTitlesByTmdbIds(
       tmdbIds,
       preferredLang,
@@ -1048,8 +1014,7 @@ const handleTitleSelected = async (result: TMDBSearchResult) => {
     }
 
     // Get title in user's preferred language (using ISO/TMDB format)
-    const preferredLang =
-      contentPreferences.value.preferred_language || LanguageCode.SPANISH;
+    const preferredLang = getAppLanguage();
     const { data: titleData } = await getTitleByTmdbIdWithLanguage(
       result.id,
       result.media_type!,
@@ -1278,8 +1243,7 @@ const handleAddToLiked = async (title: {
     }
 
     // Get title in user's preferred language
-    const preferredLang =
-      contentPreferences.value.preferred_language || LanguageCode.SPANISH;
+    const preferredLang = getAppLanguage();
     const { data: titleData } = await getTitleByTmdbIdWithLanguage(
       title.tmdb_id,
       title.type,
@@ -1471,32 +1435,13 @@ const handleRemoveNotInterested = async (title: {
 
 // Content Preferences State
 const contentPreferences = ref<{
-  preferred_language?: string;
   favorite_genres?: number[];
   included_providers?: number[];
   region?: string;
 }>({
-  preferred_language: LanguageCode.SPANISH, // Default to Spanish (TMDB format)
   favorite_genres: [],
   included_providers: [],
   region: undefined,
-});
-
-const availableLanguages = AVAILABLE_LANGUAGES;
-
-// Language selector state
-const selectedLanguage = ref<{
-  code: string;
-  name: string;
-} | null>(null);
-
-// Computed for current language code (for select value)
-const currentLanguageCode = computed(() => {
-  return (
-    selectedLanguage.value?.code ||
-    contentPreferences.value.preferred_language ||
-    LanguageCode.SPANISH
-  );
 });
 
 // Preload genres using useAsyncData (runs during setup, before mount)
@@ -1578,9 +1523,9 @@ const selectedGenreForSelector = ref<{
 const { data: providersData } = useAsyncData(
   'watch-providers',
   async () => {
-    // Get current region and language from contentPreferences or use undefined to use saved preference
+    // Get current region from contentPreferences or use undefined to use saved preference
     const region = contentPreferences.value.region;
-    const language = currentLanguageCode.value;
+    const language = getAppLanguage();
 
     const response = await $fetch<{
       results: Array<{
@@ -1608,7 +1553,7 @@ const { data: providersData } = useAsyncData(
 const refreshProviders = async () => {
   // Manually fetch with current region and language since useAsyncData doesn't react to contentPreferences changes
   const region = contentPreferences.value.region;
-  const language = currentLanguageCode.value;
+  const language = getAppLanguage();
   const response = await $fetch<{
     results: Array<{
       provider_id: number;
@@ -1685,7 +1630,6 @@ const fetchContentPreferences = async () => {
     const response = await $fetch<{
       success: boolean;
       preferences: {
-        preferred_language?: string;
         favorite_genres?: number[];
         included_providers?: number[];
         region?: string;
@@ -1697,33 +1641,11 @@ const fetchContentPreferences = async () => {
     });
 
     if (response.success && response.preferences) {
-      // Use the value from DB directly, only default to DEFAULT_LANGUAGE if it's truly null/undefined
-      const dbLanguage =
-        response.preferences.preferred_language || DEFAULT_LANGUAGE;
-
       contentPreferences.value = {
-        preferred_language: dbLanguage ?? LanguageCode.SPANISH, // Only default if null/undefined
         favorite_genres: response.preferences.favorite_genres || [],
         included_providers: response.preferences.included_providers || [],
         region: response.preferences.region || undefined,
       };
-
-      // Load selected language - use the actual DB value
-      const languageCode = dbLanguage ?? LanguageCode.SPANISH;
-
-      const languageToSelect = availableLanguages.find(
-        (l: Language) => l.code === languageCode
-      );
-
-      if (languageToSelect) {
-        selectedLanguage.value = languageToSelect;
-      } else {
-        // Default to Spanish if not found
-        selectedLanguage.value =
-          availableLanguages.find(
-            (l: Language) => l.code === LanguageCode.SPANISH
-          ) || null;
-      }
 
       // Map genres - wait for genres to be available if needed
       if (
@@ -1762,9 +1684,6 @@ const fetchContentPreferences = async () => {
       // Save initial state for comparison and rollback
       // Use the actual DB values, not the mapped selected items (which may be empty if not loaded yet)
       savedContentPreferences.value = {
-        preferred_language:
-          selectedLanguage.value?.code ||
-          contentPreferences.value.preferred_language,
         favorite_genres: contentPreferences.value.favorite_genres
           ? [...contentPreferences.value.favorite_genres]
           : [],
@@ -1775,17 +1694,12 @@ const fetchContentPreferences = async () => {
       };
       savedSelectedGenres.value = [...selectedGenres.value];
       savedSelectedProviders.value = [...selectedProviders.value];
-      savedSelectedLanguage.value = selectedLanguage.value
-        ? { ...selectedLanguage.value }
-        : null;
       hasUnsavedContentChanges.value = false;
     } else {
       // No preferences found, reset to empty
-      selectedLanguage.value = null;
       selectedGenres.value = [];
       selectedProviders.value = [];
       contentPreferences.value = {
-        preferred_language: LanguageCode.SPANISH,
         favorite_genres: [],
         included_providers: [],
         region: undefined,
@@ -1826,29 +1740,6 @@ const removeProvider = (providerId: number) => {
   contentPreferences.value.included_providers = selectedProviders.value.map(
     (p) => p.provider_id
   );
-  markContentPreferencesChanged();
-};
-
-// Handle language change from selector component
-const handleLanguageChangeFromSelector = (code: string) => {
-  // Find the language object
-  const lang = availableLanguages.find((l) => l.code === code);
-
-  if (lang) {
-    changeLanguage(lang);
-  }
-};
-
-// Change selected language (single selection)
-const changeLanguage = (lang: { code: string; name: string }) => {
-  // If already selected, do nothing
-  if (selectedLanguage.value?.code === lang.code) {
-    return;
-  }
-
-  // Update language and mark as changed
-  selectedLanguage.value = lang;
-  contentPreferences.value.preferred_language = lang.code;
   markContentPreferencesChanged();
 };
 
@@ -1897,7 +1788,6 @@ const markContentPreferencesChanged = () => {
   if (!savedContentPreferences.value) {
     // If no saved state, mark as changed if there are any preferences set
     hasUnsavedContentChanges.value =
-      !!selectedLanguage.value ||
       selectedGenres.value.length > 0 ||
       selectedProviders.value.length > 0 ||
       !!contentPreferences.value.region;
@@ -1906,7 +1796,6 @@ const markContentPreferencesChanged = () => {
 
   // Build current preferences object for comparison
   const currentPreferences = {
-    preferred_language: selectedLanguage.value?.code,
     favorite_genres: [...selectedGenres.value.map((g) => g.id)].sort(),
     included_providers: [
       ...selectedProviders.value.map((p) => p.provider_id),
@@ -1916,8 +1805,6 @@ const markContentPreferencesChanged = () => {
 
   // Build saved preferences object for comparison
   const savedPrefs = {
-    preferred_language:
-      savedContentPreferences.value.preferred_language || null,
     favorite_genres: [
       ...(savedContentPreferences.value.favorite_genres || []),
     ].sort(),
@@ -1940,8 +1827,6 @@ const revertContentPreferencesChanges = () => {
 
   // Revert contentPreferences
   contentPreferences.value = {
-    preferred_language:
-      savedContentPreferences.value.preferred_language || LanguageCode.SPANISH,
     favorite_genres: [...(savedContentPreferences.value.favorite_genres || [])],
     included_providers: [
       ...(savedContentPreferences.value.included_providers || []),
@@ -1954,9 +1839,6 @@ const revertContentPreferencesChanges = () => {
   selectedProviders.value = savedSelectedProviders.value.map((p) => ({
     ...p,
   }));
-  selectedLanguage.value = savedSelectedLanguage.value
-    ? { ...savedSelectedLanguage.value }
-    : null;
 
   hasUnsavedContentChanges.value = false;
 };
@@ -1991,12 +1873,8 @@ const confirmSaveContentPreferences = async () => {
       throw new Error(t('profile.notAuthenticated'));
     }
 
-    // Logic: Ensure at least one language (default to Spanish if empty)
     // If selection exists, include only selected items
     const preferencesToSave = {
-      preferred_language: selectedLanguage.value
-        ? selectedLanguage.value.code
-        : LanguageCode.SPANISH, // Default to Spanish if no languages selected
       favorite_genres:
         selectedGenres.value.length > 0
           ? selectedGenres.value.map((g) => g.id)
@@ -2020,27 +1898,6 @@ const confirmSaveContentPreferences = async () => {
     });
 
     if (response.success) {
-      // Get the saved language code from the response (may be converted to TMDB format)
-      const savedLanguageCode =
-        (response.preferences as { preferred_language?: string })
-          ?.preferred_language ||
-        selectedLanguage.value?.code ||
-        LanguageCode.SPANISH;
-
-      // Note: Regions are now loaded based on app language (i18n locale), not user's preferred language
-      // So we don't need to invalidate regions cache when preferred_language changes
-
-      // Update contentPreferences with the saved value to keep everything in sync
-      contentPreferences.value.preferred_language = savedLanguageCode;
-
-      // Explicitly update selectedLanguage to match the saved value (don't rely on watcher)
-      const languageToSelect = availableLanguages.find(
-        (l: Language) => l.code === savedLanguageCode
-      );
-      if (languageToSelect) {
-        selectedLanguage.value = languageToSelect;
-      }
-
       // Regenerate recommendation pool with loading modal (clear existing pool first)
       // Show modal and disable closing
       showGeneratingModal.value = true;
@@ -2061,7 +1918,6 @@ const confirmSaveContentPreferences = async () => {
       hasUnsavedContentChanges.value = false;
       // Update saved state with the actual saved value from the response
       savedContentPreferences.value = {
-        preferred_language: savedLanguageCode,
         favorite_genres: [...selectedGenres.value.map((g) => g.id)],
         included_providers: [
           ...selectedProviders.value.map((p) => p.provider_id),
@@ -2071,9 +1927,6 @@ const confirmSaveContentPreferences = async () => {
       // Update saved selected items for potential rollback
       savedSelectedGenres.value = [...selectedGenres.value];
       savedSelectedProviders.value = [...selectedProviders.value];
-      savedSelectedLanguage.value = selectedLanguage.value
-        ? { ...selectedLanguage.value }
-        : null;
     } else {
       throw new Error('Failed to save preferences');
     }
@@ -2261,41 +2114,6 @@ watch(
   { immediate: true }
 );
 
-// Watch for when preferred_language changes to map selected language
-watch(
-  () => contentPreferences.value.preferred_language,
-  (languageCode) => {
-    if (languageCode && availableLanguages.length > 0) {
-      const languageToSelect = availableLanguages.find(
-        (l: Language) => l.code === languageCode
-      );
-
-      if (languageToSelect) {
-        // Only update if it's different to avoid unnecessary updates
-        if (selectedLanguage.value?.code !== languageCode) {
-          selectedLanguage.value = languageToSelect;
-        }
-        // Only default to Spanish if the code is truly invalid
-        // Don't default if languageCode is a valid code that just isn't in availableLanguages
-        const validCodes = Object.values(LanguageCode);
-        if (!validCodes.includes(languageCode as LanguageCode)) {
-          selectedLanguage.value =
-            availableLanguages.find(
-              (l: Language) => l.code === LanguageCode.SPANISH
-            ) || null;
-        }
-      }
-    } else if (!languageCode) {
-      // No language - default to Spanish only if truly null/undefined
-      selectedLanguage.value =
-        availableLanguages.find(
-          (l: Language) => l.code === LanguageCode.SPANISH
-        ) || null;
-    }
-  },
-  { immediate: false } // Don't run immediately, let fetchContentPreferences set it first
-);
-
 // Lifecycle
 onMounted(async () => {
   checkMobile();
@@ -2321,9 +2139,9 @@ onMounted(async () => {
     }
   }
 
-  // Fetch preferences first to ensure preferred_language is available
+  // Fetch preferences first
   await Promise.all([fetchProfile(), fetchContentPreferences()]);
-  // Then fetch all lists (which will use the preferred language)
+  // Then fetch all lists (which will use the app language)
   await fetchAllLists();
 
   // Add scroll and resize listeners

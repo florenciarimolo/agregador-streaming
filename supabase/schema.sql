@@ -214,7 +214,6 @@ CREATE TABLE IF NOT EXISTS public.user_preferences (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE UNIQUE NOT NULL,
   favorite_genres INTEGER[], -- TMDB genre IDs
-  preferred_language TEXT DEFAULT 'es-ES', -- TMDB format (e.g., 'es-ES', 'ca-ES', 'eu-ES', 'gl-ES', 'en-US')
   included_providers INTEGER[], -- TMDB provider IDs (if empty, all providers are included)
   region TEXT, -- ISO 3166-1 alpha-2 country code (e.g., 'ES', 'US', 'MX')
   exploration_mode TEXT CHECK (exploration_mode IN ('similar', 'balanced', 'surprise')) DEFAULT 'balanced',

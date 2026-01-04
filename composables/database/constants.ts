@@ -62,7 +62,6 @@ export const USER_PREFERENCES_FIELDS = {
   ID: 'id',
   USER_ID: 'user_id',
   FAVORITE_GENRES: 'favorite_genres',
-  PREFERRED_LANGUAGE: 'preferred_language',
   INCLUDED_PROVIDERS: 'included_providers',
   REGION: 'region',
   EXPLORATION_MODE: 'exploration_mode',

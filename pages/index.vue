@@ -102,7 +102,6 @@ const recommendations = ref<Recommendation[]>([]);
 const allRecommendations = ref<Recommendation[]>([]); // Store all recommendations before filtering
 const lastFetchedMood = ref<string | null>(null);
 const lastFetchedAttention = ref<string | null>(null);
-const hasPreferredLanguage = ref<boolean | null>(null); // null = not checked yet, true/false = checked
 const selectedContentType = ref<'all' | 'movie' | 'tv'>('all');
 
 // Track recommendations view to update scores
@@ -366,40 +365,8 @@ watch(
         return;
       }
 
-      // Check preferred languages only if not already checked
-      if (hasPreferredLanguage.value === null) {
-        try {
-          const {
-            data: { session },
-          } = await getSession();
-          if (session?.access_token) {
-            const prefsResponse = await $fetch<{
-              success: boolean;
-              preferences: {
-                preferred_language?: string;
-              } | null;
-            }>('/api/users/preferences', {
-              headers: {
-                Authorization: `Bearer ${session.access_token}`,
-              },
-            });
-            hasPreferredLanguage.value = !!(
-              prefsResponse.success &&
-              prefsResponse.preferences?.preferred_language
-            );
-          } else {
-            hasPreferredLanguage.value = false;
-          }
-        } catch (error) {
-          console.error(
-            '[index.vue] Error checking preferred languages:',
-            error
-          );
-          hasPreferredLanguage.value = false;
-        }
-      }
-
-      if (hasPreferredLanguage.value) {
+      // Always fetch recommendations (language is always available from app settings)
+      {
         const fetched = await fetchRecommendations();
         allRecommendations.value = fetched;
         recommendations.value = filterRecommendationsByType(fetched);
@@ -1272,46 +1239,6 @@ onMounted(() => {
                 />
               </div>
 
-              <!-- No Preferred Languages State -->
-              <div
-                v-else-if="
-                  !populatingPool &&
-                  hasAttemptedLoad &&
-                  hasPreferredLanguage === false
-                "
-                class="py-6 text-center"
-              >
-                <div class="mx-auto w-full max-w-md">
-                  <svg
-                    class="mx-auto mb-4 w-16 h-16 text-gray-600 dark:text-gray-500"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"
-                    />
-                  </svg>
-                  <h3
-                    class="mb-2 text-xl font-semibold text-gray-800 dark:text-gray-300 font-heading"
-                  >
-                    {{ $t('home.noPreferredLanguage') }}
-                  </h3>
-                  <p class="mb-6 text-gray-800 dark:text-gray-300">
-                    {{ $t('home.noPreferredLanguageDescription') }}
-                  </p>
-                  <nuxt-link
-                    to="/preferences?tab=content-preferences"
-                    class="inline-block px-6 py-3 text-base font-medium text-white rounded-lg border shadow-lg backdrop-blur-sm transition-all duration-300 bg-primary-800 dark:bg-primary hover:bg-primary-900 dark:hover:bg-primary-600 border-primary-600/50"
-                  >
-                    {{ $t('home.setPreferredLanguage') }}
-                  </nuxt-link>
-                </div>
-              </div>
-
               <!-- Empty State (only show if not populating and user has no likes) -->
               <!-- When pool is empty and user has likes, we automatically generate, so we don't show this -->
               <div
@@ -1319,7 +1246,6 @@ onMounted(() => {
                   !populatingPool &&
                   hasAttemptedLoad &&
                   recommendations.length === 0 &&
-                  hasPreferredLanguage !== false &&
                   !userStore.hasLikes
                 "
                 class="py-6 text-center"

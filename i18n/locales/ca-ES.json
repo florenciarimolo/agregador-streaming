@@ -150,9 +150,6 @@
     "noRecommendations": "Encara no hi ha recomanacions",
     "generatingDescription": "Estem preparant recomanacions personalitzades basades en els teus gustos. Això pot trigar uns moments.",
     "noRecommendationsDescription": "Per rebre recomanacions personalitzades, primer necessites afegir pel·lícules i sèries que t'agradin. Això ens ajuda a conèixer-te millor i suggerir-te contingut que realment gaudiràs.",
-    "noPreferredLanguage": "Configura el teu idioma preferit",
-    "noPreferredLanguageDescription": "Per generar recomanacions, necessites configurar el teu idioma preferit. Això ens ajuda a mostrar-te contingut en l'idioma que prefereixes.",
-    "setPreferredLanguage": "Configurar idioma preferit",
     "generateButton": "Generar recomanacions",
     "generatingButton": "Generant recomanacions...",
     "loadingRecommendations": "Carregant recomanacions...",
@@ -365,16 +362,8 @@
       "saved": "Preferències desades correctament",
       "errorSaving": "Error en desar les preferències. Si us plau, intenta-ho de nou.",
       "preferredLanguage": {
-        "title": "Idioma preferit",
-        "description": "Selecciona l'idioma en què prefereixes veure contingut.",
-        "confirmChangeTitle": "Canviar idioma preferit",
-        "confirmChangeMessage": "En canviar l'idioma preferit, s'actualitzaran totes les recomanacions actuals amb el nou idioma. Estàs segur que vols continuar?",
-        "poolRegenerated": "Recomanacions actualitzades correctament.",
-        "languageUpdatedAndRegenerating": "Idioma actualitzat correctament. S'estan regenerant les recomanacions...",
-        "errorRegenerating": "Error en actualitzar les recomanacions. Torna-ho a intentar més tard.",
-        "saving": "Desant canvis...",
-        "selected": "Idioma seleccionat",
-        "noneSelected": "Encara no has seleccionat un idioma."
+        "title": "Idioma de l'aplicació",
+        "description": "Selecciona l'idioma en què vols utilitzar l'aplicació."
       },
       "loading": "Carregant preferències..."
     }
