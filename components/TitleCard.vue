@@ -1,7 +1,7 @@
 <template>
   <article
     :class="[
-      'overflow-visible relative rounded-lg border backdrop-blur-xl transition-all duration-300 group',
+      'overflow-visible relative rounded-lg border backdrop-blur-xl transition-all duration-300',
       'dark:bg-gray-900/40 bg-gray-100/80 border-gray-300/50 dark:border-white/10',
       'hover:border-gray-400/50 dark:hover:border-white/20 hover:shadow-lg hover:shadow-gray-900/20',
       customClass,
@@ -20,7 +20,7 @@
         :to="linkTo"
         :aria-label="linkAriaLabel"
         :class="[
-          'block overflow-hidden relative w-full h-full focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2',
+          'block overflow-hidden relative w-full h-full focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 group',
           showContent ? 'rounded-t-lg' : 'rounded-lg',
         ]"
       >
