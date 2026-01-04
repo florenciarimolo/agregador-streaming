@@ -5,10 +5,11 @@
  */
 export default defineNuxtPlugin(async () => {
   const { loadRegions } = useRegions();
+  const { DEFAULT_LANGUAGE } = await import('@/constants/languages');
   
   // Preload regions during SSR with default language
   // This will fetch from API if not cached, or use cache if available
-  // User's preferred language will be loaded when components mount
-  await loadRegions();
+  // Components will load regions for the correct app language when they mount
+  await loadRegions(DEFAULT_LANGUAGE);
 });
 

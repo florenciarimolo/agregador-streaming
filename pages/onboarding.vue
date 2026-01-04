@@ -13,6 +13,7 @@ import Card from '@/components/ui/Card.vue';
 import Spinner from '@/components/Spinner.vue';
 import Button from '@/components/ui/Button.vue';
 import AppShell from '@/components/layout/AppShell.vue';
+import MediaTypeBadge from '@/components/MediaTypeBadge.vue';
 
 definePageMeta({
   middleware: 'auth',
@@ -412,9 +413,7 @@ const saveSelections = async () => {
           <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
             {{ $t('preferences.content.region.description') }}
           </p>
-          <RegionSelector
-            v-model="selectedRegion"
-          />
+          <RegionSelector v-model="selectedRegion" />
         </Card>
 
         <!-- Continue Button -->
@@ -532,7 +531,7 @@ const saveSelections = async () => {
                 :class="[
                   'relative rounded-lg overflow-hidden shadow-lg transition-transform',
                   isSelected(result.id)
-                    ? 'ring-2 ring-primary scale-105'
+                    ? 'ring-2 ring-primary dark:ring-primary-400 scale-105'
                     : 'hover:scale-105',
                 ]"
               >
@@ -549,12 +548,16 @@ const saveSelections = async () => {
                   >
                     {{ $t('onboarding.noImage') }}
                   </div>
+                  <!-- Media Type Badge - Top Left -->
+                  <div class="absolute top-2 left-2 z-10">
+                    <MediaTypeBadge :type="result.media_type" />
+                  </div>
                   <div
                     v-if="isSelected(result.id)"
-                    class="absolute inset-0 bg-primary/20 flex items-center justify-center"
+                    class="absolute inset-0 bg-primary/20 dark:bg-primary-400/20 flex items-center justify-center"
                   >
                     <svg
-                      class="w-12 h-12 text-primary"
+                      class="w-12 h-12 text-primary dark:text-primary-400"
                       fill="currentColor"
                       viewBox="0 0 20 20"
                     >
@@ -571,13 +574,6 @@ const saveSelections = async () => {
                 class="mt-2 text-sm text-center dark:text-gray-300 text-gray-800 line-clamp-2"
               >
                 {{ result.title || result.name }}
-              </p>
-              <p class="text-xs text-center text-gray-500">
-                {{
-                  result.media_type === MediaTypeEnum.movie
-                    ? $t('media.movie')
-                    : $t('media.series')
-                }}
               </p>
             </div>
           </div>

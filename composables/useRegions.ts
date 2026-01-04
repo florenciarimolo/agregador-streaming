@@ -21,24 +21,45 @@ export const useRegions = () => {
    */
   const appLanguageChangeState = useState<string | null>('app-language-change', () => null);
 
+  // Get i18n locale at the top level of the composable (setup function)
+  // This must be called at the top level, not inside nested functions
+  // Use a try-catch to handle cases where it's called outside a valid context (e.g., from plugins)
+  let i18nLocaleRef: ReturnType<typeof useI18n>['locale'] | null = null;
+  try {
+    if (import.meta.client) {
+      const i18n = useI18n();
+      i18nLocaleRef = i18n.locale;
+    }
+  } catch (error) {
+    // If error (e.g., called outside setup context from plugin), we'll use DEFAULT_LANGUAGE
+    // This is expected when called from plugins before Vue setup
+    if (import.meta.dev) {
+      console.warn('[useRegions] useI18n() not available in this context, will use default language');
+    }
+  }
+
   /**
    * Get current app language (i18n locale)
    * This is the language in which the UI is displayed, not the user's content preference
    */
   const getAppLanguage = (): string => {
+    // If we have the locale ref from setup, use it
+    if (i18nLocaleRef) {
+      return i18nLocaleRef.value || DEFAULT_LANGUAGE;
+    }
+
+    // Otherwise, try to get it (might work if called from a component setup)
     try {
-      // Use i18n locale if available (client-side)
       if (import.meta.client) {
         const { locale } = useI18n();
         return locale.value || DEFAULT_LANGUAGE;
       }
     } catch (error) {
       // If error, fall back to default
-      if (import.meta.dev) {
-        console.warn('[useRegions] Error getting app language:', error);
-      }
+      // This is expected when called from plugins before Vue setup
     }
 
+    // Fallback to default
     return DEFAULT_LANGUAGE;
   };
 

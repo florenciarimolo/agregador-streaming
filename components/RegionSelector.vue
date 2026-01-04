@@ -134,6 +134,18 @@ const getTargetLanguage = (): string => {
   return getAppLanguage();
 };
 
+// Initialize filtered regions from cached regions
+// Must be declared before loadRegionsForLanguage to avoid "before initialization" error
+const initializeFilteredRegions = () => {
+  if (regions.value && regions.value.length > 0) {
+    filteredRegions.value = [...regions.value].sort((a, b) =>
+      a.name.localeCompare(b.name)
+    );
+  } else {
+    filteredRegions.value = [];
+  }
+};
+
 // Load regions for the target language
 const loadRegionsForLanguage = async (language?: string) => {
   const targetLanguage = language || getTargetLanguage();
@@ -148,10 +160,6 @@ const loadRegionsForLanguage = async (language?: string) => {
   regions.value = loadedRegions;
   initializeFilteredRegions();
 };
-
-// Load regions immediately for app language (i18n locale)
-// In onboarding, regions will load when app language is set
-await loadRegionsForLanguage();
 
 // Computed to get the selected region name (async)
 const selectedRegionName = ref<string>(t('preferences.content.region.default'));
@@ -169,16 +177,9 @@ const updateSelectedRegionName = async () => {
   selectedRegionName.value = name || t('preferences.content.region.default');
 };
 
-// Initialize filtered regions from cached regions
-const initializeFilteredRegions = () => {
-  if (regions.value && regions.value.length > 0) {
-    filteredRegions.value = [...regions.value].sort((a, b) =>
-      a.name.localeCompare(b.name)
-    );
-  } else {
-    filteredRegions.value = [];
-  }
-};
+// Load regions immediately for app language (i18n locale)
+// In onboarding, regions will load when app language is set
+await loadRegionsForLanguage();
 
 // Watch for app language (i18n locale) changes
 watch(
