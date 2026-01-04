@@ -48,9 +48,10 @@
               @mousedown.prevent="selectItem(item)"
               @click="selectItem(item)"
             >
-              <span class="text-sm text-gray-800 dark:text-gray-300">{{
-                getItemLabel(item)
-              }}</span>
+              <span
+                class="text-sm text-gray-800 dark:text-gray-300 whitespace-nowrap"
+                >{{ getItemLabel(item) }}</span
+              >
             </div>
           </slot>
         </div>

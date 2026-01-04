@@ -75,6 +75,7 @@ const dropdownStyle = ref<{
   top: string;
   left: string;
   width: string;
+  minWidth?: string;
 }>({
   top: '0px',
   left: '0px',
@@ -147,10 +148,12 @@ const updateDropdownPosition = async () => {
 
   // MANDATORY: Use position: fixed with calculated values
   // No classes like left-0, right-0, mt-2 should affect positioning
+  // Use min-width instead of fixed width to allow content to expand
   dropdownStyle.value = {
     top: `${top}px`,
     left: `${left}px`,
     width: `${triggerWidth}px`,
+    minWidth: '200px', // Ensure minimum width for content visibility
   };
 };
 
@@ -211,11 +214,25 @@ const handleClickOutside = (event: MouseEvent) => {
 
 // Handle scroll - close dropdown when scrolling (mandatory to avoid visual misalignment)
 // This applies to both window scroll and container scroll
-const handleScroll = () => {
-  if (isOpen.value) {
-    // Close immediately on any scroll event
-    closeSelect();
+// IMPORTANT: Do NOT close if scroll occurs inside the dropdown itself
+const handleScroll = (event: Event) => {
+  if (!isOpen.value) return;
+
+  const target = event.target as HTMLElement | null;
+
+  // If scroll occurs inside the dropdown, don't close
+  // Check if target is an HTMLElement and if it's contained within the dropdown
+  if (
+    dropdownRef.value &&
+    target &&
+    target instanceof HTMLElement &&
+    dropdownRef.value.contains(target)
+  ) {
+    return; // scroll interno → no cerrar
   }
+
+  // scroll externo (window, document, body, or other containers) → cerrar
+  closeSelect();
 };
 
 // Handle resize - update position and width when resizing (critical for mobile)

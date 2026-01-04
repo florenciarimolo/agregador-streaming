@@ -65,7 +65,7 @@
                 (e) => ((e.target as HTMLImageElement).style.display = 'none')
               "
             />
-            <span class="text-sm text-gray-800 dark:text-gray-300">{{
+            <span class="text-sm text-gray-800 dark:text-gray-300 whitespace-nowrap">{{
               lang.nativeName
             }}</span>
           </div>
