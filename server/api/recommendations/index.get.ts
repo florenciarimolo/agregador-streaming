@@ -974,17 +974,11 @@ export default defineEventHandler(async (event) => {
           });
 
           // Use user's region for providers, fallback to ES
+          // IMPORTANT: Only use flatrate providers (streaming services)
           const regionProviders =
             providerResponse.results?.[region] || providerResponse.results?.ES;
           if (regionProviders) {
-            const streamingProviders = regionProviders.flatrate || [];
-            const buyProviders = regionProviders.buy || [];
-            const rentProviders = regionProviders.rent || [];
-            providers = [
-              ...streamingProviders,
-              ...buyProviders,
-              ...rentProviders,
-            ].slice(0, 5);
+            providers = (regionProviders.flatrate || []).slice(0, 5);
           }
         } catch (error) {
           // Don't fail if providers can't be fetched

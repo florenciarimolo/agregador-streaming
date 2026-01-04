@@ -914,15 +914,8 @@ export default defineEventHandler(async (event) => {
       const regionProviders =
         providerResponse.results?.[region] || providerResponse.results?.ES;
       if (regionProviders) {
-        const streamingProviders =
-          regionProviders[WatchProviderType.FLATRATE] || [];
-        const buyProviders = regionProviders[WatchProviderType.BUY] || [];
-        const rentProviders = regionProviders[WatchProviderType.RENT] || [];
-        providers = [
-          ...streamingProviders,
-          ...buyProviders,
-          ...rentProviders,
-        ].slice(0, 5);
+        // IMPORTANT: Only use flatrate providers (streaming services)
+        providers = (regionProviders.flatrate || []).slice(0, 5);
       }
     } catch {
       // Don't fail if providers can't be fetched
