@@ -2,12 +2,12 @@
   <NuxtLayout>
     <NuxtPage />
   </NuxtLayout>
-  <LoadingSpinner />
+  <PageNavigationLoader />
   <CookieBanner />
 </template>
 
 <script setup lang="ts">
-import LoadingSpinner from '@/components/LoadingSpinner.vue';
+import PageNavigationLoader from '@/components/PageNavigationLoader.vue';
 
 // Initialize theme
 useTheme();

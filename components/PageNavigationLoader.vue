@@ -23,7 +23,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 
 const router = useRouter();
@@ -44,9 +44,14 @@ onMounted(() => {
 
   router.afterEach(() => {
     if (typeof window !== 'undefined') {
-      window.setTimeout(() => {
-        stopLoading();
-      }, 300);
+      // Wait for page to be fully loaded and rendered
+      // Use nextTick to wait for Vue to finish rendering, then add a small delay
+      nextTick(() => {
+        // Wait for images and content to load
+        window.setTimeout(() => {
+          stopLoading();
+        }, 500); // Increased delay to ensure page is fully loaded
+      });
     } else {
       stopLoading();
     }
