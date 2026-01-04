@@ -166,20 +166,9 @@ const handleResize = () => {
   checkMobile();
 };
 
-// Handle back navigation
+// Handle back navigation - always go back to the series detail page
 const handleBack = () => {
-  // Try to get the previous route from sessionStorage
-  const previousRoute = sessionStorage.getItem('previousRoute');
-
-  if (previousRoute) {
-    // Clear the stored route
-    sessionStorage.removeItem('previousRoute');
-    // Navigate to the previous route
-    router.push(previousRoute);
-  } else {
-    // Default: go back to the series page
-    router.push(`/tv-show/${props.seriesId}`);
-  }
+  router.push(`/tv-show/${props.seriesId}`);
 };
 
 const hasAvailableProviders = computed(() => {

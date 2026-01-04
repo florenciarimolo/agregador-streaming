@@ -27,9 +27,22 @@
             />
           </Section>
           <Section>
-            <SectionTitle>{{ $t('media.seasons') }}</SectionTitle>
+            <div class="space-y-4">
+              <div class="flex items-center gap-3">
+                <h2
+                  class="text-2xl font-semibold text-gray-800 md:text-3xl dark:text-gray-300 font-heading"
+                >
+                  {{ $t('media.seasons') }}
+                </h2>
+                <Badge
+                  v-if="tvShowWithProviders.number_of_seasons"
+                  :label="String(tvShowWithProviders.number_of_seasons)"
+                  size="md"
+                />
+              </div>
+            </div>
             <div
-              class="relative grid grid-cols-2 gap-4 justify-items-stretch lg:grid-cols-4 xl:grid-cols-5"
+              class="relative grid grid-cols-2 gap-4 justify-items-stretch lg:grid-cols-4 xl:grid-cols-5 mt-4"
             >
               <TitleCard
                 v-for="season in tvShowWithProviders.seasons"
@@ -115,7 +128,6 @@ import { getTVShowSeoExperience } from '@/composables/useSeoExperience';
 import AppShell from '@/components/layout/AppShell.vue';
 import PageContainer from '@/components/layout/PageContainer.vue';
 import Section from '@/components/layout/Section.vue';
-import SectionTitle from '@/components/layout/SectionTitle.vue';
 
 const route = useRoute();
 const { locale } = useI18n();

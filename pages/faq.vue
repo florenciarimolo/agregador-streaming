@@ -14,194 +14,244 @@
 
     <div class="space-y-4">
       <!-- FAQ Item 1 -->
-      <details
+      <Disclosure
+        v-slot="{ open }"
+        as="div"
         class="bg-white/60 dark:bg-gray-900/40 backdrop-blur-xl rounded-2xl border border-gray-300/50 dark:border-white/10 overflow-hidden"
       >
-        <summary
-          class="p-6 cursor-pointer font-semibold dark:text-gray-300 text-gray-800 hover:bg-gray-100/50 dark:hover:bg-gray-800/50 transition-colors list-none"
+        <DisclosureButton
+          class="w-full p-6 cursor-pointer font-semibold dark:text-gray-300 text-gray-800 hover:bg-gray-100/50 dark:hover:bg-gray-800/50 transition-colors text-left"
         >
           <div class="flex items-center justify-between">
             <span>{{ $t('faq.q1') }}</span>
-            <span class="text-primary text-xl">+</span>
+            <span
+              class="text-primary text-xl transition-transform duration-200"
+              :class="{ 'rotate-45': open }"
+            >+</span>
           </div>
-        </summary>
-        <div class="px-6 pb-6 dark:text-gray-300 text-gray-800">
+        </DisclosureButton>
+        <DisclosurePanel class="px-6 pb-6 dark:text-gray-300 text-gray-800">
           <p>
             {{ $t('faq.a1') }}
           </p>
-        </div>
-      </details>
+        </DisclosurePanel>
+      </Disclosure>
 
       <!-- FAQ Item 2 -->
-      <details
+      <Disclosure
+        v-slot="{ open }"
+        as="div"
         class="bg-white/60 dark:bg-gray-900/40 backdrop-blur-xl rounded-2xl border border-gray-300/50 dark:border-white/10 overflow-hidden"
       >
-        <summary
-          class="p-6 cursor-pointer font-semibold dark:text-gray-300 text-gray-800 hover:bg-gray-100/50 dark:hover:bg-gray-800/50 transition-colors list-none"
+        <DisclosureButton
+          class="w-full p-6 cursor-pointer font-semibold dark:text-gray-300 text-gray-800 hover:bg-gray-100/50 dark:hover:bg-gray-800/50 transition-colors text-left"
         >
           <div class="flex items-center justify-between">
             <span>{{ $t('faq.q2') }}</span>
-            <span class="text-primary text-xl">+</span>
+            <span
+              class="text-primary text-xl transition-transform duration-200"
+              :class="{ 'rotate-45': open }"
+            >+</span>
           </div>
-        </summary>
-        <div class="px-6 pb-6 dark:text-gray-300 text-gray-800">
+        </DisclosureButton>
+        <DisclosurePanel class="px-6 pb-6 dark:text-gray-300 text-gray-800">
           <p>
             {{ $t('faq.a2') }}
           </p>
-        </div>
-      </details>
+        </DisclosurePanel>
+      </Disclosure>
 
       <!-- FAQ Item 3 -->
-      <details
+      <Disclosure
+        v-slot="{ open }"
+        as="div"
         class="bg-white/60 dark:bg-gray-900/40 backdrop-blur-xl rounded-2xl border border-gray-300/50 dark:border-white/10 overflow-hidden"
       >
-        <summary
-          class="p-6 cursor-pointer font-semibold dark:text-gray-300 text-gray-800 hover:bg-gray-100/50 dark:hover:bg-gray-800/50 transition-colors list-none"
+        <DisclosureButton
+          class="w-full p-6 cursor-pointer font-semibold dark:text-gray-300 text-gray-800 hover:bg-gray-100/50 dark:hover:bg-gray-800/50 transition-colors text-left"
         >
           <div class="flex items-center justify-between">
             <span>{{ $t('faq.q3') }}</span>
-            <span class="text-primary text-xl">+</span>
+            <span
+              class="text-primary text-xl transition-transform duration-200"
+              :class="{ 'rotate-45': open }"
+            >+</span>
           </div>
-        </summary>
-        <div class="px-6 pb-6 dark:text-gray-300 text-gray-800">
+        </DisclosureButton>
+        <DisclosurePanel class="px-6 pb-6 dark:text-gray-300 text-gray-800">
           <p>
             {{ $t('faq.a3') }}
           </p>
-        </div>
-      </details>
+        </DisclosurePanel>
+      </Disclosure>
 
       <!-- FAQ Item 4 -->
-      <details
+      <Disclosure
+        v-slot="{ open }"
+        as="div"
         class="bg-white/60 dark:bg-gray-900/40 backdrop-blur-xl rounded-2xl border border-gray-300/50 dark:border-white/10 overflow-hidden"
       >
-        <summary
-          class="p-6 cursor-pointer font-semibold dark:text-gray-300 text-gray-800 hover:bg-gray-100/50 dark:hover:bg-gray-800/50 transition-colors list-none"
+        <DisclosureButton
+          class="w-full p-6 cursor-pointer font-semibold dark:text-gray-300 text-gray-800 hover:bg-gray-100/50 dark:hover:bg-gray-800/50 transition-colors text-left"
         >
           <div class="flex items-center justify-between">
             <span>{{ $t('faq.q4') }}</span>
-            <span class="text-primary text-xl">+</span>
+            <span
+              class="text-primary text-xl transition-transform duration-200"
+              :class="{ 'rotate-45': open }"
+            >+</span>
           </div>
-        </summary>
-        <div class="px-6 pb-6 dark:text-gray-300 text-gray-800">
+        </DisclosureButton>
+        <DisclosurePanel class="px-6 pb-6 dark:text-gray-300 text-gray-800">
           <p>
             {{ $t('faq.a4') }}
           </p>
-        </div>
-      </details>
+        </DisclosurePanel>
+      </Disclosure>
 
       <!-- FAQ Item 5 -->
-      <details
+      <Disclosure
+        v-slot="{ open }"
+        as="div"
         class="bg-white/60 dark:bg-gray-900/40 backdrop-blur-xl rounded-2xl border border-gray-300/50 dark:border-white/10 overflow-hidden"
       >
-        <summary
-          class="p-6 cursor-pointer font-semibold dark:text-gray-300 text-gray-800 hover:bg-gray-100/50 dark:hover:bg-gray-800/50 transition-colors list-none"
+        <DisclosureButton
+          class="w-full p-6 cursor-pointer font-semibold dark:text-gray-300 text-gray-800 hover:bg-gray-100/50 dark:hover:bg-gray-800/50 transition-colors text-left"
         >
           <div class="flex items-center justify-between">
             <span>{{ $t('faq.q5') }}</span>
-            <span class="text-primary text-xl">+</span>
+            <span
+              class="text-primary text-xl transition-transform duration-200"
+              :class="{ 'rotate-45': open }"
+            >+</span>
           </div>
-        </summary>
-        <div class="px-6 pb-6 dark:text-gray-300 text-gray-800">
+        </DisclosureButton>
+        <DisclosurePanel class="px-6 pb-6 dark:text-gray-300 text-gray-800">
           <p>
             {{ $t('faq.a5') }}
           </p>
-        </div>
-      </details>
+        </DisclosurePanel>
+      </Disclosure>
 
       <!-- FAQ Item 6 -->
-      <details
+      <Disclosure
+        v-slot="{ open }"
+        as="div"
         class="bg-white/60 dark:bg-gray-900/40 backdrop-blur-xl rounded-2xl border border-gray-300/50 dark:border-white/10 overflow-hidden"
       >
-        <summary
-          class="p-6 cursor-pointer font-semibold dark:text-gray-300 text-gray-800 hover:bg-gray-100/50 dark:hover:bg-gray-800/50 transition-colors list-none"
+        <DisclosureButton
+          class="w-full p-6 cursor-pointer font-semibold dark:text-gray-300 text-gray-800 hover:bg-gray-100/50 dark:hover:bg-gray-800/50 transition-colors text-left"
         >
           <div class="flex items-center justify-between">
             <span>{{ $t('faq.q6') }}</span>
-            <span class="text-primary text-xl">+</span>
+            <span
+              class="text-primary text-xl transition-transform duration-200"
+              :class="{ 'rotate-45': open }"
+            >+</span>
           </div>
-        </summary>
-        <div class="px-6 pb-6 dark:text-gray-300 text-gray-800">
+        </DisclosureButton>
+        <DisclosurePanel class="px-6 pb-6 dark:text-gray-300 text-gray-800">
           <p>
             {{ $t('faq.a6') }}
           </p>
-        </div>
-      </details>
+        </DisclosurePanel>
+      </Disclosure>
 
       <!-- FAQ Item 7 -->
-      <details
+      <Disclosure
+        v-slot="{ open }"
+        as="div"
         class="bg-white/60 dark:bg-gray-900/40 backdrop-blur-xl rounded-2xl border border-gray-300/50 dark:border-white/10 overflow-hidden"
       >
-        <summary
-          class="p-6 cursor-pointer font-semibold dark:text-gray-300 text-gray-800 hover:bg-gray-100/50 dark:hover:bg-gray-800/50 transition-colors list-none"
+        <DisclosureButton
+          class="w-full p-6 cursor-pointer font-semibold dark:text-gray-300 text-gray-800 hover:bg-gray-100/50 dark:hover:bg-gray-800/50 transition-colors text-left"
         >
           <div class="flex items-center justify-between">
             <span>{{ $t('faq.q7') }}</span>
-            <span class="text-primary text-xl">+</span>
+            <span
+              class="text-primary text-xl transition-transform duration-200"
+              :class="{ 'rotate-45': open }"
+            >+</span>
           </div>
-        </summary>
-        <div class="px-6 pb-6 dark:text-gray-300 text-gray-800">
+        </DisclosureButton>
+        <DisclosurePanel class="px-6 pb-6 dark:text-gray-300 text-gray-800">
           <p>
             {{ $t('faq.a7') }}
           </p>
-        </div>
-      </details>
+        </DisclosurePanel>
+      </Disclosure>
 
       <!-- FAQ Item 8 -->
-      <details
+      <Disclosure
+        v-slot="{ open }"
+        as="div"
         class="bg-white/60 dark:bg-gray-900/40 backdrop-blur-xl rounded-2xl border border-gray-300/50 dark:border-white/10 overflow-hidden"
       >
-        <summary
-          class="p-6 cursor-pointer font-semibold dark:text-gray-300 text-gray-800 hover:bg-gray-100/50 dark:hover:bg-gray-800/50 transition-colors list-none"
+        <DisclosureButton
+          class="w-full p-6 cursor-pointer font-semibold dark:text-gray-300 text-gray-800 hover:bg-gray-100/50 dark:hover:bg-gray-800/50 transition-colors text-left"
         >
           <div class="flex items-center justify-between">
             <span>{{ $t('faq.q8') }}</span>
-            <span class="text-primary text-xl">+</span>
+            <span
+              class="text-primary text-xl transition-transform duration-200"
+              :class="{ 'rotate-45': open }"
+            >+</span>
           </div>
-        </summary>
-        <div class="px-6 pb-6 dark:text-gray-300 text-gray-800">
+        </DisclosureButton>
+        <DisclosurePanel class="px-6 pb-6 dark:text-gray-300 text-gray-800">
           <p>
             {{ $t('faq.a8') }}
           </p>
-        </div>
-      </details>
+        </DisclosurePanel>
+      </Disclosure>
 
       <!-- FAQ Item 9 -->
-      <details
+      <Disclosure
+        v-slot="{ open }"
+        as="div"
         class="bg-white/60 dark:bg-gray-900/40 backdrop-blur-xl rounded-2xl border border-gray-300/50 dark:border-white/10 overflow-hidden"
       >
-        <summary
-          class="p-6 cursor-pointer font-semibold dark:text-gray-300 text-gray-800 hover:bg-gray-100/50 dark:hover:bg-gray-800/50 transition-colors list-none"
+        <DisclosureButton
+          class="w-full p-6 cursor-pointer font-semibold dark:text-gray-300 text-gray-800 hover:bg-gray-100/50 dark:hover:bg-gray-800/50 transition-colors text-left"
         >
           <div class="flex items-center justify-between">
             <span>{{ $t('faq.q9') }}</span>
-            <span class="text-primary text-xl">+</span>
+            <span
+              class="text-primary text-xl transition-transform duration-200"
+              :class="{ 'rotate-45': open }"
+            >+</span>
           </div>
-        </summary>
-        <div class="px-6 pb-6 dark:text-gray-300 text-gray-800">
+        </DisclosureButton>
+        <DisclosurePanel class="px-6 pb-6 dark:text-gray-300 text-gray-800">
           <p>
             {{ $t('faq.a9') }}
           </p>
-        </div>
-      </details>
+        </DisclosurePanel>
+      </Disclosure>
 
       <!-- FAQ Item 10 -->
-      <details
+      <Disclosure
+        v-slot="{ open }"
+        as="div"
         class="bg-white/60 dark:bg-gray-900/40 backdrop-blur-xl rounded-2xl border border-gray-300/50 dark:border-white/10 overflow-hidden"
       >
-        <summary
-          class="p-6 cursor-pointer font-semibold dark:text-gray-300 text-gray-800 hover:bg-gray-100/50 dark:hover:bg-gray-800/50 transition-colors list-none"
+        <DisclosureButton
+          class="w-full p-6 cursor-pointer font-semibold dark:text-gray-300 text-gray-800 hover:bg-gray-100/50 dark:hover:bg-gray-800/50 transition-colors text-left"
         >
           <div class="flex items-center justify-between">
             <span>{{ $t('faq.q10') }}</span>
-            <span class="text-primary text-xl">+</span>
+            <span
+              class="text-primary text-xl transition-transform duration-200"
+              :class="{ 'rotate-45': open }"
+            >+</span>
           </div>
-        </summary>
-        <div class="px-6 pb-6 dark:text-gray-300 text-gray-800">
+        </DisclosureButton>
+        <DisclosurePanel class="px-6 pb-6 dark:text-gray-300 text-gray-800">
           <p>
             {{ $t('faq.a10') }}
           </p>
-        </div>
-      </details>
+        </DisclosurePanel>
+      </Disclosure>
     </div>
 
     <!-- CTA -->
@@ -224,6 +274,11 @@
 
 <script setup lang="ts">
 import { watchEffect } from 'vue';
+import {
+  Disclosure,
+  DisclosureButton,
+  DisclosurePanel,
+} from '@headlessui/vue';
 import AppShell from '@/components/layout/AppShell.vue';
 import PageContainer from '@/components/layout/PageContainer.vue';
 
@@ -242,16 +297,3 @@ watchEffect(() => {
 });
 </script>
 
-<style scoped>
-details[open] summary span:last-child {
-  transform: rotate(45deg);
-}
-
-details summary {
-  list-style: none;
-}
-
-details summary::-webkit-details-marker {
-  display: none;
-}
-</style>

@@ -181,6 +181,7 @@ export default defineEventHandler(async (event) => {
         genre_ids: fullTvShowResponse?.genre_ids || [],
         seasons: fullTvShowResponse?.seasons || [],
         number_of_seasons: fullTvShowResponse?.number_of_seasons || 0,
+        number_of_episodes: fullTvShowResponse?.number_of_episodes,
         in_production: fullTvShowResponse?.in_production || false,
       };
 

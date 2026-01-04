@@ -117,7 +117,7 @@
 <script setup lang="ts">
 import { useRoute } from 'vue-router';
 import { useFetch } from 'nuxt/app';
-import { computed, onMounted, watch } from 'vue';
+import { computed, watch } from 'vue';
 
 import { Season, TVShow } from '@/types/TVShow';
 import { WatchProviderTypes } from '@/types/WatchProvider';
@@ -235,26 +235,6 @@ useSeoMeta({
   }),
 });
 
-onMounted(() => {
-  // Save the previous route when mounting
-  if (import.meta.client) {
-    const referrer = document.referrer;
-    const currentOrigin = window.location.origin;
-
-    // Only save if the referrer is from the same origin (within the app)
-    if (referrer && referrer.startsWith(currentOrigin)) {
-      try {
-        const referrerPath = new URL(referrer).pathname;
-        // Don't save if we're coming from another season page (to avoid loops)
-        if (!referrerPath.includes('/season/')) {
-          sessionStorage.setItem('previousRoute', referrerPath);
-        }
-      } catch {
-        // If URL parsing fails, ignore
-      }
-    }
-  }
-});
 </script>
 
 <style scoped>

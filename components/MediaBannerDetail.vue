@@ -285,6 +285,39 @@
             )
           }}</span>
         </div>
+        <div
+          v-if="
+            mediaType === MediaTypeEnum.tv &&
+            ((mediaWithProviders as any).number_of_episodes ||
+              (mediaWithProviders as any).number_of_seasons)
+          "
+          class="flex gap-2 items-center text-gray-800 dark:text-gray-300"
+        >
+          <IconEpisodes icon-class="w-5 h-5" />
+          <span>
+            <template v-if="(mediaWithProviders as any).number_of_seasons">
+              {{
+                $t('media.seasonsCount', {
+                  count: (mediaWithProviders as any).number_of_seasons || 0,
+                })
+              }}
+            </template>
+            <template
+              v-if="
+                (mediaWithProviders as any).number_of_seasons &&
+                (mediaWithProviders as any).number_of_episodes
+              "
+              >,
+            </template>
+            <template v-if="(mediaWithProviders as any).number_of_episodes">
+              {{
+                $t('media.episodesCount', {
+                  count: (mediaWithProviders as any).number_of_episodes || 0,
+                })
+              }}
+            </template>
+          </span>
+        </div>
         <div class="flex gap-2 items-center text-gray-800 dark:text-gray-300">
           <IconTag icon-class="w-5 h-5" />
           <span>{{
@@ -379,6 +412,7 @@ import MediaStatusBagde from './MediaStatusBagde.vue';
 import IconArrowLeft from './icons/IconArrowLeft.vue';
 import IconCalendar from './icons/IconCalendar.vue';
 import IconTag from './icons/IconTag.vue';
+import IconEpisodes from './icons/IconEpisodes.vue';
 import IconMoreVertical from './icons/IconMoreVertical.vue';
 import IconCheck from './icons/IconCheck.vue';
 import IconHeart from './icons/IconHeart.vue';

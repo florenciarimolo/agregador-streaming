@@ -35,6 +35,7 @@ export type TVShow = {
   imdb_id?: string; // Optional, as not all movies may have an IMDb ID
   backdrop_path: string;
   number_of_seasons: number;
+  number_of_episodes?: number;
   genres: Genre[];
   seasons: Season[];
   in_production: boolean;
