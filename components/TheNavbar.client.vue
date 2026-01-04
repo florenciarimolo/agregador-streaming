@@ -5,136 +5,144 @@
       <nav
         class="rounded-3xl border shadow-md backdrop-blur-xl dark:bg-gray-900/40 bg-gray-100/80 border-gray-300/50 dark:border-white/10"
       >
-      <div class="flex justify-between items-center py-4 px-4 md:px-6">
-        <!-- Logo -->
-        <nuxt-link
-          to="/"
-          class="flex items-center transition-opacity hover:opacity-80"
-        >
-          <img
-            src="/logo-light.png"
-            :alt="$t('common.appName')"
-            class="object-contain w-auto h-8 dark:hidden"
-          />
-          <img
-            src="/logo-dark.png"
-            :alt="$t('common.appName')"
-            class="hidden object-contain w-auto h-8 dark:block"
-          />
-        </nuxt-link>
+        <div class="flex justify-between items-center py-4 px-4 md:px-6">
+          <!-- Logo -->
+          <nuxt-link
+            to="/"
+            class="flex items-center transition-opacity hover:opacity-80"
+          >
+            <img
+              src="/logo-light.png"
+              :alt="$t('common.appName')"
+              class="object-contain w-auto h-8 dark:hidden"
+            />
+            <img
+              src="/logo-dark.png"
+              :alt="$t('common.appName')"
+              class="hidden object-contain w-auto h-8 dark:block"
+            />
+          </nuxt-link>
 
-        <!-- Search Bar (Public - Always visible) -->
-        <div class="flex-1 mx-6 max-w-md">
-          <SearchBar />
-        </div>
+          <!-- Search Bar (Public - Always visible) -->
+          <div class="flex-1 mx-6 max-w-md">
+            <SearchBar />
+          </div>
 
-        <!-- Desktop Menu -->
-        <div class="flex items-center gap-4 flex-shrink-0">
-          <!-- When logged in: Navigation Links, Theme Switcher, and User Avatar -->
-          <template v-if="currentUser">
-            <!-- Navigation Links -->
-            <nav class="flex gap-6 items-center mr-4">
-              <nuxt-link
-                to="/"
-                class="text-sm font-medium text-gray-800 transition-colors dark:text-gray-300 hover:text-primary dark:hover:text-primary-400"
-                active-class="text-primary dark:text-primary-400"
-              >
-                {{ $t('navbar.home') }}
-              </nuxt-link>
-              <nuxt-link
-                to="/watchlist"
-                class="text-sm font-medium text-gray-800 transition-colors dark:text-gray-300 hover:text-primary dark:hover:text-primary-400"
-                active-class="text-primary dark:text-primary-400"
-              >
-                {{ $t('navbar.watchlist') }}
-              </nuxt-link>
-            </nav>
+          <!-- Desktop Menu -->
+          <div class="flex items-center gap-4 flex-shrink-0">
+            <!-- When logged in: Navigation Links, Theme Switcher, and User Avatar -->
+            <template v-if="currentUser">
+              <!-- Navigation Links -->
+              <nav class="flex gap-6 items-center mr-4">
+                <nuxt-link
+                  to="/"
+                  class="text-sm font-medium text-gray-800 transition-colors dark:text-gray-300 hover:text-primary dark:hover:text-primary-400"
+                  active-class="text-primary dark:text-primary-400"
+                >
+                  {{ $t('navbar.home') }}
+                </nuxt-link>
+                <nuxt-link
+                  to="/watchlist"
+                  class="text-sm font-medium text-gray-800 transition-colors dark:text-gray-300 hover:text-primary dark:hover:text-primary-400"
+                  active-class="text-primary dark:text-primary-400"
+                >
+                  {{ $t('navbar.watchlist') }}
+                </nuxt-link>
+              </nav>
 
-            <!-- App Language Selector -->
-            <AppLanguageSelector />
+              <!-- App Language Selector -->
+              <AppLanguageSelector />
 
-            <!-- Theme Switcher -->
-            <ThemeSwitcher />
+              <!-- Theme Switcher -->
+              <ThemeSwitcher />
 
-            <!-- User Avatar -->
-            <div class="relative flex items-center justify-center">
-              <ActionMenu
-                ref="userMenuDropdownRef"
-                position="right"
-                width="w-64"
-                custom-class="backdrop-blur-3xl"
-              >
-                <template #trigger>
-                  <AvatarButton
-                    :aria-label="
-                      $t('navbar.userMenuFor', {
-                        email: currentUser.email || 'usuario',
-                      })
-                    "
-                  >
-                    <Avatar
-                      :avatar-url="userProfile?.avatar_url"
-                      :display-name="userProfile?.display_name"
-                      :email="currentUser.email"
-                      :user-id="
-                        currentUser.id || (currentUser as { sub?: string })?.sub
+              <!-- User Avatar -->
+              <div class="relative flex items-center justify-center">
+                <ActionMenu
+                  ref="userMenuDropdownRef"
+                  position="right"
+                  width="w-64"
+                  custom-class="backdrop-blur-3xl"
+                >
+                  <template #trigger>
+                    <AvatarButton
+                      :aria-label="
+                        $t('navbar.userMenuFor', {
+                          email: currentUser.email || 'usuario',
+                        })
                       "
-                      size="md"
-                    />
-                  </AvatarButton>
-                </template>
-                <div class="p-4 backdrop-blur-3xl">
-                  <p
-                    class="mb-3 text-sm font-medium text-gray-800 truncate dark:text-gray-300"
-                  >
-                    {{ userProfile?.display_name || currentUser.email }}
-                  </p>
-                  <p
-                    v-if="userProfile?.display_name && currentUser.email"
-                    class="mb-3 text-xs text-gray-500 truncate dark:text-gray-400"
-                  >
-                    {{ currentUser.email }}
-                  </p>
-                  <nuxt-link
-                    to="/preferences"
-                    class="block px-4 py-2 mb-2 w-full text-sm text-left text-gray-800 rounded-lg transition-colors dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                    @click="userMenuDropdownRef?.close()"
-                  >
-                    {{ $t('navbar.preferencesAndLists') }}
-                  </nuxt-link>
-                  <nuxt-link
-                    to="/my-account"
-                    class="block px-4 py-2 mb-2 w-full text-sm text-left text-gray-800 rounded-lg transition-colors dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                    @click="userMenuDropdownRef?.close()"
-                  >
-                    {{ $t('navbar.myAccount') }}
-                  </nuxt-link>
-                  <div
-                    class="my-2 border-t border-gray-300/50 dark:border-white/10"
-                  ></div>
-                  <button
-                    type="button"
-                    class="block px-4 py-2 mb-2 w-full text-sm text-left text-red-600 dark:text-red-400 rounded-lg transition-colors hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400"
-                    @click="
-                      userMenuDropdownRef?.close();
-                      handleLogoutClick();
-                    "
-                  >
-                    {{ $t('navbar.logout') }}
-                  </button>
-                </div>
-              </ActionMenu>
-            </div>
-          </template>
+                    >
+                      <Avatar
+                        :avatar-url="userProfile?.avatar_url"
+                        :display-name="userProfile?.display_name"
+                        :email="currentUser.email"
+                        :user-id="
+                          currentUser.id ||
+                          (currentUser as { sub?: string })?.sub
+                        "
+                        size="md"
+                      />
+                    </AvatarButton>
+                  </template>
+                  <div class="p-4 backdrop-blur-3xl">
+                    <p
+                      class="mb-3 text-sm font-medium text-gray-800 truncate dark:text-gray-300"
+                    >
+                      {{ userProfile?.display_name || currentUser.email }}
+                    </p>
+                    <p
+                      v-if="userProfile?.display_name && currentUser.email"
+                      class="mb-3 text-xs text-gray-500 truncate dark:text-gray-400"
+                    >
+                      {{ currentUser.email }}
+                    </p>
+                    <nuxt-link
+                      to="/lists"
+                      class="block px-4 py-2 mb-2 w-full text-sm text-left text-gray-800 rounded-lg transition-colors dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      @click="userMenuDropdownRef?.close()"
+                    >
+                      {{ $t('navbar.lists') }}
+                    </nuxt-link>
+                    <nuxt-link
+                      to="/preferences"
+                      class="block px-4 py-2 mb-2 w-full text-sm text-left text-gray-800 rounded-lg transition-colors dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      @click="userMenuDropdownRef?.close()"
+                    >
+                      {{ $t('navbar.preferences') }}
+                    </nuxt-link>
+                    <nuxt-link
+                      to="/my-account"
+                      class="block px-4 py-2 mb-2 w-full text-sm text-left text-gray-800 rounded-lg transition-colors dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      @click="userMenuDropdownRef?.close()"
+                    >
+                      {{ $t('navbar.myAccount') }}
+                    </nuxt-link>
+                    <div
+                      class="my-2 border-t border-gray-300/50 dark:border-white/10"
+                    ></div>
+                    <button
+                      type="button"
+                      class="block px-4 py-2 mb-2 w-full text-sm text-left text-red-600 dark:text-red-400 rounded-lg transition-colors hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400"
+                      @click="
+                        userMenuDropdownRef?.close();
+                        handleLogoutClick();
+                      "
+                    >
+                      {{ $t('navbar.logout') }}
+                    </button>
+                  </div>
+                </ActionMenu>
+              </div>
+            </template>
 
-          <!-- When not logged in: App Language Selector and Theme Switcher -->
-          <template v-else>
-            <AppLanguageSelector />
-            <ThemeSwitcher />
-          </template>
+            <!-- When not logged in: App Language Selector and Theme Switcher -->
+            <template v-else>
+              <AppLanguageSelector />
+              <ThemeSwitcher />
+            </template>
+          </div>
         </div>
-      </div>
-    </nav>
+      </nav>
     </AppShell>
   </header>
 
@@ -147,49 +155,49 @@
       <nav
         class="rounded-3xl border backdrop-blur-xl dark:bg-gray-900/40 bg-gray-100/90 border-gray-300/50 dark:border-white/10"
       >
-      <div class="flex justify-between items-center py-3 px-4">
-        <!-- Logo -->
-        <nuxt-link to="/" class="flex items-center">
-          <img
-            src="/logo-light.png"
-            :alt="$t('common.appName')"
-            class="object-contain w-auto h-6 dark:hidden"
-          />
-          <img
-            src="/logo-dark.png"
-            :alt="$t('common.appName')"
-            class="hidden object-contain w-auto h-6 dark:block"
-          />
-        </nuxt-link>
+        <div class="flex justify-between items-center py-3 px-4">
+          <!-- Logo -->
+          <nuxt-link to="/" class="flex items-center">
+            <img
+              src="/logo-light.png"
+              :alt="$t('common.appName')"
+              class="object-contain w-auto h-6 dark:hidden"
+            />
+            <img
+              src="/logo-dark.png"
+              :alt="$t('common.appName')"
+              class="hidden object-contain w-auto h-6 dark:block"
+            />
+          </nuxt-link>
 
-        <!-- Right side: Search Icon, Hamburger Menu (if logged in) or Theme Switcher (if not logged in) -->
-        <div class="flex items-center gap-2">
-          <!-- Search Icon -->
-          <IconButton
-            :icon="IconSearch"
-            :aria-label="$t('search.title')"
-            size="large"
-            variant="ghost"
-            custom-class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 [&_svg]:text-gray-800 dark:[&_svg]:text-gray-300"
-            @click.stop="toggleMobileSearch"
-          />
-          
-          <IconButton
-            v-if="currentUser"
-            :icon="showMobileMenu ? IconClose : IconMenu"
-            :aria-label="$t('navbar.mobileMenu')"
-            size="large"
-            variant="ghost"
-            custom-class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 [&_svg]:text-gray-800 dark:[&_svg]:text-gray-300"
-            @click.stop="toggleMobileMenu"
-          />
-          <template v-else>
-            <AppLanguageSelector />
-            <ThemeSwitcher />
-          </template>
+          <!-- Right side: Search Icon, Hamburger Menu (if logged in) or Theme Switcher (if not logged in) -->
+          <div class="flex items-center gap-2">
+            <!-- Search Icon -->
+            <IconButton
+              :icon="IconSearch"
+              :aria-label="$t('search.title')"
+              size="large"
+              variant="ghost"
+              custom-class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 [&_svg]:text-gray-800 dark:[&_svg]:text-gray-300"
+              @click.stop="toggleMobileSearch"
+            />
+
+            <IconButton
+              v-if="currentUser"
+              :icon="showMobileMenu ? IconClose : IconMenu"
+              :aria-label="$t('navbar.mobileMenu')"
+              size="large"
+              variant="ghost"
+              custom-class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 [&_svg]:text-gray-800 dark:[&_svg]:text-gray-300"
+              @click.stop="toggleMobileMenu"
+            />
+            <template v-else>
+              <AppLanguageSelector />
+              <ThemeSwitcher />
+            </template>
+          </div>
         </div>
-      </div>
-    </nav>
+      </nav>
     </AppShell>
   </header>
 
@@ -224,7 +232,9 @@
       @click.stop
     >
       <AppShell>
-        <div class="rounded-3xl border backdrop-blur-xl dark:bg-gray-900/40 bg-gray-100/90 border-gray-300/50 dark:border-white/10 p-4">
+        <div
+          class="rounded-3xl border backdrop-blur-xl dark:bg-gray-900/40 bg-gray-100/90 border-gray-300/50 dark:border-white/10 p-4"
+        >
           <SearchBar ref="mobileSearchBarRef" @closed="closeMobileSearch" />
         </div>
       </AppShell>
@@ -314,12 +324,20 @@
             {{ $t('navbar.watchlist') }}
           </nuxt-link>
           <nuxt-link
+            to="/lists"
+            class="flex items-center px-4 py-3 text-sm font-medium text-gray-800 rounded-lg transition-colors dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+            active-class="bg-gray-100 dark:bg-gray-700 text-primary dark:text-primary-400"
+            @click="showMobileMenu = false"
+          >
+            {{ $t('navbar.lists') }}
+          </nuxt-link>
+          <nuxt-link
             to="/preferences"
             class="flex items-center px-4 py-3 text-sm font-medium text-gray-800 rounded-lg transition-colors dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
             active-class="bg-gray-100 dark:bg-gray-700 text-primary dark:text-primary-400"
             @click="showMobileMenu = false"
           >
-            {{ $t('navbar.preferencesAndLists') }}
+            {{ $t('navbar.preferences') }}
           </nuxt-link>
           <nuxt-link
             to="/my-account"

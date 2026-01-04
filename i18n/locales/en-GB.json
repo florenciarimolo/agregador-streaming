@@ -34,7 +34,8 @@
     "mobileMenu": "Mobile menu",
     "theme": "Theme",
     "myAccount": "My account",
-    "preferencesAndLists": "Preferences and lists"
+    "lists": "Lists",
+    "preferences": "Preferences"
   },
   "auth": {
     "login": "Sign in",
@@ -193,6 +194,7 @@
     "errorAddingFavorites": "Error adding \"{title}\" to favourites",
     "regeneratingRecommendations": "Recommendations are being regenerated",
     "likeRemoved": "\"{title}\" removed from 'Liked'",
+    "titleRemovedFavorites": "\"{title}\" removed from favourites",
     "errorRemovingFavorites": "Error removing \"{title}\" from favourites"
   },
   "onboarding": {

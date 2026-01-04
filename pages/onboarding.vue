@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { onMounted } from 'vue';
 import { TitleStatus } from '@/types/TitleStatus';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 import { getTitleByTmdbId } from '@/composables/database/titles';
@@ -59,6 +60,18 @@ const supabase = useSupabaseClient();
 const userStore = useUserStore();
 const router = useRouter();
 const user = useSupabaseUser();
+
+// IMPORTANT: Content preferences (region, providers, genres) can only be modified:
+// - Here during initial onboarding (before onboarding_completed = true)
+// - From /preferences page after onboarding is completed
+// The middleware prevents access to /onboarding after completion, but we add an extra check here
+onMounted(() => {
+  // If onboarding is already completed, redirect to home
+  // (This is a safety check; middleware should already prevent this)
+  if (userStore.profile?.onboarding_completed) {
+    router.replace('/');
+  }
+});
 
 // Onboarding steps
 const currentStep = ref<'preferences' | 'titles'>('preferences');

@@ -34,7 +34,8 @@
     "mobileMenu": "Menú mòbil",
     "theme": "Tema",
     "myAccount": "El meu compte",
-    "preferencesAndLists": "Preferències i llistes"
+    "lists": "Llistes",
+    "preferences": "Preferències"
   },
   "auth": {
     "login": "Iniciar sessió",
@@ -193,6 +194,7 @@
     "errorAddingFavorites": "Error en afegir \"{title}\" a favorits",
     "regeneratingRecommendations": "S'estan regenerant les recomanacions",
     "likeRemoved": "\"{title}\" eliminat de 'M'agrada'",
+    "titleRemovedFavorites": "\"{title}\" eliminat de favorits",
     "errorRemovingFavorites": "Error en treure \"{title}\" de favorits"
   },
   "onboarding": {

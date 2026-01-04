@@ -2,327 +2,145 @@
   <AppShell>
     <PageContainer>
       <div class="pt-6 pb-6 w-full">
-        <!-- Profile Header -->
-        <div class="mb-6">
-          <div class="flex flex-row gap-4 items-center md:gap-6">
-            <!-- Avatar -->
-            <div class="flex flex-shrink-0 items-center">
-              <div
-                class="rounded-full border shadow-md hover:ring-2 hover:ring-primary/50 border-primary"
-              >
-                <Avatar
-                  :avatar-url="profile?.avatar_url"
-                  :display-name="profile?.display_name"
-                  :email="currentUser?.email"
-                  :user-id="userId"
-                  :size="avatarSize"
-                />
-              </div>
-            </div>
-
-            <!-- Profile Info -->
-            <div class="overflow-hidden flex-1 min-w-0">
-              <div class="space-y-2">
-                <h1
-                  class="text-sm font-medium text-gray-800 whitespace-nowrap dark:text-gray-300 font-heading"
-                >
-                  {{ displayName || currentUser?.email || $t('profile.user') }}
-                </h1>
-                <p
-                  v-if="currentUser?.email"
-                  class="text-xs text-gray-500 whitespace-nowrap dark:text-gray-400"
-                >
-                  {{ currentUser.email }}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
         <!-- Undo Toast -->
         <Toast />
 
-        <!-- Confirmation Dialog for Delete -->
-        <Modal :is-open="!!titleToDelete" @close="titleToDelete = null">
-          <h3
-            class="mb-2 text-lg font-semibold text-gray-800 dark:text-gray-300"
-          >
-            {{ $t('preferences.confirmDelete') }}
-          </h3>
-          <p class="mb-4 text-gray-800 dark:text-gray-300">
-            {{
-              $t('preferences.confirmDeleteMessage', {
-                title: titleToDelete?.title,
-              })
-            }}
-          </p>
-          <div class="flex gap-3 justify-end">
-            <Button
-              size="small"
-              variant="outline"
-              @click="titleToDelete = null"
+        <!-- Content Preferences -->
+        <div class="space-y-6">
+          <!-- Region -->
+          <Card padding="lg">
+            <h2
+              class="mb-2 text-xl font-semibold text-gray-800 dark:text-gray-300"
             >
-              {{ $t('common.cancel') }}
-            </Button>
-            <Button size="small" variant="danger" @click="confirmRemoveLiked">
-              {{ $t('common.delete') }}
+              {{ $t('preferences.content.region.title') }}
+            </h2>
+            <p class="mb-6 text-sm text-gray-600 dark:text-gray-400">
+              {{ $t('preferences.content.region.description') }}
+            </p>
+            <RegionSelector
+              v-model="contentPreferences.region"
+              @update:model-value="handleRegionChange"
+            />
+          </Card>
+
+          <!-- Included Providers -->
+          <Card padding="lg">
+            <h2
+              class="mb-2 text-xl font-semibold text-gray-800 dark:text-gray-300"
+            >
+              {{ $t('preferences.content.includedProviders.title') }}
+            </h2>
+            <p class="mb-6 text-sm text-gray-600 dark:text-gray-400">
+              {{ $t('preferences.content.includedProviders.description') }}
+            </p>
+
+            <!-- Provider Search -->
+            <ProviderSelector
+              v-model="selectedProviderForSelector"
+              :available-providers="availableProviders"
+              :selected-providers="selectedProviders"
+              :placeholder="
+                $t('preferences.content.includedProviders.searchPlaceholder')
+              "
+              :max-results="0"
+              @select="(provider: any) => addProvider(provider)"
+            />
+
+            <!-- Selected Providers List -->
+            <div v-if="selectedProviders.length > 0" class="my-4">
+              <p
+                class="mb-2 text-sm font-medium text-gray-800 dark:text-gray-300"
+              >
+                {{ $t('preferences.content.includedProviders.selected') }}
+                ({{ selectedProviders.length }})
+              </p>
+              <div class="flex flex-wrap gap-2">
+                <ProviderPill
+                  v-for="provider in selectedProviders"
+                  :key="provider.provider_id"
+                  :provider="provider"
+                  :aria-label="
+                    $t('preferences.content.includedProviders.remove', {
+                      name: provider.provider_name,
+                    })
+                  "
+                  @remove="removeProvider(provider.provider_id)"
+                />
+              </div>
+            </div>
+
+            <!-- Info Message -->
+            <p
+              v-if="selectedProviders.length === 0"
+              class="text-xs mt-2 italic text-gray-600 dark:text-gray-400"
+            >
+              {{ $t('preferences.content.includedProviders.allIncluded') }}
+            </p>
+          </Card>
+
+          <!-- Favorite Genres -->
+          <Card padding="lg">
+            <h2
+              class="mb-2 text-xl font-semibold text-gray-800 dark:text-gray-300"
+            >
+              {{ $t('preferences.content.favoriteGenres.title') }}
+            </h2>
+            <p class="mb-6 text-sm text-gray-600 dark:text-gray-400">
+              {{ $t('preferences.content.favoriteGenres.description') }}
+            </p>
+
+            <!-- Genre Search -->
+            <GenreSelector
+              v-model="selectedGenreForSelector"
+              :available-genres="availableGenres"
+              :selected-genres="selectedGenres"
+              @select="(genre: any) => addGenre(genre)"
+            />
+
+            <!-- Selected Genres List -->
+            <div v-if="selectedGenres.length > 0" class="my-4">
+              <p
+                class="mb-2 text-sm font-medium text-gray-800 dark:text-gray-300"
+              >
+                {{ $t('preferences.content.favoriteGenres.selected') }}
+                ({{ selectedGenres.length }})
+              </p>
+              <div class="flex flex-wrap gap-2">
+                <GenrePill
+                  v-for="genre in selectedGenres"
+                  :key="genre.id"
+                  :genre="genre"
+                  :aria-label="
+                    $t('preferences.content.favoriteGenres.remove', {
+                      name: genre.name,
+                    })
+                  "
+                  @remove="removeGenre(genre.id)"
+                />
+              </div>
+            </div>
+
+            <!-- Info Message -->
+            <p
+              v-if="selectedGenres.length === 0"
+              class="text-xs mt-2 italic text-gray-600 dark:text-gray-400"
+            >
+              {{ $t('preferences.content.favoriteGenres.noneSelected') }}
+            </p>
+          </Card>
+
+          <!-- Save Button -->
+          <div class="flex justify-end mt-6">
+            <Button
+              variant="primary"
+              size="small"
+              :disabled="!hasUnsavedContentChanges"
+              @click="saveContentPreferences"
+            >
+              {{ $t('common.save') }}
             </Button>
           </div>
-        </Modal>
-
-        <!-- Tabs for Lists -->
-        <Tabs
-          :default-tab="activeTab"
-          @tab-change="
-            (tab) =>
-              handleTabChange(
-                tab as
-                  | 'liked'
-                  | 'seen'
-                  | 'not-interested'
-                  | 'content-preferences'
-              )
-          "
-        >
-          <template #buttons="{ activeTab: currentTab, setActiveTab }">
-            <TabButton
-              v-for="tab in tabs"
-              :key="tab.id"
-              :is-active="currentTab === tab.id"
-              :badge="
-                tab.count !== null && tab.count !== undefined
-                  ? tab.count
-                  : undefined
-              "
-              @click="
-                handleTabButtonClick(
-                  tab.id as
-                    | 'liked'
-                    | 'seen'
-                    | 'not-interested'
-                    | 'content-preferences',
-                  setActiveTab
-                )
-              "
-            >
-              {{ tab.label }}
-            </TabButton>
-          </template>
-          <template #default="{ activeTab: currentTab }">
-            <!-- Liked Tab -->
-            <div v-if="currentTab === 'liked'">
-              <div class="mb-4">
-                <SearchBar
-                  :emit-on-select="true"
-                  @title-selected="handleTitleSelected"
-                />
-                <p
-                  v-if="likedTitles.length >= 10"
-                  class="mt-2 text-xs text-amber-600 dark:text-amber-400"
-                >
-                  {{ $t('preferences.limitReached') }}
-                </p>
-              </div>
-
-              <Spinner v-if="isLoading" :message="$t('preferences.loading')" />
-
-              <TitleGrid
-                v-else-if="likedTitles.length > 0"
-                :titles="likedTitles"
-                :on-remove="handleRemoveLikedClick"
-                :remove-label="$t('preferences.removeFromList')"
-              />
-
-              <EmptyState
-                v-else
-                :message="$t('preferences.emptyState')"
-                icon="heart"
-              />
-            </div>
-
-            <!-- Seen Tab -->
-            <div v-if="currentTab === 'seen'">
-              <Spinner v-if="isLoading" :message="$t('seen.loading')" />
-
-              <TitleGrid
-                v-else-if="seenTitles.length > 0"
-                :titles="seenTitles"
-                :on-remove="handleRemoveSeen"
-                :remove-label="$t('seen.removeFromList')"
-                :on-like="handleAddToLiked"
-                :like-label="$t('media.liked')"
-              />
-
-              <EmptyState v-else :message="$t('seen.empty')" icon="eye" />
-            </div>
-
-            <!-- Not Interested Tab -->
-            <div v-if="currentTab === 'not-interested'">
-              <Spinner
-                v-if="isLoading"
-                :message="$t('notInterested.loading')"
-              />
-
-              <TitleGrid
-                v-else-if="notInterestedTitles.length > 0"
-                :titles="notInterestedTitles"
-                :on-remove="handleRemoveNotInterested"
-                :remove-label="$t('common.delete')"
-              />
-
-              <EmptyState
-                v-else
-                :message="$t('notInterested.empty')"
-                icon="x"
-              />
-            </div>
-
-            <!-- Content Preferences Tab -->
-            <div v-if="currentTab === 'content-preferences'">
-              <div class="space-y-6">
-                <!-- Region -->
-                <Card padding="lg">
-                  <h2
-                    class="mb-2 text-xl font-semibold text-gray-800 dark:text-gray-300"
-                  >
-                    {{ $t('preferences.content.region.title') }}
-                  </h2>
-                  <p class="mb-6 text-sm text-gray-600 dark:text-gray-400">
-                    {{ $t('preferences.content.region.description') }}
-                  </p>
-                  <RegionSelector
-                    v-model="contentPreferences.region"
-                    @update:model-value="handleRegionChange"
-                  />
-                </Card>
-
-                <!-- Included Providers -->
-                <Card padding="lg">
-                  <h2
-                    class="mb-2 text-xl font-semibold text-gray-800 dark:text-gray-300"
-                  >
-                    {{ $t('preferences.content.includedProviders.title') }}
-                  </h2>
-                  <p class="mb-6 text-sm text-gray-600 dark:text-gray-400">
-                    {{
-                      $t('preferences.content.includedProviders.description')
-                    }}
-                  </p>
-
-                  <!-- Provider Search -->
-                  <ProviderSelector
-                    v-model="selectedProviderForSelector"
-                    :available-providers="availableProviders"
-                    :selected-providers="selectedProviders"
-                    :placeholder="
-                      $t(
-                        'preferences.content.includedProviders.searchPlaceholder'
-                      )
-                    "
-                    :max-results="0"
-                    @select="(provider: any) => addProvider(provider)"
-                  />
-
-                  <!-- Selected Providers List -->
-                  <div v-if="selectedProviders.length > 0" class="my-4">
-                    <p
-                      class="mb-2 text-sm font-medium text-gray-800 dark:text-gray-300"
-                    >
-                      {{ $t('preferences.content.includedProviders.selected') }}
-                      ({{ selectedProviders.length }})
-                    </p>
-                    <div class="flex flex-wrap gap-2">
-                      <ProviderPill
-                        v-for="provider in selectedProviders"
-                        :key="provider.provider_id"
-                        :provider="provider"
-                        :aria-label="
-                          $t('preferences.content.includedProviders.remove', {
-                            name: provider.provider_name,
-                          })
-                        "
-                        @remove="removeProvider(provider.provider_id)"
-                      />
-                    </div>
-                  </div>
-
-                  <!-- Info Message -->
-                  <p
-                    v-if="selectedProviders.length === 0"
-                    class="text-xs mt-2 italic text-gray-600 dark:text-gray-400"
-                  >
-                    {{
-                      $t('preferences.content.includedProviders.allIncluded')
-                    }}
-                  </p>
-                </Card>
-
-                <!-- Favorite Genres -->
-                <Card padding="lg">
-                  <h2
-                    class="mb-2 text-xl font-semibold text-gray-800 dark:text-gray-300"
-                  >
-                    {{ $t('preferences.content.favoriteGenres.title') }}
-                  </h2>
-                  <p class="mb-6 text-sm text-gray-600 dark:text-gray-400">
-                    {{ $t('preferences.content.favoriteGenres.description') }}
-                  </p>
-
-                  <!-- Genre Search -->
-                  <GenreSelector
-                    v-model="selectedGenreForSelector"
-                    :available-genres="availableGenres"
-                    :selected-genres="selectedGenres"
-                    @select="(genre: any) => addGenre(genre)"
-                  />
-
-                  <!-- Selected Genres List -->
-                  <div v-if="selectedGenres.length > 0" class="my-4">
-                    <p
-                      class="mb-2 text-sm font-medium text-gray-800 dark:text-gray-300"
-                    >
-                      {{ $t('preferences.content.favoriteGenres.selected') }}
-                      ({{ selectedGenres.length }})
-                    </p>
-                    <div class="flex flex-wrap gap-2">
-                      <GenrePill
-                        v-for="genre in selectedGenres"
-                        :key="genre.id"
-                        :genre="genre"
-                        :aria-label="
-                          $t('preferences.content.favoriteGenres.remove', {
-                            name: genre.name,
-                          })
-                        "
-                        @remove="removeGenre(genre.id)"
-                      />
-                    </div>
-                  </div>
-
-                  <!-- Info Message -->
-                  <p
-                    v-if="selectedGenres.length === 0"
-                    class="text-xs mt-2 italic text-gray-600 dark:text-gray-400"
-                  >
-                    {{ $t('preferences.content.favoriteGenres.noneSelected') }}
-                  </p>
-                </Card>
-
-                <!-- Save Button -->
-                <div class="flex justify-end mt-6">
-                  <Button
-                    variant="primary"
-                    size="small"
-                    :disabled="!hasUnsavedContentChanges"
-                    @click="saveContentPreferences"
-                  >
-                    {{ $t('common.save') }}
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </template>
-        </Tabs>
+        </div>
 
         <!-- Generating Recommendations Modal -->
         <Modal :is-open="showGeneratingModal" :close-on-overlay-click="false">
@@ -392,7 +210,6 @@
                 @click="
                   showUnsavedChangesModal = false;
                   pendingNavigation = null;
-                  pendingTabChange = null;
                   // Revert changes to saved state from DB
                   revertContentPreferencesChanges();
                 "
@@ -410,61 +227,9 @@
                     pendingNavigation();
                     pendingNavigation = null;
                   }
-                  // Handle pending tab change
-                  if (pendingTabChange) {
-                    const tabToChange = pendingTabChange;
-                    pendingTabChange = null;
-                    // Use nextTick to ensure modal is closed before changing tab
-                    nextTick(() => {
-                      activeTab = tabToChange;
-                      const route = useRoute();
-                      navigateTo(
-                        {
-                          path: route.path,
-                          query: { ...route.query, tab: tabToChange },
-                        },
-                        { replace: true }
-                      );
-                    });
-                  }
                 "
               >
                 {{ $t('common.leave') }}
-              </Button>
-            </div>
-          </div>
-        </Modal>
-
-        <!-- Modal for removing like -->
-        <Modal
-          :is-open="showRemoveLikeModal"
-          @close="showRemoveLikeModal = false"
-        >
-          <div class="flex flex-col gap-4">
-            <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-300">
-              {{ $t('home.confirmRemoveLikeTitle') }}
-            </h2>
-            <p class="text-gray-700 dark:text-gray-400">
-              {{
-                $t('home.confirmRemoveLikeMessage', {
-                  title: titleToRemoveLike?.title,
-                })
-              }}
-            </p>
-            <div class="flex gap-3 justify-end mt-4">
-              <Button
-                variant="outline"
-                size="small"
-                @click="showRemoveLikeModal = false"
-              >
-                {{ $t('common.cancel') }}
-              </Button>
-              <Button
-                variant="primary"
-                size="small"
-                @click="confirmRemoveLikeFromSeen"
-              >
-                {{ $t('common.confirm') }}
               </Button>
             </div>
           </div>
@@ -475,45 +240,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch, nextTick, onUnmounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { onBeforeRouteLeave } from 'vue-router';
-import { useUserStore } from '@/stores/user';
-import { TitleStatus } from '@/types/TitleStatus';
 import Button from '@/components/ui/Button.vue';
 import Modal from '@/components/ui/Modal.vue';
-import Tabs from '@/components/ui/Tabs.vue';
 import AppShell from '@/components/layout/AppShell.vue';
 import PageContainer from '@/components/layout/PageContainer.vue';
-import TabButton from '@/components/ui/TabButton.vue';
 import Card from '@/components/ui/Card.vue';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
-import {
-  getUserLikedTitles,
-  deleteUserTitleStatus,
-  upsertUserTitleStatus,
-  getUserLikedTitle,
-  getUserSeenTitles,
-  getUserNotInterestedTitles,
-  getUserWatchlistTitles,
-  removeNotInterested,
-} from '@/composables/database/userTitleStatus';
-import {
-  getTitleByTmdbId,
-  insertTitle,
-  getTitlesByTmdbIds,
-  getTitleByTmdbIdWithLanguage,
-} from '@/composables/database/titles';
-import {
-  isNotFoundError,
-  isUniqueViolationError,
-} from '@/composables/database/errorCodes';
-import { getProfile } from '@/composables/database/profiles';
 import { getSession } from '@/composables/database/auth';
-import SearchBar from '@/components/SearchBar.vue';
-import Avatar from '@/components/Avatar.vue';
-import TitleGrid from '@/components/TitleGrid.vue';
-import EmptyState from '@/components/EmptyState.vue';
-import Spinner from '@/components/Spinner.vue';
 import Toast from '@/components/ui/Toast.vue';
 import RegionSelector from '@/components/RegionSelector.vue';
 import GenreSelector from '@/components/GenreSelector.vue';
@@ -521,46 +256,26 @@ import ProviderSelector from '@/components/ProviderSelector.vue';
 import GenrePill from '@/components/GenrePill.vue';
 import ProviderPill from '@/components/ProviderPill.vue';
 import { useUndoToast } from '@/composables/useUndoToast';
-import type { TMDBSearchResult } from '@/types/tmdb/Search';
 import { DEFAULT_LANGUAGE, toTMDBLanguageCode } from '@/constants/languages';
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore - Auto-imported
 const currentUser = useSupabaseUser();
-const userStore = useUserStore();
-const { t, locale } = useI18n();
+const { t } = useI18n();
 const { showToast } = useUndoToast();
 
 // Get app language for TMDB API calls
 const getAppLanguage = () => {
+  const { locale } = useI18n();
   return toTMDBLanguageCode(locale.value || DEFAULT_LANGUAGE);
 };
 
 // State
-const profile = ref<{
-  display_name?: string | null;
-  avatar_url?: string | null;
-} | null>(null);
-const isLoading = ref(true);
-const activeTab = ref<
-  'liked' | 'seen' | 'not-interested' | 'content-preferences'
->('liked');
-const titleToDelete = ref<{ id: string; title: string } | null>(null);
-const showRemoveLikeModal = ref(false);
-const titleToRemoveLike = ref<{
-  id: string;
-  title: string;
-  tmdb_id: number;
-  type: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv;
-} | null>(null);
 const hasUnsavedContentChanges = ref(false);
 const showUnsavedChangesModal = ref(false);
 const showSaveConfirmationModal = ref(false);
 const showGeneratingModal = ref(false);
 const pendingNavigation = ref<(() => void) | null>(null);
-const pendingTabChange = ref<
-  'liked' | 'seen' | 'not-interested' | 'content-preferences' | null
->(null);
 const savedContentPreferences = ref<{
   favorite_genres?: number[];
   included_providers?: number[];
@@ -575,862 +290,13 @@ const savedSelectedProviders = ref<
   }>
 >([]);
 
-const likedTitles = ref<
-  Array<{
-    id: string;
-    title: string;
-    type: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv;
-    poster_path: string | null;
-    tmdb_id: number;
-  }>
->([]);
-const seenTitles = ref<
-  Array<{
-    id: string;
-    title: string;
-    type: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv;
-    poster_path: string | null;
-    tmdb_id: number;
-    liked?: boolean;
-  }>
->([]);
-const notInterestedTitles = ref<
-  Array<{
-    id: string;
-    title: string;
-    type: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv;
-    poster_path: string | null;
-    tmdb_id: number;
-  }>
->([]);
-const watchlistTitles = ref<
-  Array<{
-    id: string;
-    title: string;
-    type: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv;
-    poster_path: string | null;
-    tmdb_id: number;
-  }>
->([]);
-
 const userId = computed(() => {
   return currentUser.value?.id || (currentUser.value as { sub?: string })?.sub;
 });
 
-const displayName = computed(() => {
-  return profile.value?.display_name || currentUser.value?.email || null;
-});
-
-// Avatar size: smaller on mobile
-const isMobile = ref(false);
-const avatarSize = computed(() => {
-  return isMobile.value ? 'lg' : 'xl';
-});
-
-const checkMobile = () => {
-  isMobile.value = window.innerWidth < 768; // md breakpoint
-};
-
-const tabs = computed(() => [
-  {
-    id: 'liked' as const,
-    label: t('profile.tabs.liked'),
-    count: likedTitles.value.length,
-  },
-  {
-    id: 'seen' as const,
-    label: t('profile.tabs.seen'),
-    count: seenTitles.value.length,
-  },
-  {
-    id: 'not-interested' as const,
-    label: t('profile.tabs.notInterested'),
-    count: notInterestedTitles.value.length,
-  },
-  {
-    id: 'content-preferences' as const,
-    label: t('preferences.tabs.content'),
-    count: null,
-  },
-]);
-
 // Helper functions
 const showError = (message: string) => {
   showToast(message, null, 5000);
-};
-
-const showSuccess = (message: string) => {
-  showToast(message, null, 5000);
-};
-
-// Handle tab button click - intercepts before Tabs component changes state
-const handleTabButtonClick = (
-  tabId: 'liked' | 'seen' | 'not-interested' | 'content-preferences',
-  setActiveTab: (tab: string) => void
-) => {
-  // If trying to change from content-preferences tab and there are unsaved changes, show modal
-  if (
-    activeTab.value === 'content-preferences' &&
-    tabId !== 'content-preferences' &&
-    hasUnsavedContentChanges.value
-  ) {
-    pendingTabChange.value = tabId;
-    showUnsavedChangesModal.value = true;
-    // Don't call setActiveTab - prevent the tab change
-    return;
-  }
-
-  // No unsaved changes or same tab, proceed with change
-  setActiveTab(tabId);
-};
-
-// Handle tab change and update URL (called after Tabs component changes state)
-const handleTabChange = (
-  tabId: 'liked' | 'seen' | 'not-interested' | 'content-preferences'
-) => {
-  // Update local state and URL
-  activeTab.value = tabId;
-  const route = useRoute();
-  navigateTo(
-    {
-      path: route.path,
-      query: { ...route.query, tab: tabId },
-    },
-    { replace: true }
-  );
-};
-
-// Fetch profile
-const fetchProfile = async () => {
-  const id = userId.value;
-  if (!id) return;
-
-  try {
-    const { data, error } = await getProfile(id);
-    if (error) throw error;
-    profile.value = data;
-  } catch (error) {
-    console.error('Error fetching profile:', error);
-  }
-};
-
-// Fetch all lists
-const fetchAllLists = async () => {
-  const id = userId.value;
-  if (!id) return;
-
-  isLoading.value = true;
-  try {
-    await Promise.all([
-      fetchLikedTitles(),
-      fetchSeenTitles(),
-      fetchNotInterestedTitles(),
-      fetchWatchlistTitles(),
-    ]);
-  } catch (error) {
-    console.error('Error fetching lists:', error);
-  } finally {
-    isLoading.value = false;
-  }
-};
-
-// Fetch functions for each list
-const fetchLikedTitles = async () => {
-  const id = userId.value;
-
-  if (!id) {
-    return;
-  }
-
-  try {
-    const { data: likedStatuses, error: statusError } =
-      await getUserLikedTitles(id);
-    if (statusError) {
-      throw statusError;
-    }
-
-    if (!likedStatuses || likedStatuses.length === 0) {
-      likedTitles.value = [];
-      return;
-    }
-
-    const tmdbIds = likedStatuses.map((s) => s.tmdb_id);
-    // Create a map of tmdb_id to type for titles that might not exist in database
-    const titleTypesMap = new Map(
-      likedStatuses.map((s) => [s.tmdb_id, s.type])
-    );
-
-    // Use app language in ISO/TMDB format (e.g., 'ca-ES', 'es-ES')
-    const preferredLang = getAppLanguage();
-
-    const { data: titlesData, error: titlesError } = await getTitlesByTmdbIds(
-      tmdbIds,
-      preferredLang,
-      contentPreferences.value.region,
-      titleTypesMap
-    );
-
-    if (titlesError) {
-      throw titlesError;
-    }
-
-    const titleMap = new Map(titlesData?.map((t) => [t.tmdb_id, t]) || []);
-
-    likedTitles.value = likedStatuses
-      .map((status) => {
-        const title = titleMap.get(status.tmdb_id);
-        if (!title) {
-          return null;
-        }
-        return {
-          id: status.id,
-          title: title.title,
-          type: title.type,
-          poster_path: title.poster_path,
-          tmdb_id: title.tmdb_id,
-        };
-      })
-      .filter((t): t is NonNullable<typeof t> => t !== null);
-  } catch {
-    // Error handled silently
-  }
-};
-
-const fetchSeenTitles = async () => {
-  const id = userId.value;
-  if (!id) return;
-
-  try {
-    const { data: seenStatuses, error: statusError } =
-      await getUserSeenTitles(id);
-    if (statusError) throw statusError;
-
-    if (!seenStatuses || seenStatuses.length === 0) {
-      seenTitles.value = [];
-      return;
-    }
-
-    const tmdbIds = seenStatuses.map((s) => s.tmdb_id);
-    // Create a map of tmdb_id to type for titles that might not exist in database
-    const titleTypesMap = new Map(seenStatuses.map((s) => [s.tmdb_id, s.type]));
-    // Use app language in ISO/TMDB format (e.g., 'ca-ES', 'es-ES')
-    const preferredLang = getAppLanguage();
-    const { data: titlesData, error: titlesError } = await getTitlesByTmdbIds(
-      tmdbIds,
-      preferredLang,
-      contentPreferences.value.region,
-      titleTypesMap
-    );
-    if (titlesError) throw titlesError;
-
-    const titleMap = new Map(titlesData?.map((t) => [t.tmdb_id, t]) || []);
-    seenTitles.value = seenStatuses
-      .map((status) => {
-        const title = titleMap.get(status.tmdb_id);
-        if (!title) return null;
-        const isLiked = status.liked === true;
-        return {
-          id: status.id,
-          title: title.title,
-          type: title.type,
-          poster_path: title.poster_path,
-          tmdb_id: title.tmdb_id,
-          liked: isLiked,
-        };
-      })
-      .filter((t): t is NonNullable<typeof t> => t !== null);
-  } catch {
-    // Error handled silently
-  }
-};
-
-const fetchNotInterestedTitles = async () => {
-  const id = userId.value;
-  if (!id) return;
-
-  try {
-    const { data: notInterestedStatuses, error: statusError } =
-      await getUserNotInterestedTitles(id);
-    if (statusError) throw statusError;
-
-    if (!notInterestedStatuses || notInterestedStatuses.length === 0) {
-      notInterestedTitles.value = [];
-      return;
-    }
-
-    const tmdbIds = notInterestedStatuses.map((s) => s.tmdb_id);
-    // Create a map of tmdb_id to type for titles that might not exist in database
-    const titleTypesMap = new Map(
-      notInterestedStatuses.map((s) => [s.tmdb_id, s.type])
-    );
-    // Use app language in ISO/TMDB format (e.g., 'ca-ES', 'es-ES')
-    const preferredLang = getAppLanguage();
-    const { data: titlesData, error: titlesError } = await getTitlesByTmdbIds(
-      tmdbIds,
-      preferredLang,
-      contentPreferences.value.region,
-      titleTypesMap
-    );
-    if (titlesError) throw titlesError;
-
-    const titleMap = new Map(titlesData?.map((t) => [t.tmdb_id, t]) || []);
-    notInterestedTitles.value = notInterestedStatuses
-      .map((status) => {
-        const title = titleMap.get(status.tmdb_id);
-        if (!title) return null;
-        return {
-          id: status.id,
-          title: title.title,
-          type: title.type,
-          poster_path: title.poster_path,
-          tmdb_id: title.tmdb_id,
-        };
-      })
-      .filter((t): t is NonNullable<typeof t> => t !== null);
-  } catch {
-    // Error handled silently
-  }
-};
-
-const fetchWatchlistTitles = async () => {
-  const id = userId.value;
-  if (!id) return;
-
-  try {
-    const { data: watchlistStatuses, error: statusError } =
-      await getUserWatchlistTitles(id);
-    if (statusError) throw statusError;
-
-    if (!watchlistStatuses || watchlistStatuses.length === 0) {
-      watchlistTitles.value = [];
-      return;
-    }
-
-    const tmdbIds = watchlistStatuses.map((s) => s.tmdb_id);
-    // Create a map of tmdb_id to type for titles that might not exist in database
-    const titleTypesMap = new Map(
-      watchlistStatuses.map((s) => [s.tmdb_id, s.type])
-    );
-    // Use app language in ISO/TMDB format (e.g., 'ca-ES', 'es-ES')
-    const preferredLang = getAppLanguage();
-    const { data: titlesData, error: titlesError } = await getTitlesByTmdbIds(
-      tmdbIds,
-      preferredLang,
-      contentPreferences.value.region,
-      titleTypesMap
-    );
-    if (titlesError) throw titlesError;
-
-    const titleMap = new Map(titlesData?.map((t) => [t.tmdb_id, t]) || []);
-    watchlistTitles.value = watchlistStatuses
-      .map((status) => {
-        const title = titleMap.get(status.tmdb_id);
-        if (!title) return null;
-        return {
-          id: status.id,
-          title: title.title,
-          type: title.type,
-          poster_path: title.poster_path,
-          tmdb_id: title.tmdb_id,
-        };
-      })
-      .filter((t): t is NonNullable<typeof t> => t !== null);
-  } catch {
-    // Error handled silently
-  }
-};
-
-// Title management
-const handleTitleSelected = async (result: TMDBSearchResult) => {
-  const id = userId.value;
-  if (!id) return;
-
-  if (likedTitles.value.length >= 10) {
-    showError(t('preferences.limitReached'));
-    return;
-  }
-
-  const alreadyLiked = likedTitles.value.some(
-    (t) => t.tmdb_id === result.id && t.type === result.media_type
-  );
-  if (alreadyLiked) {
-    showError(t('preferences.alreadyInPreferences'));
-    return;
-  }
-
-  try {
-    if (!result.media_type) {
-      showError(t('preferences.invalidMediaType'));
-      return;
-    }
-
-    const { data: existingTitle, error: titleCheckError } =
-      await getTitleByTmdbId(result.id, result.media_type);
-
-    if (titleCheckError && !isNotFoundError(titleCheckError)) {
-      throw titleCheckError;
-    }
-
-    const { data: existingLike } = await getUserLikedTitle(id, result.id);
-
-    if (existingLike) {
-      showError(t('preferences.alreadyInPreferences'));
-      await fetchLikedTitles();
-      return;
-    }
-
-    if (!existingTitle && result.media_type) {
-      const { error: insertError } = await insertTitle({
-        tmdb_id: result.id,
-        title: { es: result.title || result.name || 'Unknown' }, // Multi-language JSONB
-        type: result.media_type,
-        poster_path: result.poster_path ? { es: result.poster_path } : null, // Multi-language JSONB
-        backdrop_path: result.backdrop_path || null,
-        overview: result.overview ? { es: result.overview } : null, // Multi-language JSONB
-        release_date: result.release_date || null,
-        first_air_date: result.first_air_date || null,
-        genres: null,
-        vote_average: result.vote_average || null,
-      });
-
-      if (insertError) throw insertError;
-    }
-
-    const { data: newLike, error: likeError } = await upsertUserTitleStatus({
-      user_id: id,
-      tmdb_id: result.id,
-      type: result.media_type,
-      status: TitleStatus.SEEN,
-      liked: true,
-    });
-
-    if (likeError) {
-      if (isUniqueViolationError(likeError)) {
-        showError(t('preferences.alreadyInPreferences'));
-        await fetchLikedTitles();
-        return;
-      }
-      throw likeError;
-    }
-
-    // Get title in user's preferred language (using ISO/TMDB format)
-    const preferredLang = getAppLanguage();
-    const { data: titleData } = await getTitleByTmdbIdWithLanguage(
-      result.id,
-      result.media_type!,
-      preferredLang,
-      contentPreferences.value.region
-    );
-
-    if (titleData) {
-      likedTitles.value.unshift({
-        id: newLike.id,
-        title: titleData.title,
-        type: titleData.type,
-        poster_path: titleData.poster_path,
-        tmdb_id: titleData.tmdb_id,
-      });
-    }
-
-    await userStore.fetchProfile();
-    showSuccess(t('preferences.titleAdded'));
-
-    // Regenerate recommendation pool in background
-    try {
-      const {
-        data: { session },
-      } = await getSession();
-      if (session?.access_token) {
-        await $fetch('/api/recommendations/populate-pool', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-          },
-        });
-      }
-    } catch (poolError) {
-      console.error('Error regenerating pool:', poolError);
-      // Don't show error to user, pool regeneration is background task
-    }
-  } catch {
-    showError(t('preferences.errorAdding'));
-  }
-};
-
-const handleRemoveLikedClick = (title: {
-  id: string;
-  title: string;
-  tmdb_id: number;
-}) => {
-  titleToDelete.value = { id: title.id, title: title.title };
-};
-
-const confirmRemoveLiked = async () => {
-  if (!titleToDelete.value) return;
-
-  const title = titleToDelete.value;
-  const titleToRestore = likedTitles.value.find((t) => t.id === title.id);
-  titleToDelete.value = null;
-
-  try {
-    const { error } = await deleteUserTitleStatus(title.id);
-    if (error) throw error;
-
-    likedTitles.value = likedTitles.value.filter((t) => t.id !== title.id);
-    await userStore.fetchProfile();
-
-    // Regenerate recommendation pool in background
-    try {
-      const {
-        data: { session },
-      } = await getSession();
-      if (session?.access_token) {
-        await $fetch('/api/recommendations/populate-pool', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-          },
-        });
-      }
-    } catch (poolError) {
-      console.error('Error regenerating pool:', poolError);
-      // Don't show error to user, pool regeneration is background task
-    }
-
-    showToast(
-      t('preferences.titleRemoved'),
-      {
-        label: t('undo.undo'),
-        action: async () => {
-          // Re-add the like
-          if (titleToRestore) {
-            // Just check if title exists, then restore and refetch (which will use correct language)
-            const titleCheck = await getTitleByTmdbId(
-              titleToRestore.tmdb_id,
-              titleToRestore.type
-            );
-            if (titleCheck?.data) {
-              await upsertUserTitleStatus({
-                user_id: userId.value!,
-                tmdb_id: titleToRestore.tmdb_id,
-                type: titleToRestore.type,
-                status: TitleStatus.SEEN,
-                liked: true,
-              });
-              // Refetch will use the correct language
-              await fetchLikedTitles();
-              // Regenerate pool after undo
-              try {
-                const {
-                  data: { session },
-                } = await getSession();
-                if (session?.access_token) {
-                  await $fetch('/api/recommendations/populate-pool', {
-                    method: 'POST',
-                    headers: {
-                      Authorization: `Bearer ${session.access_token}`,
-                    },
-                  });
-                }
-              } catch (poolError) {
-                console.error('Error regenerating pool:', poolError);
-              }
-            }
-          }
-        },
-      },
-      7000
-    );
-  } catch {
-    showError(t('preferences.errorRemoving'));
-    await fetchLikedTitles();
-  }
-};
-
-/**
- * Remove title from seen list
- * IMPORTANT: This deletes the ENTIRE user_title_status record, including `liked: true` if present.
- * This is correct behavior: `liked` is an attribute of `seen`, not an independent status.
- * Do NOT attempt to preserve `liked` when removing `seen`.
- */
-const handleRemoveSeen = async (title: {
-  id: string;
-  title: string;
-  tmdb_id: number;
-}) => {
-  try {
-    const { error } = await deleteUserTitleStatus(title.id);
-    if (error) throw error;
-
-    seenTitles.value = seenTitles.value.filter((t) => t.id !== title.id);
-    showSuccess(t('seen.titleRemoved'));
-  } catch {
-    showError(t('seen.errorRemoving'));
-    await fetchSeenTitles();
-  }
-};
-
-const handleAddToLiked = async (title: {
-  id: string;
-  title: string;
-  tmdb_id: number;
-  type: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv;
-  liked?: boolean;
-}) => {
-  console.log('[UNLIKE DEBUG] handleAddToLiked called', {
-    title: title.title,
-    tmdb_id: title.tmdb_id,
-    type: title.type,
-    currentLiked: title.liked,
-  });
-
-  try {
-    const id = userId.value;
-    if (!id) {
-      console.warn('[UNLIKE DEBUG] No userId available');
-      return;
-    }
-
-    // Check if title is already liked using the database
-    const { data: likedTitle, error: likedError } = await getUserLikedTitle(
-      id,
-      title.tmdb_id
-    );
-
-    console.log('[UNLIKE DEBUG] getUserLikedTitle result', {
-      likedTitle,
-      error: likedError,
-      hasLikedTitle: !!likedTitle,
-    });
-
-    if (likedTitle) {
-      console.log('[UNLIKE DEBUG] Title is already liked, showing modal');
-      // Title is already liked, show confirmation modal
-      titleToRemoveLike.value = {
-        id: title.id,
-        title: title.title,
-        tmdb_id: title.tmdb_id,
-        type: title.type,
-      };
-      showRemoveLikeModal.value = true;
-      return;
-    }
-
-    console.log('[UNLIKE DEBUG] Title is not liked, adding it');
-
-    // Check if limit reached
-    if (likedTitles.value.length >= 10) {
-      showError(t('preferences.limitReached'));
-      return;
-    }
-
-    // Update the title status to liked=true
-    const { error: likeError } = await upsertUserTitleStatus({
-      user_id: id,
-      tmdb_id: title.tmdb_id,
-      type: title.type,
-      status: TitleStatus.SEEN,
-      liked: true,
-    });
-
-    if (likeError) {
-      if (isUniqueViolationError(likeError)) {
-        showError(t('preferences.alreadyInPreferences'));
-        await fetchLikedTitles();
-        return;
-      }
-      throw likeError;
-    }
-
-    // Get title in user's preferred language
-    const preferredLang = getAppLanguage();
-    const { data: titleData } = await getTitleByTmdbIdWithLanguage(
-      title.tmdb_id,
-      title.type,
-      preferredLang,
-      contentPreferences.value.region
-    );
-
-    if (titleData) {
-      // Add to liked titles list
-      likedTitles.value.unshift({
-        id: title.id, // Use the existing status id
-        title: titleData.title,
-        type: titleData.type,
-        poster_path: titleData.poster_path,
-        tmdb_id: titleData.tmdb_id,
-      });
-
-      // Update the title in seen titles to mark it as liked (don't remove it)
-      // A title can be both "seen" and "liked" at the same time
-      const seenTitleIndex = seenTitles.value.findIndex(
-        (t) => t.id === title.id
-      );
-      if (seenTitleIndex !== -1) {
-        seenTitles.value[seenTitleIndex] = {
-          ...seenTitles.value[seenTitleIndex],
-          liked: true,
-        };
-      }
-    }
-
-    await userStore.fetchProfile();
-    // Refresh seen titles to ensure all titles have the correct liked status
-    await fetchSeenTitles();
-    showSuccess(t('preferences.titleAdded'));
-
-    // Regenerate recommendation pool in background
-    try {
-      const {
-        data: { session },
-      } = await getSession();
-      if (session?.access_token) {
-        await $fetch('/api/recommendations/populate-pool', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-          },
-        });
-      }
-    } catch (poolError) {
-      console.error('Error regenerating pool:', poolError);
-      // Don't show error to user, pool regeneration is background task
-    }
-  } catch (error) {
-    console.error('Error adding to liked:', error);
-    showError(t('preferences.errorAdding'));
-    await fetchSeenTitles();
-  }
-};
-
-// Handle removing like after confirmation (from Seen tab)
-const confirmRemoveLikeFromSeen = async () => {
-  console.log('[UNLIKE DEBUG] confirmRemoveLikeFromSeen called', {
-    title: titleToRemoveLike.value,
-  });
-
-  if (!titleToRemoveLike.value) {
-    console.warn('[UNLIKE DEBUG] No title to remove like');
-    return;
-  }
-
-  const title = titleToRemoveLike.value;
-  showRemoveLikeModal.value = false;
-
-  try {
-    const id = userId.value;
-    if (!id) {
-      console.warn(
-        '[UNLIKE DEBUG] No userId available in confirmRemoveLikeFromSeen'
-      );
-      return;
-    }
-
-    console.log('[UNLIKE DEBUG] Removing like', {
-      userId: id,
-      tmdb_id: title.tmdb_id,
-      type: title.type,
-    });
-
-    // Remove like
-    const { error: likeError } = await upsertUserTitleStatus({
-      user_id: id,
-      tmdb_id: title.tmdb_id,
-      type: title.type,
-      status: TitleStatus.SEEN, // Keep status as seen, just remove liked
-      liked: false,
-    });
-
-    console.log('[UNLIKE DEBUG] Remove like result', { error: likeError });
-
-    if (likeError) {
-      throw likeError;
-    }
-
-    // Update frontend state - remove from likedTitles and update seenTitles
-    likedTitles.value = likedTitles.value.filter(
-      (t) => !(t.tmdb_id === title.tmdb_id && t.type === title.type)
-    );
-
-    // Update the title in seen titles to mark it as not liked
-    const seenTitleIndex = seenTitles.value.findIndex((t) => t.id === title.id);
-    if (seenTitleIndex !== -1) {
-      seenTitles.value[seenTitleIndex] = {
-        ...seenTitles.value[seenTitleIndex],
-        liked: false,
-      };
-    }
-
-    // Show toast about regenerating recommendations
-    // Regenerate recommendation pool in background (silently)
-    try {
-      const {
-        data: { session },
-      } = await getSession();
-      if (session?.access_token) {
-        await $fetch('/api/recommendations/populate-pool', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-          },
-        });
-      }
-    } catch (poolError) {
-      console.error('[UNLIKE DEBUG] Error regenerating pool:', poolError);
-      // Don't show error to user, pool regeneration is background task
-    }
-
-    titleToRemoveLike.value = null;
-  } catch (error) {
-    console.error('[UNLIKE DEBUG] Error in confirmRemoveLikeFromSeen:', error);
-    showToast(
-      t('home.errorRemovingFavorites', { title: title.title }),
-      null,
-      3000
-    );
-    titleToRemoveLike.value = null;
-  }
-};
-
-const handleRemoveNotInterested = async (title: {
-  id: string;
-  title: string;
-  tmdb_id: number;
-}) => {
-  try {
-    const id = userId.value;
-    if (!id) return;
-
-    const { error } = await removeNotInterested(id, title.tmdb_id);
-    if (error) throw error;
-
-    notInterestedTitles.value = notInterestedTitles.value.filter(
-      (t) => t.id !== title.id
-    );
-
-    showToast(
-      t('notInterested.titleRemoved', { title: title.title }),
-      {
-        label: t('undo.undo'),
-        action: async () => {
-          // Re-add to not interested
-          await upsertUserTitleStatus({
-            user_id: id,
-            tmdb_id: title.tmdb_id,
-            type:
-              notInterestedTitles.value.find((t) => t.tmdb_id === title.tmdb_id)
-                ?.type || MediaTypeEnum.movie,
-            status: TitleStatus.NOT_INTERESTED,
-          });
-          await fetchNotInterestedTitles();
-        },
-      },
-      7000
-    );
-  } catch {
-    showError(t('notInterested.errorUndo'));
-    await fetchNotInterestedTitles();
-  }
 };
 
 // Content Preferences State
@@ -1510,7 +376,6 @@ const selectedGenres = ref<
   }>
 >([]);
 
-// Selected genre for GenreSelector (temporary state for the selector)
 // Selected genre for GenreSelector (temporary state for the selector)
 const selectedGenreForSelector = ref<{
   id: number;
@@ -2116,86 +981,9 @@ watch(
 
 // Lifecycle
 onMounted(async () => {
-  checkMobile();
-  window.addEventListener('resize', checkMobile);
-
-  // Check if we should open a specific tab from query params
-  const route = useRoute();
-  const tabFromQuery = route.query.tab as string;
-  if (tabFromQuery) {
-    const validTabs: Array<
-      'liked' | 'seen' | 'not-interested' | 'content-preferences'
-    > = ['liked', 'seen', 'not-interested', 'content-preferences'];
-    if (
-      validTabs.includes(
-        tabFromQuery as
-          | 'liked'
-          | 'seen'
-          | 'not-interested'
-          | 'content-preferences'
-      )
-    ) {
-      activeTab.value = tabFromQuery as typeof activeTab.value;
-    }
-  }
-
-  // Fetch preferences first
-  await Promise.all([fetchProfile(), fetchContentPreferences()]);
-  // Then fetch all lists (which will use the app language)
-  await fetchAllLists();
-
-  // Add scroll and resize listeners
+  // Fetch content preferences
+  await fetchContentPreferences();
 });
-
-// Watch for app language changes and refresh all lists
-watch(
-  () => locale.value,
-  async (newLocale, oldLocale) => {
-    // Only refresh if language actually changed and user is authenticated
-    if (newLocale && oldLocale && newLocale !== oldLocale && userId.value) {
-      if (import.meta.dev) {
-        console.log(
-          '[preferences.vue] Language changed, updating pool language and refreshing all lists:',
-          {
-            oldLocale,
-            newLocale,
-          }
-        );
-      }
-
-      // Update title_data in recommendation pool with new language (don't regenerate pool)
-      try {
-        const {
-          data: { session },
-        } = await getSession();
-        if (session?.access_token) {
-          await $fetch(
-            `/api/recommendations/update-pool-language?language=${encodeURIComponent(newLocale)}`,
-            {
-              method: 'POST',
-              headers: {
-                Authorization: `Bearer ${session.access_token}`,
-              },
-            }
-          );
-          if (import.meta.dev) {
-            console.log('[preferences.vue] Pool language updated successfully');
-          }
-        }
-      } catch (poolError) {
-        console.error(
-          '[preferences.vue] Error updating pool language:',
-          poolError
-        );
-        // Continue anyway to refresh lists
-      }
-
-      // Refresh all lists with new language
-      await fetchAllLists();
-    }
-  },
-  { immediate: false }
-);
 
 // Handle navigation away with unsaved changes
 onBeforeRouteLeave((_to, _from, next) => {
@@ -2205,10 +993,6 @@ onBeforeRouteLeave((_to, _from, next) => {
   } else {
     next();
   }
-});
-
-onUnmounted(() => {
-  window.removeEventListener('resize', checkMobile);
 });
 
 // Page meta

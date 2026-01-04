@@ -290,12 +290,12 @@ watch(
       if (filterLoadingTimeoutId) {
         clearTimeout(filterLoadingTimeoutId);
       }
-      
+
       // Show skeleton after short delay (400ms) - shorter than initial load since user has content visible
       filterLoadingDelayTimeoutId = setTimeout(() => {
         isFilterLoading.value = true;
       }, 400);
-      
+
       try {
         const fetched = await fetchRecommendations();
         allRecommendations.value = fetched;
@@ -462,15 +462,12 @@ watch(
           sessionStorage.setItem('generatingRecommendations', 'true');
           populatingPool.value = true;
           try {
-            await $fetch(
-              '/api/recommendations/populate-pool?clearPool=true',
-              {
-                method: 'POST',
-                headers: {
-                  Authorization: `Bearer ${sessionForPool.access_token}`,
-                },
-              }
-            );
+            await $fetch('/api/recommendations/populate-pool?clearPool=true', {
+              method: 'POST',
+              headers: {
+                Authorization: `Bearer ${sessionForPool.access_token}`,
+              },
+            });
             // After generation, fetch recommendations again
             const newFetched = await fetchRecommendations();
             allRecommendations.value = newFetched;
@@ -593,7 +590,7 @@ const handleTitleStatus = async (
           label: t('home.viewSeen'),
           variant: 'secondary',
           action: async () => {
-            await navigateTo('/preferences?tab=seen');
+            await navigateTo('/lists?tab=seen');
           },
         },
         5000
@@ -799,7 +796,7 @@ const handleMarkLiked = async (title: Recommendation) => {
       {
         label: t('home.viewFavorites'),
         action: async () => {
-          await navigateTo('/preferences');
+          await navigateTo('/lists');
         },
       },
       5000
@@ -1022,7 +1019,7 @@ const handleAuthSuccess = async () => {
         } catch {
           hasRecoveryFlag = recoveryFlag === '1';
         }
-        
+
         if (hasRecoveryFlag) {
           console.log(
             '[handleAuthSuccess] Removing auth:recovery flag after successful login'
@@ -1153,12 +1150,15 @@ watch(
       hasAttemptedLoad.value
     ) {
       if (import.meta.dev) {
-        console.log('[index.vue] Language changed, updating pool language and refreshing recommendations:', {
-          oldLocale,
-          newLocale,
-        });
+        console.log(
+          '[index.vue] Language changed, updating pool language and refreshing recommendations:',
+          {
+            oldLocale,
+            newLocale,
+          }
+        );
       }
-      
+
       // Update title_data in recommendation pool with new language (don't regenerate pool)
       updatingLanguage.value = true;
       try {
@@ -1176,7 +1176,10 @@ watch(
             }
           );
           if (import.meta.dev) {
-            console.log('[index.vue] Pool language updated successfully:', result);
+            console.log(
+              '[index.vue] Pool language updated successfully:',
+              result
+            );
           }
         }
       } catch (poolError) {
@@ -1185,7 +1188,7 @@ watch(
       } finally {
         updatingLanguage.value = false;
       }
-      
+
       // Refresh recommendations with new language
       const fetched = await fetchRecommendations();
       allRecommendations.value = fetched;
@@ -1323,27 +1326,33 @@ onMounted(() => {
                   populatingPool
                     ? $t('home.generatingButton')
                     : updatingLanguage
-                    ? $t('home.updatingLanguage')
-                    : fetchingReplacement
-                    ? $t('home.loadingRecommendations')
-                    : $t('home.loadingRecommendations')
+                      ? $t('home.updatingLanguage')
+                      : fetchingReplacement
+                        ? $t('home.loadingRecommendations')
+                        : $t('home.loadingRecommendations')
                 "
               />
             </div>
 
             <!-- Skeleton loading for initial load (after delay) -->
             <div
-              v-else-if="showSkeleton && loadingRecommendations && !hasAttemptedLoad"
+              v-else-if="
+                showSkeleton && loadingRecommendations && !hasAttemptedLoad
+              "
               class="pt-6 pb-6 w-full"
             >
               <Section>
-                <SectionTitle>{{ $t('home.recommendationsTitle') }}</SectionTitle>
+                <SectionTitle>{{
+                  $t('home.recommendationsTitle')
+                }}</SectionTitle>
                 <p
                   class="text-sm text-gray-800 dark:text-gray-300 md:text-base"
                 >
                   {{ $t('home.recommendationsDescription') }}
                 </p>
-                <div class="grid grid-cols-2 gap-4 md:grid-cols-4 overflow-visible">
+                <div
+                  class="grid grid-cols-2 gap-4 md:grid-cols-4 overflow-visible"
+                >
                   <SkeletonMediaCard
                     v-for="i in 8"
                     :key="`skeleton-${i}`"
@@ -1354,10 +1363,7 @@ onMounted(() => {
               </Section>
             </div>
 
-            <div
-              v-else
-              class="pt-6 pb-6 w-full"
-            >
+            <div v-else class="pt-6 pb-6 w-full">
               <!-- Filtros Section -->
               <Section v-if="userStore.hasCompletedOnboarding">
                 <div class="flex flex-col gap-4">
