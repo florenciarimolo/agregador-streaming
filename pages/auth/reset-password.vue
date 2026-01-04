@@ -505,7 +505,7 @@ const handleResetPassword = async () => {
     router.replace('/?auth=login');
   } catch (err: unknown) {
     console.error('[Client] Reset password error:', err);
-    error.value = t('media.unexpectedError');
+    error.value = t('auth.requestError');
   } finally {
     loading.value = false;
   }

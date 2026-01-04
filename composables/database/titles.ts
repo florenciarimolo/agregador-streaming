@@ -73,29 +73,17 @@ export function getTitleInLanguage(
 
     // Check alphabet if conditions are met
     if (shouldCheckAlphabet) {
-      console.log(
-        `[AlphabetDetection] Checking alphabet for language: ${language} (code: ${requestedLangCode}), primary language: ${primaryLanguageKey} (code: ${primaryLangCode}), region: ${userRegion || 'unknown'}, title preview: "${titleText.substring(0, 50)}"`
-      );
       const hasUnexpected = hasUnexpectedCharacters(
         titleText,
         requestedLangCode
       );
       if (hasUnexpected) {
-        console.log(
-          `[AlphabetDetection] ⚠️ Non-Latin alphabet detected! Falling back to primary language ${primaryLanguageKey} for language ${language}. Original title: "${titleText.substring(0, 100)}"`
-        );
         // Try primary language in ISO format first
         if (titleJsonb[primaryLanguageKey]) {
-          console.log(
-            `[AlphabetDetection] ✅ Using primary language (${primaryLanguageKey}) fallback: "${titleJsonb[primaryLanguageKey].substring(0, 100)}"`
-          );
           return titleJsonb[primaryLanguageKey];
         }
         // Fallback to primary language legacy format
         if (titleJsonb[primaryLanguage]) {
-          console.log(
-            `[AlphabetDetection] ✅ Using primary language (${primaryLanguage}) fallback: "${titleJsonb[primaryLanguage].substring(0, 100)}"`
-          );
           return titleJsonb[primaryLanguage];
         }
         // Fallback to any primary language variant
@@ -103,20 +91,10 @@ export function getTitleInLanguage(
           k.startsWith(`${primaryLanguage}-`)
         );
         if (primaryKey) {
-          console.log(
-            `[AlphabetDetection] ✅ Using primary language variant (${primaryKey}) fallback: "${titleJsonb[primaryKey].substring(0, 100)}"`
-          );
           return titleJsonb[primaryKey];
         }
-        // If no primary language found, log and return empty to signal need to fetch from TMDB
-        console.log(
-          `[AlphabetDetection] ❌ No primary language (${primaryLanguageKey}) variant found in titleJsonb. Available keys: ${Object.keys(titleJsonb).join(', ')}. Should fetch from TMDB.`
-        );
+        // If no primary language found, return empty to signal need to fetch from TMDB
         return '';
-      } else {
-        console.log(
-          `[AlphabetDetection] ✅ Alphabet is valid for language ${language}. Using original title.`
-        );
       }
     }
 
@@ -131,14 +109,8 @@ export function getTitleInLanguage(
     const legacyText = titleJsonb[langCode];
     // Check alphabet if conditions are met
     if (shouldCheckAlphabet) {
-      console.log(
-        `[AlphabetDetection] Checking alphabet for legacy format language: ${langCode}, primary language: ${primaryLanguageKey}, region: ${userRegion || 'unknown'}, title preview: "${legacyText.substring(0, 50)}"`
-      );
       const hasUnexpected = hasUnexpectedCharacters(legacyText, langCode);
       if (hasUnexpected) {
-        console.log(
-          `[AlphabetDetection] ⚠️ Non-Latin alphabet detected in legacy format! Falling back to primary language ${primaryLanguageKey} for language ${langCode}. Original title: "${legacyText.substring(0, 100)}"`
-        );
         // Try primary language fallbacks
         if (titleJsonb[primaryLanguageKey]) {
           return titleJsonb[primaryLanguageKey];
@@ -152,9 +124,6 @@ export function getTitleInLanguage(
         if (primaryKey) {
           return titleJsonb[primaryKey];
         }
-        console.log(
-          `[AlphabetDetection] ❌ No primary language (${primaryLanguageKey}) variant found in legacy format fallback. Available keys: ${Object.keys(titleJsonb).join(', ')}. Should fetch from TMDB.`
-        );
         return '';
       }
     }
@@ -195,17 +164,11 @@ export function getTitleInLanguage(
 
     // If we're expecting Latin but the fallback is non-Latin, check for non-Latin characters
     if (shouldCheckAlphabet && !isFallbackLatin) {
-      console.log(
-        `[AlphabetDetection] Fallback: Checking alphabet for fallback language "${firstKey}" (code: ${fallbackLangCode}) when expecting Latin script (${requestedLangCode}), primary: ${primaryLanguageKey}, region: ${userRegion || 'unknown'}, title preview: "${fallbackText.substring(0, 50)}"`
-      );
       const hasUnexpected = hasUnexpectedCharacters(
         fallbackText,
         requestedLangCode
       );
       if (hasUnexpected) {
-        console.log(
-          `[AlphabetDetection] ⚠️ Fallback language "${firstKey}" has non-Latin alphabet! Title: "${fallbackText.substring(0, 100)}". Should fetch primary language (${primaryLanguageKey}) from TMDB.`
-        );
         // Return empty string to signal that we need to fetch primary language from TMDB
         return '';
       }

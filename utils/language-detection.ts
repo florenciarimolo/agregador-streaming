@@ -100,47 +100,13 @@ export function hasUnexpectedCharacters(
   // For very short texts (like titles), if ALL characters are non-Latin, flag it
   // This handles cases like "七つの大罪" where all characters are CJK
   if (totalChars <= 10 && nonLatinCount === totalChars && nonLatinCount > 0) {
-    console.log(
-      `[AlphabetDetection] 🔍 Detected non-Latin alphabet in ${expectedLanguage} text (all characters are non-Latin):`,
-      {
-        nonLatinCount,
-        totalChars,
-        nonLatinRatio: `${Math.round(nonLatinRatio * 100)}%`,
-        textPreview: text.substring(0, 100),
-        detectedScripts: nonLatinPatterns
-          .map((pattern) => {
-            const matches = text.match(pattern);
-            return matches ? pattern.toString() : null;
-          })
-          .filter(Boolean),
-      }
-    );
     return true;
   }
   
   if (nonLatinRatio > 0.5) {
     // This is expected behavior when TMDB returns titles in non-Latin scripts (e.g., Japanese, Chinese)
-    console.log(
-      `[AlphabetDetection] 🔍 Detected non-Latin alphabet in ${expectedLanguage} text:`,
-      {
-        nonLatinCount,
-        totalChars,
-        nonLatinRatio: `${Math.round(nonLatinRatio * 100)}%`,
-        textPreview: text.substring(0, 100),
-        detectedScripts: nonLatinPatterns
-          .map((pattern, idx) => {
-            const matches = text.match(pattern);
-            return matches ? pattern.toString() : null;
-          })
-          .filter(Boolean),
-      }
-    );
     return true;
   }
-  
-  console.log(
-    `[AlphabetDetection] ✅ Alphabet is valid for ${expectedLanguage}: ${Math.round(nonLatinRatio * 100)}% non-Latin (threshold: 50%)`
-  );
 
   return false;
 }

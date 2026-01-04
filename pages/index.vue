@@ -248,7 +248,6 @@ watch(
       allRecommendations.value = fetched;
       recommendations.value = filterRecommendationsByType(fetched);
 
-      // Log received recommendations for alphabet detection debugging
       if (import.meta.dev && fetched.length > 0) {
         console.log('[Recommendations] Refetched recommendations:', {
           count: fetched.length,
@@ -405,7 +404,6 @@ watch(
         allRecommendations.value = fetched;
         recommendations.value = filterRecommendationsByType(fetched);
 
-        // Log received recommendations for alphabet detection debugging
         if (import.meta.dev && fetched.length > 0) {
           console.log('[Recommendations] Received recommendations:', {
             count: fetched.length,

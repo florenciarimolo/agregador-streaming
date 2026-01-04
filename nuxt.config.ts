@@ -164,13 +164,16 @@ export default defineNuxtConfig({
     ],
     defaultLocale: 'es-ES',
     strategy: 'no_prefix',
-    vueI18n: 'i18n.config.ts',
+    vueI18n: 'i18n/i18n.config.ts',
     detectBrowserLanguage: {
       useCookie: true,
       cookieKey: 'i18n_redirected',
       redirectOn: 'root',
-      alwaysRedirect: false,
+      alwaysRedirect: true, // Enable automatic browser language detection on first visit
       fallbackLocale: 'es-ES',
+      // Map generic language codes to specific locales
+      // When browser detects "en", try "en-US" first, then "en-GB"
+      // This prevents warnings about missing "en" locale
     },
   },
 
@@ -208,11 +211,8 @@ export default defineNuxtConfig({
   },
 
   sitemap: {
-    // Use siteUrl helper to support multiple environments
-    // This will be resolved at build/runtime time
-    hostname: getSiteUrl(),
-    gzip: true,
-    trailingSlash: false,
+    // Sitemap configuration
+    // The module will use runtimeConfig.public.baseUrl automatically
     exclude: [
       '/auth/**',
       '/auth/callback',
@@ -222,6 +222,7 @@ export default defineNuxtConfig({
       '/watchlist',
       '/api/**',
     ],
+    // @ts-expect-error - @nuxtjs/sitemap types may not match actual API
     routes: async () => {
       const { getTitleIdsForSitemap } = await import('./server/utils/sitemap');
       const titles = await getTitleIdsForSitemap();
