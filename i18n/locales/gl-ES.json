@@ -246,7 +246,7 @@
   },
   "watchlist": {
     "title": "Watchlist",
-    "description": "Películas y series que has guardado en tu Watchlist.",
+    "description": "Películas e series que gardaches para ver máis adiante.",
     "loading": "Cargando lista de watchlist...",
     "empty": "No has guardado ningún título en tu Watchlist todavía. Explora as nosas recomendacións e descobre contido que che encantará.",
     "emptyCta": "Ver recomendacións",

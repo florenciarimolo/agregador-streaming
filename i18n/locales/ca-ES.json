@@ -246,7 +246,7 @@
   },
   "watchlist": {
     "title": "Watchlist",
-    "description": "Pel·lícules i sèries que has desat a la teva Watchlist.",
+    "description": "Pel·lícules i sèries que has desat per veure més endevant.",
     "loading": "Carregant llista de watchlist...",
     "empty": "Encara no has desat cap títol a la teva Watchlist. Explora les nostres recomanacions i descobreix contingut que t'encantarà.",
     "emptyCta": "Veure recomanacions",

@@ -246,7 +246,7 @@
   },
   "watchlist": {
     "title": "Watchlist",
-    "description": "Filmak y telesailak que has guardado en tu Watchlist.",
+    "description": "Filmak eta telesailak geroago ikusteko gordeta dituzunak.",
     "loading": "Kargatzen lista de watchlist...",
     "empty": "No has guardado ningún título en tu Watchlist todavía. Explora nuestras recomendaciones y descubre contenido que te encantará.",
     "emptyCta": "Ver recomendaciones",

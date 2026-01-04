@@ -246,7 +246,7 @@
   },
   "watchlist": {
     "title": "Watchlist",
-    "description": "Movies and TV shows you've saved to your Watchlist.",
+    "description": "Movies and TV shows you've saved to watch later.",
     "loading": "Loading watchlist...",
     "empty": "You haven't saved any titles to your Watchlist yet. Explore our recommendations and discover content you'll love.",
     "emptyCta": "View recommendations",

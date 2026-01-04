@@ -3,7 +3,7 @@
   <header class="hidden sticky top-4 z-50 w-full md:block">
     <AppShell>
       <nav
-        class="rounded-3xl border shadow-md backdrop-blur-xl dark:bg-gray-900/40 bg-gray-100/80 border-gray-300/50 dark:border-white/10"
+        class="rounded-3xl border shadow-md backdrop-blur-xl dark:bg-gray-900/40 bg-primary-50/80 border-gray-300/50 dark:border-white/10"
       >
         <div class="flex justify-between items-center py-4 px-4 md:px-6">
           <!-- Logo -->
@@ -149,7 +149,7 @@
   >
     <AppShell>
       <nav
-        class="rounded-3xl border backdrop-blur-xl dark:bg-gray-900/40 bg-gray-100/90 border-gray-300/50 dark:border-white/10"
+        class="rounded-3xl border backdrop-blur-xl dark:bg-gray-900/40 bg-primary-50/90 border-gray-300/50 dark:border-white/10"
       >
         <div class="flex justify-between items-center py-3 px-4">
           <!-- Logo -->
@@ -229,7 +229,7 @@
     >
       <AppShell>
         <div
-          class="rounded-3xl border backdrop-blur-xl dark:bg-gray-900/40 bg-gray-100/90 border-gray-300/50 dark:border-white/10 p-4"
+          class="rounded-3xl border backdrop-blur-xl dark:bg-gray-900/40 bg-primary-50/90 border-gray-300/50 dark:border-white/10 p-4"
         >
           <SearchBar ref="mobileSearchBarRef" @closed="closeMobileSearch" />
         </div>
