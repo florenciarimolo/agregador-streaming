@@ -107,6 +107,38 @@ const lastFetchedMood = ref<string | null>(null);
 const lastFetchedAttention = ref<string | null>(null);
 const selectedContentType = ref<'all' | 'movie' | 'tv'>('all');
 
+// Skeleton loading state with delay (500-700ms)
+const showSkeleton = ref(false);
+let skeletonTimeoutId: ReturnType<typeof setTimeout> | null = null;
+
+// Watch loadingRecommendations to show skeleton after delay
+watch(loadingRecommendations, (isLoading) => {
+  if (isLoading) {
+    // Clear any existing timeout
+    if (skeletonTimeoutId) {
+      clearTimeout(skeletonTimeoutId);
+    }
+    // Show skeleton after 600ms delay
+    skeletonTimeoutId = setTimeout(() => {
+      if (loadingRecommendations.value) {
+        showSkeleton.value = true;
+      }
+    }, 600);
+  } else {
+    // Clear timeout and hide skeleton immediately when loading stops
+    if (skeletonTimeoutId) {
+      clearTimeout(skeletonTimeoutId);
+      skeletonTimeoutId = null;
+    }
+    showSkeleton.value = false;
+  }
+});
+
+// Track filter changes for skeletons
+const isFilterLoading = ref(false);
+let filterLoadingTimeoutId: ReturnType<typeof setTimeout> | null = null;
+let filterLoadingDelayTimeoutId: ReturnType<typeof setTimeout> | null = null;
+
 // Track recommendations view to update scores
 const trackRecommendationsView = async (
   recommendations: Recommendation[]
@@ -251,20 +283,43 @@ watch(
       userStore.hasCompletedOnboarding &&
       hasAttemptedLoad.value
     ) {
-      const fetched = await fetchRecommendations();
-      allRecommendations.value = fetched;
-      recommendations.value = filterRecommendationsByType(fetched);
+      // Clear any existing timeouts
+      if (filterLoadingDelayTimeoutId) {
+        clearTimeout(filterLoadingDelayTimeoutId);
+      }
+      if (filterLoadingTimeoutId) {
+        clearTimeout(filterLoadingTimeoutId);
+      }
+      
+      // Show skeleton after short delay (400ms) - shorter than initial load since user has content visible
+      filterLoadingDelayTimeoutId = setTimeout(() => {
+        isFilterLoading.value = true;
+      }, 400);
+      
+      try {
+        const fetched = await fetchRecommendations();
+        allRecommendations.value = fetched;
+        recommendations.value = filterRecommendationsByType(fetched);
 
-      if (import.meta.dev && fetched.length > 0) {
-        console.log('[Recommendations] Refetched recommendations:', {
-          count: fetched.length,
-          sampleTitles: fetched.slice(0, 5).map((r) => ({
-            tmdb_id: r.tmdb_id,
-            title: r.title,
-            type: r.type,
-            titleLength: r.title?.length || 0,
-          })),
-        });
+        if (import.meta.dev && fetched.length > 0) {
+          console.log('[Recommendations] Refetched recommendations:', {
+            count: fetched.length,
+            sampleTitles: fetched.slice(0, 5).map((r) => ({
+              tmdb_id: r.tmdb_id,
+              title: r.title,
+              type: r.type,
+              titleLength: r.title?.length || 0,
+            })),
+          });
+        }
+      } finally {
+        // Clear delay timeout if still pending
+        if (filterLoadingDelayTimeoutId) {
+          clearTimeout(filterLoadingDelayTimeoutId);
+          filterLoadingDelayTimeoutId = null;
+        }
+        // Hide skeleton immediately when loading stops
+        isFilterLoading.value = false;
       }
     }
   }
@@ -1258,9 +1313,9 @@ onMounted(() => {
       <section v-if="isMounted && userStore.authInitialized && effectiveUser">
         <AppShell>
           <PageContainer>
-            <!-- Loading State - Applied to entire content -->
+            <!-- Loading State - Show spinner for long operations, skeleton for quick loads -->
             <div
-              v-if="loadingRecommendations || populatingPool || updatingLanguage || fetchingReplacement"
+              v-if="populatingPool || updatingLanguage || fetchingReplacement"
               class="w-full pt-6 pb-6"
             >
               <Spinner
@@ -1274,6 +1329,29 @@ onMounted(() => {
                     : $t('home.loadingRecommendations')
                 "
               />
+            </div>
+
+            <!-- Skeleton loading for initial load (after delay) -->
+            <div
+              v-else-if="showSkeleton && loadingRecommendations && !hasAttemptedLoad"
+              class="pt-6 pb-6 w-full"
+            >
+              <Section>
+                <SectionTitle>{{ $t('home.recommendationsTitle') }}</SectionTitle>
+                <p
+                  class="text-sm text-gray-800 dark:text-gray-300 md:text-base"
+                >
+                  {{ $t('home.recommendationsDescription') }}
+                </p>
+                <div class="grid grid-cols-2 gap-4 md:grid-cols-4 overflow-visible">
+                  <SkeletonMediaCard
+                    v-for="i in 8"
+                    :key="`skeleton-${i}`"
+                    :show-rating="i % 3 !== 0"
+                    :show-watchlist="i % 4 === 0"
+                  />
+                </div>
+              </Section>
             </div>
 
             <div
@@ -1379,6 +1457,7 @@ onMounted(() => {
                   :description="$t('home.recommendationsDescription')"
                   :recommendations="recommendations"
                   :loading-titles="loadingTitles"
+                  :is-loading="isFilterLoading"
                   @mark-seen="handleTitleStatus($event, TitleStatus.SEEN)"
                   @mark-not-interested="
                     handleTitleStatus($event, TitleStatus.NOT_INTERESTED)

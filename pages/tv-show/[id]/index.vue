@@ -2,15 +2,10 @@
   <AppShell>
     <PageContainer>
       <div class="w-full pt-6 pb-6">
-        <!-- Loading state -->
-        <div
-          v-if="isLoading"
-          class="flex items-center justify-center min-h-screen"
-        >
-          <div class="text-xl dark:text-gray-300 text-gray-800">{{
-            $t('common.loading')
-          }}</div>
-        </div>
+        <!-- Skeleton loading (after delay) -->
+        <template v-if="showSkeleton && isLoading">
+          <SkeletonMediaDetail />
+        </template>
 
         <!-- Error state -->
         <div
@@ -23,7 +18,7 @@
         </div>
 
         <!-- Content -->
-        <template v-else>
+        <template v-else-if="!isLoading">
           <Section>
             <MediaBannerDetail
               :media="tvShowWithProviders as unknown as Media"
@@ -121,7 +116,7 @@
 <script setup lang="ts">
 import { useRoute } from 'vue-router';
 import { useFetch, useSeoMeta, useHead } from 'nuxt/app';
-import { computed, onMounted, watch } from 'vue';
+import { computed, onMounted, watch, ref } from 'vue';
 
 import { TVShow } from '@/types/TVShow';
 import { formatDateToSpanish } from '@/utils/formatDate';
@@ -183,6 +178,33 @@ const isLoading = computed(
   () => tvShowPending.value || tvProvidersPending.value
 );
 const hasError = computed(() => tvShowError.value || tvProvidersError.value);
+
+// Skeleton loading state with delay (500-700ms)
+const showSkeleton = ref(false);
+let skeletonTimeoutId: ReturnType<typeof setTimeout> | null = null;
+
+// Watch isLoading to show skeleton after delay
+watch(isLoading, (isLoadingValue) => {
+  if (isLoadingValue) {
+    // Clear any existing timeout
+    if (skeletonTimeoutId) {
+      clearTimeout(skeletonTimeoutId);
+    }
+    // Show skeleton after 600ms delay
+    skeletonTimeoutId = setTimeout(() => {
+      if (isLoading.value) {
+        showSkeleton.value = true;
+      }
+    }, 600);
+  } else {
+    // Clear timeout and hide skeleton immediately when loading stops
+    if (skeletonTimeoutId) {
+      clearTimeout(skeletonTimeoutId);
+      skeletonTimeoutId = null;
+    }
+    showSkeleton.value = false;
+  }
+});
 
 const tvShow = computed<TVShow>(() => {
   if (!tvShowDetails.value) {
