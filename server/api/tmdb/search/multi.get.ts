@@ -52,7 +52,12 @@ export default defineEventHandler(async (event: H3Event) => {
     );
 
     // Extract language code (e.g., 'es-ES' -> 'es')
-    const languageCode = language.split('-')[0]?.toLowerCase() || 'es';
+    const {
+      extractLanguageCode,
+      LanguageIsoCode,
+      SUPPORTED_LANGUAGE_ISO_CODES,
+    } = await import('@/constants/languages');
+    const languageCode = extractLanguageCode(language) || LanguageIsoCode.SPANISH;
     const primaryLanguage = getPrimaryLanguageForRegion(region);
 
     // Filter results to only movies and TV shows
@@ -69,15 +74,15 @@ export default defineEventHandler(async (event: H3Event) => {
 
         // Check alphabet if the user's language is a Latin script language
         // (Spanish, Catalan, Basque, Galician, or English)
-        const latinLanguages = ['es', 'ca', 'eu', 'gl', 'en'];
-        const shouldCheckAlphabet = latinLanguages.includes(languageCode);
+        const supportedLanguages = SUPPORTED_LANGUAGE_ISO_CODES.map((code) => code);
+        const shouldCheckAlphabet = supportedLanguages.includes(languageCode as LanguageIsoCode);
 
         if (shouldCheckAlphabet && title) {
           // For English, we need to check differently since hasUnexpectedCharacters
           // is designed for ES region languages. For English, we'll use a simpler check.
           let hasNonLatin = false;
 
-          if (languageCode === 'en') {
+          if (languageCode === LanguageIsoCode.ENGLISH) {
             // Simple check for non-Latin characters in English
             const nonLatinPatterns = [
               /[\u3040-\u309F]/, // Hiragana

@@ -412,7 +412,9 @@ const saveSelections = async () => {
           <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
             {{ $t('preferences.content.region.description') }}
           </p>
-          <RegionSelector v-model="selectedRegion" />
+          <RegionSelector
+            v-model="selectedRegion"
+          />
         </Card>
 
         <!-- Continue Button -->

@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { TABLES, TITLES_FIELDS } from '@/composables/database/constants';
 import { getTitleInLanguage } from '@/composables/database/titles';
 import type { MultiLanguageText } from '@/composables/database/titles';
+import { LanguageCode } from '@/constants/languages';
 
 /**
  * Get Spanish title for a given tmdb_id and type
@@ -53,7 +54,7 @@ export default defineEventHandler(async (event) => {
 
     // Extract Spanish title from JSONB
     const titleJsonb = titleFromDb.title as MultiLanguageText;
-    const spanishTitle = getTitleInLanguage(titleJsonb, 'es');
+    const spanishTitle = getTitleInLanguage(titleJsonb, LanguageCode.SPANISH);
 
     return { title: spanishTitle || null };
   } catch (error) {

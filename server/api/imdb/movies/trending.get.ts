@@ -3,6 +3,7 @@ import { createError, setHeader } from 'h3';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 import type { MediaResponse } from '@/types/Media';
 import type { Media } from '@/types/Media';
+import { LanguageCode, LanguageIsoCode } from '@/constants/languages';
 
 /**
  * Translates English text to Spanish using LibreTranslate
@@ -19,8 +20,8 @@ async function translateToSpanish(text: string): Promise<string> {
         },
         body: {
           q: text,
-          source: 'en',
-          target: 'es',
+          source: LanguageIsoCode.ENGLISH,
+          target: LanguageIsoCode.SPANISH,
           format: 'text',
         },
       }
@@ -147,7 +148,7 @@ export default defineCachedEventHandler(
                 {
                   query: {
                     api_key: config.apiKey,
-                    language: 'en-US',
+                    language: LanguageCode.ENGLISH,
                     include_adult: config.includeAdult,
                   },
                 }

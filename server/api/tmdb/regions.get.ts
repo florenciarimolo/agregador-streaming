@@ -1,15 +1,20 @@
 import { getTMDBConfig } from '@/server/utils/config';
 import { readdir } from 'fs/promises';
 import { join } from 'path';
+import { parseCookies } from 'h3';
 
 /**
- * Cache for regions data
+ * Cache for regions data by language
  * Cache duration: 24 hours (regions don't change frequently)
+ * Key: language code (e.g., 'es-ES', 'en-US')
  */
-let regionsCache: {
-  data: Array<{ iso_3166_1: string; native_name: string }>;
-  timestamp: number;
-} | null = null;
+const regionsCache = new Map<
+  string,
+  {
+    data: Array<{ iso_3166_1: string; native_name: string }>;
+    timestamp: number;
+  }
+>();
 
 /**
  * Cache for available flags
@@ -51,22 +56,36 @@ async function getAvailableFlags(): Promise<Set<string>> {
 }
 
 /**
- * Get regions from TMDB API with caching
+ * Get regions from TMDB API with caching by language
+ * Uses app language (i18n locale) from cookies, or query parameter, or default
  */
 export default defineEventHandler(async (event) => {
   try {
     const query = getQuery(event);
-    const language = (query.language as string) || 'es-ES';
+    const { DEFAULT_LANGUAGE } = await import('@/constants/languages');
 
-    // Check cache
+    // Get app language (i18n locale) from cookies
+    // Nuxt i18n stores it in 'i18n_redirected' cookie (see nuxt.config.ts)
+    let language: string = (query.language as string) || DEFAULT_LANGUAGE;
+
+    try {
+      const cookies = parseCookies(event);
+      const i18nCookie = cookies['i18n_redirected'];
+      if (i18nCookie) {
+        language = i18nCookie;
+      }
+    } catch {
+      // If error reading cookies, use query or default
+      language = (query.language as string) || DEFAULT_LANGUAGE;
+    }
+
+    // Check cache for this specific language
     const now = Date.now();
-    if (
-      regionsCache &&
-      now - regionsCache.timestamp < CACHE_DURATION
-    ) {
-      // Return cached data
+    const cachedData = regionsCache.get(language);
+    if (cachedData && now - cachedData.timestamp < CACHE_DURATION) {
+      // Return cached data for this language
       const availableFlags = await getAvailableFlags();
-      const filteredRegions = regionsCache.data
+      const filteredRegions = cachedData.data
         .filter((region) => availableFlags.has(region.iso_3166_1))
         .map((region) => ({
           code: region.iso_3166_1,
@@ -77,15 +96,17 @@ export default defineEventHandler(async (event) => {
       // Set cache headers
       event.node.res.setHeader('Cache-Control', 'public, max-age=86400'); // 24 hours
       event.node.res.setHeader('X-Cache', 'HIT');
+      event.node.res.setHeader('X-Cache-Language', language);
 
       return {
         success: true,
         regions: filteredRegions,
         cached: true,
+        language,
       };
     }
 
-    // Fetch from TMDB API
+    // Fetch from TMDB API for this language
     const tmdbConfig = getTMDBConfig(language);
     const response = await $fetch<{
       results: Array<{ iso_3166_1: string; native_name: string }>;
@@ -100,11 +121,11 @@ export default defineEventHandler(async (event) => {
       throw new Error('Invalid response from TMDB API');
     }
 
-    // Update cache
-    regionsCache = {
+    // Update cache for this language
+    regionsCache.set(language, {
       data: response.results,
       timestamp: now,
-    };
+    });
 
     // Get available flags and filter regions
     const availableFlags = await getAvailableFlags();
@@ -119,11 +140,13 @@ export default defineEventHandler(async (event) => {
     // Set cache headers
     event.node.res.setHeader('Cache-Control', 'public, max-age=86400'); // 24 hours
     event.node.res.setHeader('X-Cache', 'MISS');
+    event.node.res.setHeader('X-Cache-Language', language);
 
     return {
       success: true,
       regions: filteredRegions,
       cached: false,
+      language,
     };
   } catch (error) {
     console.error('[Regions] Error fetching regions from TMDB:', error);
@@ -133,4 +156,3 @@ export default defineEventHandler(async (event) => {
     });
   }
 });
-

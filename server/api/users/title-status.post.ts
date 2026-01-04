@@ -11,6 +11,7 @@ import {
   updatePoolScore,
   removeFromPool,
 } from '@/composables/database/recommendationPool';
+import { DEFAULT_LANGUAGE } from '@/constants/languages';
 
 /**
  * Update user title status (seen, not_interested, or watchlist)
@@ -139,7 +140,7 @@ export default defineEventHandler(async (event) => {
         // Call internal TMDB endpoint which will fetch and create the title
         await $fetch(`/api/tmdb/${endpoint}s/${tmdb_id}`, {
           query: {
-            language: 'es-ES', // Default language, will be updated with user preferences later
+            language: DEFAULT_LANGUAGE, // Default language, will be updated with user preferences later
           },
         });
       } catch (tmdbError) {

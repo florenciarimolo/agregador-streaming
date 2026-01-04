@@ -2,6 +2,11 @@ import { getTMDBConfig } from '../../utils/config';
 import { getUserTMDBParams } from '../../utils/user-preferences';
 import { createError, defineEventHandler, getQuery } from 'h3';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
+import {
+  LanguageIsoCode,
+  DEFAULT_LANGUAGE_ISO,
+  extractLanguageCode,
+} from '@/constants/languages';
 
 export default defineEventHandler(async (event) => {
   try {
@@ -14,9 +19,11 @@ export default defineEventHandler(async (event) => {
 
     // Extract language code only (e.g., 'es-ES' -> 'es')
     // TMDB genres API only accepts ISO 639-1 language code, not the full locale
-    // IMPORTANT: If region is ES, always use 'es' regardless of preferred language
+    // IMPORTANT: If region is ES, always use Spanish regardless of preferred language
     const languageCode =
-      config.region === 'ES' ? 'es' : config.language.split('-')[0] || 'es';
+      config.region === 'ES'
+        ? LanguageIsoCode.SPANISH
+        : extractLanguageCode(config.language) || DEFAULT_LANGUAGE_ISO;
 
     const url = `${config.baseUrl}/genre/${type}/list`;
     const queryParams = {

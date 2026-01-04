@@ -9,6 +9,7 @@ import {
 import { getUserActivity } from '@/composables/database/activity';
 import { getSession } from '@/composables/database/auth';
 import { getTitlesByTmdbIds, getTitleInLanguage, type MultiLanguageText } from '@/composables/database/titles';
+import { DEFAULT_LANGUAGE } from '@/constants/languages';
 
 export default defineEventHandler(async (event) => {
   try {
@@ -53,7 +54,7 @@ export default defineEventHandler(async (event) => {
     const { data: titlesData } = await getTitlesByTmdbIds(Array.from(allTmdbIds));
     
     // Get user's preferred language
-    const userLanguage = preferences.data?.preferred_language || 'es';
+    const userLanguage = preferences.data?.preferred_language || DEFAULT_LANGUAGE;
     
     // Extract language-specific text from JSONB and create map
     const titleMap = new Map(

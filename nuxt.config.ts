@@ -126,15 +126,52 @@ export default defineNuxtConfig({
     langDir: 'locales',
     locales: [
       {
-        code: 'es',
+        code: 'es-ES',
         iso: 'es-ES',
         name: 'Español',
-        file: 'es.json',
+        file: 'es-ES.json',
+      },
+      {
+        code: 'ca-ES',
+        iso: 'ca-ES',
+        name: 'Català',
+        file: 'ca-ES.json',
+      },
+      {
+        code: 'eu-ES',
+        iso: 'eu-ES',
+        name: 'Euskera',
+        file: 'eu-ES.json',
+      },
+      {
+        code: 'gl-ES',
+        iso: 'gl-ES',
+        name: 'Galego',
+        file: 'gl-ES.json',
+      },
+      {
+        code: 'en-US',
+        iso: 'en-US',
+        name: 'English (US)',
+        file: 'en-US.json',
+      },
+      {
+        code: 'en-GB',
+        iso: 'en-GB',
+        name: 'English (GB)',
+        file: 'en-GB.json',
       },
     ],
-    defaultLocale: 'es',
+    defaultLocale: 'es-ES',
     strategy: 'no_prefix',
     vueI18n: 'i18n.config.ts',
+    detectBrowserLanguage: {
+      useCookie: true,
+      cookieKey: 'i18n_redirected',
+      redirectOn: 'root',
+      alwaysRedirect: false,
+      fallbackLocale: 'es-ES',
+    },
   },
 
   app: {
@@ -229,7 +266,7 @@ export default defineNuxtConfig({
       // Dynamic routes for TV shows
       const tvShows = titles.filter((t) => t.type === 'tv');
       const { getTVShowSeasons } = await import('./server/utils/sitemap');
-      
+
       // Process TV shows in batches to avoid overwhelming TMDB API
       const batchSize = 10;
       for (let i = 0; i < tvShows.length; i += batchSize) {
@@ -238,9 +275,9 @@ export default defineNuxtConfig({
           const seasons = await getTVShowSeasons(tvShow.tmdb_id);
           return { tvShow, seasons };
         });
-        
+
         const results = await Promise.all(seasonPromises);
-        
+
         for (const { tvShow, seasons } of results) {
           // Add TV show route
           routes.push({
@@ -251,7 +288,7 @@ export default defineNuxtConfig({
             changefreq: 'weekly',
             priority: 0.7,
           });
-          
+
           // Add season routes
           for (const season of seasons) {
             routes.push({

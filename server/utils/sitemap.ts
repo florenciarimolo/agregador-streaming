@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { TABLES, TITLES_FIELDS } from '@/composables/database/constants';
 import { getTMDBConfig } from './config';
 import type { Season } from '@/types/TVShow';
+import { DEFAULT_LANGUAGE } from '@/constants/languages';
 
 /**
  * Get all movie and TV show IDs from Supabase for sitemap generation
@@ -97,7 +98,7 @@ export async function getTVShowSeasons(
       {
         query: {
           api_key: apiKey,
-          language: 'es-ES',
+          language: DEFAULT_LANGUAGE,
         },
       }
     );

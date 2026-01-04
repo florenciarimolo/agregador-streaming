@@ -5,6 +5,13 @@ import {
   hasUnexpectedCharacters,
   getPrimaryLanguageForRegion,
 } from '@/utils/language-detection';
+import {
+  LanguageCode,
+  LanguageIsoCode,
+  DEFAULT_LANGUAGE,
+  DEFAULT_LANGUAGE_ISO,
+  LATIN_SCRIPT_LANGUAGE_ISO_CODES,
+} from '@/constants/languages';
 
 // Multi-language structure: {"es": "...", "ca": "...", "eu": "...", "gl": "...", "en": "..."}
 export type MultiLanguageText = Record<string, string>;
@@ -45,7 +52,7 @@ export function getTitleInLanguage(
   // Determine primary language for region
   const primaryLanguage = userRegion
     ? getPrimaryLanguageForRegion(userRegion)
-    : 'es'; // Default to Spanish
+    : LanguageIsoCode.SPANISH; // Default to Spanish
   const primaryLanguageKey = `${primaryLanguage}-${userRegion?.toUpperCase() || 'ES'}`;
   const requestedLangCode = language.split('-')[0]?.toLowerCase() || '';
   const primaryLangCode = primaryLanguage.split('-')[0]?.toLowerCase() || '';
@@ -57,7 +64,7 @@ export function getTitleInLanguage(
   const shouldCheckAlphabet =
     !isImagePath &&
     requestedLangCode !== primaryLangCode &&
-    ['es', 'ca', 'eu', 'gl'].includes(requestedLangCode) &&
+    LATIN_SCRIPT_LANGUAGE_ISO_CODES.includes(requestedLangCode as LanguageIsoCode) &&
     (userRegion?.toUpperCase() === 'ES' || !userRegion);
 
   // Try requested language first (using ISO/TMDB format)
@@ -184,7 +191,7 @@ export function getTitleInLanguage(
   if (firstKey) {
     const fallbackText = titleJsonb[firstKey];
     const fallbackLangCode = firstKey.split('-')[0]?.toLowerCase() || '';
-    const isFallbackLatin = ['es', 'ca', 'eu', 'gl'].includes(fallbackLangCode);
+    const isFallbackLatin = LATIN_SCRIPT_LANGUAGE_ISO_CODES.includes(fallbackLangCode as LanguageIsoCode);
 
     // If we're expecting Latin but the fallback is non-Latin, check for non-Latin characters
     if (shouldCheckAlphabet && !isFallbackLatin) {
@@ -260,7 +267,7 @@ export async function getTitleByTmdbId(
  */
 export async function getTitlesByTmdbIds(
   tmdbIds: number[],
-  language: string = 'es-ES',
+  language: string = DEFAULT_LANGUAGE,
   userRegion?: string | null,
   titleTypes?: Map<number, 'movie' | 'tv'>
 ) {
@@ -512,7 +519,7 @@ export async function getTitlesByTmdbIds(
   // Determine primary language for region
   const primaryLanguage = userRegion
     ? getPrimaryLanguageForRegion(userRegion)
-    : 'es'; // Default to Spanish
+    : DEFAULT_LANGUAGE_ISO; // Default to Spanish
   const primaryLanguageKey = `${primaryLanguage}-${userRegion?.toUpperCase() || 'ES'}`;
   const requestedLangCode = language.split('-')[0]?.toLowerCase() || '';
   const primaryLangCode = primaryLanguage.split('-')[0]?.toLowerCase() || '';
@@ -664,7 +671,7 @@ export async function getTitlesByTmdbIds(
 export async function getTitleByTmdbIdWithLanguage(
   tmdbId: number,
   type: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv,
-  language: string = 'es-ES',
+  language: string = DEFAULT_LANGUAGE,
   userRegion?: string | null
 ) {
   const supabase = useSupabaseClient();

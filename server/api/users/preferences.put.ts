@@ -12,7 +12,11 @@ import {
   TABLES,
   USER_PREFERENCES_FIELDS,
 } from '@/composables/database/constants';
-import { LanguageCode, toTMDBLanguageCode } from '@/constants/languages';
+import {
+  LanguageCode,
+  DEFAULT_LANGUAGE,
+  toTMDBLanguageCode,
+} from '@/constants/languages';
 
 export default defineEventHandler(async (event) => {
   try {
@@ -149,7 +153,7 @@ export default defineEventHandler(async (event) => {
 
     // Merge with existing or create new
     // Important: Explicitly set all fields to ensure they're updated
-    // If preferred_language is explicitly provided, use it; otherwise keep current or default to 'es'
+    // If preferred_language is explicitly provided, use it; otherwise keep current or default
     const mergedPreferences = current
       ? {
           ...current,
@@ -158,9 +162,9 @@ export default defineEventHandler(async (event) => {
           preferred_language:
             body.preferred_language !== undefined
               ? preferences.preferred_language
-              : current.preferred_language || 'es',
+              : current.preferred_language || DEFAULT_LANGUAGE,
         }
-      : { user_id: userId, preferred_language: 'es', ...preferences };
+      : { user_id: userId, preferred_language: DEFAULT_LANGUAGE, ...preferences };
 
     // Log for debugging
     if (import.meta.dev) {

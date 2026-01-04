@@ -11,6 +11,7 @@ This document describes the design guidelines, UI components, spacing, and visua
 5. [Visual Hierarchy](#visual-hierarchy)
 6. [Title Cards](#title-cards)
 7. [Toasts and Notifications](#toasts-and-notifications)
+8. [Flags and Icons](#flags-and-icons)
 
 ---
 
@@ -406,6 +407,93 @@ showToast(
 
 ---
 
+## Flags and Icons
+
+### Flag Icons
+
+**Location:** `public/icons/flags/`
+
+**Purpose:** SVG flag icons used in language and region selectors.
+
+**Important:** Flag files must be in `public/icons/flags/` (not in `components/icons/flags/`) because Nuxt serves static files from the `public/` directory.
+
+### Usage in Components
+
+Flags are used directly as images in components:
+
+```vue
+<img
+  :src="`/icons/flags/${flagCode}.svg`"
+  :alt="flagCode"
+  class="object-contain flex-shrink-0 w-5 h-4"
+  loading="lazy"
+  @error="(e) => ((e.target as HTMLImageElement).style.display = 'none')"
+/>
+```
+
+**Standard classes:**
+- `object-contain`: Maintain aspect ratio
+- `flex-shrink-0`: Prevent shrinking in flex layouts
+- `w-5 h-4`: Standard size (20px × 16px)
+- `loading="lazy"`: Lazy load for performance
+- `@error`: Hide image if file not found
+
+### Language Flags
+
+For language selectors (`AppLanguageSelector`, `LanguageSelector`), the following flags are used:
+
+- `es.svg` - Spain (Español)
+- `cat.svg` - Catalonia (Català)
+- `gal.svg` - Galicia (Galego)
+- `eus.svg` - Basque Country (Euskera)
+- `us.svg` - United States (English US)
+- `gb.svg` - United Kingdom (English UK)
+
+**Mapping function:**
+```typescript
+const getFlagFileName = (flagCode: string): string => {
+  const flagMap: Record<string, string> = {
+    'ES': 'es',
+    'CAT': 'cat',
+    'GAL': 'gal',
+    'EUS': 'eus',
+    'US': 'us',
+    'GB': 'gb',
+  };
+  return flagMap[flagCode] || flagCode.toLowerCase();
+};
+```
+
+### Region Flags
+
+For the region selector (`RegionSelector`), country flags are used according to ISO 3166-1 alpha-2 codes in lowercase (e.g., `es.svg`, `us.svg`, `mx.svg`, etc.).
+
+The region selector automatically loads flags from `/icons/flags/${regionCode.toLowerCase()}.svg`.
+
+### Adding New Flags
+
+**Recommended sources:**
+
+1. **flag-icons** (https://github.com/lipis/flag-icons)
+   - Download the repository
+   - Copy SVG files from `flags/4x3/` or `flags/1x1/`
+   - Rename to lowercase (e.g., `ES.svg` → `es.svg`)
+   - Place in `public/icons/flags/`
+
+2. **country-flag-icons** (https://github.com/catamphetamine/country-flag-icons)
+   - Similar to above
+
+3. **SVG Flags** (https://flagpedia.net/download/api)
+   - API to download SVG flags
+
+**Format:**
+- File name: lowercase ISO code (e.g., `es.svg`, `us.svg`)
+- Format: SVG
+- ViewBox: Recommended `0 0 640 480` or `0 0 1 1` for square flags
+- Size: Optimize for web (typically 1-5KB per file)
+
+---
+
 ## Colors and Themes
 
 ### Dark Mode
@@ -483,3 +571,7 @@ Always use `Section`, `SectionTitle`, `PageContainer`, `AppShell` instead of cre
 - `components/TitleCard.vue`: Base card component
 - `components/ui/Toast.vue`: Notification component
 - `composables/useUndoToast.ts`: Toast composable
+- `public/icons/flags/`: Flag SVG files
+- `components/AppLanguageSelector.vue`: App language selector with flags
+- `components/LanguageSelector.vue`: Content language selector with flags
+- `components/RegionSelector.vue`: Region selector with flags

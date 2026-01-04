@@ -6,6 +6,7 @@ import {
 import { getTitlesByTmdbIds, getTitleInLanguage, type MultiLanguageText } from '@/composables/database/titles';
 import { getSession } from '@/composables/database/auth';
 import { getUserPreferences } from '@/composables/database/preferences';
+import { DEFAULT_LANGUAGE } from '@/constants/languages';
 
 export default defineEventHandler(async (event) => {
   try {
@@ -49,7 +50,7 @@ export default defineEventHandler(async (event) => {
 
     // Get user preferences for language
     const { data: userPreferences } = await getUserPreferences(userId);
-    const userLanguage = userPreferences?.preferred_language || 'es';
+    const userLanguage = userPreferences?.preferred_language || DEFAULT_LANGUAGE;
 
     // Get title data
     const tmdbIds = seenStatuses.map((s) => s.tmdb_id);

@@ -16,11 +16,18 @@
       >
         <span class="flex gap-2 justify-between items-center w-full">
           <div class="flex overflow-hidden flex-1 gap-2 items-center min-w-0">
+            <img
+              v-if="selectedLanguageObj"
+              :src="`/icons/flags/${getFlagFileName(selectedLanguageObj.flagCode)}.svg`"
+              :alt="selectedLanguageObj.flagCode"
+              class="object-contain flex-shrink-0 w-5 h-4"
+              loading="lazy"
+              @error="
+                (e) => ((e.target as HTMLImageElement).style.display = 'none')
+              "
+            />
             <span class="text-sm truncate">{{
-              selectedLanguage
-                ? availableLanguages.find((l) => l.code === selectedLanguage)
-                    ?.name || selectedLanguage
-                : availableLanguages[0]?.name || ''
+              selectedLanguageObj?.nativeName || selectedLanguage || ''
             }}</span>
           </div>
           <IconChevronDown
@@ -48,8 +55,17 @@
             }"
             @click="selectLanguage(lang.code)"
           >
+            <img
+              :src="`/icons/flags/${getFlagFileName(lang.flagCode)}.svg`"
+              :alt="lang.flagCode"
+              class="object-contain flex-shrink-0 w-5 h-4"
+              loading="lazy"
+              @error="
+                (e) => ((e.target as HTMLImageElement).style.display = 'none')
+              "
+            />
             <span class="text-sm text-gray-800 dark:text-gray-300">{{
-              lang.name
+              lang.nativeName
             }}</span>
           </div>
         </div>
@@ -59,8 +75,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
-import { AVAILABLE_LANGUAGES } from '@/constants/languages';
+import { ref, watch, computed } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { AVAILABLE_LANGUAGES, type Language } from '@/constants/languages';
 import SelectMenu from '@/components/ui/SelectMenu.vue';
 import Button from '@/components/ui/Button.vue';
 import IconChevronDown from '@/components/icons/IconChevronDown.vue';
@@ -74,11 +91,41 @@ const emit = defineEmits<{
   'update:modelValue': [value: string];
 }>();
 
-const selectedLanguage = ref<string | null>(props.modelValue || null);
+const { locale } = useI18n();
+
+// Initialize selectedLanguage from props only
+// NOTE: This is for CONTENT language preference, not app language
+const getInitialLanguage = (): string | null => {
+  return props.modelValue || null;
+};
+
+const selectedLanguage = ref<string | null>(getInitialLanguage());
 
 const availableLanguages = AVAILABLE_LANGUAGES;
 
 const dropdownRef = ref<InstanceType<typeof SelectMenu> | null>(null);
+
+// Get selected language object
+// NOTE: This is for CONTENT language preference, not app language
+const selectedLanguageObj = computed<Language | undefined>(() => {
+  if (!selectedLanguage.value) {
+    return availableLanguages[0];
+  }
+  return availableLanguages.find((l) => l.code === selectedLanguage.value);
+});
+
+// Map flag codes to file names
+const getFlagFileName = (flagCode: string): string => {
+  const flagMap: Record<string, string> = {
+    ES: 'es',
+    CAT: 'cat',
+    GAL: 'gal',
+    EUS: 'eus',
+    US: 'us',
+    GB: 'gb',
+  };
+  return flagMap[flagCode] || flagCode.toLowerCase();
+};
 
 const handleDropdownOpen = () => {
   // No search needed for languages
@@ -87,6 +134,8 @@ const handleDropdownOpen = () => {
 const selectLanguage = (code: string) => {
   selectedLanguage.value = code;
   emit('update:modelValue', code);
+  // NOTE: This selector is for CONTENT language preference, NOT app language
+  // Do NOT change i18n locale here - that's handled by AppLanguageSelector
   dropdownRef.value?.close();
 };
 
@@ -97,4 +146,8 @@ watch(
     selectedLanguage.value = newValue || null;
   }
 );
+
+// NOTE: Removed watch for i18n locale changes
+// This selector is for CONTENT language preference, not app language
+// App language changes are handled by AppLanguageSelector
 </script>

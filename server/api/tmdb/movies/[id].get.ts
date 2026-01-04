@@ -5,6 +5,13 @@ import { createClient } from '@supabase/supabase-js';
 import { TABLES, TITLES_FIELDS } from '@/composables/database/constants';
 import { type MultiLanguageText } from '@/composables/database/titles';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
+import {
+  LanguageCode,
+  LanguageIsoCode,
+  SUPPORTED_LANGUAGE_ISO_CODES,
+  extractLanguageCode,
+  toTMDBLanguageCode,
+} from '@/constants/languages';
 
 export default defineEventHandler(async (event) => {
   try {
@@ -33,8 +40,8 @@ export default defineEventHandler(async (event) => {
     // Get user preferences for language
     const { language: userLanguage, region } = await getUserTMDBParams(event);
     // Extract base language code (e.g., 'es-ES' -> 'es')
-    const userLangCode = userLanguage.split('-')[0] || 'es';
-    const supportedLanguages = ['es', 'ca', 'eu', 'gl', 'en'];
+    const userLangCode = extractLanguageCode(userLanguage) || LanguageIsoCode.SPANISH;
+    const supportedLanguages = SUPPORTED_LANGUAGE_ISO_CODES.map((code) => code);
 
     const { data: titleFromDb, error: dbError } = await supabase
       .from(TABLES.TITLES)
@@ -57,8 +64,8 @@ export default defineEventHandler(async (event) => {
       
       // Check if we need to fetch missing languages
       // If title only has Spanish (or very few languages), fetch all supported languages
-      const supportedLanguages = ['es', 'ca', 'eu', 'gl', 'en'];
-      const missingLanguages = supportedLanguages.filter((lang) => !existingLanguages.has(lang));
+      const supportedLanguagesList = SUPPORTED_LANGUAGE_ISO_CODES.map((code) => code);
+      const missingLanguages = supportedLanguagesList.filter((lang) => !existingLanguages.has(lang));
       
       // If we're missing languages, fetch all missing ones from TMDB
       if (missingLanguages.length > 0) {
@@ -66,7 +73,7 @@ export default defineEventHandler(async (event) => {
         
         // Fetch all missing languages in parallel
         const languagePromises = missingLanguages.map(async (lang) => {
-          const langCode = lang === 'es' ? 'es-ES' : lang === 'en' ? 'en-US' : `${lang}-ES`;
+          const langCode = toTMDBLanguageCode(lang);
           try {
             const response = await $fetch(`${tmdbConfig.baseUrl}/movie/${tmdbId}`, {
               query: {
@@ -187,7 +194,7 @@ export default defineEventHandler(async (event) => {
 
     // Fetch movie data for all supported languages
     const languagePromises = supportedLanguages.map(async (lang) => {
-      const langCode = lang === 'es' ? 'es-ES' : lang === 'en' ? 'en-US' : `${lang}-ES`;
+      const langCode = toTMDBLanguageCode(lang);
       try {
         const response = await $fetch(`${tmdbConfig.baseUrl}/movie/${tmdbId}`, {
           query: {

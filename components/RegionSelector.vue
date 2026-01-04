@@ -27,10 +27,7 @@
               "
             />
             <span class="text-sm truncate">{{
-              selectedRegion && regions.length > 0
-                ? regions.find((r: Region) => r.code === selectedRegion)
-                    ?.name || t('preferences.content.region.default')
-                : t('preferences.content.region.default')
+              selectedRegionName
             }}</span>
           </div>
           <IconChevronDown
@@ -94,12 +91,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue';
+import { ref, watch, onMounted } from 'vue';
 import type { Region } from '@/constants/regions';
 import SelectMenu from '@/components/ui/SelectMenu.vue';
 import Button from '@/components/ui/Button.vue';
 import IconChevronDown from '@/components/icons/IconChevronDown.vue';
 import IconSearch from '@/components/icons/IconSearch.vue';
+import { useRegions } from '@/composables/useRegions';
 
 interface Props {
   modelValue: string | null | undefined;
@@ -116,65 +114,127 @@ const selectedRegion = ref<string | null>(props.modelValue || null);
 const searchQuery = ref('');
 const filteredRegions = ref<Region[]>([]);
 
-// Fetch regions from TMDB API with cache
-// Cache is handled server-side, but we use useAsyncData for client-side caching
-const { data: regionsData, error: regionsError } = await useAsyncData(
-  'tmdb-regions',
-  async () => {
-    try {
-      const response = await $fetch<{
-        success: boolean;
-        regions: Region[];
-        cached?: boolean;
-      }>('/api/tmdb/regions');
+// Use the regions composable for global caching
+const {
+  loadRegions,
+  getRegionName,
+  getAppLanguage,
+  appLanguageChange,
+} = useRegions();
 
-      if (!response || !response.success || !response.regions) {
-        console.error('[RegionSelector] Failed to fetch regions:', response);
-        return [];
-      }
+// Get i18n locale for watching changes
+const { locale } = useI18n();
 
-      if (import.meta.dev) {
-        console.log(
-          '[RegionSelector] Loaded regions:',
-          response.regions.length
-        );
+// Reactive state for current regions
+const regions = ref<Region[]>([]);
+const currentLanguage = ref<string>('');
+
+// Determine which language to use (always app language/i18n locale)
+const getTargetLanguage = (): string => {
+  return getAppLanguage();
+};
+
+// Load regions for the target language
+const loadRegionsForLanguage = async (language?: string) => {
+  const targetLanguage = language || getTargetLanguage();
+  
+  // Only reload if language actually changed
+  if (currentLanguage.value && currentLanguage.value === targetLanguage && regions.value.length > 0) {
+    return; // Already loaded for this language
+  }
+  
+  currentLanguage.value = targetLanguage;
+  const loadedRegions = await loadRegions(targetLanguage);
+  regions.value = loadedRegions;
+  initializeFilteredRegions();
+};
+
+// Load regions immediately for app language (i18n locale)
+// In onboarding, regions will load when app language is set
+await loadRegionsForLanguage();
+
+// Computed to get the selected region name (async)
+const selectedRegionName = ref<string>(t('preferences.content.region.default'));
+
+// Update selected region name when region or language changes
+const updateSelectedRegionName = async () => {
+  if (!selectedRegion.value) {
+    selectedRegionName.value = t('preferences.content.region.default');
+    return;
+  }
+
+  // Use current language (from prop if provided, otherwise app language)
+  const targetLanguage = getTargetLanguage();
+  const name = await getRegionName(selectedRegion.value, targetLanguage);
+  selectedRegionName.value = name || t('preferences.content.region.default');
+};
+
+// Initialize filtered regions from cached regions
+const initializeFilteredRegions = () => {
+  if (regions.value && regions.value.length > 0) {
+    filteredRegions.value = [...regions.value].sort((a, b) =>
+      a.name.localeCompare(b.name)
+    );
+  } else {
+    filteredRegions.value = [];
+  }
+};
+
+// Watch for app language (i18n locale) changes
+watch(
+  () => locale.value,
+  async (newLocale) => {
+    if (newLocale) {
+      // App language changed, reload regions for new app language
+      // Keep the selected region code (ISO doesn't change, only name)
+      const currentRegionCode = selectedRegion.value;
+      await loadRegionsForLanguage();
+      // Restore selected region (name will update automatically)
+      if (currentRegionCode) {
+        selectedRegion.value = currentRegionCode;
       }
-      return response.regions;
-    } catch (error) {
-      console.error('[RegionSelector] Error fetching regions:', error);
-      return [];
+      await updateSelectedRegionName();
     }
-  },
-  {
-    server: true, // Fetch on server for SSR
-    default: () => [],
-    // Cache for 24 hours (86400 seconds)
-    lazy: false, // Fetch immediately
   }
 );
 
-// Log error if any
-if (regionsError.value) {
-  console.error('[RegionSelector] Regions fetch error:', regionsError.value);
-}
-
-// Use regions from TMDB API
-const regions = computed(() => regionsData.value || []);
-
-// Initialize filtered regions
+// Watch for language changes via global state (backup)
 watch(
-  regions,
-  (newRegions) => {
-    if (newRegions && newRegions.length > 0) {
-      filteredRegions.value = [...newRegions].sort((a, b) =>
-        a.name.localeCompare(b.name)
-      );
-    } else {
-      filteredRegions.value = [];
+  appLanguageChange,
+  async (changedLanguage) => {
+    if (changedLanguage) {
+      // App language changed, reload regions for current app language
+      // The cache for the old language has already been invalidated
+      // Keep the selected region code (ISO doesn't change, only name)
+      const currentRegionCode = selectedRegion.value;
+      await loadRegionsForLanguage();
+      // Restore selected region (name will update automatically)
+      if (currentRegionCode) {
+        selectedRegion.value = currentRegionCode;
+      }
+      await updateSelectedRegionName();
     }
-  },
-  { immediate: true }
+  }
 );
+
+// Update region name when selected region changes
+watch(
+  () => selectedRegion.value,
+  async () => {
+    await updateSelectedRegionName();
+  }
+);
+
+// Initialize region name
+await updateSelectedRegionName();
+
+// Also ensure regions are loaded on mount (client-side fallback)
+onMounted(async () => {
+  if (regions.value.length === 0) {
+    await loadRegionsForLanguage();
+  }
+  await updateSelectedRegionName();
+});
 
 const filterRegions = () => {
   if (!regions.value || regions.value.length === 0) {
@@ -201,16 +261,17 @@ const filterRegions = () => {
 
 const dropdownRef = ref<InstanceType<typeof SelectMenu> | null>(null);
 
-const handleDropdownOpen = () => {
+const handleDropdownOpen = async () => {
   // Reset search and show all regions when opening
   searchQuery.value = '';
-  if (regions.value && regions.value.length > 0) {
-    filteredRegions.value = [...regions.value].sort((a, b) =>
-      a.name.localeCompare(b.name)
-    );
-  } else {
-    filteredRegions.value = [];
+  
+  // Ensure regions are loaded (will use cache if available)
+  if (regions.value.length === 0) {
+    await loadRegionsForLanguage();
   }
+  
+  // Update filtered regions
+  initializeFilteredRegions();
 };
 
 const selectRegion = (code: string) => {

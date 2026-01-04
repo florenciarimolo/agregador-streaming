@@ -35,11 +35,38 @@ dist-ssr
 .cache
 
 # Generated files by Nuxt/TypeScript
+# Vue component compiled files
 *.vue.js
+app.vue.js
+error.vue.js
+
+# Nuxt config compiled
+nuxt.config.js
+
+# TypeScript compiled files in specific directories
 types/**/*.js
+
+# Server API routes compiled
 server/api/**/*.js
 server/middleware/**/*.js
+server/plugins/**/*.js
+server/routes/**/*.js
+
+# Client-side compiled files
 middleware/**/*.js
+components/**/*.js
+pages/**/*.js
+layouts/**/*.js
+composables/**/*.js
+utils/**/*.js
+stores/**/*.js
+
+# Config and plugin compiled files
+config/**/*.js
+constants/**/*.js
+i18n/**/*.js
+plugins/**/*.js
+vite.*.js
 
 # Vercel
 .vercel

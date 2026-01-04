@@ -1,3 +1,5 @@
+import { DEFAULT_LANGUAGE } from '@/constants/languages';
+
 export const getTMDBConfig = (language?: string, region?: string) => {
   const apiKey = process.env.NUXT_TMDB_API_KEY;
   if (!apiKey) {
@@ -13,7 +15,7 @@ export const getTMDBConfig = (language?: string, region?: string) => {
   return {
     apiKey,
     baseUrl,
-    language: language || 'es-ES',
+    language: language || DEFAULT_LANGUAGE,
     region: region || 'ES',
     includeAdult: false, // Changed to false as per requirements
   };

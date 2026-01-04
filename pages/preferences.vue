@@ -670,8 +670,13 @@ import LanguageSelector from '@/components/LanguageSelector.vue';
 import RegionSelector from '@/components/RegionSelector.vue';
 import SearchableSelect from '@/components/ui/SearchableSelect.vue';
 import { useUndoToast } from '@/composables/useUndoToast';
+import { useRegions } from '@/composables/useRegions';
 import type { TMDBSearchResult } from '@/types/tmdb/Search';
-import { AVAILABLE_LANGUAGES, LanguageCode } from '@/constants/languages';
+import {
+  AVAILABLE_LANGUAGES,
+  LanguageCode,
+  DEFAULT_LANGUAGE,
+} from '@/constants/languages';
 import type { Language } from '@/constants/languages';
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -1775,8 +1780,8 @@ const fetchContentPreferences = async () => {
     });
 
     if (response.success && response.preferences) {
-      // Use the value from DB directly, only default to 'es' if it's truly null/undefined
-      const dbLanguage = response.preferences.preferred_language;
+      // Use the value from DB directly, only default to DEFAULT_LANGUAGE if it's truly null/undefined
+      const dbLanguage = response.preferences.preferred_language || DEFAULT_LANGUAGE;
 
       contentPreferences.value = {
         preferred_language: dbLanguage ?? LanguageCode.SPANISH, // Only default if null/undefined
@@ -2096,6 +2101,9 @@ const confirmSaveContentPreferences = async () => {
           ?.preferred_language ||
         selectedLanguage.value?.code ||
         LanguageCode.SPANISH;
+
+      // Note: Regions are now loaded based on app language (i18n locale), not user's preferred language
+      // So we don't need to invalidate regions cache when preferred_language changes
 
       // Update contentPreferences with the saved value to keep everything in sync
       contentPreferences.value.preferred_language = savedLanguageCode;

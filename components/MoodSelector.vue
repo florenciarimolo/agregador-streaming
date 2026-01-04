@@ -7,7 +7,7 @@
         <label
           class="text-xs font-semibold uppercase tracking-wide text-gray-800 dark:text-gray-300"
         >
-          Estado de ánimo
+          {{ $t('mood.label') }}
         </label>
         <div class="flex flex-wrap gap-2">
           <button
@@ -31,7 +31,7 @@
         <label
           class="text-xs font-semibold uppercase tracking-wide text-gray-800 dark:text-gray-300"
         >
-          Nivel de atención
+          {{ $t('attention.label') }}
         </label>
         <div class="flex flex-wrap gap-2">
           <button
@@ -55,7 +55,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref, watch, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import {
   MoodEnum,
@@ -74,6 +74,8 @@ import IconBattery0 from './icons/IconBattery0.vue';
 import IconBattery50 from './icons/IconBattery50.vue';
 import IconBattery100 from './icons/IconBattery100.vue';
 
+const { t } = useI18n();
+
 type Mood = MoodEnumType | null;
 type Attention = AttentionEnumType | null;
 
@@ -86,19 +88,35 @@ const attention = ref<Attention>(
   (route.query.attention as AttentionEnumType) || null
 );
 
-const moodOptions = [
-  { value: MoodEnum.RELAX, label: 'Relajado', icon: IconRelax },
-  { value: MoodEnum.LIGERO, label: 'Ligero', icon: IconLigero },
-  { value: MoodEnum.INTENSO, label: 'Intenso', icon: IconIntenso },
-  { value: MoodEnum.EMOCIONAL, label: 'Emocional', icon: IconEmocional },
-  { value: MoodEnum.REFLEXIVO, label: 'Reflexivo', icon: IconReflexivo },
-];
+const moodOptions = computed(() => [
+  { value: MoodEnum.RELAX, label: t('mood.relaxed'), icon: IconRelax },
+  { value: MoodEnum.LIGERO, label: t('mood.light'), icon: IconLigero },
+  { value: MoodEnum.INTENSO, label: t('mood.intense'), icon: IconIntenso },
+  {
+    value: MoodEnum.EMOCIONAL,
+    label: t('mood.emotional'),
+    icon: IconEmocional,
+  },
+  {
+    value: MoodEnum.REFLEXIVO,
+    label: t('mood.reflective'),
+    icon: IconReflexivo,
+  },
+]);
 
-const attentionOptions = [
-  { value: AttentionEnum.LOW, label: 'Bajo', icon: IconBattery0 },
-  { value: AttentionEnum.MEDIUM, label: 'Medio', icon: IconBattery50 },
-  { value: AttentionEnum.HIGH, label: 'Alto', icon: IconBattery100 },
-];
+const attentionOptions = computed(() => [
+  { value: AttentionEnum.LOW, label: t('attention.low'), icon: IconBattery0 },
+  {
+    value: AttentionEnum.MEDIUM,
+    label: t('attention.medium'),
+    icon: IconBattery50,
+  },
+  {
+    value: AttentionEnum.HIGH,
+    label: t('attention.high'),
+    icon: IconBattery100,
+  },
+]);
 
 const selectMood = (value: Mood) => {
   mood.value = mood.value === value ? null : value;

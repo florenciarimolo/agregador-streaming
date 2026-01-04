@@ -6,6 +6,7 @@ import {
   PROFILES_FIELDS,
   USER_PREFERENCES_FIELDS,
 } from '@/composables/database/constants';
+import { LanguageCode, toTMDBLanguageCode } from '@/constants/languages';
 
 /**
  * Get user preferences from server-side (using createClient)
@@ -74,7 +75,7 @@ export async function getUserTMDBParamsByUserId(userId: string): Promise<{
   region: string;
 }> {
   const defaults = {
-    language: 'es-ES',
+    language: LanguageCode.SPANISH,
     region: 'ES',
   };
 
@@ -89,26 +90,11 @@ export async function getUserTMDBParamsByUserId(userId: string): Promise<{
     let language = defaults.language;
     if (preferencesResult.data?.preferred_language) {
       // Use preferred language (should already be in TMDB format)
-      const { toTMDBLanguageCode } = await import('@/constants/languages');
       language = toTMDBLanguageCode(preferencesResult.data.preferred_language);
     } else if (settingsResult.data?.language) {
       // Fallback to app language setting
       const lang = String(settingsResult.data.language);
-      const langMap: Record<string, string> = {
-        es: 'es-ES',
-        ca: 'ca-ES', // Catalan (Spain)
-        eu: 'eu-ES', // Basque (Spain)
-        gl: 'gl-ES', // Galician (Spain)
-        en: 'en-US',
-        fr: 'fr-FR',
-        de: 'de-DE',
-        it: 'it-IT',
-        pt: 'pt-PT',
-        ja: 'ja-JP',
-        ko: 'ko-KR',
-        zh: 'zh-CN',
-      };
-      language = langMap[lang] || `${lang}-${lang.toUpperCase()}`;
+      language = toTMDBLanguageCode(lang);
     }
 
     // Priority: settings.region > default
@@ -137,7 +123,7 @@ export async function getUserTMDBParams(event?: H3Event): Promise<{
   region: string;
 }> {
   const defaults = {
-    language: 'es-ES',
+    language: LanguageCode.SPANISH,
     region: 'ES',
   };
 

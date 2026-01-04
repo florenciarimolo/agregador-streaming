@@ -1,3 +1,9 @@
+import {
+  LanguageIsoCode,
+  DEFAULT_LANGUAGE_ISO,
+  LATIN_SCRIPT_LANGUAGE_ISO_CODES,
+} from '@/constants/languages';
+
 /**
  * Detect if a text uses a non-Latin alphabet
  * This helps identify cases where TMDB returns titles in non-Latin scripts (e.g., Japanese, Chinese, Hindi)
@@ -16,7 +22,7 @@ export function hasUnexpectedCharacters(
   }
 
   // Languages in ES region that use Latin script
-  const latinLanguages = ['es', 'ca', 'eu', 'gl'];
+  const latinLanguages = LATIN_SCRIPT_LANGUAGE_ISO_CODES.map((code) => code);
 
   // If the expected language is not a Latin script language in ES region, don't check
   if (!latinLanguages.includes(expectedLanguage)) {
@@ -148,25 +154,25 @@ export function getPrimaryLanguageForRegion(
   region: string | null | undefined
 ): string {
   if (!region) {
-    return 'es'; // Default to Spanish
+    return DEFAULT_LANGUAGE_ISO; // Default to Spanish
   }
 
   // Map regions to their primary languages
   const regionPrimaryLanguages: Record<string, string> = {
-    ES: 'es',
-    US: 'en',
-    GB: 'en',
+    ES: LanguageIsoCode.SPANISH,
+    US: LanguageIsoCode.ENGLISH,
+    GB: LanguageIsoCode.ENGLISH,
     FR: 'fr',
     DE: 'de',
     IT: 'it',
     PT: 'pt',
-    MX: 'es',
-    AR: 'es',
-    CO: 'es',
-    CL: 'es',
-    PE: 'es',
-    VE: 'es',
+    MX: LanguageIsoCode.SPANISH,
+    AR: LanguageIsoCode.SPANISH,
+    CO: LanguageIsoCode.SPANISH,
+    CL: LanguageIsoCode.SPANISH,
+    PE: LanguageIsoCode.SPANISH,
+    VE: LanguageIsoCode.SPANISH,
   };
 
-  return regionPrimaryLanguages[region.toUpperCase()] || 'es';
+  return regionPrimaryLanguages[region.toUpperCase()] || DEFAULT_LANGUAGE_ISO;
 }

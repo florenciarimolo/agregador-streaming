@@ -13,6 +13,7 @@ import {
 } from '@/composables/database/recommendationPool';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 import { TitleStatus } from '@/types/TitleStatus';
+import { DEFAULT_LANGUAGE_ISO } from '@/constants/languages';
 import type {
   TMDBResponse,
   TMDBTitleDetails,
@@ -218,7 +219,7 @@ export default defineEventHandler(async (event) => {
         // Determine primary language for region
         const primaryLanguage = region
           ? getPrimaryLanguageForRegion(region)
-          : 'es';
+          : DEFAULT_LANGUAGE_ISO;
         const primaryLanguageKey = `${primaryLanguage}-${region?.toUpperCase() || 'ES'}`;
 
         // Check if we need to fetch primary language (title empty or overview empty)

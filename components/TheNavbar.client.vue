@@ -50,6 +50,9 @@
               </nuxt-link>
             </nav>
 
+            <!-- App Language Selector -->
+            <AppLanguageSelector />
+
             <!-- Theme Switcher -->
             <ThemeSwitcher />
 
@@ -126,8 +129,11 @@
             </div>
           </template>
 
-          <!-- When not logged in: Only Theme Switcher -->
-          <ThemeSwitcher v-else />
+          <!-- When not logged in: App Language Selector and Theme Switcher -->
+          <template v-else>
+            <AppLanguageSelector />
+            <ThemeSwitcher />
+          </template>
         </div>
       </div>
     </nav>
@@ -179,7 +185,10 @@
             custom-class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 [&_svg]:text-gray-800 dark:[&_svg]:text-gray-300"
             @click.stop="toggleMobileMenu"
           />
-          <ThemeSwitcher v-else />
+          <template v-else>
+            <AppLanguageSelector />
+            <ThemeSwitcher />
+          </template>
         </div>
       </div>
     </nav>
@@ -322,6 +331,13 @@
           >
             {{ $t('navbar.myAccount') }}
           </nuxt-link>
+          <!-- App Language Selector -->
+          <div class="flex justify-between items-center px-4 py-3">
+            <span class="text-sm font-medium text-gray-800 dark:text-gray-300">
+              {{ $t('settings.language.title') }}
+            </span>
+            <AppLanguageSelector />
+          </div>
           <!-- Theme Switcher -->
           <div class="flex justify-between items-center px-4 py-3">
             <span class="text-sm font-medium text-gray-800 dark:text-gray-300">
@@ -399,6 +415,7 @@ import IconMenu from '@/components/icons/IconMenu.vue';
 import IconClose from '@/components/icons/IconClose.vue';
 import IconSearch from '@/components/icons/IconSearch.vue';
 import IconArrowUp from '@/components/icons/IconArrowUp.vue';
+import AppLanguageSelector from '@/components/AppLanguageSelector.vue';
 
 // User state
 const user = useSupabaseUser();

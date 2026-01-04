@@ -8,6 +8,7 @@ import {
   type EventHandlerRequest,
   type H3Event,
 } from 'h3';
+import { DEFAULT_LANGUAGE_ISO } from '@/constants/languages';
 
 export default defineEventHandler(
   async (event: H3Event<EventHandlerRequest>) => {
@@ -37,7 +38,7 @@ export default defineEventHandler(
       // Determine primary language for region
       const primaryLanguage = region
         ? getPrimaryLanguageForRegion(region)
-        : 'es';
+        : DEFAULT_LANGUAGE_ISO;
       const primaryLanguageKey = `${primaryLanguage}-${region?.toUpperCase() || 'ES'}`;
       const requestedLangCode = language.split('-')[0]?.toLowerCase() || '';
       const primaryLangCode = primaryLanguage.split('-')[0]?.toLowerCase() || '';
