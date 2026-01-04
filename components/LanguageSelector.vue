@@ -4,6 +4,7 @@
     position="left"
     width="w-full"
     :close-on-click-outside="true"
+    select-id="language-selector"
     @open="handleDropdownOpen"
   >
     <template #trigger="{ isOpen }">
@@ -76,7 +77,6 @@
 
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue';
-import { useI18n } from 'vue-i18n';
 import { AVAILABLE_LANGUAGES, type Language } from '@/constants/languages';
 import SelectMenu from '@/components/ui/SelectMenu.vue';
 import Button from '@/components/ui/Button.vue';
@@ -91,7 +91,8 @@ const emit = defineEmits<{
   'update:modelValue': [value: string];
 }>();
 
-const { locale } = useI18n();
+// Note: useI18n is imported but locale is not used in this component
+// This is for CONTENT language preference, not app language
 
 // Initialize selectedLanguage from props only
 // NOTE: This is for CONTENT language preference, not app language

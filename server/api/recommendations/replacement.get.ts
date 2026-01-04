@@ -21,6 +21,7 @@ import {
 import {
   TABLES,
   USER_TITLE_STATUS_FIELDS,
+  USER_PREFERENCES_FIELDS,
 } from '@/composables/database/constants';
 import type { MultiLanguageText } from '@/composables/database/titles';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
@@ -357,6 +358,18 @@ export default defineEventHandler(async (event) => {
   });
 
   try {
+    // Get user preferences for providers
+    const { data: userPreferences } = await supabase
+      .from(TABLES.USER_PREFERENCES)
+      .select(USER_PREFERENCES_FIELDS.INCLUDED_PROVIDERS)
+      .eq(USER_PREFERENCES_FIELDS.USER_ID, userId)
+      .maybeSingle();
+
+    const includedProviders =
+      (userPreferences?.[USER_PREFERENCES_FIELDS.INCLUDED_PROVIDERS] as
+        | number[]
+        | null) || [];
+
     // Get excluded titles (seen + not_interested + watchlist + the one being replaced)
     const { data: excludedStatuses, error: statusError } = await supabase
       .from(TABLES.USER_TITLE_STATUS)
@@ -423,13 +436,100 @@ export default defineEventHandler(async (event) => {
     }
 
     // Filter out excluded titles
-    const filteredEntries = poolEntries.filter(
+    let filteredEntries = poolEntries.filter(
       (entry) => !excludedTmdbIds.has(entry.tmdb_id)
     );
 
     // Get user preferences for language and region
     const { language, region } = await getUserTMDBParams(event);
     const tmdbConfig = getTMDBConfig(language, region);
+
+    // Helper to fetch watch providers for a title
+    const fetchWatchProviders = async (
+      tmdbId: number,
+      type: 'movie' | 'tv'
+    ): Promise<number[]> => {
+      try {
+        const endpoint =
+          type === MediaTypeEnum.movie
+            ? `/movie/${tmdbId}/watch/providers`
+            : `/tv/${tmdbId}/watch/providers`;
+        const response = await $fetch<{
+          results?: {
+            [key: string]: {
+              flatrate?: Array<{ provider_id: number }>;
+              buy?: Array<{ provider_id: number }>;
+              rent?: Array<{ provider_id: number }>;
+            };
+          };
+        }>(`${tmdbConfig.baseUrl}${endpoint}`, {
+          query: {
+            api_key: tmdbConfig.apiKey,
+          },
+        });
+
+        if (!response?.results) return [];
+
+        // Get providers from the region (flatrate, buy, rent)
+        const regionLower = region.toLowerCase();
+        const regionUpper = region.toUpperCase();
+        const regionData =
+          response.results[regionLower] || response.results[regionUpper] || {};
+        const providers: number[] = [];
+
+        // Combine all provider types
+        if (regionData.flatrate) {
+          providers.push(...regionData.flatrate.map((p) => p.provider_id));
+        }
+        if (regionData.buy) {
+          providers.push(...regionData.buy.map((p) => p.provider_id));
+        }
+        if (regionData.rent) {
+          providers.push(...regionData.rent.map((p) => p.provider_id));
+        }
+
+        return providers;
+      } catch (error) {
+        safeError(
+          `[Replacement] Error fetching providers for ${tmdbId}`,
+          error
+        );
+        return [];
+      }
+    };
+
+    // Filter by providers if user has preferences
+    if (includedProviders.length > 0) {
+      const entriesWithProviders = await Promise.all(
+        filteredEntries.map(async (entry) => {
+          const titleProviders = await fetchWatchProviders(
+            entry.tmdb_id,
+            entry.type as 'movie' | 'tv'
+          );
+
+          // Exclude titles that don't have any providers
+          if (titleProviders.length === 0) {
+            return null;
+          }
+
+          // Check if any of the title's providers match user's included providers
+          const hasMatchingProvider = titleProviders.some((providerId) =>
+            includedProviders.includes(providerId)
+          );
+
+          if (!hasMatchingProvider) {
+            return null;
+          }
+
+          return entry;
+        })
+      );
+
+      // Filter out null entries (excluded titles)
+      filteredEntries = entriesWithProviders.filter(
+        (entry): entry is NonNullable<typeof entry> => entry !== null
+      );
+    }
 
     // Helper to fetch title_data from TMDB if missing
     const ensureTitleData = async (

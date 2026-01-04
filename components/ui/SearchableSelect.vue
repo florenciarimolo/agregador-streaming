@@ -4,7 +4,8 @@
       ref="selectMenuRef"
       width="w-full"
       position="left"
-      :close-on-click-outside="false"
+      :close-on-click-outside="closeOnClickOutside"
+      :select-id="selectId"
     >
       <template #trigger>
         <div class="relative" @mousedown.stop>
@@ -86,6 +87,10 @@ interface Props {
   filterItem?: (item: Record<string, unknown>, query: string) => boolean;
   // Maximum number of results to show (0 = unlimited)
   maxResults?: number;
+  // Unique ID for this select instance (for global active select management)
+  selectId?: string;
+  // Whether to close the dropdown when clicking outside
+  closeOnClickOutside?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -112,6 +117,8 @@ const props = withDefaults(defineProps<Props>(), {
   },
   filterItem: undefined,
   maxResults: 0,
+  selectId: undefined,
+  closeOnClickOutside: false,
 });
 
 const emit = defineEmits<{
@@ -235,5 +242,13 @@ watch(
 // Load results on mount
 onMounted(() => {
   filterOptions();
+});
+
+// Expose methods to parent component
+defineExpose({
+  close: () => {
+    selectMenuRef.value?.close();
+    searchQuery.value = '';
+  },
 });
 </script>

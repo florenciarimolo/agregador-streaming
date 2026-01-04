@@ -4,6 +4,7 @@
     position="right"
     width="w-48"
     :close-on-click-outside="true"
+    select-id="app-language-selector"
   >
     <template #trigger="{ isOpen }">
       <!-- Trigger Button with Flag -->

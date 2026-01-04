@@ -4,6 +4,7 @@
     position="left"
     width="w-full"
     :close-on-click-outside="true"
+    select-id="region-selector"
     @open="handleDropdownOpen"
   >
     <template #trigger="{ isOpen }">
@@ -26,9 +27,7 @@
                 (e) => ((e.target as HTMLImageElement).style.display = 'none')
               "
             />
-            <span class="text-sm truncate">{{
-              selectedRegionName
-            }}</span>
+            <span class="text-sm truncate">{{ selectedRegionName }}</span>
           </div>
           <IconChevronDown
             :icon-class="`flex-shrink-0 w-4 h-4 text-gray-400 transition-transform ${
@@ -115,12 +114,8 @@ const searchQuery = ref('');
 const filteredRegions = ref<Region[]>([]);
 
 // Use the regions composable for global caching
-const {
-  loadRegions,
-  getRegionName,
-  getAppLanguage,
-  appLanguageChange,
-} = useRegions();
+const { loadRegions, getRegionName, getAppLanguage, appLanguageChange } =
+  useRegions();
 
 // Get i18n locale for watching changes
 const { locale } = useI18n();
@@ -149,12 +144,16 @@ const initializeFilteredRegions = () => {
 // Load regions for the target language
 const loadRegionsForLanguage = async (language?: string) => {
   const targetLanguage = language || getTargetLanguage();
-  
+
   // Only reload if language actually changed
-  if (currentLanguage.value && currentLanguage.value === targetLanguage && regions.value.length > 0) {
+  if (
+    currentLanguage.value &&
+    currentLanguage.value === targetLanguage &&
+    regions.value.length > 0
+  ) {
     return; // Already loaded for this language
   }
-  
+
   currentLanguage.value = targetLanguage;
   const loadedRegions = await loadRegions(targetLanguage);
   regions.value = loadedRegions;
@@ -200,23 +199,20 @@ watch(
 );
 
 // Watch for language changes via global state (backup)
-watch(
-  appLanguageChange,
-  async (changedLanguage) => {
-    if (changedLanguage) {
-      // App language changed, reload regions for current app language
-      // The cache for the old language has already been invalidated
-      // Keep the selected region code (ISO doesn't change, only name)
-      const currentRegionCode = selectedRegion.value;
-      await loadRegionsForLanguage();
-      // Restore selected region (name will update automatically)
-      if (currentRegionCode) {
-        selectedRegion.value = currentRegionCode;
-      }
-      await updateSelectedRegionName();
+watch(appLanguageChange, async (changedLanguage) => {
+  if (changedLanguage) {
+    // App language changed, reload regions for current app language
+    // The cache for the old language has already been invalidated
+    // Keep the selected region code (ISO doesn't change, only name)
+    const currentRegionCode = selectedRegion.value;
+    await loadRegionsForLanguage();
+    // Restore selected region (name will update automatically)
+    if (currentRegionCode) {
+      selectedRegion.value = currentRegionCode;
     }
+    await updateSelectedRegionName();
   }
-);
+});
 
 // Update region name when selected region changes
 watch(
@@ -265,12 +261,12 @@ const dropdownRef = ref<InstanceType<typeof SelectMenu> | null>(null);
 const handleDropdownOpen = async () => {
   // Reset search and show all regions when opening
   searchQuery.value = '';
-  
+
   // Ensure regions are loaded (will use cache if available)
   if (regions.value.length === 0) {
     await loadRegionsForLanguage();
   }
-  
+
   // Update filtered regions
   initializeFilteredRegions();
 };

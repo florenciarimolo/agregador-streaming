@@ -96,6 +96,8 @@ const showAuthForm = ref(false);
 const loadingRecommendations = ref(false);
 const hasAttemptedLoad = ref(false); // Track if we've attempted to load recommendations at least once
 const populatingPool = ref(false);
+// Track loading state for individual title actions
+const loadingTitles = ref<Set<number>>(new Set());
 const recommendations = ref<Recommendation[]>([]);
 const allRecommendations = ref<Recommendation[]>([]); // Store all recommendations before filtering
 const lastFetchedMood = ref<string | null>(null);
@@ -492,6 +494,9 @@ const handleTitleStatus = async (
   status: TitleStatus,
   liked: boolean = false
 ) => {
+  // Set loading state for this title
+  loadingTitles.value.add(title.tmdb_id);
+
   // Store original state for rollback in case of error
   let originalTitleIndex = -1;
   let originalInWatchlist: boolean | undefined = undefined;
@@ -681,6 +686,9 @@ const handleTitleStatus = async (
 // Handle marking as liked (implies seen, removes from watchlist)
 // Or removing like if already liked
 const handleMarkLiked = async (title: Recommendation) => {
+  // Set loading state for this title
+  loadingTitles.value.add(title.tmdb_id);
+
   console.log('[UNLIKE DEBUG] handleMarkLiked called', {
     title: title.title,
     tmdb_id: title.tmdb_id,
@@ -827,6 +835,9 @@ const handleMarkLiked = async (title: Recommendation) => {
       null,
       3000
     );
+  } finally {
+    // Remove loading state for this title
+    loadingTitles.value.delete(title.tmdb_id);
   }
 };
 
@@ -838,6 +849,9 @@ const handleRemoveLiked = async (title: Recommendation) => {
 
 // Handle removing like (no modal needed - just updates score)
 const confirmRemoveLike = async (title: Recommendation) => {
+  // Set loading state for this title
+  loadingTitles.value.add(title.tmdb_id);
+
   console.log('[UNLIKE DEBUG] confirmRemoveLike called', {
     title: title.title,
   });
@@ -895,6 +909,9 @@ const confirmRemoveLike = async (title: Recommendation) => {
       null,
       3000
     );
+  } finally {
+    // Remove loading state for this title
+    loadingTitles.value.delete(title.tmdb_id);
   }
 };
 
@@ -1348,6 +1365,7 @@ onMounted(() => {
                   :title="$t('home.recommendationsTitle')"
                   :description="$t('home.recommendationsDescription')"
                   :recommendations="recommendations"
+                  :loading-titles="loadingTitles"
                   @mark-seen="handleTitleStatus($event, TitleStatus.SEEN)"
                   @mark-not-interested="
                     handleTitleStatus($event, TitleStatus.NOT_INTERESTED)

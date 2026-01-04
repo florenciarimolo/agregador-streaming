@@ -14,6 +14,7 @@ import Spinner from '@/components/Spinner.vue';
 import Button from '@/components/ui/Button.vue';
 import AppShell from '@/components/layout/AppShell.vue';
 import MediaTypeBadge from '@/components/MediaTypeBadge.vue';
+import SearchableSelect from '@/components/ui/SearchableSelect.vue';
 
 definePageMeta({
   middleware: 'auth',
@@ -65,6 +66,7 @@ const preferencesSaved = ref(false);
 // Preferences state
 const selectedLanguage = ref<Language | null>(null);
 const selectedRegion = ref<string | null>(null);
+const selectedGenres = ref<Array<{ id: number; name: string }>>([]);
 const savingPreferences = ref(false);
 
 // Titles state
@@ -140,6 +142,84 @@ const removeTitle = (id: number) => {
   selectedTitles.value = selectedTitles.value.filter((t) => t.id !== id);
 };
 
+// Preload genres using useAsyncData
+const { data: genresData } = useAsyncData(
+  'onboarding-genres',
+  async () => {
+    // Fetch both movie and TV genres
+    const [movieResponse, tvResponse] = await Promise.all([
+      $fetch<{ genres: Array<{ id: number; name: string }> }>(
+        `/api/tmdb/genres?type=${MediaTypeEnum.movie}`
+      ),
+      $fetch<{ genres: Array<{ id: number; name: string }> }>(
+        `/api/tmdb/genres?type=${MediaTypeEnum.tv}`
+      ),
+    ]);
+    return { movie: movieResponse, tv: tvResponse };
+  },
+  {
+    server: false, // Only fetch on client
+    default: () => ({ movie: { genres: [] }, tv: { genres: [] } }),
+  }
+);
+
+const availableGenres = computed(() => {
+  if (!genresData.value) return [];
+
+  // Combine all genres with their type (movie or tv)
+  const allGenres: Array<{
+    id: number;
+    name: string;
+    type: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv;
+  }> = [];
+
+  // Add movie genres
+  genresData.value.movie.genres.forEach((g: { id: number; name: string }) => {
+    if (g.name) {
+      allGenres.push({ id: g.id, name: g.name, type: MediaTypeEnum.movie });
+    }
+  });
+
+  // Add TV genres
+  genresData.value.tv.genres.forEach((g: { id: number; name: string }) => {
+    if (g.name) {
+      allGenres.push({ id: g.id, name: g.name, type: MediaTypeEnum.tv });
+    }
+  });
+
+  // Sort: first by type (movie first, then tv), then alphabetically by name
+  return allGenres
+    .filter((genre) => genre.name) // Filter out any genres without a name
+    .sort((a, b) => {
+      // First sort by type: movie comes before tv
+      if (a.type !== b.type) {
+        return a.type === MediaTypeEnum.movie ? -1 : 1;
+      }
+      // Then sort alphabetically by name
+      return (a.name || '').localeCompare(b.name || '');
+    });
+});
+
+// Add genre to selected list
+const addGenre = (genre: {
+  id: number;
+  name: string;
+  type?: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv;
+}) => {
+  // Check if already selected
+  if (selectedGenres.value.some((g) => g.id === genre.id)) {
+    return;
+  }
+
+  // Add genre (only store id and name, not type)
+  selectedGenres.value.push({ id: genre.id, name: genre.name });
+};
+
+// Remove genre from selected list
+const removeGenre = (genreId: number) => {
+  selectedGenres.value = selectedGenres.value.filter((g) => g.id !== genreId);
+};
+
 // Save preferences (language and region) first
 const savePreferences = async () => {
   if (!selectedLanguage.value) {
@@ -176,11 +256,11 @@ const savePreferences = async () => {
       return;
     }
 
-    // Save preferences with language and region
+    // Save preferences with language, region, and optional genres
     const preferencesToSave = {
       preferred_language: selectedLanguage.value.code,
       region: selectedRegion.value || null,
-      favorite_genres: [],
+      favorite_genres: selectedGenres.value.map((g) => g.id),
       included_providers: [],
     };
 
@@ -365,6 +445,19 @@ const saveSelections = async () => {
 
       <!-- Step 1: Preferences -->
       <div v-if="currentStep === 'preferences'" class="space-y-6">
+        <!-- Region -->
+        <Card padding="lg">
+          <h2
+            class="text-xl font-semibold dark:text-gray-300 text-gray-800 mb-2"
+          >
+            {{ $t('preferences.content.region.title') }}
+          </h2>
+          <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+            {{ $t('preferences.content.region.description') }}
+          </p>
+          <RegionSelector v-model="selectedRegion" />
+        </Card>
+
         <!-- Preferred Language -->
         <Card padding="lg">
           <h2
@@ -403,17 +496,109 @@ const saveSelections = async () => {
           </div>
         </Card>
 
-        <!-- Region -->
+        <!-- Favorite Genres (Optional) -->
         <Card padding="lg">
           <h2
             class="text-xl font-semibold dark:text-gray-300 text-gray-800 mb-2"
           >
-            {{ $t('preferences.content.region.title') }}
+            {{ $t('preferences.content.favoriteGenres.title') }}
+            <span class="text-sm font-normal text-gray-500 dark:text-gray-400">
+              ({{ $t('common.optional') }})
+            </span>
           </h2>
           <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
-            {{ $t('preferences.content.region.description') }}
+            {{ $t('preferences.content.favoriteGenres.description') }}
           </p>
-          <RegionSelector v-model="selectedRegion" />
+
+          <!-- Genre Search -->
+          <SearchableSelect
+            :options="availableGenres"
+            :selected-items="selectedGenres"
+            :placeholder="
+              $t('preferences.content.favoriteGenres.searchPlaceholder')
+            "
+            :get-item-key="(genre: any) => `${genre.id}-${genre.type}`"
+            :get-item-label="(genre: any) => genre.name || ''"
+            :is-item-selected="
+              (genre: any, selected: any[]) =>
+                selected.some((g: any) => g.id === genre.id)
+            "
+            :filter-item="
+              (genre: any, query: string) =>
+                genre.name &&
+                String(genre.name).toLowerCase().includes(query.toLowerCase())
+            "
+            @select="(item: any) => addGenre(item)"
+          >
+            <template #items="{ filteredOptions: genres, selectItem }">
+              <template
+                v-for="(genre, index) in genres"
+                :key="`${(genre as any).id}-${(genre as any).type}`"
+              >
+                <!-- Separator: show only when type changes (first item of each type) -->
+                <div
+                  v-if="
+                    Number(index) === 0 ||
+                    (genres[Number(index) - 1] as any)?.type !==
+                      (genre as any).type
+                  "
+                  class="px-4 py-2 text-xs font-semibold tracking-wider text-gray-500 uppercase dark:text-gray-400"
+                  :class="
+                    Number(index) > 0
+                      ? 'border-t border-gray-200 dark:border-gray-700'
+                      : ''
+                  "
+                >
+                  {{
+                    (genre as any).type === MediaTypeEnum.movie
+                      ? t('preferences.content.contentTypes.movie')
+                      : t('preferences.content.contentTypes.tv')
+                  }}
+                </div>
+                <!-- Genre option -->
+                <div
+                  class="flex gap-3 items-center px-4 py-3 transition-colors duration-150 cursor-pointer dark:hover:bg-gray-800/50 hover:bg-gray-100/50"
+                  @mousedown.prevent="selectItem(genre)"
+                  @click="selectItem(genre)"
+                >
+                  <span class="text-sm text-gray-800 dark:text-gray-300">{{
+                    (genre as any).name
+                  }}</span>
+                </div>
+              </template>
+            </template>
+          </SearchableSelect>
+
+          <!-- Selected Genres List -->
+          <div v-if="selectedGenres.length > 0" class="mt-4">
+            <p
+              class="mb-2 text-sm font-medium text-gray-800 dark:text-gray-300"
+            >
+              {{ $t('preferences.content.favoriteGenres.selected') }}
+              ({{ selectedGenres.length }})
+            </p>
+            <div class="flex flex-wrap gap-2">
+              <div
+                v-for="genre in selectedGenres"
+                :key="genre.id"
+                class="flex gap-2 items-center px-4 py-1.5 rounded-full border backdrop-blur-xl md:py-2.5 dark:bg-gray-900/40 bg-gray-100/80 border-gray-300/50 dark:border-white/10"
+              >
+                <span
+                  class="text-xs font-medium text-gray-800 md:text-sm dark:text-gray-300"
+                  >{{ genre.name }}</span
+                >
+                <CloseButton
+                  custom-class="ml-1"
+                  :aria-label="
+                    $t('preferences.content.favoriteGenres.remove', {
+                      name: genre.name,
+                    })
+                  "
+                  @click="removeGenre(genre.id)"
+                />
+              </div>
+            </div>
+          </div>
         </Card>
 
         <!-- Continue Button -->

@@ -1,39 +1,43 @@
 <template>
   <div ref="selectRef" class="relative">
     <!-- Trigger Slot -->
-    <div @mousedown.prevent="toggleSelect">
+    <div ref="triggerRef" @mousedown.prevent="toggleSelect">
       <slot name="trigger" :is-open="isOpen" />
     </div>
 
-    <!-- Dropdown (always dropdown, no action sheet) -->
-    <Transition
-      enter-active-class="transition duration-200 ease-out"
-      enter-from-class="opacity-0 transform scale-95"
-      enter-to-class="opacity-100 transform scale-100"
-      leave-active-class="transition duration-150 ease-in"
-      leave-from-class="opacity-100 transform scale-100"
-      leave-to-class="opacity-0 transform scale-95"
-    >
-      <div
-        v-if="isOpen"
-        :class="[
-          'absolute z-[10000] mt-2',
-          'dark:bg-gray-900/95 bg-gray-100/95 rounded-3xl border border-gray-300/50 dark:border-white/10 shadow-xl overflow-hidden',
-          widthClass,
-          positionClass,
-          customClass,
-        ]"
-        @click.stop
-        @mousedown.stop
+    <!-- Dropdown rendered via Teleport to body to avoid overflow/clipping issues -->
+    <Teleport to="body">
+      <Transition
+        enter-active-class="transition duration-200 ease-out"
+        enter-from-class="opacity-0 transform scale-95"
+        enter-to-class="opacity-100 transform scale-100"
+        leave-active-class="transition duration-150 ease-in"
+        leave-from-class="opacity-100 transform scale-100"
+        leave-to-class="opacity-0 transform scale-95"
       >
-        <slot />
-      </div>
-    </Transition>
+        <div
+          v-if="isOpen"
+          ref="dropdownRef"
+          :style="dropdownStyle"
+          :class="[
+            'fixed z-[9999]',
+            'dark:bg-gray-900/95 bg-gray-100/95 rounded-3xl border border-gray-300/50 dark:border-white/10 shadow-xl overflow-hidden',
+            // Never use widthClass - width is always calculated from trigger
+            customClass,
+          ]"
+          @click.stop
+          @mousedown.stop
+        >
+          <slot />
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue';
+import { useActiveSelect } from '@/composables/useActiveSelect';
 
 type SelectWidth = 'auto' | 'w-48' | 'w-64' | 'w-full';
 type SelectPosition = 'left' | 'right';
@@ -44,12 +48,14 @@ const props = withDefaults(
     position?: SelectPosition;
     customClass?: string;
     closeOnClickOutside?: boolean;
+    selectId?: string; // Unique ID for this select instance
   }>(),
   {
     width: 'w-48',
     position: 'right',
     customClass: '',
     closeOnClickOutside: true,
+    selectId: undefined,
   }
 );
 
@@ -58,35 +64,133 @@ const emit = defineEmits<{
   close: [];
 }>();
 
+const { activeSelectId, setActiveSelect, clearActiveSelect } =
+  useActiveSelect();
+
 const isOpen = ref(false);
 const selectRef = ref<HTMLElement | null>(null);
+const triggerRef = ref<HTMLElement | null>(null);
+const dropdownRef = ref<HTMLElement | null>(null);
+const dropdownStyle = ref<{
+  top: string;
+  left: string;
+  width: string;
+}>({
+  top: '0px',
+  left: '0px',
+  width: '0px',
+});
 
-const widthClass = computed(() => {
-  const classes: Record<SelectWidth, string> = {
-    auto: 'w-auto',
-    'w-48': 'w-48',
-    'w-64': 'w-64',
-    'w-full': 'w-full',
+/**
+ * Calculate dropdown position and width using getBoundingClientRect
+ * MANDATORY: Dropdown must always appear directly below the trigger, aligned to it
+ * - same left
+ * - same width
+ * - top = triggerRect.bottom + 8px offset
+ */
+const updateDropdownPosition = async () => {
+  if (!triggerRef.value || !isOpen.value) return;
+
+  await nextTick();
+
+  const triggerRect = triggerRef.value.getBoundingClientRect();
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
+
+  // MANDATORY: Inherit width from trigger (same width as trigger)
+  const triggerWidth = triggerRect.width;
+
+  // MANDATORY: Position directly below trigger
+  // With position: fixed, getBoundingClientRect() returns viewport coordinates
+  // DO NOT add window.scrollY - that's only for position: absolute
+  let top = triggerRect.bottom + 8;
+
+  // MANDATORY: Align left edge with trigger's left edge (same left)
+  // getBoundingClientRect() already returns viewport coordinates
+  let left = triggerRect.left;
+
+  // Ensure dropdown doesn't go off-screen on the right
+  // Adjust left if needed, but maintain relationship with trigger
+  if (left + triggerWidth > viewportWidth) {
+    left = Math.max(0, viewportWidth - triggerWidth);
+  }
+
+  // Ensure dropdown doesn't go off-screen on the left
+  if (left < 0) {
+    left = 0;
+  }
+
+  // If dropdown would go below viewport, position above trigger
+  // But only if there's more space above than below
+  const dropdownHeight = dropdownRef.value?.offsetHeight || 0;
+  const spaceBelow = viewportHeight - triggerRect.bottom;
+  const spaceAbove = triggerRect.top;
+
+  if (
+    spaceBelow < dropdownHeight &&
+    spaceAbove > spaceBelow &&
+    dropdownHeight > 0
+  ) {
+    // Position above trigger
+    // With position: fixed, use viewport coordinates directly (no scrollY)
+    top = triggerRect.top - dropdownHeight - 8;
+    // Still align left with trigger
+    left = triggerRect.left;
+    // Adjust if needed
+    if (left + triggerWidth > viewportWidth) {
+      left = Math.max(0, viewportWidth - triggerWidth);
+    }
+    if (left < 0) {
+      left = 0;
+    }
+  }
+
+  // MANDATORY: Use position: fixed with calculated values
+  // No classes like left-0, right-0, mt-2 should affect positioning
+  dropdownStyle.value = {
+    top: `${top}px`,
+    left: `${left}px`,
+    width: `${triggerWidth}px`,
   };
-  return classes[props.width];
-});
-
-const positionClass = computed(() => {
-  return props.position === 'left' ? 'left-0' : 'right-0';
-});
+};
 
 const toggleSelect = () => {
-  isOpen.value = !isOpen.value;
   if (isOpen.value) {
-    emit('open');
+    closeSelect();
   } else {
-    emit('close');
+    openSelect();
   }
+};
+
+const openSelect = async () => {
+  // If this select has an ID, set it as active (will close others)
+  if (props.selectId) {
+    setActiveSelect(props.selectId);
+  }
+
+  isOpen.value = true;
+  // Register scroll listener when opening (mandatory to close on scroll)
+  registerScrollListener();
+
+  await updateDropdownPosition();
+  // Also update on next animation frame to ensure accurate measurements
+  // This is especially important for mobile where layout may change
+  await nextTick();
+  requestAnimationFrame(() => {
+    updateDropdownPosition();
+  });
+  emit('open');
 };
 
 const closeSelect = () => {
   if (isOpen.value) {
     isOpen.value = false;
+    // Unregister scroll listener when closing (mandatory cleanup)
+    unregisterScrollListener();
+    // If this select has an ID, clear it from active
+    if (props.selectId && activeSelectId.value === props.selectId) {
+      clearActiveSelect();
+    }
     emit('close');
   }
 };
@@ -95,26 +199,92 @@ const handleClickOutside = (event: MouseEvent) => {
   if (!props.closeOnClickOutside) return;
 
   const target = event.target as HTMLElement;
-  if (selectRef.value && !selectRef.value.contains(target)) {
+  // Check both the trigger and the dropdown (which is teleported to body)
+  const isClickInside =
+    (selectRef.value && selectRef.value.contains(target)) ||
+    (dropdownRef.value && dropdownRef.value.contains(target));
+
+  if (!isClickInside) {
     closeSelect();
   }
 };
 
-// Handle scroll - close select when scrolling
+// Handle scroll - close dropdown when scrolling (mandatory to avoid visual misalignment)
+// This applies to both window scroll and container scroll
 const handleScroll = () => {
-  closeSelect();
+  if (isOpen.value) {
+    // Close immediately on any scroll event
+    closeSelect();
+  }
 };
 
-// Handle resize - close select when resizing
+// Handle resize - update position and width when resizing (critical for mobile)
 const handleResize = () => {
-  closeSelect();
+  if (isOpen.value) {
+    // Use requestAnimationFrame for smooth updates during resize
+    requestAnimationFrame(() => {
+      updateDropdownPosition();
+    });
+  }
+};
+
+// Watch for activeSelectId changes to close this select if another opens
+watch(activeSelectId, (id) => {
+  if (props.selectId && id !== props.selectId && isOpen.value) {
+    closeSelect();
+  }
+});
+
+// Watch for isOpen changes to update position and width
+// MANDATORY: Recalculate position when opening
+watch(isOpen, async (open) => {
+  if (open) {
+    // Calculate position immediately
+    await updateDropdownPosition();
+    // Also update on next animation frame to ensure accurate measurements
+    // This is especially important for mobile where layout may change
+    await nextTick();
+    requestAnimationFrame(() => {
+      updateDropdownPosition();
+    });
+    // One more update after a short delay to ensure final position
+    setTimeout(() => {
+      if (isOpen.value) {
+        updateDropdownPosition();
+      }
+    }, 50);
+  }
+});
+
+// Register scroll listener when select opens
+const registerScrollListener = () => {
+  // Listen to window scroll
+  window.addEventListener('scroll', handleScroll, {
+    passive: true,
+    capture: true,
+  });
+  // Also listen to scroll events on document and body (for container scrolls)
+  document.addEventListener('scroll', handleScroll, {
+    passive: true,
+    capture: true,
+  });
+  document.body.addEventListener('scroll', handleScroll, {
+    passive: true,
+    capture: true,
+  });
+};
+
+// Remove scroll listener when select closes
+const unregisterScrollListener = () => {
+  window.removeEventListener('scroll', handleScroll, { capture: true });
+  document.removeEventListener('scroll', handleScroll, { capture: true });
+  document.body.removeEventListener('scroll', handleScroll, { capture: true });
 };
 
 onMounted(() => {
   if (props.closeOnClickOutside) {
     document.addEventListener('click', handleClickOutside);
   }
-  window.addEventListener('scroll', handleScroll, { passive: true });
   window.addEventListener('resize', handleResize);
 });
 
@@ -122,8 +292,13 @@ onUnmounted(() => {
   if (props.closeOnClickOutside) {
     document.removeEventListener('click', handleClickOutside);
   }
-  window.removeEventListener('scroll', handleScroll);
   window.removeEventListener('resize', handleResize);
+  // Unregister scroll listener on unmount (mandatory cleanup)
+  unregisterScrollListener();
+  // Clean up: if this select was active, clear it
+  if (props.selectId && activeSelectId.value === props.selectId) {
+    clearActiveSelect();
+  }
 });
 
 defineExpose({
@@ -136,4 +311,3 @@ defineExpose({
   toggle: toggleSelect,
 });
 </script>
-

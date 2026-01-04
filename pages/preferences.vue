@@ -180,8 +180,24 @@
             <!-- Content Preferences Tab -->
             <div v-if="currentTab === 'content-preferences'">
               <div class="space-y-6">
+                <!-- Region -->
+                <Card padding="lg">
+                  <h2
+                    class="mb-2 text-xl font-semibold text-gray-800 dark:text-gray-300"
+                  >
+                    {{ $t('preferences.content.region.title') }}
+                  </h2>
+                  <p class="mb-4 text-sm text-gray-600 dark:text-gray-400">
+                    {{ $t('preferences.content.region.description') }}
+                  </p>
+                  <RegionSelector
+                    v-model="contentPreferences.region"
+                    @update:model-value="handleRegionChange"
+                  />
+                </Card>
+
                 <!-- Preferred Languages -->
-                <Card padding="lg" custom-class="relative z-10">
+                <Card padding="lg">
                   <h2
                     class="mb-2 text-xl font-semibold text-gray-800 dark:text-gray-300"
                   >
@@ -194,129 +210,14 @@
                   </p>
 
                   <!-- Language Selector -->
-                  <div class="relative z-10">
-                    <LanguageSelector
-                      v-model="currentLanguageCode"
-                      @update:model-value="handleLanguageChangeFromSelector"
-                    />
-                  </div>
-                </Card>
-
-                <!-- Favorite Genres -->
-                <Card padding="lg" custom-class="relative">
-                  <h2
-                    class="mb-2 text-xl font-semibold text-gray-800 dark:text-gray-300"
-                  >
-                    {{ $t('preferences.content.favoriteGenres.title') }}
-                  </h2>
-                  <p class="mb-4 text-sm text-gray-600 dark:text-gray-400">
-                    {{ $t('preferences.content.favoriteGenres.description') }}
-                  </p>
-
-                  <!-- Genre Search -->
-                  <SearchableSelect
-                    :options="availableGenres"
-                    :selected-items="selectedGenres"
-                    :placeholder="
-                      $t('preferences.content.favoriteGenres.searchPlaceholder')
-                    "
-                    :get-item-key="(genre: any) => `${genre.id}-${genre.type}`"
-                    :get-item-label="(genre: any) => genre.name || ''"
-                    :is-item-selected="
-                      (genre: any, selected: any[]) =>
-                        selected.some((g: any) => g.id === genre.id)
-                    "
-                    :filter-item="
-                      (genre: any, query: string) =>
-                        genre.name &&
-                        String(genre.name)
-                          .toLowerCase()
-                          .includes(query.toLowerCase())
-                    "
-                    @select="(item: any) => addGenre(item)"
-                  >
-                    <template #items="{ filteredOptions: genres, selectItem }">
-                      <template
-                        v-for="(genre, index) in genres"
-                        :key="`${(genre as any).id}-${(genre as any).type}`"
-                      >
-                        <!-- Separator: show only when type changes (first item of each type) -->
-                        <div
-                          v-if="
-                            Number(index) === 0 ||
-                            (genres[Number(index) - 1] as any)?.type !==
-                              (genre as any).type
-                          "
-                          class="px-4 py-2 text-xs font-semibold tracking-wider text-gray-500 uppercase dark:text-gray-400"
-                          :class="
-                            Number(index) > 0
-                              ? 'border-t border-gray-200 dark:border-gray-700'
-                              : ''
-                          "
-                        >
-                          {{
-                            (genre as any).type === MediaTypeEnum.movie
-                              ? t('preferences.content.contentTypes.movie')
-                              : t('preferences.content.contentTypes.tv')
-                          }}
-                        </div>
-                        <!-- Genre option -->
-                        <div
-                          class="flex gap-3 items-center px-4 py-3 transition-colors duration-150 cursor-pointer dark:hover:bg-gray-800/50 hover:bg-gray-100/50"
-                          @mousedown.prevent="selectItem(genre)"
-                          @click="selectItem(genre)"
-                        >
-                          <span
-                            class="text-sm text-gray-800 dark:text-gray-300"
-                            >{{ (genre as any).name }}</span
-                          >
-                        </div>
-                      </template>
-                    </template>
-                  </SearchableSelect>
-
-                  <!-- Selected Genres List -->
-                  <div v-if="selectedGenres.length > 0" class="mb-4">
-                    <p
-                      class="mb-2 text-sm font-medium text-gray-800 dark:text-gray-300"
-                    >
-                      {{ $t('preferences.content.favoriteGenres.selected') }}
-                      ({{ selectedGenres.length }})
-                    </p>
-                    <div class="flex flex-wrap gap-2">
-                      <div
-                        v-for="genre in selectedGenres"
-                        :key="genre.id"
-                        class="flex gap-2 items-center px-4 py-1.5 rounded-full border backdrop-blur-xl md:py-2.5 dark:bg-gray-900/40 bg-gray-100/80 border-gray-300/50 dark:border-white/10"
-                      >
-                        <span
-                          class="text-xs font-medium text-gray-800 md:text-sm dark:text-gray-300"
-                          >{{ genre.name }}</span
-                        >
-                        <CloseButton
-                          custom-class="ml-1"
-                          :aria-label="
-                            $t('preferences.content.favoriteGenres.remove', {
-                              name: genre.name,
-                            })
-                          "
-                          @click="removeGenre(genre.id)"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Info Message -->
-                  <p
-                    v-if="selectedGenres.length === 0"
-                    class="text-sm italic text-gray-600 dark:text-gray-400"
-                  >
-                    {{ $t('preferences.content.favoriteGenres.noneSelected') }}
-                  </p>
+                  <LanguageSelector
+                    v-model="currentLanguageCode"
+                    @update:model-value="handleLanguageChangeFromSelector"
+                  />
                 </Card>
 
                 <!-- Included Providers -->
-                <Card padding="lg" custom-class="relative">
+                <Card padding="lg">
                   <h2
                     class="mb-2 text-xl font-semibold text-gray-800 dark:text-gray-300"
                   >
@@ -330,6 +231,9 @@
 
                   <!-- Provider Search -->
                   <SearchableSelect
+                    ref="providerSelectRef"
+                    select-id="provider-selector"
+                    :close-on-click-outside="true"
                     :options="availableProviders"
                     :selected-items="selectedProviders"
                     :placeholder="
@@ -442,20 +346,120 @@
                   </p>
                 </Card>
 
-                <!-- Region -->
+                <!-- Favorite Genres -->
                 <Card padding="lg">
                   <h2
                     class="mb-2 text-xl font-semibold text-gray-800 dark:text-gray-300"
                   >
-                    {{ $t('preferences.content.region.title') }}
+                    {{ $t('preferences.content.favoriteGenres.title') }}
                   </h2>
                   <p class="mb-4 text-sm text-gray-600 dark:text-gray-400">
-                    {{ $t('preferences.content.region.description') }}
+                    {{ $t('preferences.content.favoriteGenres.description') }}
                   </p>
-                  <RegionSelector
-                    v-model="contentPreferences.region"
-                    @update:model-value="handleRegionChange"
-                  />
+
+                  <!-- Genre Search -->
+                  <SearchableSelect
+                    ref="genreSelectRef"
+                    select-id="genre-selector"
+                    :close-on-click-outside="true"
+                    :options="availableGenres"
+                    :selected-items="selectedGenres"
+                    :placeholder="
+                      $t('preferences.content.favoriteGenres.searchPlaceholder')
+                    "
+                    :get-item-key="(genre: any) => `${genre.id}-${genre.type}`"
+                    :get-item-label="(genre: any) => genre.name || ''"
+                    :is-item-selected="
+                      (genre: any, selected: any[]) =>
+                        selected.some((g: any) => g.id === genre.id)
+                    "
+                    :filter-item="
+                      (genre: any, query: string) =>
+                        genre.name &&
+                        String(genre.name)
+                          .toLowerCase()
+                          .includes(query.toLowerCase())
+                    "
+                    @select="(item: any) => addGenre(item)"
+                  >
+                    <template #items="{ filteredOptions: genres, selectItem }">
+                      <template
+                        v-for="(genre, index) in genres"
+                        :key="`${(genre as any).id}-${(genre as any).type}`"
+                      >
+                        <!-- Separator: show only when type changes (first item of each type) -->
+                        <div
+                          v-if="
+                            Number(index) === 0 ||
+                            (genres[Number(index) - 1] as any)?.type !==
+                              (genre as any).type
+                          "
+                          class="px-4 py-2 text-xs font-semibold tracking-wider text-gray-500 uppercase dark:text-gray-400"
+                          :class="
+                            Number(index) > 0
+                              ? 'border-t border-gray-200 dark:border-gray-700'
+                              : ''
+                          "
+                        >
+                          {{
+                            (genre as any).type === MediaTypeEnum.movie
+                              ? t('preferences.content.contentTypes.movie')
+                              : t('preferences.content.contentTypes.tv')
+                          }}
+                        </div>
+                        <!-- Genre option -->
+                        <div
+                          class="flex gap-3 items-center px-4 py-3 transition-colors duration-150 cursor-pointer dark:hover:bg-gray-800/50 hover:bg-gray-100/50"
+                          @mousedown.prevent="selectItem(genre)"
+                          @click="selectItem(genre)"
+                        >
+                          <span
+                            class="text-sm text-gray-800 dark:text-gray-300"
+                            >{{ (genre as any).name }}</span
+                          >
+                        </div>
+                      </template>
+                    </template>
+                  </SearchableSelect>
+
+                  <!-- Selected Genres List -->
+                  <div v-if="selectedGenres.length > 0" class="mb-4">
+                    <p
+                      class="mb-2 text-sm font-medium text-gray-800 dark:text-gray-300"
+                    >
+                      {{ $t('preferences.content.favoriteGenres.selected') }}
+                      ({{ selectedGenres.length }})
+                    </p>
+                    <div class="flex flex-wrap gap-2">
+                      <div
+                        v-for="genre in selectedGenres"
+                        :key="genre.id"
+                        class="flex gap-2 items-center px-4 py-1.5 rounded-full border backdrop-blur-xl md:py-2.5 dark:bg-gray-900/40 bg-gray-100/80 border-gray-300/50 dark:border-white/10"
+                      >
+                        <span
+                          class="text-xs font-medium text-gray-800 md:text-sm dark:text-gray-300"
+                          >{{ genre.name }}</span
+                        >
+                        <CloseButton
+                          custom-class="ml-1"
+                          :aria-label="
+                            $t('preferences.content.favoriteGenres.remove', {
+                              name: genre.name,
+                            })
+                          "
+                          @click="removeGenre(genre.id)"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Info Message -->
+                  <p
+                    v-if="selectedGenres.length === 0"
+                    class="text-sm italic text-gray-600 dark:text-gray-400"
+                  >
+                    {{ $t('preferences.content.favoriteGenres.noneSelected') }}
+                  </p>
                 </Card>
 
                 <!-- Save Button -->
@@ -670,7 +674,6 @@ import LanguageSelector from '@/components/LanguageSelector.vue';
 import RegionSelector from '@/components/RegionSelector.vue';
 import SearchableSelect from '@/components/ui/SearchableSelect.vue';
 import { useUndoToast } from '@/composables/useUndoToast';
-import { useRegions } from '@/composables/useRegions';
 import type { TMDBSearchResult } from '@/types/tmdb/Search';
 import {
   AVAILABLE_LANGUAGES,
@@ -1750,6 +1753,12 @@ const selectedProviders = ref<
     logo_path: string | null;
   }>
 >([]);
+
+// Refs for SearchableSelect components (kept for potential future use)
+const providerSelectRef = ref<InstanceType<typeof SearchableSelect> | null>(
+  null
+);
+const genreSelectRef = ref<InstanceType<typeof SearchableSelect> | null>(null);
 
 // Fetch content preferences
 const fetchContentPreferences = async () => {
