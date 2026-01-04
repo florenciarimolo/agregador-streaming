@@ -121,7 +121,7 @@
 <script setup lang="ts">
 import { useRoute } from 'vue-router';
 import { useFetch, useSeoMeta, useHead } from 'nuxt/app';
-import { computed, onMounted } from 'vue';
+import { computed, onMounted, watch } from 'vue';
 
 import { TVShow } from '@/types/TVShow';
 import { formatDateToSpanish } from '@/utils/formatDate';
@@ -140,6 +140,7 @@ import Section from '@/components/layout/Section.vue';
 import SectionTitle from '@/components/layout/SectionTitle.vue';
 
 const route = useRoute();
+const { locale } = useI18n();
 
 const tvShowId = route.params.id;
 
@@ -147,13 +148,36 @@ const {
   data: tvShowDetails,
   pending: tvShowPending,
   error: tvShowError,
+  refresh: refreshTVShowDetails,
 } = await useFetch<TVShow>(`/api/tmdb/tvshows/${tvShowId}`);
 
 const {
   data: tvProviders,
   pending: tvProvidersPending,
   error: tvProvidersError,
+  refresh: refreshTVProviders,
 } = await useFetch(`/api/tmdb/tvshows/${tvShowId}/providers`);
+
+// Watch for locale changes and refresh all data
+watch(
+  () => locale.value,
+  async (newLocale, oldLocale) => {
+    if (newLocale && oldLocale && newLocale !== oldLocale) {
+      if (import.meta.dev) {
+        console.log(
+          '[tv-show/[id]/index.vue] Language changed, refreshing TV show data:',
+          {
+            oldLocale,
+            newLocale,
+          }
+        );
+      }
+      // Refresh all data with new language
+      await Promise.all([refreshTVShowDetails(), refreshTVProviders()]);
+    }
+  },
+  { immediate: false }
+);
 
 const isLoading = computed(
   () => tvShowPending.value || tvProvidersPending.value

@@ -235,7 +235,7 @@
 <script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router';
 import { useFetch } from 'nuxt/app';
-import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 
 import { Season } from '@/types/TVShow';
 import { formatDateToSpanish } from '@/utils/formatDate';
@@ -253,6 +253,7 @@ import SectionTitle from '@/components/layout/SectionTitle.vue';
 
 const route = useRoute();
 const router = useRouter();
+const { locale } = useI18n();
 
 // Necesitamos obtener el seriesId desde la URL padre y el seasonId de los parámetros actuales
 const seriesId = route.params.id;
@@ -262,6 +263,7 @@ const {
   data: seasonData,
   pending: seasonPending,
   error: seasonError,
+  refresh: refreshSeasonData,
 } = await useFetch<Season>(`/api/tmdb/tvshows/${seriesId}/seasons/${seasonId}`);
 
 const isLoading = computed(
@@ -275,8 +277,30 @@ const {
   data: seasonProviders,
   pending: seasonProvidersPending,
   error: seasonProvidersError,
+  refresh: refreshSeasonProviders,
 } = await useFetch<WatchProviderTypes>(
   `/api/tmdb/tvshows/${seriesId}/seasons/${seasonId}/providers`
+);
+
+// Watch for locale changes and refresh all data
+watch(
+  () => locale.value,
+  async (newLocale, oldLocale) => {
+    if (newLocale && oldLocale && newLocale !== oldLocale) {
+      if (import.meta.dev) {
+        console.log('[tv-show/[id]/season/[seasonId].vue] Language changed, refreshing season data:', {
+          oldLocale,
+          newLocale,
+        });
+      }
+      // Refresh all data with new language
+      await Promise.all([
+        refreshSeasonData(),
+        refreshSeasonProviders(),
+      ]);
+    }
+  },
+  { immediate: false }
 );
 
 const seasonWithProviders = computed(() => {

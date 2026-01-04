@@ -78,7 +78,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 import { getSession } from '@/composables/database/auth';
 import AlertMessage from '@/components/AlertMessage.vue';
@@ -89,7 +89,7 @@ import TitleCard from '@/components/TitleCard.vue';
 import IconX from '@/components/icons/IconX.vue';
 import Tooltip from '@/components/ui/Tooltip.vue';
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 
 // SEO: Private page - noindex, nofollow
 useHead({
@@ -227,6 +227,24 @@ const handleRemoveTitle = async (title: WatchlistTitle) => {
     isRemoving.value = false;
   }
 };
+
+// Watch for locale changes and refresh watchlist
+watch(
+  () => locale.value,
+  async (newLocale, oldLocale) => {
+    if (newLocale && oldLocale && newLocale !== oldLocale) {
+      if (import.meta.dev) {
+        console.log('[watchlist.vue] Language changed, refreshing watchlist:', {
+          oldLocale,
+          newLocale,
+        });
+      }
+      // Refresh watchlist with new language
+      await fetchWatchlist();
+    }
+  },
+  { immediate: false }
+);
 
 onMounted(() => {
   fetchWatchlist();

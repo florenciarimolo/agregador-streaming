@@ -29,7 +29,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useFetch, useSeoMeta, useHead } from 'nuxt/app';
 import type { Movie } from '@/types/Movie';
@@ -46,12 +46,14 @@ import PageContainer from '@/components/layout/PageContainer.vue';
 
 const route = useRoute();
 const movieId = route.params.id as string;
+const { locale } = useI18n();
 
 // Fetch movie details
 const {
   data: movieDetails,
   pending: moviePending,
   error: movieError,
+  refresh: refreshMovieDetails,
 } = await useFetch(`/api/tmdb/movies/${movieId}`);
 
 // Fetch providers
@@ -59,6 +61,7 @@ const {
   data: providersData,
   pending: providersPending,
   error: providersError,
+  refresh: refreshProviders,
 } = await useFetch(`/api/tmdb/movies/${movieId}/providers`);
 
 // Fetch alternative titles
@@ -66,7 +69,30 @@ const {
   data: alternativeTitlesData,
   pending: alternativeTitlesPending,
   error: alternativeTitlesError,
+  refresh: refreshAlternativeTitles,
 } = await useFetch(`/api/tmdb/movies/${movieId}/alternative-titles`);
+
+// Watch for locale changes and refresh all data
+watch(
+  () => locale.value,
+  async (newLocale, oldLocale) => {
+    if (newLocale && oldLocale && newLocale !== oldLocale) {
+      if (import.meta.dev) {
+        console.log('[movie/[id].vue] Language changed, refreshing movie data:', {
+          oldLocale,
+          newLocale,
+        });
+      }
+      // Refresh all data with new language
+      await Promise.all([
+        refreshMovieDetails(),
+        refreshProviders(),
+        refreshAlternativeTitles(),
+      ]);
+    }
+  },
+  { immediate: false }
+);
 
 // Computed para manejar los datos
 const movie = computed<Movie>(
