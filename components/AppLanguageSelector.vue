@@ -4,10 +4,14 @@
       <div v-show="false">{{ updateOpenState(open) }}</div>
       <ListboxButton
         ref="buttonRef"
-        class="flex gap-2 items-center px-3 py-2 text-sm font-medium text-gray-800 rounded-lg transition-colors dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+        class="flex gap-2 items-center px-3 py-2 text-sm font-medium text-gray-800 rounded-lg transition-colors dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 touch-manipulation select-none"
         :class="{
           'bg-gray-100 dark:bg-gray-700': open,
         }"
+        style="
+          touch-action: manipulation;
+          -webkit-tap-highlight-color: transparent;
+        "
       >
         <img
           v-if="currentLanguageObj"
@@ -41,7 +45,7 @@
           <ListboxOptions
             v-if="open"
             :style="dropdownStyle"
-            class="fixed z-50 mt-1 overflow-hidden rounded-lg border border-gray-300 backdrop-blur-sm dark:bg-gray-900/95 bg-white/95 dark:border-gray-600 shadow-lg focus:outline-none"
+            class="fixed z-[110] mt-1 overflow-hidden rounded-lg border border-gray-300 backdrop-blur-sm dark:bg-gray-900/95 bg-white/95 dark:border-gray-600 shadow-lg focus:outline-none"
           >
             <div
               data-dropdown-scroll
@@ -119,6 +123,7 @@ const dropdownStyle = ref<{
   right: string;
   minWidth: string;
   width: string;
+  maxWidth?: string;
 }>({
   position: 'fixed',
   top: '0px',
@@ -135,12 +140,23 @@ const updateDropdownPosition = () => {
   if (!button) return;
 
   const rect = button.getBoundingClientRect();
+  const isMobile = window.innerWidth < 768; // md breakpoint
+
+  // On mobile, align to the right edge of the button
+  // On desktop, also align to the right edge
+  const rightPosition = window.innerWidth - rect.right;
+
+  // Ensure dropdown doesn't go off-screen on mobile
+  const minWidth = Math.max(rect.width, 192); // Minimum width
+  const maxRight = window.innerWidth - 16; // 16px padding from screen edge
+
   dropdownStyle.value = {
     position: 'fixed',
     top: `${rect.bottom + 4}px`, // mt-1 = 4px
-    right: `${window.innerWidth - rect.right}px`,
-    minWidth: `${rect.width}px`,
+    right: `${Math.min(rightPosition, maxRight)}px`,
+    minWidth: `${minWidth}px`,
     width: 'max-content',
+    maxWidth: isMobile ? `${window.innerWidth - 32}px` : 'none', // Prevent overflow on mobile
   };
 };
 

@@ -55,8 +55,6 @@ export default defineEventHandler(async (event) => {
       ...(tvResponse?.results || []),
     ];
 
-    console.log('allProviders', allProviders);
-
     // Remove duplicates by provider_id and sort by name
     const uniqueProviders = new Map<number, (typeof allProviders)[0]>();
     allProviders.forEach((provider) => {
