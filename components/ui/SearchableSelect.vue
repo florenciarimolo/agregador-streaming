@@ -18,7 +18,6 @@
             @input="handleInput"
             @focus="handleFocus"
             @mousedown.stop.prevent="handleFocus"
-            @blur="handleBlur"
           />
           <!-- Search Icon -->
           <div
@@ -30,9 +29,8 @@
       </template>
       <div
         v-if="filteredOptions.length > 0"
+        data-dropdown-scroll
         class="overflow-y-auto max-h-64 border-gray-300 backdrop-blur-sm custom-scrollbar dark:bg-gray-900/95 bg-white/95 dark:border-gray-600"
-        @mousedown="clickInsideMenu = true"
-        @click="clickInsideMenu = true"
       >
         <div class="py-2">
           <slot
@@ -130,7 +128,6 @@ const searchQuery = ref('');
 const selectMenuRef = ref<InstanceType<typeof SelectMenu> | null>(null);
 const inputRef = ref<HTMLInputElement | null>(null);
 const filteredOptions = ref<Array<Record<string, unknown>>>([]);
-const clickInsideMenu = ref(false);
 
 // Default filterItem function (needs to be defined after props)
 const defaultFilterItem = (item: Record<string, unknown>, query: string) => {
@@ -186,46 +183,10 @@ const handleFocus = () => {
   }
 };
 
-// Handle blur - close dropdown after a delay, but only if click was outside
-const handleBlur = (event: FocusEvent) => {
-  // Check if the related target (where focus is going) is inside the select menu
-  const relatedTarget = event.relatedTarget as HTMLElement | null;
-  const selectMenuElement = selectMenuRef.value?.$el as HTMLElement | null;
-
-  // If focus is moving to an element inside the menu, don't close
-  if (
-    relatedTarget &&
-    selectMenuElement &&
-    selectMenuElement.contains(relatedTarget)
-  ) {
-    clickInsideMenu.value = false;
-    return;
-  }
-
-  // Delay closing to allow click events to process first
-  setTimeout(() => {
-    // If click was inside menu, don't close
-    if (clickInsideMenu.value) {
-      clickInsideMenu.value = false;
-      // Restore focus to input
-      inputRef.value?.focus();
-      return;
-    }
-
-    // Double-check that focus is still not on the input or menu
-    const activeElement = document.activeElement;
-    if (
-      activeElement !== inputRef.value &&
-      (!selectMenuElement || !selectMenuElement.contains(activeElement))
-    ) {
-      selectMenuRef.value?.close();
-    }
-  }, 200);
-};
-
 // Select an item
+// SearchableSelect only closes when an item is selected
+// All other closing (scroll, click outside) is handled by SelectMenu
 const selectItem = (item: Record<string, unknown>) => {
-  clickInsideMenu.value = false;
   emit('select', item);
   searchQuery.value = '';
   selectMenuRef.value?.close();

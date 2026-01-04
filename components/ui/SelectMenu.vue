@@ -71,6 +71,8 @@ const isOpen = ref(false);
 const selectRef = ref<HTMLElement | null>(null);
 const triggerRef = ref<HTMLElement | null>(null);
 const dropdownRef = ref<HTMLElement | null>(null);
+// Protection window to prevent immediate closure after opening (wheel/touchmove fire on initial click/tap)
+const ignoreScrollUntil = ref(0);
 const dropdownStyle = ref<{
   top: string;
   left: string;
@@ -172,6 +174,9 @@ const openSelect = async () => {
   }
 
   isOpen.value = true;
+  // Set protection window to prevent immediate closure from wheel/touchmove events
+  // These events fire even during the initial click/tap that opens the select
+  ignoreScrollUntil.value = Date.now() + 250;
   // Register scroll listener when opening (mandatory to close on scroll)
   registerScrollListener();
 
@@ -212,30 +217,31 @@ const handleClickOutside = (event: MouseEvent) => {
   }
 };
 
-// Handle scroll - close dropdown when scrolling (mandatory to avoid visual misalignment)
-// This applies to both window scroll and container scroll
+// Handle scroll intent - close dropdown BEFORE scroll happens (mandatory to avoid visual misalignment)
 // IMPORTANT: Do NOT close if scroll occurs inside the dropdown itself
-const handleScroll = (event: Event) => {
+// The dropdown must NEVER reposition or follow layout scroll - it must close immediately
+// Use wheel and touchmove instead of scroll because scroll events don't bubble reliably
+const handleGlobalScrollIntent = (event: Event) => {
   if (!isOpen.value) return;
+
+  // No cerrar inmediatamente tras abrir (wheel/touchmove se disparan en el click/tap inicial)
+  if (Date.now() < ignoreScrollUntil.value) {
+    return;
+  }
 
   const target = event.target as HTMLElement | null;
 
-  // If scroll occurs inside the dropdown, don't close
-  // Check if target is an HTMLElement and if it's contained within the dropdown
-  if (
-    dropdownRef.value &&
-    target &&
-    target instanceof HTMLElement &&
-    dropdownRef.value.contains(target)
-  ) {
-    return; // scroll interno → no cerrar
+  // Permitir scroll solo dentro del dropdown
+  if (target?.closest('[data-dropdown-scroll]')) {
+    return;
   }
 
-  // scroll externo (window, document, body, or other containers) → cerrar
+  // Cualquier otro scroll (page, tabs, contenedores externos) → cerrar inmediatamente
   closeSelect();
 };
 
 // Handle resize - update position and width when resizing (critical for mobile)
+// Also handles orientationchange for mobile devices
 const handleResize = () => {
   if (isOpen.value) {
     // Use requestAnimationFrame for smooth updates during resize
@@ -273,29 +279,28 @@ watch(isOpen, async (open) => {
   }
 });
 
-// Register scroll listener when select opens
+// Register scroll intent listeners when select opens
+// Use wheel (desktop) and touchmove (mobile) instead of scroll
+// These events bubble reliably and fire BEFORE the scroll happens
 const registerScrollListener = () => {
-  // Listen to window scroll
-  window.addEventListener('scroll', handleScroll, {
+  document.addEventListener('wheel', handleGlobalScrollIntent, {
     passive: true,
     capture: true,
   });
-  // Also listen to scroll events on document and body (for container scrolls)
-  document.addEventListener('scroll', handleScroll, {
-    passive: true,
-    capture: true,
-  });
-  document.body.addEventListener('scroll', handleScroll, {
+  document.addEventListener('touchmove', handleGlobalScrollIntent, {
     passive: true,
     capture: true,
   });
 };
 
-// Remove scroll listener when select closes
+// Remove scroll intent listeners when select closes
 const unregisterScrollListener = () => {
-  window.removeEventListener('scroll', handleScroll, { capture: true });
-  document.removeEventListener('scroll', handleScroll, { capture: true });
-  document.body.removeEventListener('scroll', handleScroll, { capture: true });
+  document.removeEventListener('wheel', handleGlobalScrollIntent, {
+    capture: true,
+  });
+  document.removeEventListener('touchmove', handleGlobalScrollIntent, {
+    capture: true,
+  });
 };
 
 onMounted(() => {
@@ -303,6 +308,7 @@ onMounted(() => {
     document.addEventListener('click', handleClickOutside);
   }
   window.addEventListener('resize', handleResize);
+  window.addEventListener('orientationchange', handleResize);
 });
 
 onUnmounted(() => {
@@ -310,6 +316,7 @@ onUnmounted(() => {
     document.removeEventListener('click', handleClickOutside);
   }
   window.removeEventListener('resize', handleResize);
+  window.removeEventListener('orientationchange', handleResize);
   // Unregister scroll listener on unmount (mandatory cleanup)
   unregisterScrollListener();
   // Clean up: if this select was active, clear it

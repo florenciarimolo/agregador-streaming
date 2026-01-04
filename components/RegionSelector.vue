@@ -57,7 +57,7 @@
         </div>
       </div>
       <!-- Options List -->
-      <div class="overflow-y-auto flex-1 custom-scrollbar">
+      <div data-dropdown-scroll class="overflow-y-auto flex-1 custom-scrollbar">
         <div class="py-2">
           <!-- Region Options -->
           <div

@@ -43,7 +43,7 @@
       class="flex overflow-hidden flex-col max-h-64 rounded-lg border border-gray-300 backdrop-blur-sm dark:bg-gray-900/95 bg-white/95 dark:border-gray-600"
     >
       <!-- Options List -->
-      <div class="overflow-y-auto flex-1 custom-scrollbar">
+      <div data-dropdown-scroll class="overflow-y-auto flex-1 custom-scrollbar">
         <div class="py-2">
           <!-- Language Options -->
           <div

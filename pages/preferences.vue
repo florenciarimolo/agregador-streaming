@@ -291,7 +291,7 @@
                           >
                         </div>
                         <span
-                          class="text-sm text-gray-800 dark:text-gray-300"
+                          class="text-sm text-gray-800 dark:text-gray-300 whitespace-nowrap"
                           >{{ (provider as any).provider_name }}</span
                         >
                       </div>
@@ -414,7 +414,7 @@
                           @click="selectItem(genre)"
                         >
                           <span
-                            class="text-sm text-gray-800 dark:text-gray-300"
+                            class="text-sm text-gray-800 dark:text-gray-300 whitespace-nowrap"
                             >{{ (genre as any).name }}</span
                           >
                         </div>
