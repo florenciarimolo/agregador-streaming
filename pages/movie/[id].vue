@@ -3,8 +3,13 @@
     <PageContainer>
       <div class="w-full pt-6 pb-6">
         <!-- Loading state -->
-        <div v-if="isLoading" class="flex items-center justify-center min-h-screen">
-          <div class="text-xl dark:text-gray-300 text-gray-800">{{ $t('common.loading') }}</div>
+        <div
+          v-if="isLoading"
+          class="flex items-center justify-center min-h-screen"
+        >
+          <div class="text-xl dark:text-gray-300 text-gray-800">{{
+            $t('common.loading')
+          }}</div>
         </div>
 
         <!-- Error state -->
@@ -12,7 +17,9 @@
           v-else-if="hasError"
           class="flex items-center justify-center min-h-screen"
         >
-          <div class="text-xl text-red-500">{{ $t('media.errorLoadingMovie') }}</div>
+          <div class="text-xl text-red-500">{{
+            $t('media.errorLoadingMovie')
+          }}</div>
         </div>
 
         <!-- Content -->
@@ -78,10 +85,13 @@ watch(
   async (newLocale, oldLocale) => {
     if (newLocale && oldLocale && newLocale !== oldLocale) {
       if (import.meta.dev) {
-        console.log('[movie/[id].vue] Language changed, refreshing movie data:', {
-          oldLocale,
-          newLocale,
-        });
+        console.log(
+          '[movie/[id].vue] Language changed, refreshing movie data:',
+          {
+            oldLocale,
+            newLocale,
+          }
+        );
       }
       // Refresh all data with new language
       await Promise.all([
@@ -138,21 +148,24 @@ const handleResize = () => {
 onMounted(() => {
   checkMobile();
   window.addEventListener('resize', handleResize);
-  
+
   // Save the previous route if it exists and is from within the app
   if (import.meta.client) {
     const referrer = document.referrer;
     const currentOrigin = window.location.origin;
-    
+
     // Only save if the referrer is from the same origin (within the app)
     if (referrer && referrer.startsWith(currentOrigin)) {
       try {
         const referrerPath = new URL(referrer).pathname;
         // Don't save if we're coming from another detail page (to avoid loops)
-        if (!referrerPath.startsWith('/movie/') && !referrerPath.startsWith('/tv-show/')) {
+        if (
+          !referrerPath.startsWith('/movie/') &&
+          !referrerPath.startsWith('/tv-show/')
+        ) {
           sessionStorage.setItem('previousRoute', referrerPath);
         }
-      } catch (e) {
+      } catch {
         // If URL parsing fails, try to use router's previous route
         // This is a fallback
       }
@@ -240,7 +253,7 @@ useHead({
     ? [
         {
           type: 'application/ld+json',
-          children: JSON.stringify(movieSchema.value),
+          innerHTML: JSON.stringify(movieSchema.value),
         },
       ]
     : [],
@@ -262,4 +275,3 @@ useSeoMeta({
 });
 </script>
 <style scoped></style>
-

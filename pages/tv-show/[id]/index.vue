@@ -269,7 +269,7 @@ useHead({
     ? [
         {
           type: 'application/ld+json',
-          children: JSON.stringify(tvShowSchema.value),
+          innerHTML: JSON.stringify(tvShowSchema.value),
         },
       ]
     : [],
@@ -307,7 +307,7 @@ onMounted(() => {
         ) {
           sessionStorage.setItem('previousRoute', referrerPath);
         }
-      } catch (e) {
+      } catch {
         // If URL parsing fails, ignore
       }
     }
