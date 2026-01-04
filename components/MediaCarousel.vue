@@ -128,7 +128,7 @@
               decoding="async"
             />
             <div
-              class="flex absolute bottom-0 left-0 flex-col justify-center items-center px-4 w-full h-full rounded-xl border opacity-0 backdrop-blur-md transition-all duration-300 group-hover:opacity-100 group-hover:shadow-primary/40 group-hover:shadow-xl w-inherit dark:bg-black/80 bg-white/80 border-primary/20"
+              class="flex absolute bottom-0 left-0 flex-col justify-center items-center px-4 w-full h-full rounded-xl border opacity-0 backdrop-blur-md transition-all duration-300 group-hover:opacity-100 group-hover:shadow-primary/40 group-hover:shadow-xl w-inherit dark:bg-black/80 bg-primary-50/80 border-primary/20"
             >
               <p class="font-semibold text-gray-800 dark:text-gray-300">{{
                 $t('media.viewDetails')
