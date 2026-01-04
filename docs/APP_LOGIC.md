@@ -10,8 +10,9 @@ This document describes the business logic, data rules, and architecture of the 
 4. [Title States](#title-states)
 5. [Scoring System](#scoring-system)
 6. [Recommendation Pool](#recommendation-pool)
-7. [Data Model](#data-model)
-8. [Business Rules](#business-rules)
+7. [Recommendation Explanations](#recommendation-explanations)
+8. [Data Model](#data-model)
+9. [Business Rules](#business-rules)
 
 ---
 
@@ -728,31 +729,93 @@ When a title's state is reversed (e.g., removing `seen` or `not_interested`):
 
 ---
 
+## Recommendation Explanations
+
+The recommendation system can optionally explain _why_ a title is being shown to the user.
+
+This explanation is informational only and does not affect ranking or behavior.
+
+### explanation_code
+
+Stored in `recommendation_pool.explanation_code`.
+
+It represents a **human-readable reason** that can be displayed in the UI.
+
+Allowed values:
+
+- `BASED_ON_LIKE` – Based on titles the user liked
+- `TRENDING` – Trending this week
+- `DISCOVER` – Editorial discovery
+- `EASY_TO_WATCH` – Easy-to-watch content
+- `MOOD_MATCH` – Matches the user's current mood (calculated dynamically)
+
+### Display Rules
+
+- Displayed only in **personalized recommendations**
+- Never displayed in Discover or editorial lists
+- Rendered as subtle helper text, not as a badge
+- Optional: if missing, nothing is shown
+
+### Important Notes
+
+- `source` is internal and must never be shown in the UI
+- `MOOD_MATCH` is not persisted in the database; it is calculated at read time
+- Explanations are meant to provide context, not transparency of the algorithm
+
+---
+
 ## Data Model
 
 ### Table: `profiles`
 
 Extends Supabase's `auth.users`. Stores user profile information.
 
-**Main fields:**
+**Fields:**
 
-- `id`: UUID (reference to `auth.users`)
-- `email`: User email
-- `display_name`: Display name
-- `avatar_url`: Avatar URL
-- `onboarding_completed`: Boolean indicating if onboarding was completed
-- `settings`: JSONB with additional settings
+- `id`: UUID PRIMARY KEY (references `auth.users.id` ON DELETE CASCADE)
+- `email`: TEXT - User email
+- `display_name`: TEXT - Display name
+- `avatar_url`: TEXT - Avatar URL
+- `onboarding_completed`: BOOLEAN DEFAULT FALSE NOT NULL - Indicates if onboarding was completed
+- `created_at`: TIMESTAMP WITH TIME ZONE - Creation timestamp (auto-set)
+- `updated_at`: TIMESTAMP WITH TIME ZONE - Last update timestamp (auto-updated via trigger)
+
+**Constraints:**
+
+- Primary key references `auth.users(id)` with CASCADE delete
+- Auto-created via trigger when a new user signs up
 
 ### Table: `titles`
 
 Stores movie and TV show information.
 
+**Fields:**
+
+- `id`: UUID PRIMARY KEY - Internal ID (auto-generated)
+- `tmdb_id`: INTEGER UNIQUE NOT NULL - TMDB ID for reference
+- `title`: JSONB NOT NULL - Multi-language title in ISO format: `{"es-ES": "...", "ca-ES": "...", "eu-ES": "...", "gl-ES": "...", "en-US": "..."}`
+- `type`: TEXT NOT NULL CHECK (type IN ('movie', 'tv')) - Content type
+- `poster_path`: JSONB - Multi-language poster path in ISO format (same structure as title)
+- `backdrop_path`: TEXT - Backdrop image path
+- `overview`: JSONB - Multi-language overview in ISO format (same structure as title)
+- `release_date`: DATE - Release date for movies
+- `first_air_date`: DATE - First air date for TV shows
+- `genres`: JSONB - Array of genre objects from TMDB: `[{"id": 28, "name": "Action"}, ...]`
+- `vote_average`: DECIMAL(3, 1) - Average rating
+- `created_at`: TIMESTAMP WITH TIME ZONE - Creation timestamp (auto-set)
+- `updated_at`: TIMESTAMP WITH TIME ZONE - Last update timestamp (auto-updated via trigger)
+
 **Important characteristics:**
 
-- `title`, `poster_path`, `overview` are **multi-language JSONB**
-- Format: `{"es": "...", "ca": "...", "eu": "...", "gl": "...", "en": "..."}`
-- `tmdb_id`: Unique TMDB ID (unique in the table)
-- `type`: 'movie' or 'tv'
+- `title`, `poster_path`, and `overview` are **multi-language JSONB in ISO format** (`xx-XX`)
+- Legacy format (`xx`) is supported for backward compatibility during reads, but all new writes use ISO format
+- `tmdb_id` is unique across the table
+- `backdrop_path` is a simple TEXT field (not multi-language)
+
+**Indexes:**
+
+- `idx_titles_tmdb_id` on `tmdb_id`
+- `idx_titles_type` on `type`
 
 ### Table: `user_title_status`
 
@@ -760,17 +823,24 @@ Stores title states for each user.
 
 **Fields:**
 
-- `user_id`: User UUID
-- `tmdb_id`: Title ID in TMDB
-- `type`: 'movie' or 'tv'
-- `status`: 'watchlist', 'seen', or 'not_interested'
-- `liked`: Boolean (can only be `true` when `status = 'seen'`)
-- `created_at`: Creation timestamp
+- `id`: UUID PRIMARY KEY - Internal ID (auto-generated)
+- `user_id`: UUID NOT NULL - User UUID (references `profiles.id` ON DELETE CASCADE)
+- `tmdb_id`: INTEGER NOT NULL - Title ID in TMDB
+- `type`: TEXT CHECK (type IN ('movie', 'tv')) - Content type
+- `status`: TEXT NOT NULL CHECK (status IN ('seen', 'not_interested', 'watchlist')) - Title status
+- `liked`: BOOLEAN DEFAULT FALSE NOT NULL - Whether the title is liked (can only be `true` when `status = 'seen'`)
+- `created_at`: TIMESTAMP WITH TIME ZONE - Creation timestamp (auto-set)
 
 **Constraints:**
 
 - `UNIQUE(user_id, tmdb_id)`: A user can only have one state per title
 - `liked` only makes sense when `status = 'seen'`
+- Foreign key to `profiles(id)` with CASCADE delete
+
+**Indexes:**
+
+- `idx_user_title_status_user_id` on `user_id`
+- `idx_user_title_status_tmdb_id` on `tmdb_id`
 
 ### Table: `recommendation_pool`
 
@@ -778,32 +848,78 @@ Stores the recommendation pool for each user.
 
 **Fields:**
 
-- `user_id`: User UUID
-- `tmdb_id`: Title ID
-- `type`: 'movie' or 'tv'
-- `source`: Recommendation origin
-- `score`: Calculated score (can be negative)
-- `explanation_code`: Code explaining why it's recommended
-- `title_data`: JSONB with title data (cache)
-- `last_shown_at`: Last time it was shown to the user
+- `id`: UUID PRIMARY KEY - Internal ID (auto-generated)
+- `user_id`: UUID NOT NULL - User UUID (references `profiles(id)` ON DELETE CASCADE)
+- `tmdb_id`: INTEGER NOT NULL - Title ID
+- `type`: TEXT NOT NULL CHECK (type IN ('movie', 'tv')) - Content type
+- `source`: TEXT NOT NULL CHECK (source IN ('based_on_like', 'trending', 'discover', 'easy', 'mood')) - Recommendation origin
+- `score`: DOUBLE PRECISION - Calculated score (can be negative)
+- `explanation_code`: TEXT - Code explaining why it's recommended (see [Recommendation Explanations](#recommendation-explanations))
+- `created_at`: TIMESTAMP WITH TIME ZONE - Creation timestamp (auto-set)
+- `last_shown_at`: TIMESTAMP WITH TIME ZONE - Last time it was shown to the user
 
 **Constraints:**
 
 - `UNIQUE(user_id, tmdb_id)`: A title can only appear once in the pool
+- Foreign key to `profiles(id)` with CASCADE delete
+
+**Indexes:**
+
+- `idx_recommendation_pool_user_id` on `user_id`
+- `idx_recommendation_pool_score` on `(user_id, score DESC)`
+- `idx_recommendation_pool_tmdb_id` on `tmdb_id`
+
+**Note:** The `title_data` field has been removed. Title data is now fetched from the `titles` table when needed.
 
 ### Table: `user_preferences`
 
 Stores user preferences.
 
-**Main fields:**
+**Fields:**
 
-- `favorite_genres`: Favorite genres
-- `included_providers`: Included streaming providers
-- `region`: User region
-- `exploration_mode`: Exploration mode
-- `prioritize_content`: Prioritized content type
+- `id`: UUID PRIMARY KEY - Internal ID (auto-generated)
+- `user_id`: UUID UNIQUE NOT NULL - User UUID (references `profiles(id)` ON DELETE CASCADE)
+- `favorite_genres`: INTEGER[] - Array of TMDB genre IDs
+- `included_providers`: INTEGER[] - Array of TMDB provider IDs (if empty, all providers are included)
+- `region`: TEXT - ISO 3166-1 alpha-2 country code (e.g., 'ES', 'US', 'MX')
+- `exploration_mode`: TEXT CHECK (exploration_mode IN ('similar', 'balanced', 'surprise')) DEFAULT 'balanced' - Exploration mode
+- `prioritize_content`: TEXT CHECK (prioritize_content IN ('new', 'classics', 'top_rated')) DEFAULT 'new' - Content prioritization
+- `created_at`: TIMESTAMP WITH TIME ZONE - Creation timestamp (auto-set)
+- `updated_at`: TIMESTAMP WITH TIME ZONE - Last update timestamp (auto-updated via trigger)
 
-**Note:** Language is managed through cookies (`i18n_redirected` cookie from Nuxt i18n), NOT stored in the database. The app always uses the user's app language from cookies for TMDB API calls. Region is stored in `profiles.settings.region` in the database.
+**Constraints:**
+
+- `UNIQUE(user_id)`: One preference record per user
+- Foreign key to `profiles(id)` with CASCADE delete
+
+**Indexes:**
+
+- `idx_user_preferences_user_id` on `user_id`
+
+**Note:** Language is managed through cookies (`i18n_redirected` cookie from Nuxt i18n), NOT stored in the database. The app always uses the user's app language from cookies for TMDB API calls. Region is stored in `user_preferences.region` in the database.
+
+### Table: `user_activity`
+
+Stores user activity tracking for analytics and debugging.
+
+**Fields:**
+
+- `id`: UUID PRIMARY KEY - Internal ID (auto-generated)
+- `user_id`: UUID NOT NULL - User UUID (references `profiles(id)` ON DELETE CASCADE)
+- `action`: TEXT NOT NULL - Action type (e.g., 'login', 'logout', 'title_action', etc.)
+- `metadata`: JSONB - Additional action metadata
+- `ip_address`: INET - IP address of the user
+- `user_agent`: TEXT - User agent string
+- `created_at`: TIMESTAMP WITH TIME ZONE - Creation timestamp (auto-set)
+
+**Constraints:**
+
+- Foreign key to `profiles(id)` with CASCADE delete
+
+**Indexes:**
+
+- `idx_user_activity_user_id` on `user_id`
+- `idx_user_activity_created_at` on `created_at DESC`
 
 ---
 

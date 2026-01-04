@@ -129,6 +129,14 @@
 
     <!-- Content: Custom content with overview and providers -->
     <template #content>
+      <!-- EXPLANATION (si existe) -->
+      <p
+        v-if="explanationText"
+        class="mb-2 text-xs text-gray-500 dark:text-gray-400"
+      >
+        {{ explanationText }}
+      </p>
+
       <!-- Overview -->
       <p
         v-if="props.title.overview"
@@ -169,7 +177,10 @@ import IconClock from './icons/IconClock.vue';
 import IconCheck from './icons/IconCheck.vue';
 import IconHeart from './icons/IconHeart.vue';
 import IconX from './icons/IconX.vue';
-import { TITLE_STATUS } from '@/constants/domain/titleStatus';
+import {
+  TITLE_STATUS,
+  type TitleStatusType,
+} from '@/constants/domain/titleStatus';
 import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 import type { Recommendation } from '@/types/Recommendation';
 import IconButton from '@/components/ui/IconButton.vue';
@@ -193,7 +204,7 @@ const emit = defineEmits<{
 
 const dropdownRef = ref<InstanceType<typeof ActionMenu> | null>(null);
 
-const handleAction = (action: TitleStatus | 'liked' | 'remove-liked') => {
+const handleAction = (action: TitleStatusType | 'liked' | 'remove-liked') => {
   // Close dropdown when action is triggered
   dropdownRef.value?.close();
 
@@ -213,6 +224,21 @@ const handleAction = (action: TitleStatus | 'liked' | 'remove-liked') => {
 const mediaType = computed(() =>
   props.title.type === MEDIA_TYPE.MOVIE ? 'movie' : 'tv-show'
 );
+
+// Map explanation_code to user-friendly text
+const explanationText = computed(() => {
+  if (!props.title.explanation_code) return null;
+
+  const map: Record<string, string> = {
+    BASED_ON_LIKE: 'Porque te gustó algo parecido',
+    TRENDING: 'Tendencia esta semana',
+    DISCOVER: 'Selección editorial',
+    EASY_TO_WATCH: 'Fácil de ver, ideal para relajarse',
+    MOOD_MATCH: 'Perfecto para tu estado de ánimo',
+  };
+
+  return map[props.title.explanation_code] ?? null;
+});
 
 // Filter providers that have logos
 const providersWithLogos = computed(() => {
