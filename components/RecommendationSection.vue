@@ -11,7 +11,7 @@
     <!-- Show skeletons when filter is loading -->
     <div
       v-if="isFilterLoading"
-      class="grid grid-cols-2 gap-4 md:grid-cols-4 overflow-visible"
+      class="grid grid-cols-2 gap-4 md:grid-cols-5 lg:grid-cols-6 overflow-visible"
     >
       <SkeletonMediaCard
         v-for="i in skeletonCount"
@@ -22,7 +22,10 @@
     </div>
 
     <!-- Show real content when not loading filters -->
-    <div v-else class="grid grid-cols-2 gap-4 md:grid-cols-4 overflow-visible">
+    <div
+      v-else
+      class="grid grid-cols-2 gap-4 md:grid-cols-5 lg:grid-cols-6 overflow-visible"
+    >
       <RecommendationCard
         v-for="recommendation in recommendations"
         :key="recommendation.id"
