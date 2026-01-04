@@ -1,7 +1,7 @@
 import { serverSupabaseUser } from '#supabase/server';
 import { createClient } from '@supabase/supabase-js';
-import { getSession } from '@/composables/database/auth';
-import { TABLES } from '@/composables/database/constants';
+import { getSession } from '@/services/auth';
+import { TABLES } from '@/services/constants';
 
 export default defineEventHandler(async (event) => {
   try {

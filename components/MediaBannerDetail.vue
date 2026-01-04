@@ -421,16 +421,13 @@ import IconHeartFilled from './icons/IconHeartFilled.vue';
 import IconX from './icons/IconX.vue';
 import IconClock from './icons/IconClock.vue';
 import { TitleStatus } from '@/types/TitleStatus';
-import { getSession } from '@/composables/database/auth';
+import { getSession } from '@/services/auth';
 import { useUndoToast } from '@/composables/useUndoToast';
 import ActionMenu from '@/components/ui/ActionMenu.vue';
 import IconButton from '@/components/ui/IconButton.vue';
 import Button from '@/components/ui/Button.vue';
 import Tooltip from '@/components/ui/Tooltip.vue';
-import {
-  getUserLikedTitle,
-  getTitleStatus,
-} from '@/composables/database/userTitleStatus';
+import { getUserLikedTitle, getTitleStatus } from '@/services/userTitleStatus';
 import { useRouter } from 'vue-router';
 import Section from '@/components/layout/Section.vue';
 import { useUserRegion } from '@/composables/useUserRegion';

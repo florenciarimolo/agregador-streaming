@@ -4,11 +4,78 @@ This document describes the business logic, data rules, and architecture of the 
 
 ## Table of Contents
 
-1. [Title States](#title-states)
-2. [Scoring System](#scoring-system)
-3. [Recommendation Pool](#recommendation-pool)
-4. [Data Model](#data-model)
-5. [Business Rules](#business-rules)
+1. [Architecture](#architecture)
+2. [Title States](#title-states)
+3. [Scoring System](#scoring-system)
+4. [Recommendation Pool](#recommendation-pool)
+5. [Data Model](#data-model)
+6. [Business Rules](#business-rules)
+
+---
+
+## Architecture
+
+### Principle
+
+**Not every fetch should live in a service.**
+
+The correct separation is:
+
+- **Composables** → UI behavior and flows
+- **Services** → Pure infrastructure
+- **Pages / Components** → Visual rendering and orchestration
+
+### When to use COMPOSABLES
+
+Keep API calls within composables when:
+
+- The call depends on reactive state (route, locale, store, UI)
+- It's part of a flow (loading, skeleton, debounce, replacements, tracking)
+- It reacts to user changes (filters, language, actions)
+
+**Correct examples:**
+
+- `useRecommendations` - depends on route, user, store, UI state
+- `useTitleActions` - depends on recommendations, route, UI state
+- `useRegions` - depends on i18n locale, reactive state
+
+❌ **Do NOT move these calls to services.**
+
+### When to use SERVICES
+
+Create services only for infrastructure calls that:
+
+- Do NOT depend on Vue or reactive state
+- Are reused in multiple places
+- Are pure CRUD or helpers
+
+**Correct examples:**
+
+- `services/auth.ts` - authentication operations
+- `services/profiles.ts` - user profile CRUD
+- `services/preferences.ts` - user preferences CRUD
+- `services/titles.ts` - title database operations
+- `services/userTitleStatus.ts` - title status CRUD
+
+A service:
+
+- ❌ Does NOT maintain state
+- ❌ Does NOT have watchers
+- ❌ Does NOT know about UI
+
+### What NOT to do
+
+- ❌ Don't create services that only wrap `$fetch`
+- ❌ Don't pass 6 parameters to a service to compensate for lack of context
+- ❌ Don't move fetches "for organization" if it loses clarity
+- ❌ Don't duplicate logic between composables and services
+
+### Goal
+
+- Code easy to follow without jumping from file to file
+- Each API call lives where it makes semantic sense
+- Maintain flow clarity before abstraction
+- If a refactor doesn't improve flow understanding, don't do it
 
 ---
 
@@ -62,6 +129,7 @@ This is a product decision to maintain data consistency and avoid orphaned state
 ```
 
 **Notes:**
+
 - Changing from one state to another **replaces** the previous state
 - `not_interested` removes any other state
 - Marking as "liked" sets `seen` (and removes `watchlist` if it existed)
@@ -77,14 +145,14 @@ The score represents **real affinity**, not future intention.
 
 ### Score Weights
 
-Defined in `composables/database/constants.ts`:
+Defined in `services/constants.ts`:
 
 ```typescript
 export const SCORE_WEIGHTS = {
-  liked: 30,           // +30 points
-  seen: -50,           // -50 points
+  liked: 30, // +30 points
+  seen: -50, // -50 points
   not_interested: -100, // -100 points
-  watchlist: 0,        // 0 points (no effect)
+  watchlist: 0, // 0 points (no effect)
 };
 ```
 
@@ -107,6 +175,7 @@ export const SCORE_WEIGHTS = {
 #### Minimum Quality Threshold
 
 **IMPORTANT**: All recommendations must meet a minimum quality threshold:
+
 - **Minimum vote average**: 6.5 (enforced during pool population)
 - This ensures all recommendations in the pool are of acceptable quality
 - The filtering system respects this threshold and never reduces scores below it
@@ -118,16 +187,19 @@ The recommendation system uses **multiplicative boost factors** to reorder recom
 ##### Boost Calculation
 
 **Formula:**
+
 ```
 finalScore = baseScore * Math.max(1 + combinedFactor, 0.4)
 ```
 
 Where:
+
 - `baseScore`: The original score from the recommendation pool (already filtered by 6.5 minimum)
 - `combinedFactor`: Weighted combination of attention and mood factors
 - `0.4`: Protection factor ensuring scores never drop below 40% of base (maintains quality)
 
 **Factor Combination:**
+
 ```
 combinedFactor = attentionFactor * 0.6 + moodFactor * 0.4
 ```
@@ -141,52 +213,54 @@ Boost factors are expressed as percentages (e.g., `0.10` = +10%, `-0.15` = -15%)
 
 **Attention Levels:**
 
-- **LOW** (Baja atención):
-  - +10%: Películas < 100 min, Series con 1 episodio
-  - -15%: Thriller, Mystery, Sci-Fi (atenuado al 50% si voteAverage < 7.0)
+- **LOW** (Low attention):
+  - +10%: Movies < 100 min, Series with 1 episode
+  - -15%: Thriller, Mystery, Sci-Fi (attenuated by 50% if voteAverage < 7.0)
 
-- **MEDIUM** (Atención media):
+- **MEDIUM** (Medium attention):
   - +5%: Family, Comedy
 
-- **HIGH** (Alta atención):
-  - +10%: Drama, Thriller, Sci-Fi (atenuado al 50% si voteAverage < 7.0)
-  - +15%: Mystery, Thriller (narrativas complejas)
-  - -10%: Comedy, Animation (atenuado al 50% si voteAverage < 7.0)
+- **HIGH** (High attention):
+  - +10%: Drama, Thriller, Sci-Fi (attenuated by 50% if voteAverage < 7.0)
+  - +15%: Mystery, Thriller (complex narratives)
+  - -10%: Comedy, Animation (attenuated by 50% if voteAverage < 7.0)
 
 **Mood Types:**
 
-- **RELAX** (Relajado):
+- **RELAXED**:
   - +10%: Comedy, Animation, Family
-  - -10%: Thriller, Horror (atenuado al 50% si voteAverage < 7.0)
-  - -10%: Drama denso < 7.0 (atenuado al 50%)
+  - -10%: Thriller, Horror (attenuated by 50% if voteAverage < 7.0)
+  - -10%: Dense drama < 7.0 (attenuated by 50%)
 
-- **LIGERO** (Ligero):
+- **LIGHT**:
   - +10%: Comedy
   - +5%: Adventure, Family
-  - -5%: Drama pesado < 6.5 (atenuado al 50%)
+  - -5%: Heavy drama < 6.5 (attenuated by 50%)
 
-- **INTENSO** (Intenso):
+- **INTENSE**:
   - +10%: Thriller, Action, Crime
-  - +5%: Votación alta (≥ 7.5)
-  - -10%: Animación infantil < 7.0 (atenuado al 50%)
+  - +5%: High rating (≥ 7.5)
+  - -10%: Children's animation < 7.0 (attenuated by 50%)
 
-- **EMOCIONAL** (Emocional):
+- **EMOTIONAL**:
   - +10%: Drama, Romance
-  - +5%: Drama (historias humanas)
-  - -10%: Action vacía < 6.0 (atenuado al 50%)
+  - +5%: Drama (human stories)
+  - -10%: Empty action < 6.0 (attenuated by 50%)
 
-- **REFLEXIVO** (Reflexivo):
+- **REFLECTIVE**:
   - +10%: Sci-Fi, Mystery
   - +5%: Documentary
-  - -10%: Comedy simple < 6.5 (atenuado al 50%)
+  - -10%: Simple comedy < 6.5 (attenuated by 50%)
 
 ##### Attenuation Logic
 
 Given that all titles already meet the 6.5 minimum threshold, boost factors are **attenuated** for lower-rated titles to avoid:
+
 - Over-boosting mediocre titles
 - Over-penalizing acceptable quality titles
 
 **Attenuation rules:**
+
 - If `voteAverage < 7.0`: Penalties and some boosts are reduced by 50%
 - This ensures the system **reorders** rather than **expels** valid recommendations
 - Maintains diversity even with extreme filter combinations
@@ -208,6 +282,7 @@ Given that all titles already meet the 6.5 minimum threshold, boost factors are 
 ### Calculation Examples
 
 #### Scenario 1: Mark as "liked"
+
 ```
 Initial state: no state (score = 0)
 Action: liked = true, status = 'seen'
@@ -215,6 +290,7 @@ Result: score = +30 (liked) + (-50) (seen) = -20
 ```
 
 #### Scenario 2: Mark as "seen" then "liked"
+
 ```
 Initial state: status = 'watchlist' (score = 0)
 Action 1: status = 'seen'
@@ -225,16 +301,18 @@ Result: score = -50 + 30 = -20
 ```
 
 #### Scenario 3: Remove "seen" (with liked)
+
 ```
 Initial state: status = 'seen', liked = true (score = -20)
 Action: remove seen
-Result: 
+Result:
   - Revert seen: score += 50 → score = 30
   - Revert liked: score -= 30 → score = 0
   - Delete entire record
 ```
 
 #### Scenario 4: Remove "liked" (keeping "seen")
+
 ```
 Initial state: status = 'seen', liked = true (score = -20)
 Action: liked = false (keeping seen)
@@ -246,6 +324,7 @@ Result:
 ```
 
 #### Scenario 5: Mark as "not_interested"
+
 ```
 Initial state: status = 'seen', liked = true (score = -20)
 Action: status = 'not_interested'
@@ -267,6 +346,7 @@ The recommendation pool is a persistent table (`recommendation_pool`) that store
 **IMPORTANT: Pool vs Score Separation**
 
 The system clearly separates:
+
 - **Pool**: The universe of possible titles (defines what content is available)
 - **Score**: Priority/relevance within that universe (defines ranking)
 
@@ -319,6 +399,7 @@ The pool should **only** be regenerated when the user's structural preferences c
 **Note:** When the pool is regenerated, the system first checks the `titles` table for existing title data, and only fetches from TMDB if the information is missing or incomplete in the requested language. This ensures efficient caching and reduces API calls.
 
 When preferences change:
+
 1. The previous pool is discarded
 2. A new pool is generated
 3. Rankings and diversity are recalculated
@@ -331,6 +412,7 @@ When preferences change:
 - Adding/removing titles from `watchlist`
 
 These actions:
+
 - Adjust the score (weight/relevance)
 - Affect the order of titles
 - Affect similar titles
@@ -340,10 +422,12 @@ These actions:
 ### Score Update
 
 The score is updated when the user:
+
 - Marks a title as `liked`, `seen`, or `not_interested`
 - Removes a state from a title
 
 **Process:**
+
 1. Get the previous state of the title
 2. Revert the impact of the previous state (if applicable)
 3. Apply the impact of the new state (if applicable)
@@ -354,6 +438,7 @@ The score is updated when the user:
 ### Pool Removal
 
 A title is removed from the pool when:
+
 - It is marked as `not_interested`
 - The user has already watched it (`seen`)
 - The pool is manually regenerated (when preferences change)
@@ -392,6 +477,7 @@ When no filters are active (neither mood, attention level, nor content type), th
 - Content type filtering happens on server when `type` query param is provided
 
 This ensures that:
+
 - Users exploring without preferences see a diverse mix
 - Users with specific preferences get results tailored to their filters
 - The base ranking bias (if any) is corrected in neutral mode
@@ -448,6 +534,7 @@ The recommendation list must always maintain exactly 20 visible recommendations.
 #### State Reversal and Recommendations:
 
 When a title's state is reversed (e.g., removing `seen` or `not_interested`):
+
 - The title becomes eligible for recommendations again
 - It may appear in future recommendations
 - The replacement system continues to work normally
@@ -461,6 +548,7 @@ When a title's state is reversed (e.g., removing `seen` or `not_interested`):
 Extends Supabase's `auth.users`. Stores user profile information.
 
 **Main fields:**
+
 - `id`: UUID (reference to `auth.users`)
 - `email`: User email
 - `display_name`: Display name
@@ -473,6 +561,7 @@ Extends Supabase's `auth.users`. Stores user profile information.
 Stores movie and TV show information.
 
 **Important characteristics:**
+
 - `title`, `poster_path`, `overview` are **multi-language JSONB**
 - Format: `{"es": "...", "ca": "...", "eu": "...", "gl": "...", "en": "..."}`
 - `tmdb_id`: Unique TMDB ID (unique in the table)
@@ -483,6 +572,7 @@ Stores movie and TV show information.
 Stores title states for each user.
 
 **Fields:**
+
 - `user_id`: User UUID
 - `tmdb_id`: Title ID in TMDB
 - `type`: 'movie' or 'tv'
@@ -491,6 +581,7 @@ Stores title states for each user.
 - `created_at`: Creation timestamp
 
 **Constraints:**
+
 - `UNIQUE(user_id, tmdb_id)`: A user can only have one state per title
 - `liked` only makes sense when `status = 'seen'`
 
@@ -499,6 +590,7 @@ Stores title states for each user.
 Stores the recommendation pool for each user.
 
 **Fields:**
+
 - `user_id`: User UUID
 - `tmdb_id`: Title ID
 - `type`: 'movie' or 'tv'
@@ -509,6 +601,7 @@ Stores the recommendation pool for each user.
 - `last_shown_at`: Last time it was shown to the user
 
 **Constraints:**
+
 - `UNIQUE(user_id, tmdb_id)`: A title can only appear once in the pool
 
 ### Table: `user_preferences`
@@ -516,6 +609,7 @@ Stores the recommendation pool for each user.
 Stores user preferences.
 
 **Main fields:**
+
 - `favorite_genres`: Favorite genres
 - `included_providers`: Included streaming providers
 - `region`: User region
@@ -603,6 +697,7 @@ Stores user preferences.
 7. Frontend shows success toast
 
 **Important behaviors:**
+
 - Title remains as `seen` (not eligible for recommendations)
 - Title does NOT return to recommendations
 - Only the score is adjusted (pool remains stable)
@@ -652,7 +747,8 @@ Stores user preferences.
 
 ### Constants
 
-Defined in `composables/database/constants.ts`:
+Defined in `services/constants.ts`:
+
 - `TABLES`: Table names
 - `SCORE_WEIGHTS`: Scoring weights
 - `*_FIELDS`: Field names for each table
@@ -668,11 +764,13 @@ The `auth:recovery` flag is a localStorage flag used to track the password recov
 #### Flag Format
 
 **New format (with timestamp):**
+
 ```json
 { "value": 1, "ts": 1234567890123 }
 ```
 
 **Legacy format (backward compatible):**
+
 ```
 "1"
 ```
@@ -700,6 +798,7 @@ The flag includes a timestamp to prevent indefinite persistence if the user aban
 **Problem**: When Supabase processes a recovery link, it creates a temporary recovery session. After changing the password, this session becomes a regular session, but the middleware may not detect it correctly, causing "home without detected session" bugs.
 
 **Solution**: Keep the flag until the user manually logs in with their new password. This ensures:
+
 - The store is properly populated
 - The middleware can detect the session
 - No false authentication states occur
@@ -736,7 +835,7 @@ Flag removed → normal navigation
 ## References
 
 - `types/TitleStatus.ts`: State definitions
-- `composables/database/constants.ts`: Constants and weights
+- `services/constants.ts`: Constants and weights
 - `server/api/users/title-status.post.ts`: Update logic
 - `server/api/users/title-status.delete.ts`: Delete logic
 - `supabase/schema.sql`: Database schema

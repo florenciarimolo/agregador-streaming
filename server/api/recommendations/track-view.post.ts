@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import {
   updateLastShownAt,
   updatePoolScore,
-} from '@/composables/database/recommendationPool';
+} from '@/services/recommendationPool';
 
 /**
  * Track when recommendations are shown to a user

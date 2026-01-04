@@ -3,7 +3,7 @@ import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useSupabaseUser } from '#imports';
 import { useUserStore } from '@/stores/user';
-import { getSession } from '@/composables/database/auth';
+import { getSession } from '@/services/auth';
 import type { Recommendation } from '@/types/Recommendation';
 
 /**

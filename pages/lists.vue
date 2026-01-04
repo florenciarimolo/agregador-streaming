@@ -173,18 +173,18 @@ import {
   getUserNotInterestedTitles,
   getUserWatchlistTitles,
   removeNotInterested,
-} from '@/composables/database/userTitleStatus';
+} from '@/services/userTitleStatus';
 import {
   getTitleByTmdbId,
   insertTitle,
   getTitlesByTmdbIds,
   getTitleByTmdbIdWithLanguage,
-} from '@/composables/database/titles';
+} from '@/services/titles';
 import {
   isNotFoundError,
   isUniqueViolationError,
-} from '@/composables/database/errorCodes';
-import { getSession } from '@/composables/database/auth';
+} from '@/services/errorCodes';
+import { getSession } from '@/services/auth';
 import TitleGrid from '@/components/TitleGrid.vue';
 import EmptyState from '@/components/EmptyState.vue';
 import Spinner from '@/components/Spinner.vue';

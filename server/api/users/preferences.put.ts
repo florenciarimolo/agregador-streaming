@@ -1,6 +1,6 @@
 import { serverSupabaseUser } from '#supabase/server';
 import { createClient } from '@supabase/supabase-js';
-import type { UserPreferences } from '@/composables/database/preferences';
+import type { UserPreferences } from '@/services/preferences';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 import {
   ExplorationModeEnum,
@@ -11,7 +11,7 @@ import {
 import {
   TABLES,
   USER_PREFERENCES_FIELDS,
-} from '@/composables/database/constants';
+} from '@/services/constants';
 import {
   LanguageCode,
   DEFAULT_LANGUAGE,

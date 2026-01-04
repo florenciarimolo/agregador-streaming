@@ -5,8 +5,8 @@ import {
   TABLES,
   USER_TITLE_STATUS_FIELDS,
   SCORE_WEIGHTS,
-} from '@/composables/database/constants';
-import { updatePoolScore } from '@/composables/database/recommendationPool';
+} from '@/services/constants';
+import { updatePoolScore } from '@/services/recommendationPool';
 
 /**
  * Delete user title status (remove from seen or not_interested)

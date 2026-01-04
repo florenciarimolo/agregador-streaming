@@ -1,10 +1,10 @@
-import { getProfile } from '@/composables/database/profiles';
+import { getProfile } from '@/services/profiles';
 import {
   getUserSeenTitles,
   getUserLikedTitles,
-} from '@/composables/database/userTitleStatus';
-import { getTitlesByTmdbIds, getTitleInLanguage, type MultiLanguageText } from '@/composables/database/titles';
-import { getSession } from '@/composables/database/auth';
+} from '@/services/userTitleStatus';
+import { getTitlesByTmdbIds, getTitleInLanguage, type MultiLanguageText } from '@/services/titles';
+import { getSession } from '@/services/auth';
 import { getUserTMDBParams } from '../../utils/user-preferences';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 

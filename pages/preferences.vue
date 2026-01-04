@@ -265,7 +265,7 @@ import AppShell from '@/components/layout/AppShell.vue';
 import PageContainer from '@/components/layout/PageContainer.vue';
 import Card from '@/components/ui/Card.vue';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
-import { getSession } from '@/composables/database/auth';
+import { getSession } from '@/services/auth';
 import Toast from '@/components/ui/Toast.vue';
 import RegionSelector from '@/components/RegionSelector.vue';
 import GenreSelector from '@/components/GenreSelector.vue';

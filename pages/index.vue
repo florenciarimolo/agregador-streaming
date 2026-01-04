@@ -4,7 +4,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useUserStore } from '@/stores/user';
 import { useRecommendations } from '@/composables/useRecommendations';
 import { useTitleActions } from '@/composables/useTitleActions';
-import { getSession } from '@/composables/database/auth';
+import { getSession } from '@/services/auth';
 import { TitleStatus } from '@/types/TitleStatus';
 import AppShell from '@/components/layout/AppShell.vue';
 import PageContainer from '@/components/layout/PageContainer.vue';

@@ -82,7 +82,7 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
-import { getSession } from '@/composables/database/auth';
+import { getSession } from '@/services/auth';
 import AlertMessage from '@/components/AlertMessage.vue';
 import IconButton from '@/components/ui/IconButton.vue';
 import AppShell from '@/components/layout/AppShell.vue';

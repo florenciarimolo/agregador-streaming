@@ -8,7 +8,7 @@ import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 import {
   TABLES,
   USER_TITLE_STATUS_FIELDS,
-} from '@/composables/database/constants';
+} from '@/services/constants';
 
 /**
  * Get user title status history (seen and not_interested)

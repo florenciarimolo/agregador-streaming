@@ -10,7 +10,7 @@ import {
   insertPoolEntries,
   type RecommendationPoolSource,
   type TitleData,
-} from '@/composables/database/recommendationPool';
+} from '@/services/recommendationPool';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 import { TitleStatus } from '@/types/TitleStatus';
 import { DEFAULT_LANGUAGE_ISO } from '@/constants/languages';
@@ -24,11 +24,11 @@ import {
   TITLES_FIELDS,
   USER_TITLE_STATUS_FIELDS,
   USER_PREFERENCES_FIELDS,
-} from '@/composables/database/constants';
+} from '@/services/constants';
 import {
   getTitleInLanguage,
   type MultiLanguageText,
-} from '@/composables/database/titles';
+} from '@/services/titles';
 import { getPrimaryLanguageForRegion } from '@/utils/language-detection';
 
 /**

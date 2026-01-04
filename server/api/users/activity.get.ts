@@ -1,5 +1,5 @@
-import { getUserActivity } from '@/composables/database/activity';
-import { getSession } from '@/composables/database/auth';
+import { getUserActivity } from '@/services/activity';
+import { getSession } from '@/services/auth';
 
 export default defineEventHandler(async (event) => {
   try {

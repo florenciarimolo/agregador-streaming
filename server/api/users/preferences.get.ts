@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import {
   TABLES,
   USER_PREFERENCES_FIELDS,
-} from '@/composables/database/constants';
+} from '@/services/constants';
 
 export default defineEventHandler(async (event) => {
   try {

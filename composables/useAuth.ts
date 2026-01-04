@@ -59,7 +59,7 @@ export const useAuth = () => {
         const userId = data.user.id || (data.user as { sub?: string }).sub;
         if (userId) {
           const { updateProfile } =
-            await import('@/composables/database/profiles');
+            await import('@/services/profiles');
           await updateProfile(userId, {
             display_name: displayName,
           });

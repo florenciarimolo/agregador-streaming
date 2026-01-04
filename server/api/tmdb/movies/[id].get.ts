@@ -2,8 +2,8 @@ import { getTMDBConfig } from '../../../utils/config';
 import { getUserTMDBParams, getUserTMDBParamsByUserId } from '../../../utils/user-preferences';
 import { createError, getRouterParams } from 'h3';
 import { createClient } from '@supabase/supabase-js';
-import { TABLES, TITLES_FIELDS } from '@/composables/database/constants';
-import { type MultiLanguageText } from '@/composables/database/titles';
+import { TABLES, TITLES_FIELDS } from '@/services/constants';
+import { type MultiLanguageText } from '@/services/titles';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 import {
   LanguageCode,

@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
-import { TABLES, TITLES_FIELDS } from '@/composables/database/constants';
-import { getTitleInLanguage } from '@/composables/database/titles';
-import type { MultiLanguageText } from '@/composables/database/titles';
+import { TABLES, TITLES_FIELDS } from '@/services/constants';
+import { getTitleInLanguage } from '@/services/titles';
+import type { MultiLanguageText } from '@/services/titles';
 import { LanguageCode } from '@/constants/languages';
 
 /**

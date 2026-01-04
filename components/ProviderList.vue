@@ -32,7 +32,7 @@ import {
   getFallbackSearchUrl,
 } from '@/utils/providerLinks';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
-import { getSession } from '@/composables/database/auth';
+import { getSession } from '@/services/auth';
 // @ts-expect-error - Used in template, linter doesn't detect template usage
 import IconPlay from '@/components/icons/IconPlay.vue';
 

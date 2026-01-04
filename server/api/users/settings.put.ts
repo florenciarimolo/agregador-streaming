@@ -1,6 +1,6 @@
-import { updateSettings } from '@/composables/database/profiles';
-import { getSession } from '@/composables/database/auth';
-import type { UserSettings } from '@/composables/database/profiles';
+import { updateSettings } from '@/services/profiles';
+import { getSession } from '@/services/auth';
+import type { UserSettings } from '@/services/profiles';
 
 export default defineEventHandler(async (event) => {
   try {

@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { TABLES, TITLES_FIELDS } from '@/composables/database/constants';
+import { TABLES, TITLES_FIELDS } from '@/services/constants';
 import { getTMDBConfig } from './config';
 import type { Season } from '@/types/TVShow';
 import { DEFAULT_LANGUAGE } from '@/constants/languages';

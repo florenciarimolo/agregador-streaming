@@ -6,10 +6,10 @@
  * 3. Caching results in database for future requests
  */
 
-import { getTitleInLanguage, type MultiLanguageText } from '@/composables/database/titles';
+import { getTitleInLanguage, type MultiLanguageText } from '@/services/titles';
 import { getTMDBConfig } from './config';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
-import { TABLES, TITLES_FIELDS } from '@/composables/database/constants';
+import { TABLES, TITLES_FIELDS } from '@/services/constants';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 export interface ExtractedTitleData {

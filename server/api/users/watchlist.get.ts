@@ -7,11 +7,11 @@ import {
   TABLES,
   USER_TITLE_STATUS_FIELDS,
   TITLES_FIELDS,
-} from '@/composables/database/constants';
+} from '@/services/constants';
 import {
   getTitleInLanguage,
   type MultiLanguageText,
-} from '@/composables/database/titles';
+} from '@/services/titles';
 import { getTMDBConfig } from '../../utils/config';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 

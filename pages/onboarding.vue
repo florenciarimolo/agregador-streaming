@@ -2,10 +2,10 @@
 import { onMounted } from 'vue';
 import { TitleStatus } from '@/types/TitleStatus';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
-import { getTitleByTmdbId } from '@/composables/database/titles';
-import { upsertUserTitleStatus } from '@/composables/database/userTitleStatus';
-import { getSession } from '@/composables/database/auth';
-import { isUniqueViolationError } from '@/composables/database/errorCodes';
+import { getTitleByTmdbId } from '@/services/titles';
+import { upsertUserTitleStatus } from '@/services/userTitleStatus';
+import { getSession } from '@/services/auth';
+import { isUniqueViolationError } from '@/services/errorCodes';
 import RegionSelector from '@/components/RegionSelector.vue';
 import CloseButton from '@/components/ui/CloseButton.vue';
 import Card from '@/components/ui/Card.vue';

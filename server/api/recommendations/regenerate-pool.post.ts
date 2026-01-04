@@ -12,9 +12,9 @@ import {
   type RecommendationPoolSource,
   RECOMMENDATION_POOL_FIELDS,
   TABLES as POOL_TABLES,
-} from '@/composables/database/recommendationPool';
-import { TABLES, TITLES_FIELDS } from '@/composables/database/constants';
-import type { MultiLanguageText } from '@/composables/database/titles';
+} from '@/services/recommendationPool';
+import { TABLES, TITLES_FIELDS } from '@/services/constants';
+import type { MultiLanguageText } from '@/services/titles';
 
 const TARGET_POOL_SIZE = 200;
 
@@ -134,7 +134,7 @@ export default defineEventHandler(async (event) => {
 
         // Update titles table (title_data removed from pool, data comes from titles table)
         // This ensures the title data is available when recommendations are fetched
-        const { getTitleInLanguage } = await import('@/composables/database/titles');
+        const { getTitleInLanguage } = await import('@/services/titles');
         const { data: existingTitle } = await supabase
           .from(TABLES.TITLES)
           .select(

@@ -195,7 +195,7 @@ import Input from '@/components/ui/Input.vue';
 import Button from '@/components/ui/Button.vue';
 import Modal from '@/components/ui/Modal.vue';
 import { validatePassword } from '@/utils/passwordValidation';
-import { getSession } from '@/composables/database/auth';
+import { getSession } from '@/services/auth';
 import { useUndoToast } from '@/composables/useUndoToast';
 
 definePageMeta({

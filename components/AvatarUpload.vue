@@ -166,7 +166,7 @@ const processFile = async (file: File) => {
     const formData = new FormData();
     formData.append('file', file);
 
-    const { getSession } = await import('@/composables/database/auth');
+    const { getSession } = await import('@/services/auth');
     const {
       data: { session },
     } = await getSession();

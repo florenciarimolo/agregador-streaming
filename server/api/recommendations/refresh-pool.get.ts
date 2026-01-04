@@ -5,7 +5,7 @@ import {
   deleteLowestScoreEntries,
   insertPoolEntries,
   type RecommendationPoolSource,
-} from '@/composables/database/recommendationPool';
+} from '@/services/recommendationPool';
 import { getTMDBConfig } from '../../utils/config';
 import { getUserTMDBParamsByUserId } from '../../utils/user-preferences';
 import { TitleStatus } from '@/types/TitleStatus';
@@ -14,8 +14,8 @@ import {
   TITLES_FIELDS,
   PROFILES_FIELDS,
   USER_TITLE_STATUS_FIELDS,
-} from '@/composables/database/constants';
-import type { MultiLanguageText } from '@/composables/database/titles';
+} from '@/services/constants';
+import type { MultiLanguageText } from '@/services/titles';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 
 /**

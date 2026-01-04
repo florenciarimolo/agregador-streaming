@@ -5,7 +5,7 @@ import {
   TABLES,
   PROFILES_FIELDS,
   USER_PREFERENCES_FIELDS,
-} from '@/composables/database/constants';
+} from '@/services/constants';
 import { LanguageCode, toTMDBLanguageCode } from '@/constants/languages';
 
 /**

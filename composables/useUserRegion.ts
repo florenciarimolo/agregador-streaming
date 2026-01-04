@@ -1,4 +1,4 @@
-import { getSession } from '@/composables/database/auth';
+import { getSession } from '@/services/auth';
 
 /**
  * Composable to get user's region preference

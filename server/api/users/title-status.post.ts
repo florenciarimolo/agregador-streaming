@@ -6,11 +6,11 @@ import {
   TABLES,
   USER_TITLE_STATUS_FIELDS,
   SCORE_WEIGHTS,
-} from '@/composables/database/constants';
+} from '@/services/constants';
 import {
   updatePoolScore,
   removeFromPool,
-} from '@/composables/database/recommendationPool';
+} from '@/services/recommendationPool';
 import { DEFAULT_LANGUAGE } from '@/constants/languages';
 
 /**

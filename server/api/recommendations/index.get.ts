@@ -17,15 +17,15 @@ import {
   RECOMMENDATION_POOL_FIELDS,
   RECOMMENDATION_POOL_TABLES,
   type TitleData,
-} from '@/composables/database/recommendationPool';
-import { updateLastShownAt } from '@/composables/database/recommendationPool';
+} from '@/services/recommendationPool';
+import { updateLastShownAt } from '@/services/recommendationPool';
 import {
   TABLES,
   TITLES_FIELDS,
   USER_TITLE_STATUS_FIELDS,
   USER_PREFERENCES_FIELDS,
-} from '@/composables/database/constants';
-import type { MultiLanguageText } from '@/composables/database/titles';
+} from '@/services/constants';
+import type { MultiLanguageText } from '@/services/titles';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 import { TmdbGenreId } from '@/types/enums/TmdbGenreId';
 import {
@@ -582,7 +582,7 @@ export default defineEventHandler(async (event) => {
 
         // Extract text in user's language from titles table (may return fallback if language missing)
         const { getTitleInLanguage } =
-          await import('@/composables/database/titles');
+          await import('@/services/titles');
         const extractedTitle = getTitleInLanguage(
           titleJsonb,
           language,

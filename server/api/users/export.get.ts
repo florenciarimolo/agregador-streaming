@@ -1,13 +1,13 @@
-import { getProfile } from '@/composables/database/profiles';
+import { getProfile } from '@/services/profiles';
 import {
   getUserLikedTitles,
   getUserSeenTitles,
   getUserNotInterestedTitles,
   getUserWatchlistTitles,
-} from '@/composables/database/userTitleStatus';
-import { getUserActivity } from '@/composables/database/activity';
-import { getSession } from '@/composables/database/auth';
-import { getTitlesByTmdbIds, getTitleInLanguage, type MultiLanguageText } from '@/composables/database/titles';
+} from '@/services/userTitleStatus';
+import { getUserActivity } from '@/services/activity';
+import { getSession } from '@/services/auth';
+import { getTitlesByTmdbIds, getTitleInLanguage, type MultiLanguageText } from '@/services/titles';
 import { getUserTMDBParams } from '../../utils/user-preferences';
 
 export default defineEventHandler(async (event) => {
