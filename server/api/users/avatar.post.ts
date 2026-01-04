@@ -1,7 +1,9 @@
 import { serverSupabaseUser } from '#supabase/server';
 import { createClient } from '@supabase/supabase-js';
 import { getSession } from '@/services/auth';
-import { TABLES, PROFILES_FIELDS } from '@/services/constants';
+import { PROFILES_COLUMNS, USER_PREFERENCES_COLUMNS, TITLES_COLUMNS } from '@/constants/db/columns';
+import { TABLES, PROFILES_COLUMNS } from '@/constants/db/tables';
+import { SCORE_WEIGHTS } from '@/constants/domain/scoring';
 
 export default defineEventHandler(async (event) => {
   try {
@@ -122,9 +124,9 @@ export default defineEventHandler(async (event) => {
     const { data: profileData, error: profileError } = await supabase
       .from(TABLES.PROFILES)
       .update({
-        [PROFILES_FIELDS.AVATAR_URL]: publicUrl,
+        [PROFILES_COLUMNS.AVATAR_URL]: publicUrl,
       })
-      .eq(PROFILES_FIELDS.ID, userId)
+      .eq(PROFILES_COLUMNS.ID, userId)
       .select()
       .single();
 

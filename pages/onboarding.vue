@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { onMounted } from 'vue';
-import { TitleStatus } from '@/types/TitleStatus';
+import { TITLE_STATUS } from '@/constants/domain/titleStatus';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 import { getTitleByTmdbId } from '@/services/titles';
 import { upsertUserTitleStatus } from '@/services/userTitleStatus';
 import { getSession } from '@/services/auth';
-import { isUniqueViolationError } from '@/services/errorCodes';
+import { isUniqueViolationError } from '@/constants/db/errorCodes';
 import RegionSelector from '@/components/RegionSelector.vue';
 import CloseButton from '@/components/ui/CloseButton.vue';
 import Card from '@/components/ui/Card.vue';
@@ -478,7 +478,7 @@ const saveSelections = async () => {
         user_id: userId,
         tmdb_id: title.id,
         type: title.media_type,
-        status: TitleStatus.SEEN,
+        status: TITLE_STATUS.SEEN,
         liked: true,
       });
 

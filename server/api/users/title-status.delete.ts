@@ -1,11 +1,9 @@
 import { serverSupabaseUser } from '#supabase/server';
 import { createClient } from '@supabase/supabase-js';
-import { TitleStatus } from '@/types/TitleStatus';
-import {
-  TABLES,
-  USER_TITLE_STATUS_FIELDS,
-  SCORE_WEIGHTS,
-} from '@/services/constants';
+import { TITLE_STATUS } from '@/constants/domain/titleStatus';
+import { TABLES } from '@/constants/db/tables';
+import { USER_TITLE_STATUS_COLUMNS } from '@/constants/db/columns';
+import { SCORE_WEIGHTS } from '@/constants/domain/scoring';
 import { updatePoolScore } from '@/services/recommendationPool';
 
 /**
@@ -112,10 +110,10 @@ export default defineEventHandler(async (event) => {
     const { data: previousStatus } = await supabase
       .from(TABLES.USER_TITLE_STATUS)
       .select(
-        `${USER_TITLE_STATUS_FIELDS.STATUS}, ${USER_TITLE_STATUS_FIELDS.LIKED}`
+        `${USER_TITLE_STATUS_COLUMNS.STATUS}, ${USER_TITLE_STATUS_COLUMNS.LIKED}`
       )
-      .eq(USER_TITLE_STATUS_FIELDS.USER_ID, userId)
-      .eq(USER_TITLE_STATUS_FIELDS.TMDB_ID, tmdbIdNumber)
+      .eq(USER_TITLE_STATUS_COLUMNS.USER_ID, userId)
+      .eq(USER_TITLE_STATUS_COLUMNS.TMDB_ID, tmdbIdNumber)
       .maybeSingle();
 
     // Delete user title status
@@ -124,8 +122,8 @@ export default defineEventHandler(async (event) => {
     const { error } = await supabase
       .from(TABLES.USER_TITLE_STATUS)
       .delete()
-      .eq(USER_TITLE_STATUS_FIELDS.USER_ID, userId)
-      .eq(USER_TITLE_STATUS_FIELDS.TMDB_ID, tmdbIdNumber);
+      .eq(USER_TITLE_STATUS_COLUMNS.USER_ID, userId)
+      .eq(USER_TITLE_STATUS_COLUMNS.TMDB_ID, tmdbIdNumber);
 
     if (error) {
       if (process.env.NODE_ENV === 'development') {
@@ -146,7 +144,7 @@ export default defineEventHandler(async (event) => {
       // Revert status impact (if status was not watchlist)
       if (
         deletedStatus &&
-        deletedStatus !== TitleStatus.WATCHLIST
+        deletedStatus !== TITLE_STATUS.WATCHLIST
       ) {
         // Revert: score -= SCORE_WEIGHTS[deletedStatus]
         const deletedWeight =

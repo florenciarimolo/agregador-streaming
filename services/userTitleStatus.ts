@@ -1,6 +1,7 @@
 // useSupabaseClient is auto-imported by Nuxt
-import { TABLES, USER_TITLE_STATUS_FIELDS } from './constants';
-import { TitleStatus } from '@/types/TitleStatus';
+import { TABLES } from '@/constants/db/tables';
+import { USER_TITLE_STATUS_COLUMNS } from '@/constants/db/columns';
+import { TITLE_STATUS, type TitleStatusType } from '@/constants/domain/titleStatus';
 
 /**
  * Service: User title status operations
@@ -11,7 +12,7 @@ export interface UpsertUserTitleStatusData {
   user_id: string;
   tmdb_id: number;
   type: 'movie' | 'tv';
-  status: TitleStatus;
+  status: TitleStatusType;
   liked?: boolean;
 }
 
@@ -24,14 +25,14 @@ export async function upsertUserTitleStatus(data: UpsertUserTitleStatusData) {
     .from(TABLES.USER_TITLE_STATUS)
     .upsert(
       {
-        [USER_TITLE_STATUS_FIELDS.USER_ID]: data.user_id,
-        [USER_TITLE_STATUS_FIELDS.TMDB_ID]: data.tmdb_id,
-        [USER_TITLE_STATUS_FIELDS.TYPE]: data.type,
-        [USER_TITLE_STATUS_FIELDS.STATUS]: data.status,
-        [USER_TITLE_STATUS_FIELDS.LIKED]: data.liked ?? false,
+        [USER_TITLE_STATUS_COLUMNS.USER_ID]: data.user_id,
+        [USER_TITLE_STATUS_COLUMNS.TMDB_ID]: data.tmdb_id,
+        [USER_TITLE_STATUS_COLUMNS.TYPE]: data.type,
+        [USER_TITLE_STATUS_COLUMNS.STATUS]: data.status,
+        [USER_TITLE_STATUS_COLUMNS.LIKED]: data.liked ?? false,
       },
       {
-        onConflict: `${USER_TITLE_STATUS_FIELDS.USER_ID},${USER_TITLE_STATUS_FIELDS.TMDB_ID}`,
+        onConflict: `${USER_TITLE_STATUS_COLUMNS.USER_ID},${USER_TITLE_STATUS_COLUMNS.TMDB_ID}`,
         ignoreDuplicates: false,
       }
     )
@@ -52,9 +53,9 @@ export async function getUserLikedTitles(userId: string) {
   const result = await supabase
     .from(TABLES.USER_TITLE_STATUS)
     .select('id, tmdb_id, type')
-    .eq(USER_TITLE_STATUS_FIELDS.USER_ID, userId)
-    .eq(USER_TITLE_STATUS_FIELDS.LIKED, true)
-    .order(USER_TITLE_STATUS_FIELDS.CREATED_AT, { ascending: false });
+    .eq(USER_TITLE_STATUS_COLUMNS.USER_ID, userId)
+    .eq(USER_TITLE_STATUS_COLUMNS.LIKED, true)
+    .order(USER_TITLE_STATUS_COLUMNS.CREATED_AT, { ascending: false });
 
   if (import.meta.dev) {
     console.log('[getUserLikedTitles] Result:', {
@@ -75,9 +76,9 @@ export async function getUserLikedTitle(userId: string, tmdbId: number) {
   return await supabase
     .from(TABLES.USER_TITLE_STATUS)
     .select('id')
-    .eq(USER_TITLE_STATUS_FIELDS.USER_ID, userId)
-    .eq(USER_TITLE_STATUS_FIELDS.TMDB_ID, tmdbId)
-    .eq(USER_TITLE_STATUS_FIELDS.LIKED, true)
+    .eq(USER_TITLE_STATUS_COLUMNS.USER_ID, userId)
+    .eq(USER_TITLE_STATUS_COLUMNS.TMDB_ID, tmdbId)
+    .eq(USER_TITLE_STATUS_COLUMNS.LIKED, true)
     .maybeSingle();
 }
 
@@ -89,8 +90,8 @@ export async function getUserLikedStatuses(userId: string) {
   return await supabase
     .from(TABLES.USER_TITLE_STATUS)
     .select('tmdb_id, type')
-    .eq(USER_TITLE_STATUS_FIELDS.USER_ID, userId)
-    .eq(USER_TITLE_STATUS_FIELDS.LIKED, true);
+    .eq(USER_TITLE_STATUS_COLUMNS.USER_ID, userId)
+    .eq(USER_TITLE_STATUS_COLUMNS.LIKED, true);
 }
 
 /**
@@ -101,7 +102,7 @@ export async function deleteUserTitleStatus(id: string) {
   return await supabase
     .from(TABLES.USER_TITLE_STATUS)
     .delete()
-    .eq(USER_TITLE_STATUS_FIELDS.ID, id);
+    .eq(USER_TITLE_STATUS_COLUMNS.ID, id);
 }
 
 /**
@@ -112,8 +113,8 @@ export async function countUserLikedTitles(userId: string) {
   return await supabase
     .from(TABLES.USER_TITLE_STATUS)
     .select('*', { count: 'exact', head: true })
-    .eq(USER_TITLE_STATUS_FIELDS.USER_ID, userId)
-    .eq(USER_TITLE_STATUS_FIELDS.LIKED, true);
+    .eq(USER_TITLE_STATUS_COLUMNS.USER_ID, userId)
+    .eq(USER_TITLE_STATUS_COLUMNS.LIKED, true);
 }
 
 /**
@@ -125,9 +126,9 @@ export async function getUserSeenTitles(userId: string) {
   const result = await supabase
     .from(TABLES.USER_TITLE_STATUS)
     .select('id, tmdb_id, type, liked')
-    .eq(USER_TITLE_STATUS_FIELDS.USER_ID, userId)
-    .eq(USER_TITLE_STATUS_FIELDS.STATUS, 'seen')
-    .order(USER_TITLE_STATUS_FIELDS.CREATED_AT, { ascending: false });
+    .eq(USER_TITLE_STATUS_COLUMNS.USER_ID, userId)
+    .eq(USER_TITLE_STATUS_COLUMNS.STATUS, 'seen')
+    .order(USER_TITLE_STATUS_COLUMNS.CREATED_AT, { ascending: false });
 
   return result;
 }
@@ -141,9 +142,9 @@ export async function getUserNotInterestedTitles(userId: string) {
   const result = await supabase
     .from(TABLES.USER_TITLE_STATUS)
     .select('id, tmdb_id, type')
-    .eq(USER_TITLE_STATUS_FIELDS.USER_ID, userId)
-    .eq(USER_TITLE_STATUS_FIELDS.STATUS, 'not_interested')
-    .order(USER_TITLE_STATUS_FIELDS.CREATED_AT, { ascending: false });
+    .eq(USER_TITLE_STATUS_COLUMNS.USER_ID, userId)
+    .eq(USER_TITLE_STATUS_COLUMNS.STATUS, 'not_interested')
+    .order(USER_TITLE_STATUS_COLUMNS.CREATED_AT, { ascending: false });
 
   return result;
 }
@@ -156,9 +157,9 @@ export async function getUserWatchlistTitles(userId: string) {
   return await supabase
     .from(TABLES.USER_TITLE_STATUS)
     .select('id, tmdb_id, type')
-    .eq(USER_TITLE_STATUS_FIELDS.USER_ID, userId)
-    .eq(USER_TITLE_STATUS_FIELDS.STATUS, 'watchlist')
-    .order(USER_TITLE_STATUS_FIELDS.CREATED_AT, { ascending: false });
+    .eq(USER_TITLE_STATUS_COLUMNS.USER_ID, userId)
+    .eq(USER_TITLE_STATUS_COLUMNS.STATUS, 'watchlist')
+    .order(USER_TITLE_STATUS_COLUMNS.CREATED_AT, { ascending: false });
 }
 
 /**
@@ -169,9 +170,9 @@ export async function removeNotInterested(userId: string, tmdbId: number) {
   return await supabase
     .from(TABLES.USER_TITLE_STATUS)
     .delete()
-    .eq(USER_TITLE_STATUS_FIELDS.USER_ID, userId)
-    .eq(USER_TITLE_STATUS_FIELDS.TMDB_ID, tmdbId)
-    .eq(USER_TITLE_STATUS_FIELDS.STATUS, 'not_interested');
+    .eq(USER_TITLE_STATUS_COLUMNS.USER_ID, userId)
+    .eq(USER_TITLE_STATUS_COLUMNS.TMDB_ID, tmdbId)
+    .eq(USER_TITLE_STATUS_COLUMNS.STATUS, 'not_interested');
 }
 
 /**
@@ -182,9 +183,9 @@ export async function removeLike(userId: string, tmdbId: number) {
   // Update liked to false instead of deleting, to preserve the status
   return await supabase
     .from(TABLES.USER_TITLE_STATUS)
-    .update({ [USER_TITLE_STATUS_FIELDS.LIKED]: false })
-    .eq(USER_TITLE_STATUS_FIELDS.USER_ID, userId)
-    .eq(USER_TITLE_STATUS_FIELDS.TMDB_ID, tmdbId);
+    .update({ [USER_TITLE_STATUS_COLUMNS.LIKED]: false })
+    .eq(USER_TITLE_STATUS_COLUMNS.USER_ID, userId)
+    .eq(USER_TITLE_STATUS_COLUMNS.TMDB_ID, tmdbId);
 }
 
 /**
@@ -194,9 +195,9 @@ export async function getTitleStatus(userId: string, tmdbId: number) {
   const supabase = useSupabaseClient();
   return await supabase
     .from(TABLES.USER_TITLE_STATUS)
-    .select(`${USER_TITLE_STATUS_FIELDS.LIKED}, ${USER_TITLE_STATUS_FIELDS.STATUS}`)
-    .eq(USER_TITLE_STATUS_FIELDS.USER_ID, userId)
-    .eq(USER_TITLE_STATUS_FIELDS.TMDB_ID, tmdbId)
+    .select(`${USER_TITLE_STATUS_COLUMNS.LIKED}, ${USER_TITLE_STATUS_COLUMNS.STATUS}`)
+    .eq(USER_TITLE_STATUS_COLUMNS.USER_ID, userId)
+    .eq(USER_TITLE_STATUS_COLUMNS.TMDB_ID, tmdbId)
     .maybeSingle();
 }
 

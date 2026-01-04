@@ -1,11 +1,9 @@
 import { serverSupabaseUser } from '#supabase/server';
 import { createClient } from '@supabase/supabase-js';
 import type { H3Event } from 'h3';
-import {
-  TABLES,
-  PROFILES_FIELDS,
-  USER_PREFERENCES_FIELDS,
-} from '@/services/constants';
+import { TABLES } from '@/constants/db/tables';
+import { PROFILES_COLUMNS, USER_PREFERENCES_COLUMNS } from '@/constants/db/columns';
+import { SCORE_WEIGHTS } from '@/constants/domain/scoring';
 import { LanguageCode, toTMDBLanguageCode } from '@/constants/languages';
 
 /**
@@ -27,7 +25,7 @@ async function getUserPreferencesServer(userId: string) {
   const { data, error } = await supabase
     .from(TABLES.USER_PREFERENCES)
     .select('*')
-    .eq(USER_PREFERENCES_FIELDS.USER_ID, userId)
+    .eq(USER_PREFERENCES_COLUMNS.USER_ID, userId)
     .maybeSingle();
 
   return { data, error };
@@ -51,8 +49,8 @@ async function getSettingsServer(userId: string) {
 
   const { data: profile, error: profileError } = await supabase
     .from(TABLES.PROFILES)
-    .select(`${PROFILES_FIELDS.SETTINGS}`)
-    .eq(PROFILES_FIELDS.ID, userId)
+    .select(`${PROFILES_COLUMNS.SETTINGS}`)
+    .eq(PROFILES_COLUMNS.ID, userId)
     .single();
 
   if (profileError || !profile) {
@@ -61,7 +59,7 @@ async function getSettingsServer(userId: string) {
 
   return {
     data:
-      (profile[PROFILES_FIELDS.SETTINGS] as Record<string, unknown>) || null,
+      (profile[PROFILES_COLUMNS.SETTINGS] as Record<string, unknown>) || null,
     error: null,
   };
 }

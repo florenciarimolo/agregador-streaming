@@ -4,19 +4,8 @@
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { TABLES } from './constants';
-
-export const RECOMMENDATION_POOL_FIELDS = {
-  ID: 'id',
-  USER_ID: 'user_id',
-  TMDB_ID: 'tmdb_id',
-  TYPE: 'type',
-  SOURCE: 'source',
-  SCORE: 'score',
-  EXPLANATION_CODE: 'explanation_code',
-  CREATED_AT: 'created_at',
-  LAST_SHOWN_AT: 'last_shown_at',
-} as const;
+import { TABLES } from '@/constants/db/tables';
+import { RECOMMENDATION_POOL_COLUMNS } from '@/constants/db/columns';
 
 export type RecommendationPoolSource =
   | 'based_on_like'
@@ -61,7 +50,7 @@ export async function getPoolCount(
   const { count, error } = await supabase
     .from(TABLES.RECOMMENDATION_POOL)
     .select('*', { count: 'exact', head: true })
-    .eq(RECOMMENDATION_POOL_FIELDS.USER_ID, userId);
+    .eq(RECOMMENDATION_POOL_COLUMNS.USER_ID, userId);
 
   if (error) {
     console.error('[RecommendationPool] Error getting pool count:', error);
@@ -85,10 +74,10 @@ export async function deleteLowestScoreEntries(
   // Get IDs of entries with lowest scores
   const { data: entriesToDelete, error: selectError } = await supabase
     .from(TABLES.RECOMMENDATION_POOL)
-    .select(RECOMMENDATION_POOL_FIELDS.ID)
-    .eq(RECOMMENDATION_POOL_FIELDS.USER_ID, userId)
-    .order(RECOMMENDATION_POOL_FIELDS.SCORE, { ascending: true })
-    .order(RECOMMENDATION_POOL_FIELDS.CREATED_AT, { ascending: true })
+    .select(RECOMMENDATION_POOL_COLUMNS.ID)
+    .eq(RECOMMENDATION_POOL_COLUMNS.USER_ID, userId)
+    .order(RECOMMENDATION_POOL_COLUMNS.SCORE, { ascending: true })
+    .order(RECOMMENDATION_POOL_COLUMNS.CREATED_AT, { ascending: true })
     .limit(count);
 
   if (selectError) {
@@ -108,7 +97,7 @@ export async function deleteLowestScoreEntries(
   const { error: deleteError } = await supabase
     .from(TABLES.RECOMMENDATION_POOL)
     .delete()
-    .in(RECOMMENDATION_POOL_FIELDS.ID, idsToDelete);
+    .in(RECOMMENDATION_POOL_COLUMNS.ID, idsToDelete);
 
   if (deleteError) {
     console.error('[RecommendationPool] Error deleting entries:', deleteError);
@@ -178,9 +167,9 @@ export async function updatePoolScore(
   // First get current score
   const { data: currentEntry, error: selectError } = await supabase
     .from(TABLES.RECOMMENDATION_POOL)
-    .select(RECOMMENDATION_POOL_FIELDS.SCORE)
-    .eq(RECOMMENDATION_POOL_FIELDS.USER_ID, userId)
-    .eq(RECOMMENDATION_POOL_FIELDS.TMDB_ID, tmdbId)
+    .select(RECOMMENDATION_POOL_COLUMNS.SCORE)
+    .eq(RECOMMENDATION_POOL_COLUMNS.USER_ID, userId)
+    .eq(RECOMMENDATION_POOL_COLUMNS.TMDB_ID, tmdbId)
     .single();
 
   if (selectError || !currentEntry) {
@@ -195,9 +184,9 @@ export async function updatePoolScore(
 
   const { error: updateError } = await supabase
     .from(TABLES.RECOMMENDATION_POOL)
-    .update({ [RECOMMENDATION_POOL_FIELDS.SCORE]: newScore })
-    .eq(RECOMMENDATION_POOL_FIELDS.USER_ID, userId)
-    .eq(RECOMMENDATION_POOL_FIELDS.TMDB_ID, tmdbId);
+    .update({ [RECOMMENDATION_POOL_COLUMNS.SCORE]: newScore })
+    .eq(RECOMMENDATION_POOL_COLUMNS.USER_ID, userId)
+    .eq(RECOMMENDATION_POOL_COLUMNS.TMDB_ID, tmdbId);
 
   if (updateError) {
     console.error('[RecommendationPool] Error updating score:', updateError);
@@ -219,8 +208,8 @@ export async function removeFromPool(
   const { error } = await supabase
     .from(TABLES.RECOMMENDATION_POOL)
     .delete()
-    .eq(RECOMMENDATION_POOL_FIELDS.USER_ID, userId)
-    .eq(RECOMMENDATION_POOL_FIELDS.TMDB_ID, tmdbId);
+    .eq(RECOMMENDATION_POOL_COLUMNS.USER_ID, userId)
+    .eq(RECOMMENDATION_POOL_COLUMNS.TMDB_ID, tmdbId);
 
   if (error) {
     console.error('[RecommendationPool] Error removing entry:', error);
@@ -241,7 +230,7 @@ export async function deleteAllPoolEntries(
   const { error } = await supabase
     .from(TABLES.RECOMMENDATION_POOL)
     .delete()
-    .eq(RECOMMENDATION_POOL_FIELDS.USER_ID, userId);
+    .eq(RECOMMENDATION_POOL_COLUMNS.USER_ID, userId);
 
   if (error) {
     console.error(
@@ -268,10 +257,10 @@ export async function updateLastShownAt(
   const { error } = await supabase
     .from(TABLES.RECOMMENDATION_POOL)
     .update({
-      [RECOMMENDATION_POOL_FIELDS.LAST_SHOWN_AT]: new Date().toISOString(),
+      [RECOMMENDATION_POOL_COLUMNS.LAST_SHOWN_AT]: new Date().toISOString(),
     })
-    .eq(RECOMMENDATION_POOL_FIELDS.USER_ID, userId)
-    .in(RECOMMENDATION_POOL_FIELDS.TMDB_ID, tmdbIds);
+    .eq(RECOMMENDATION_POOL_COLUMNS.USER_ID, userId)
+    .in(RECOMMENDATION_POOL_COLUMNS.TMDB_ID, tmdbIds);
 
   if (error) {
     console.error('[RecommendationPool] Error updating last_shown_at:', error);
@@ -293,9 +282,9 @@ export async function getPoolEntries(
   let query = supabase
     .from(TABLES.RECOMMENDATION_POOL)
     .select('*')
-    .eq(RECOMMENDATION_POOL_FIELDS.USER_ID, userId)
-    .order(RECOMMENDATION_POOL_FIELDS.SCORE, { ascending: false })
-    .order(RECOMMENDATION_POOL_FIELDS.CREATED_AT, { ascending: false });
+    .eq(RECOMMENDATION_POOL_COLUMNS.USER_ID, userId)
+    .order(RECOMMENDATION_POOL_COLUMNS.SCORE, { ascending: false })
+    .order(RECOMMENDATION_POOL_COLUMNS.CREATED_AT, { ascending: false });
 
   if (limit) {
     query = query.limit(limit);

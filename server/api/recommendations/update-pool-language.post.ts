@@ -1,5 +1,5 @@
 import { serverSupabaseUser } from '#supabase/server';
-import { devLog } from '../../utils/logger';
+import { devLog } from '@/server/utils/logger';
 
 /**
  * @deprecated This endpoint is no longer needed as title_data has been removed from recommendation_pool.

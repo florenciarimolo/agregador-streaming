@@ -5,7 +5,8 @@ import { useUserStore } from '@/stores/user';
 import { useRecommendations } from '@/composables/useRecommendations';
 import { useTitleActions } from '@/composables/useTitleActions';
 import { getSession } from '@/services/auth';
-import { TitleStatus } from '@/types/TitleStatus';
+import { TITLE_STATUS } from '@/constants/domain/titleStatus';
+import { QUERY_PARAMS } from '@/constants/api/queryParams';
 import AppShell from '@/components/layout/AppShell.vue';
 import PageContainer from '@/components/layout/PageContainer.vue';
 import Section from '@/components/layout/Section.vue';
@@ -162,7 +163,7 @@ const showNoResultsWithFilters = computed(
     hasAttemptedLoad.value &&
     recommendations.value.length === 0 &&
     !loading.value &&
-    (route.query.mood || route.query.attention)
+    (route.query[QUERY_PARAMS.MOOD] || route.query[QUERY_PARAMS.ATTENTION])
 );
 
 const showRecommendationsList = computed(
@@ -439,14 +440,14 @@ onMounted(() => {
                 :recommendations="recommendations"
                 :loading-titles="loadingTitles"
                 :is-loading="fetchingReplacement"
-                @mark-seen="handleTitleStatus($event, TitleStatus.SEEN)"
+                @mark-seen="handleTitleStatus($event, TITLE_STATUS.SEEN)"
                 @mark-not-interested="
-                  handleTitleStatus($event, TitleStatus.NOT_INTERESTED)
+                  handleTitleStatus($event, TITLE_STATUS.NOT_INTERESTED)
                 "
                 @mark-liked="handleMarkLiked($event)"
                 @remove-liked="handleRemoveLiked($event)"
                 @mark-watchlist="
-                  handleTitleStatus($event, TitleStatus.WATCHLIST)
+                  handleTitleStatus($event, TITLE_STATUS.WATCHLIST)
                 "
               />
             </Section>

@@ -271,6 +271,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted } from 'vue';
+import { STORAGE_KEYS } from '@/constants/storage/keys';
 import {
   validatePassword,
   getPasswordHelperText,
@@ -346,7 +347,7 @@ onMounted(async () => {
   try {
     // Protección: Verificar que estamos en el flujo de recovery correcto
     if (typeof window !== 'undefined') {
-      const recoveryFlag = localStorage.getItem('auth:recovery');
+      const recoveryFlag = localStorage.getItem(STORAGE_KEYS.AUTH_RECOVERY);
       let isRecoveryFlow = false;
 
       if (recoveryFlag) {
@@ -359,7 +360,7 @@ onMounted(async () => {
             isRecoveryFlow = true;
           } else {
             // Flag expired, remove it
-            localStorage.removeItem('auth:recovery');
+            localStorage.removeItem(STORAGE_KEYS.AUTH_RECOVERY);
           }
         } catch {
           // Legacy format: '1' (string)

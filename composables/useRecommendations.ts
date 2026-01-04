@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n';
 import { useSupabaseUser } from '#imports';
 import { useUserStore } from '@/stores/user';
 import { getSession } from '@/services/auth';
+import { QUERY_PARAMS } from '@/constants/api/queryParams';
 import type { Recommendation } from '@/types/Recommendation';
 
 /**
@@ -121,11 +122,11 @@ export const useRecommendations = () => {
       // Get mood, attention, and content type from query params
       const query = route.query;
       const queryParams: Record<string, string> = {};
-      if (query.mood) queryParams.mood = query.mood as string;
-      if (query.attention) queryParams.attention = query.attention as string;
+      if (query.mood) queryParams[QUERY_PARAMS.MOOD] = query.mood as string;
+      if (query.attention) queryParams[QUERY_PARAMS.ATTENTION] = query.attention as string;
       // Send content type to server when not 'all' (server-side filtering)
       if (selectedContentType.value !== 'all') {
-        queryParams.type = selectedContentType.value;
+        queryParams[QUERY_PARAMS.TYPE] = selectedContentType.value;
       }
 
       const data = await $fetch<Recommendation[]>('/api/recommendations', {
@@ -176,7 +177,7 @@ export const useRecommendations = () => {
 
   // Watch for query param changes (mood/attention) to refetch recommendations
   watch(
-    () => [route.query.mood, route.query.attention],
+    () => [route.query[QUERY_PARAMS.MOOD], route.query[QUERY_PARAMS.ATTENTION]],
     async () => {
       // Only refetch if user is logged in and has completed onboarding
       if (

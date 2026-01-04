@@ -1,19 +1,20 @@
 import { serverSupabaseUser } from '#supabase/server';
 import { createClient } from '@supabase/supabase-js';
-import { getTMDBConfig } from '../../utils/config';
-import { getUserTMDBParams } from '../../utils/user-preferences';
-import { devLog, devError, safeError } from '../../utils/logger';
-import { TitleStatus } from '@/types/TitleStatus';
+import { getTMDBConfig } from '@/server/utils/config';
+import { getUserTMDBParams } from '@/server/utils/user-preferences';
+import { devLog, devError, safeError } from '@/server/utils/logger';
+import { TITLE_STATUS } from '@/constants/domain/titleStatus';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 import {
   getPoolCount,
   deleteLowestScoreEntries,
   insertPoolEntries,
   type RecommendationPoolSource,
-  RECOMMENDATION_POOL_FIELDS,
-  TABLES as POOL_TABLES,
 } from '@/services/recommendationPool';
-import { TABLES, TITLES_FIELDS } from '@/services/constants';
+import { RECOMMENDATION_POOL_COLUMNS } from '@/constants/db/columns';
+import { TABLES } from '@/constants/db/tables';
+import { PROFILES_COLUMNS, USER_PREFERENCES_COLUMNS, TITLES_COLUMNS } from '@/constants/db/columns';
+import { SCORE_WEIGHTS } from '@/constants/domain/scoring';
 import type { MultiLanguageText } from '@/services/titles';
 
 const TARGET_POOL_SIZE = 200;
@@ -86,9 +87,9 @@ export default defineEventHandler(async (event) => {
     // Get all pool entries for the user (DO NOT DELETE)
     // Note: title_data has been removed from recommendation_pool
     const { data: poolEntries, error: fetchError } = await supabase
-      .from(POOL_TABLES.RECOMMENDATION_POOL)
-      .select(`${RECOMMENDATION_POOL_FIELDS.TMDB_ID}, ${RECOMMENDATION_POOL_FIELDS.TYPE}`)
-      .eq(RECOMMENDATION_POOL_FIELDS.USER_ID, userId);
+      .from(TABLES.RECOMMENDATION_POOL)
+      .select(`${RECOMMENDATION_POOL_COLUMNS.TMDB_ID}, ${RECOMMENDATION_POOL_COLUMNS.TYPE}`)
+      .eq(RECOMMENDATION_POOL_COLUMNS.USER_ID, userId);
 
     if (fetchError) {
       devError('[RegeneratePool] Error fetching pool entries:', fetchError);
@@ -138,10 +139,10 @@ export default defineEventHandler(async (event) => {
         const { data: existingTitle } = await supabase
           .from(TABLES.TITLES)
           .select(
-            `${TITLES_FIELDS.TITLE}, ${TITLES_FIELDS.OVERVIEW}, ${TITLES_FIELDS.POSTER_PATH}`
+            `${TITLES_COLUMNS.TITLE}, ${TITLES_COLUMNS.OVERVIEW}, ${TITLES_COLUMNS.POSTER_PATH}`
           )
-          .eq(TITLES_FIELDS.TMDB_ID, tmdb_id)
-          .eq(TITLES_FIELDS.TYPE, type)
+          .eq(TITLES_COLUMNS.TMDB_ID, tmdb_id)
+          .eq(TITLES_COLUMNS.TYPE, type)
           .maybeSingle();
 
         const titleJsonb: MultiLanguageText = existingTitle?.title 
@@ -169,18 +170,18 @@ export default defineEventHandler(async (event) => {
         supabase
           .from(TABLES.TITLES)
           .upsert({
-            [TITLES_FIELDS.TMDB_ID]: tmdb_id,
-            [TITLES_FIELDS.TYPE]: type,
-            [TITLES_FIELDS.TITLE]: titleJsonb,
-            [TITLES_FIELDS.OVERVIEW]: Object.keys(overviewJsonb).length > 0 ? overviewJsonb : null,
-            [TITLES_FIELDS.POSTER_PATH]: Object.keys(posterPathJsonb).length > 0 ? posterPathJsonb : null,
-            [TITLES_FIELDS.GENRES]: (tmdbResponse.genres || []).length > 0 ? tmdbResponse.genres : null,
-            [TITLES_FIELDS.BACKDROP_PATH]: tmdbResponse.backdrop_path || null,
-            [TITLES_FIELDS.VOTE_AVERAGE]: tmdbResponse.vote_average || null,
-            [TITLES_FIELDS.RELEASE_DATE]: tmdbResponse.release_date || null,
-            [TITLES_FIELDS.FIRST_AIR_DATE]: tmdbResponse.first_air_date || null,
+            [TITLES_COLUMNS.TMDB_ID]: tmdb_id,
+            [TITLES_COLUMNS.TYPE]: type,
+            [TITLES_COLUMNS.TITLE]: titleJsonb,
+            [TITLES_COLUMNS.OVERVIEW]: Object.keys(overviewJsonb).length > 0 ? overviewJsonb : null,
+            [TITLES_COLUMNS.POSTER_PATH]: Object.keys(posterPathJsonb).length > 0 ? posterPathJsonb : null,
+            [TITLES_COLUMNS.GENRES]: (tmdbResponse.genres || []).length > 0 ? tmdbResponse.genres : null,
+            [TITLES_COLUMNS.BACKDROP_PATH]: tmdbResponse.backdrop_path || null,
+            [TITLES_COLUMNS.VOTE_AVERAGE]: tmdbResponse.vote_average || null,
+            [TITLES_COLUMNS.RELEASE_DATE]: tmdbResponse.release_date || null,
+            [TITLES_COLUMNS.FIRST_AIR_DATE]: tmdbResponse.first_air_date || null,
           }, {
-            onConflict: TITLES_FIELDS.TMDB_ID,
+            onConflict: TITLES_COLUMNS.TMDB_ID,
           })
           .catch((error) => {
             if (import.meta.dev) {

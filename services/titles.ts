@@ -1,5 +1,6 @@
 // useSupabaseClient is auto-imported by Nuxt
-import { TABLES, TITLES_FIELDS } from './constants';
+import { TABLES } from '@/constants/db/tables';
+import { TITLES_COLUMNS } from '@/constants/db/columns';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 import {
   hasUnexpectedCharacters,
@@ -223,16 +224,16 @@ export async function insertTitle(data: InsertTitleData) {
   return await supabase
     .from(TABLES.TITLES)
     .insert({
-      [TITLES_FIELDS.TMDB_ID]: data.tmdb_id,
-      [TITLES_FIELDS.TITLE]: data.title,
-      [TITLES_FIELDS.TYPE]: data.type,
-      [TITLES_FIELDS.POSTER_PATH]: data.poster_path,
-      [TITLES_FIELDS.BACKDROP_PATH]: data.backdrop_path || null,
-      [TITLES_FIELDS.OVERVIEW]: data.overview || null,
-      [TITLES_FIELDS.RELEASE_DATE]: data.release_date || null,
-      [TITLES_FIELDS.FIRST_AIR_DATE]: data.first_air_date || null,
-      [TITLES_FIELDS.GENRES]: data.genres || null,
-      [TITLES_FIELDS.VOTE_AVERAGE]: data.vote_average || null,
+      [TITLES_COLUMNS.TMDB_ID]: data.tmdb_id,
+      [TITLES_COLUMNS.TITLE]: data.title,
+      [TITLES_COLUMNS.TYPE]: data.type,
+      [TITLES_COLUMNS.POSTER_PATH]: data.poster_path,
+      [TITLES_COLUMNS.BACKDROP_PATH]: data.backdrop_path || null,
+      [TITLES_COLUMNS.OVERVIEW]: data.overview || null,
+      [TITLES_COLUMNS.RELEASE_DATE]: data.release_date || null,
+      [TITLES_COLUMNS.FIRST_AIR_DATE]: data.first_air_date || null,
+      [TITLES_COLUMNS.GENRES]: data.genres || null,
+      [TITLES_COLUMNS.VOTE_AVERAGE]: data.vote_average || null,
     })
     .select('id')
     .single();
@@ -249,8 +250,8 @@ export async function getTitleByTmdbId(
   return await supabase
     .from(TABLES.TITLES)
     .select('id')
-    .eq(TITLES_FIELDS.TMDB_ID, tmdbId)
-    .eq(TITLES_FIELDS.TYPE, type)
+    .eq(TITLES_COLUMNS.TMDB_ID, tmdbId)
+    .eq(TITLES_COLUMNS.TYPE, type)
     .maybeSingle();
 }
 
@@ -284,7 +285,7 @@ export async function getTitlesByTmdbIds(
   const result = await supabase
     .from(TABLES.TITLES)
     .select('id, title, type, poster_path, tmdb_id, overview, genres')
-    .in(TITLES_FIELDS.TMDB_ID, tmdbIds);
+    .in(TITLES_COLUMNS.TMDB_ID, tmdbIds);
 
   let { data } = result;
   const { error } = result;
@@ -350,7 +351,7 @@ export async function getTitlesByTmdbIds(
     const { data: reloadedData, error: reloadError } = await supabase
       .from(TABLES.TITLES)
       .select('id, title, type, poster_path, tmdb_id, overview, genres')
-      .in(TITLES_FIELDS.TMDB_ID, tmdbIds);
+      .in(TITLES_COLUMNS.TMDB_ID, tmdbIds);
 
     if (reloadError) {
       console.error(
@@ -497,7 +498,7 @@ export async function getTitlesByTmdbIds(
       const { data: updatedData, error: reloadError } = await supabase
         .from(TABLES.TITLES)
         .select('id, title, type, poster_path, tmdb_id, overview, genres')
-        .in(TITLES_FIELDS.TMDB_ID, updatedTmdbIds);
+        .in(TITLES_COLUMNS.TMDB_ID, updatedTmdbIds);
 
       if (!reloadError && updatedData) {
         // Update the data array with the reloaded data
@@ -625,7 +626,7 @@ export async function getTitlesByTmdbIds(
     const { data: reloadedData, error: reloadError } = await supabase
       .from(TABLES.TITLES)
       .select('id, title, type, poster_path, tmdb_id, overview, genres')
-      .in(TITLES_FIELDS.TMDB_ID, primaryLanguageTmdbIds);
+      .in(TITLES_COLUMNS.TMDB_ID, primaryLanguageTmdbIds);
 
     if (!reloadError && reloadedData) {
       // Update the titlesWithLanguage array with the reloaded data
@@ -677,8 +678,8 @@ export async function getTitleByTmdbIdWithLanguage(
   const result = await supabase
     .from(TABLES.TITLES)
     .select('*')
-    .eq(TITLES_FIELDS.TMDB_ID, tmdbId)
-    .eq(TITLES_FIELDS.TYPE, type)
+    .eq(TITLES_COLUMNS.TMDB_ID, tmdbId)
+    .eq(TITLES_COLUMNS.TYPE, type)
     .maybeSingle();
 
   let { data } = result;
@@ -726,8 +727,8 @@ export async function getTitleByTmdbIdWithLanguage(
         const { data: reloadedData, error: reloadError } = await supabase
           .from(TABLES.TITLES)
           .select('*')
-          .eq(TITLES_FIELDS.TMDB_ID, tmdbId)
-          .eq(TITLES_FIELDS.TYPE, type)
+          .eq(TITLES_COLUMNS.TMDB_ID, tmdbId)
+          .eq(TITLES_COLUMNS.TYPE, type)
           .maybeSingle();
 
         if (!reloadError && reloadedData) {

@@ -1,14 +1,15 @@
 import { serverSupabaseUser } from '#supabase/server';
 import { createClient } from '@supabase/supabase-js';
-import { getTMDBConfig } from '../../utils/config';
-import { getUserTMDBParams } from '../../utils/user-preferences';
-import { devLog, devError, devWarn, safeError } from '../../utils/logger';
-import { TitleStatus } from '@/types/TitleStatus';
+import { getTMDBConfig } from '@/server/utils/config';
+import { getUserTMDBParams } from '@/server/utils/user-preferences';
+import { devLog, devError, devWarn, safeError } from '@/server/utils/logger';
+import { TITLE_STATUS } from '@/constants/domain/titleStatus';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 import {
   TABLES,
-  USER_TITLE_STATUS_FIELDS,
-} from '@/services/constants';
+  USER_TITLE_STATUS_COLUMNS,
+} from '@/constants/db/tables';
+import { SCORE_WEIGHTS } from '@/constants/domain/scoring';
 
 /**
  * Get user title status history (seen and not_interested)
@@ -95,10 +96,10 @@ export default defineEventHandler(async (event) => {
     const { data: statuses, error: statusError } = await supabase
       .from(TABLES.USER_TITLE_STATUS)
       .select(
-        `${USER_TITLE_STATUS_FIELDS.TMDB_ID}, ${USER_TITLE_STATUS_FIELDS.TYPE}, ${USER_TITLE_STATUS_FIELDS.STATUS}, ${USER_TITLE_STATUS_FIELDS.LIKED}, ${USER_TITLE_STATUS_FIELDS.CREATED_AT}`
+        `${USER_TITLE_STATUS_COLUMNS.TMDB_ID}, ${USER_TITLE_STATUS_COLUMNS.TYPE}, ${USER_TITLE_STATUS_COLUMNS.STATUS}, ${USER_TITLE_STATUS_COLUMNS.LIKED}, ${USER_TITLE_STATUS_COLUMNS.CREATED_AT}`
       )
-      .eq(USER_TITLE_STATUS_FIELDS.USER_ID, userId)
-      .order(USER_TITLE_STATUS_FIELDS.CREATED_AT, { ascending: false });
+      .eq(USER_TITLE_STATUS_COLUMNS.USER_ID, userId)
+      .order(USER_TITLE_STATUS_COLUMNS.CREATED_AT, { ascending: false });
 
     if (statusError) {
       safeError(
@@ -190,7 +191,7 @@ export default defineEventHandler(async (event) => {
           return null;
         });
 
-      if (status.status === TitleStatus.SEEN) {
+      if (status.status === TITLE_STATUS.SEEN) {
         seenPromises.push(fetchPromise);
       } else {
         notInterestedPromises.push(fetchPromise);

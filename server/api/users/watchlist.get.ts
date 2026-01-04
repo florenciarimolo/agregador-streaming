@@ -1,18 +1,16 @@
 import { serverSupabaseUser } from '#supabase/server';
 import { createClient } from '@supabase/supabase-js';
-import { getUserTMDBParams } from '../../utils/user-preferences';
-import { devLog, devError, devWarn, safeError } from '../../utils/logger';
-import { TitleStatus } from '@/types/TitleStatus';
-import {
-  TABLES,
-  USER_TITLE_STATUS_FIELDS,
-  TITLES_FIELDS,
-} from '@/services/constants';
+import { getUserTMDBParams } from '@/server/utils/user-preferences';
+import { devLog, devError, devWarn, safeError } from '@/server/utils/logger';
+import { TITLE_STATUS } from '@/constants/domain/titleStatus';
+import { TABLES } from '@/constants/db/tables';
+import { USER_TITLE_STATUS_COLUMNS, TITLES_COLUMNS } from '@/constants/db/columns';
+import { SCORE_WEIGHTS } from '@/constants/domain/scoring';
 import {
   getTitleInLanguage,
   type MultiLanguageText,
 } from '@/services/titles';
-import { getTMDBConfig } from '../../utils/config';
+import { getTMDBConfig } from '@/server/utils/config';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 
 /**
@@ -100,11 +98,11 @@ export default defineEventHandler(async (event) => {
     const { data: statuses, error: statusError } = await supabase
       .from(TABLES.USER_TITLE_STATUS)
       .select(
-        `${USER_TITLE_STATUS_FIELDS.TMDB_ID}, ${USER_TITLE_STATUS_FIELDS.TYPE}, ${USER_TITLE_STATUS_FIELDS.CREATED_AT}`
+        `${USER_TITLE_STATUS_COLUMNS.TMDB_ID}, ${USER_TITLE_STATUS_COLUMNS.TYPE}, ${USER_TITLE_STATUS_COLUMNS.CREATED_AT}`
       )
-      .eq(USER_TITLE_STATUS_FIELDS.USER_ID, userId)
-      .eq(USER_TITLE_STATUS_FIELDS.STATUS, TitleStatus.WATCHLIST)
-      .order(USER_TITLE_STATUS_FIELDS.CREATED_AT, { ascending: false });
+      .eq(USER_TITLE_STATUS_COLUMNS.USER_ID, userId)
+      .eq(USER_TITLE_STATUS_COLUMNS.STATUS, TITLE_STATUS.WATCHLIST)
+      .order(USER_TITLE_STATUS_COLUMNS.CREATED_AT, { ascending: false });
 
     if (statusError) {
       safeError(
@@ -146,9 +144,9 @@ export default defineEventHandler(async (event) => {
     const { data: titlesData, error: titlesError } = await supabase
       .from(TABLES.TITLES)
       .select(
-        `${TITLES_FIELDS.ID}, ${TITLES_FIELDS.TITLE}, ${TITLES_FIELDS.TYPE}, ${TITLES_FIELDS.POSTER_PATH}, ${TITLES_FIELDS.TMDB_ID}, ${TITLES_FIELDS.OVERVIEW}, ${TITLES_FIELDS.GENRES}`
+        `${TITLES_COLUMNS.ID}, ${TITLES_COLUMNS.TITLE}, ${TITLES_COLUMNS.TYPE}, ${TITLES_COLUMNS.POSTER_PATH}, ${TITLES_COLUMNS.TMDB_ID}, ${TITLES_COLUMNS.OVERVIEW}, ${TITLES_COLUMNS.GENRES}`
       )
-      .in(TITLES_FIELDS.TMDB_ID, tmdbIds);
+      .in(TITLES_COLUMNS.TMDB_ID, tmdbIds);
 
     if (titlesError) {
       safeError(
@@ -216,9 +214,9 @@ export default defineEventHandler(async (event) => {
       const { data: reloadedData } = await supabase
         .from(TABLES.TITLES)
         .select(
-          `${TITLES_FIELDS.ID}, ${TITLES_FIELDS.TITLE}, ${TITLES_FIELDS.TYPE}, ${TITLES_FIELDS.POSTER_PATH}, ${TITLES_FIELDS.TMDB_ID}, ${TITLES_FIELDS.OVERVIEW}, ${TITLES_FIELDS.GENRES}`
+          `${TITLES_COLUMNS.ID}, ${TITLES_COLUMNS.TITLE}, ${TITLES_COLUMNS.TYPE}, ${TITLES_COLUMNS.POSTER_PATH}, ${TITLES_COLUMNS.TMDB_ID}, ${TITLES_COLUMNS.OVERVIEW}, ${TITLES_COLUMNS.GENRES}`
         )
-        .in(TITLES_FIELDS.TMDB_ID, tmdbIds);
+        .in(TITLES_COLUMNS.TMDB_ID, tmdbIds);
 
       if (reloadedData) {
         titlesData.length = 0;

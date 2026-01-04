@@ -8,7 +8,7 @@ import {
 import { getUserActivity } from '@/services/activity';
 import { getSession } from '@/services/auth';
 import { getTitlesByTmdbIds, getTitleInLanguage, type MultiLanguageText } from '@/services/titles';
-import { getUserTMDBParams } from '../../utils/user-preferences';
+import { getUserTMDBParams } from '@/server/utils/user-preferences';
 
 export default defineEventHandler(async (event) => {
   try {

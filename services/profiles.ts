@@ -1,5 +1,6 @@
 // useSupabaseClient is auto-imported by Nuxt
-import { TABLES, PROFILES_FIELDS } from './constants';
+import { TABLES } from '@/constants/db/tables';
+import { PROFILES_COLUMNS } from '@/constants/db/columns';
 
 /**
  * Service: User profile operations
@@ -33,7 +34,7 @@ export async function getProfile(userId: string) {
   return await supabase
     .from(TABLES.PROFILES)
     .select('*')
-    .eq(PROFILES_FIELDS.ID, userId)
+    .eq(PROFILES_COLUMNS.ID, userId)
     .single();
 }
 
@@ -45,9 +46,9 @@ export async function insertProfile(data: InsertProfileData) {
   return await supabase
     .from(TABLES.PROFILES)
     .insert({
-      [PROFILES_FIELDS.ID]: data.id,
-      [PROFILES_FIELDS.EMAIL]: data.email,
-      [PROFILES_FIELDS.ONBOARDING_COMPLETED]:
+      [PROFILES_COLUMNS.ID]: data.id,
+      [PROFILES_COLUMNS.EMAIL]: data.email,
+      [PROFILES_COLUMNS.ONBOARDING_COMPLETED]:
         data.onboarding_completed ?? false,
     })
     .select()
@@ -62,16 +63,16 @@ export async function updateProfile(userId: string, data: UpdateProfileData) {
   const updateData: Record<string, unknown> = {};
 
   if (data.display_name !== undefined) {
-    updateData[PROFILES_FIELDS.DISPLAY_NAME] = data.display_name;
+    updateData[PROFILES_COLUMNS.DISPLAY_NAME] = data.display_name;
   }
   if (data.avatar_url !== undefined) {
-    updateData[PROFILES_FIELDS.AVATAR_URL] = data.avatar_url;
+    updateData[PROFILES_COLUMNS.AVATAR_URL] = data.avatar_url;
   }
 
   return await supabase
     .from(TABLES.PROFILES)
     .update(updateData)
-    .eq(PROFILES_FIELDS.ID, userId)
+    .eq(PROFILES_COLUMNS.ID, userId)
     .select()
     .single();
 }
@@ -160,8 +161,8 @@ export async function getSettings(userId: string) {
   const supabase = useSupabaseClient();
   const { data, error } = await supabase
     .from(TABLES.PROFILES)
-    .select(PROFILES_FIELDS.SETTINGS)
-    .eq(PROFILES_FIELDS.ID, userId)
+    .select(PROFILES_COLUMNS.SETTINGS)
+    .eq(PROFILES_COLUMNS.ID, userId)
     .single();
 
   if (error) {
@@ -186,8 +187,8 @@ export async function updateSettings(
   // Get current settings
   const { data: currentData, error: fetchError } = await supabase
     .from(TABLES.PROFILES)
-    .select(PROFILES_FIELDS.SETTINGS)
-    .eq(PROFILES_FIELDS.ID, userId)
+    .select(PROFILES_COLUMNS.SETTINGS)
+    .eq(PROFILES_COLUMNS.ID, userId)
     .single();
 
   if (fetchError) {
@@ -202,9 +203,9 @@ export async function updateSettings(
   return await supabase
     .from(TABLES.PROFILES)
     .update({
-      [PROFILES_FIELDS.SETTINGS]: mergedSettings,
+      [PROFILES_COLUMNS.SETTINGS]: mergedSettings,
     })
-    .eq(PROFILES_FIELDS.ID, userId)
+    .eq(PROFILES_COLUMNS.ID, userId)
     .select()
     .single();
 }

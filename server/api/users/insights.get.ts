@@ -5,7 +5,7 @@ import {
 } from '@/services/userTitleStatus';
 import { getTitlesByTmdbIds, getTitleInLanguage, type MultiLanguageText } from '@/services/titles';
 import { getSession } from '@/services/auth';
-import { getUserTMDBParams } from '../../utils/user-preferences';
+import { getUserTMDBParams } from '@/server/utils/user-preferences';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 
 export default defineEventHandler(async (event) => {

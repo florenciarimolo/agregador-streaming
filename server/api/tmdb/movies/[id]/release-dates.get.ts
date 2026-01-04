@@ -1,4 +1,4 @@
-import { getTMDBConfig } from '../../../../utils/config';
+import { getTMDBConfig } from '@/server/utils/config';
 import { createError, getRouterParams } from 'h3';
 
 export default defineEventHandler(async (event) => {

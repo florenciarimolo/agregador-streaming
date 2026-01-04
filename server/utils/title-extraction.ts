@@ -9,7 +9,9 @@
 import { getTitleInLanguage, type MultiLanguageText } from '@/services/titles';
 import { getTMDBConfig } from './config';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
-import { TABLES, TITLES_FIELDS } from '@/services/constants';
+import { PROFILES_COLUMNS, USER_PREFERENCES_COLUMNS, TITLES_COLUMNS } from '@/constants/db/columns';
+import { TABLES, TITLES_COLUMNS } from '@/constants/db/tables';
+import { SCORE_WEIGHTS } from '@/constants/domain/scoring';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 export interface ExtractedTitleData {
@@ -123,7 +125,7 @@ export async function fetchOverviewWithPrimaryLanguageFallback(
             type,
             overview: Object.keys(mergedOverviewJsonb).length > 0 ? mergedOverviewJsonb : null,
           }, {
-            onConflict: TITLES_FIELDS.TMDB_ID,
+            onConflict: TITLES_COLUMNS.TMDB_ID,
           })
           .then(() => {
             // Success - no action needed
@@ -169,8 +171,8 @@ export async function extractTitleDataWithFallback(
   const { data: titleFromDb, error: dbError } = await supabase
     .from(TABLES.TITLES)
     .select('*')
-    .eq(TITLES_FIELDS.TMDB_ID, tmdbId)
-    .eq(TITLES_FIELDS.TYPE, type)
+    .eq(TITLES_COLUMNS.TMDB_ID, tmdbId)
+    .eq(TITLES_COLUMNS.TYPE, type)
     .maybeSingle();
 
   let titleJsonb: MultiLanguageText | null = null;
@@ -275,7 +277,7 @@ export async function extractTitleDataWithFallback(
             overview: Object.keys(updatedOverview).length > 0 ? updatedOverview : null,
             poster_path: Object.keys(updatedPosterPath).length > 0 ? updatedPosterPath : null,
           }, {
-            onConflict: TITLES_FIELDS.TMDB_ID,
+            onConflict: TITLES_COLUMNS.TMDB_ID,
           })
           .then(() => {
             // Success - no action needed

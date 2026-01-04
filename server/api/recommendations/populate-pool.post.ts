@@ -1,8 +1,8 @@
 import { serverSupabaseUser } from '#supabase/server';
 import { createClient } from '@supabase/supabase-js';
-import { getTMDBConfig } from '../../utils/config';
-import { getUserTMDBParams } from '../../utils/user-preferences';
-import { devLog, devError, safeError } from '../../utils/logger';
+import { getTMDBConfig } from '@/server/utils/config';
+import { getUserTMDBParams } from '@/server/utils/user-preferences';
+import { devLog, devError, safeError } from '@/server/utils/logger';
 import {
   getPoolCount,
   deleteLowestScoreEntries,
@@ -12,19 +12,16 @@ import {
   type TitleData,
 } from '@/services/recommendationPool';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
-import { TitleStatus } from '@/types/TitleStatus';
+import { TITLE_STATUS } from '@/constants/domain/titleStatus';
 import { DEFAULT_LANGUAGE_ISO } from '@/constants/languages';
 import type {
   TMDBResponse,
   TMDBTitleDetails,
   TMDBWatchProvidersResponse,
 } from '@/types/tmdb/Responses';
-import {
-  TABLES,
-  TITLES_FIELDS,
-  USER_TITLE_STATUS_FIELDS,
-  USER_PREFERENCES_FIELDS,
-} from '@/services/constants';
+import { TABLES } from '@/constants/db/tables';
+import { PROFILES_COLUMNS, USER_PREFERENCES_COLUMNS, TITLES_COLUMNS, USER_TITLE_STATUS_COLUMNS } from '@/constants/db/columns';
+import { SCORE_WEIGHTS } from '@/constants/domain/scoring';
 import {
   getTitleInLanguage,
   type MultiLanguageText,
@@ -94,18 +91,18 @@ export default defineEventHandler(async (event) => {
     const { data: userPreferences } = await supabase
       .from(TABLES.USER_PREFERENCES)
       .select(
-        `${USER_PREFERENCES_FIELDS.FAVORITE_GENRES}, ${USER_PREFERENCES_FIELDS.INCLUDED_PROVIDERS}`
+        `${USER_PREFERENCES_COLUMNS.FAVORITE_GENRES}, ${USER_PREFERENCES_COLUMNS.INCLUDED_PROVIDERS}`
       )
-      .eq(USER_PREFERENCES_FIELDS.USER_ID, userId)
+      .eq(USER_PREFERENCES_COLUMNS.USER_ID, userId)
       .maybeSingle();
 
     const favoriteGenres =
       (userPreferences?.[
-        USER_PREFERENCES_FIELDS.FAVORITE_GENRES
+        USER_PREFERENCES_COLUMNS.FAVORITE_GENRES
       ] as number[]) || [];
     const includedProviders =
       (userPreferences?.[
-        USER_PREFERENCES_FIELDS.INCLUDED_PROVIDERS
+        USER_PREFERENCES_COLUMNS.INCLUDED_PROVIDERS
       ] as number[]) || [];
 
     devLog(
@@ -141,9 +138,9 @@ export default defineEventHandler(async (event) => {
     const { data: allUserStatuses } = await supabase
       .from(TABLES.USER_TITLE_STATUS)
       .select(
-        `${USER_TITLE_STATUS_FIELDS.TMDB_ID}, ${USER_TITLE_STATUS_FIELDS.TYPE}, ${USER_TITLE_STATUS_FIELDS.STATUS}, ${USER_TITLE_STATUS_FIELDS.LIKED}`
+        `${USER_TITLE_STATUS_COLUMNS.TMDB_ID}, ${USER_TITLE_STATUS_COLUMNS.TYPE}, ${USER_TITLE_STATUS_COLUMNS.STATUS}, ${USER_TITLE_STATUS_COLUMNS.LIKED}`
       )
-      .eq(USER_TITLE_STATUS_FIELDS.USER_ID, userId);
+      .eq(USER_TITLE_STATUS_COLUMNS.USER_ID, userId);
 
     const excludedTmdbIds = new Set<number>();
     const likedTmdbIds = new Set<number>();
@@ -153,8 +150,8 @@ export default defineEventHandler(async (event) => {
       allUserStatuses.forEach((status) => {
         // Build excluded set (seen + not_interested)
         if (
-          status.status === TitleStatus.SEEN ||
-          status.status === TitleStatus.NOT_INTERESTED
+          status.status === TITLE_STATUS.SEEN ||
+          status.status === TITLE_STATUS.NOT_INTERESTED
         ) {
           excludedTmdbIds.add(status.tmdb_id);
         }
@@ -189,8 +186,8 @@ export default defineEventHandler(async (event) => {
         const { data: titleFromDb, error: dbError } = await supabase
           .from(TABLES.TITLES)
           .select('*')
-          .eq(TITLES_FIELDS.TMDB_ID, tmdbId)
-          .eq(TITLES_FIELDS.TYPE, type)
+          .eq(TITLES_COLUMNS.TMDB_ID, tmdbId)
+          .eq(TITLES_COLUMNS.TYPE, type)
           .maybeSingle();
 
         let titleJsonb: MultiLanguageText | null = null;
@@ -359,10 +356,10 @@ export default defineEventHandler(async (event) => {
           const { data: existingTitle } = await supabase
             .from(TABLES.TITLES)
             .select(
-              `${TITLES_FIELDS.TITLE}, ${TITLES_FIELDS.OVERVIEW}, ${TITLES_FIELDS.POSTER_PATH}, ${TITLES_FIELDS.GENRES}, ${TITLES_FIELDS.BACKDROP_PATH}, ${TITLES_FIELDS.VOTE_AVERAGE}, ${TITLES_FIELDS.RELEASE_DATE}, ${TITLES_FIELDS.FIRST_AIR_DATE}`
+              `${TITLES_COLUMNS.TITLE}, ${TITLES_COLUMNS.OVERVIEW}, ${TITLES_COLUMNS.POSTER_PATH}, ${TITLES_COLUMNS.GENRES}, ${TITLES_COLUMNS.BACKDROP_PATH}, ${TITLES_COLUMNS.VOTE_AVERAGE}, ${TITLES_COLUMNS.RELEASE_DATE}, ${TITLES_COLUMNS.FIRST_AIR_DATE}`
             )
-            .eq(TITLES_FIELDS.TMDB_ID, tmdbId)
-            .eq(TITLES_FIELDS.TYPE, type)
+            .eq(TITLES_COLUMNS.TMDB_ID, tmdbId)
+            .eq(TITLES_COLUMNS.TYPE, type)
             .maybeSingle();
 
           // Merge with existing data to preserve all language keys
@@ -379,18 +376,18 @@ export default defineEventHandler(async (event) => {
           await supabase
             .from(TABLES.TITLES)
             .upsert({
-              [TITLES_FIELDS.TMDB_ID]: tmdbId,
-              [TITLES_FIELDS.TYPE]: type,
-              [TITLES_FIELDS.TITLE]: finalTitleJsonb,
-              [TITLES_FIELDS.OVERVIEW]: Object.keys(finalOverviewJsonb).length > 0 ? finalOverviewJsonb : null,
-              [TITLES_FIELDS.POSTER_PATH]: Object.keys(finalPosterPathJsonb).length > 0 ? finalPosterPathJsonb : null,
-              [TITLES_FIELDS.GENRES]: genres.length > 0 ? genres : (existingTitle?.genres || null),
-              [TITLES_FIELDS.BACKDROP_PATH]: fullResponse.backdrop_path || existingTitle?.backdrop_path || null,
-              [TITLES_FIELDS.VOTE_AVERAGE]: fullResponse.vote_average ?? existingTitle?.vote_average ?? null,
-              [TITLES_FIELDS.RELEASE_DATE]: fullResponse.release_date || existingTitle?.release_date || null,
-              [TITLES_FIELDS.FIRST_AIR_DATE]: fullResponse.first_air_date || existingTitle?.first_air_date || null,
+              [TITLES_COLUMNS.TMDB_ID]: tmdbId,
+              [TITLES_COLUMNS.TYPE]: type,
+              [TITLES_COLUMNS.TITLE]: finalTitleJsonb,
+              [TITLES_COLUMNS.OVERVIEW]: Object.keys(finalOverviewJsonb).length > 0 ? finalOverviewJsonb : null,
+              [TITLES_COLUMNS.POSTER_PATH]: Object.keys(finalPosterPathJsonb).length > 0 ? finalPosterPathJsonb : null,
+              [TITLES_COLUMNS.GENRES]: genres.length > 0 ? genres : (existingTitle?.genres || null),
+              [TITLES_COLUMNS.BACKDROP_PATH]: fullResponse.backdrop_path || existingTitle?.backdrop_path || null,
+              [TITLES_COLUMNS.VOTE_AVERAGE]: fullResponse.vote_average ?? existingTitle?.vote_average ?? null,
+              [TITLES_COLUMNS.RELEASE_DATE]: fullResponse.release_date || existingTitle?.release_date || null,
+              [TITLES_COLUMNS.FIRST_AIR_DATE]: fullResponse.first_air_date || existingTitle?.first_air_date || null,
             }, {
-              onConflict: TITLES_FIELDS.TMDB_ID,
+              onConflict: TITLES_COLUMNS.TMDB_ID,
             });
         } catch (error) {
           // Log but don't fail the request
@@ -575,14 +572,14 @@ export default defineEventHandler(async (event) => {
       const { data: likedTitlesData } = await supabase
         .from(TABLES.TITLES)
         .select(
-          `${TITLES_FIELDS.TMDB_ID}, ${TITLES_FIELDS.TYPE}, ${TITLES_FIELDS.VOTE_AVERAGE}`
+          `${TITLES_COLUMNS.TMDB_ID}, ${TITLES_COLUMNS.TYPE}, ${TITLES_COLUMNS.VOTE_AVERAGE}`
         )
         .in(
-          TITLES_FIELDS.TMDB_ID,
+          TITLES_COLUMNS.TMDB_ID,
           userLikedStatuses.map((s) => s.tmdb_id)
         )
-        .not(TITLES_FIELDS.VOTE_AVERAGE, 'is', null)
-        .order(TITLES_FIELDS.VOTE_AVERAGE, { ascending: false })
+        .not(TITLES_COLUMNS.VOTE_AVERAGE, 'is', null)
+        .order(TITLES_COLUMNS.VOTE_AVERAGE, { ascending: false })
         .limit(2);
 
       if (likedTitlesData) {
@@ -637,12 +634,12 @@ export default defineEventHandler(async (event) => {
       // Fallback: Get user's top genres from liked titles
       const { data: likedTitlesForGenres } = await supabase
         .from(TABLES.TITLES)
-        .select(TITLES_FIELDS.GENRES)
+        .select(TITLES_COLUMNS.GENRES)
         .in(
-          TITLES_FIELDS.TMDB_ID,
+          TITLES_COLUMNS.TMDB_ID,
           userLikedStatuses?.map((s) => s.tmdb_id) || []
         )
-        .not(TITLES_FIELDS.GENRES, 'is', null);
+        .not(TITLES_COLUMNS.GENRES, 'is', null);
 
       const genreFrequency = new Map<number, number>();
       if (likedTitlesForGenres) {

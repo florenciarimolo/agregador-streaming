@@ -157,7 +157,7 @@
                     custom-class="justify-start w-full text-left"
                     @click.stop.prevent="
                       dropdownRef?.close();
-                      handleAction(TitleStatus.SEEN);
+                      handleAction(TITLE_STATUS.SEEN);
                     "
                   >
                     <template #icon>
@@ -173,7 +173,7 @@
                     custom-class="justify-start w-full text-left"
                     @click.stop.prevent="
                       dropdownRef?.close();
-                      handleAction(TitleStatus.NOT_INTERESTED);
+                      handleAction(TITLE_STATUS.NOT_INTERESTED);
                     "
                   >
                     <template #icon>
@@ -206,7 +206,7 @@
                       custom-class="justify-start mb-2 w-full text-left"
                       @click.stop.prevent="
                         dropdownRef?.close();
-                        handleAction(TitleStatus.SEEN);
+                        handleAction(TITLE_STATUS.SEEN);
                       "
                     >
                       <template #icon>
@@ -236,7 +236,7 @@
                       custom-class="justify-start mb-2 w-full text-left"
                       @click.stop.prevent="
                         dropdownRef?.close();
-                        handleAction(TitleStatus.NOT_INTERESTED);
+                        handleAction(TITLE_STATUS.NOT_INTERESTED);
                       "
                     >
                       <template #icon>
@@ -251,7 +251,7 @@
                       custom-class="justify-start w-full text-left"
                       @click.stop.prevent="
                         dropdownRef?.close();
-                        handleAction(TitleStatus.WATCHLIST);
+                        handleAction(TITLE_STATUS.WATCHLIST);
                       "
                     >
                       <template #icon>
@@ -420,7 +420,10 @@ import IconHeart from './icons/IconHeart.vue';
 import IconHeartFilled from './icons/IconHeartFilled.vue';
 import IconX from './icons/IconX.vue';
 import IconClock from './icons/IconClock.vue';
-import { TitleStatus } from '@/types/TitleStatus';
+import {
+  TITLE_STATUS,
+  type TitleStatusType,
+} from '@/constants/domain/titleStatus';
 import { getSession } from '@/services/auth';
 import { useUndoToast } from '@/composables/useUndoToast';
 import ActionMenu from '@/components/ui/ActionMenu.vue';
@@ -534,9 +537,10 @@ const fetchTitleStatus = async () => {
 
     if (titleStatus) {
       isLiked.value = titleStatus.liked === true;
-      isInWatchlist.value = titleStatus.status === TitleStatus.WATCHLIST;
-      isSeen.value = titleStatus.status === TitleStatus.SEEN;
-      isNotInterested.value = titleStatus.status === TitleStatus.NOT_INTERESTED;
+      isInWatchlist.value = titleStatus.status === TITLE_STATUS.WATCHLIST;
+      isSeen.value = titleStatus.status === TITLE_STATUS.SEEN;
+      isNotInterested.value =
+        titleStatus.status === TITLE_STATUS.NOT_INTERESTED;
     }
   } catch (error) {
     console.error('Error fetching title status:', error);
@@ -571,7 +575,7 @@ const sectionStyle = computed(() => ({
   backgroundPosition: isMobile.value ? 'center' : 'center',
 }));
 
-const handleAction = async (action: TitleStatus | 'liked') => {
+const handleAction = async (action: TitleStatusType | 'liked') => {
   try {
     const {
       data: { session },
@@ -630,7 +634,7 @@ const handleAction = async (action: TitleStatus | 'liked') => {
         body: {
           tmdb_id: mediaWithProviders.value.id,
           type: props.mediaType,
-          status: TitleStatus.SEEN,
+          status: TITLE_STATUS.SEEN,
           liked: true,
         },
       });
@@ -668,7 +672,7 @@ const handleAction = async (action: TitleStatus | 'liked') => {
         },
       });
 
-      if (action === TitleStatus.NOT_INTERESTED) {
+      if (action === TITLE_STATUS.NOT_INTERESTED) {
         // Update local state immediately
         isNotInterested.value = true;
         isInWatchlist.value = false;
@@ -693,7 +697,7 @@ const handleAction = async (action: TitleStatus | 'liked') => {
           },
           7000
         );
-      } else if (action === TitleStatus.SEEN) {
+      } else if (action === TITLE_STATUS.SEEN) {
         // Check if already seen - if so, remove it (toggle behavior)
         if (isSeen.value) {
           // Remove seen status (DELETE)
@@ -737,7 +741,7 @@ const handleAction = async (action: TitleStatus | 'liked') => {
             5000
           );
         }
-      } else if (action === TitleStatus.WATCHLIST) {
+      } else if (action === TITLE_STATUS.WATCHLIST) {
         // Update local state immediately
         isInWatchlist.value = true;
         isSeen.value = false;
@@ -800,7 +804,7 @@ const handleRemoveLike = async () => {
       body: {
         tmdb_id: mediaWithProviders.value.id,
         type: props.mediaType,
-        status: TitleStatus.SEEN, // Keep status as seen, just remove liked
+        status: TITLE_STATUS.SEEN, // Keep status as seen, just remove liked
         liked: false,
       },
     });

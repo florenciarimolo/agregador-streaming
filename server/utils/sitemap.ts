@@ -1,5 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
-import { TABLES, TITLES_FIELDS } from '@/services/constants';
+import { PROFILES_COLUMNS, USER_PREFERENCES_COLUMNS, TITLES_COLUMNS } from '@/constants/db/columns';
+import { TABLES, TITLES_COLUMNS } from '@/constants/db/tables';
+import { SCORE_WEIGHTS } from '@/constants/domain/scoring';
 import { getTMDBConfig } from './config';
 import type { Season } from '@/types/TVShow';
 import { DEFAULT_LANGUAGE } from '@/constants/languages';
@@ -48,7 +50,7 @@ export async function getTitleIdsForSitemap(): Promise<
     const { data, error } = await supabase
       .from(TABLES.TITLES)
       .select(
-        `${TITLES_FIELDS.TMDB_ID}, ${TITLES_FIELDS.TYPE}, ${TITLES_FIELDS.UPDATED_AT}`
+        `${TITLES_COLUMNS.TMDB_ID}, ${TITLES_COLUMNS.TYPE}, ${TITLES_COLUMNS.UPDATED_AT}`
       );
 
     if (error) {

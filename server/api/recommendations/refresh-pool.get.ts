@@ -1,20 +1,17 @@
 import { createClient } from '@supabase/supabase-js';
-import { devLog, devError, safeError } from '../../utils/logger';
+import { devLog, devError, safeError } from '@/server/utils/logger';
 import {
   getPoolCount,
   deleteLowestScoreEntries,
   insertPoolEntries,
   type RecommendationPoolSource,
 } from '@/services/recommendationPool';
-import { getTMDBConfig } from '../../utils/config';
-import { getUserTMDBParamsByUserId } from '../../utils/user-preferences';
-import { TitleStatus } from '@/types/TitleStatus';
-import {
-  TABLES,
-  TITLES_FIELDS,
-  PROFILES_FIELDS,
-  USER_TITLE_STATUS_FIELDS,
-} from '@/services/constants';
+import { getTMDBConfig } from '@/server/utils/config';
+import { getUserTMDBParamsByUserId } from '@/server/utils/user-preferences';
+import { TITLE_STATUS } from '@/constants/domain/titleStatus';
+import { TABLES } from '@/constants/db/tables';
+import { PROFILES_COLUMNS, USER_PREFERENCES_COLUMNS, TITLES_COLUMNS, USER_TITLE_STATUS_COLUMNS } from '@/constants/db/columns';
+import { SCORE_WEIGHTS } from '@/constants/domain/scoring';
 import type { MultiLanguageText } from '@/services/titles';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 
@@ -93,7 +90,7 @@ export default defineEventHandler(async (event) => {
     // Get all users with pool count < MIN_POOL_SIZE
     const { data: usersWithLowPool, error: usersError } = await supabase
       .from(TABLES.PROFILES)
-      .select(PROFILES_FIELDS.ID)
+      .select(PROFILES_COLUMNS.ID)
       .limit(100); // Limit to 100 users per run to avoid timeout
 
     if (usersError) {
@@ -136,11 +133,11 @@ export default defineEventHandler(async (event) => {
         // Get excluded titles (seen + not_interested)
         const { data: excludedStatuses } = await supabase
           .from(TABLES.USER_TITLE_STATUS)
-          .select(USER_TITLE_STATUS_FIELDS.TMDB_ID)
-          .eq(USER_TITLE_STATUS_FIELDS.USER_ID, userId)
-          .in(USER_TITLE_STATUS_FIELDS.STATUS, [
-            TitleStatus.SEEN,
-            TitleStatus.NOT_INTERESTED,
+          .select(USER_TITLE_STATUS_COLUMNS.TMDB_ID)
+          .eq(USER_TITLE_STATUS_COLUMNS.USER_ID, userId)
+          .in(USER_TITLE_STATUS_COLUMNS.STATUS, [
+            TITLE_STATUS.SEEN,
+            TITLE_STATUS.NOT_INTERESTED,
           ]);
 
         const excludedTmdbIds = new Set<number>();
@@ -154,10 +151,10 @@ export default defineEventHandler(async (event) => {
         const { data: userLikedStatuses } = await supabase
           .from(TABLES.USER_TITLE_STATUS)
           .select(
-            `${USER_TITLE_STATUS_FIELDS.TMDB_ID}, ${USER_TITLE_STATUS_FIELDS.TYPE}`
+            `${USER_TITLE_STATUS_COLUMNS.TMDB_ID}, ${USER_TITLE_STATUS_COLUMNS.TYPE}`
           )
-          .eq(USER_TITLE_STATUS_FIELDS.USER_ID, userId)
-          .eq(USER_TITLE_STATUS_FIELDS.LIKED, true);
+          .eq(USER_TITLE_STATUS_COLUMNS.USER_ID, userId)
+          .eq(USER_TITLE_STATUS_COLUMNS.LIKED, true);
 
         const likedTmdbIds = new Set<number>();
         if (userLikedStatuses) {
@@ -206,10 +203,10 @@ export default defineEventHandler(async (event) => {
             const { data: existingTitle } = await supabase
               .from(TABLES.TITLES)
               .select(
-                `${TITLES_FIELDS.TITLE}, ${TITLES_FIELDS.OVERVIEW}, ${TITLES_FIELDS.POSTER_PATH}, ${TITLES_FIELDS.GENRES}, ${TITLES_FIELDS.BACKDROP_PATH}, ${TITLES_FIELDS.VOTE_AVERAGE}, ${TITLES_FIELDS.RELEASE_DATE}, ${TITLES_FIELDS.FIRST_AIR_DATE}`
+                `${TITLES_COLUMNS.TITLE}, ${TITLES_COLUMNS.OVERVIEW}, ${TITLES_COLUMNS.POSTER_PATH}, ${TITLES_COLUMNS.GENRES}, ${TITLES_COLUMNS.BACKDROP_PATH}, ${TITLES_COLUMNS.VOTE_AVERAGE}, ${TITLES_COLUMNS.RELEASE_DATE}, ${TITLES_COLUMNS.FIRST_AIR_DATE}`
               )
-              .eq(TITLES_FIELDS.TMDB_ID, tmdbId)
-              .eq(TITLES_FIELDS.TYPE, type)
+              .eq(TITLES_COLUMNS.TMDB_ID, tmdbId)
+              .eq(TITLES_COLUMNS.TYPE, type)
               .maybeSingle();
 
             // Merge with existing data to preserve all language keys
@@ -238,18 +235,18 @@ export default defineEventHandler(async (event) => {
             supabase
               .from(TABLES.TITLES)
               .upsert({
-                [TITLES_FIELDS.TMDB_ID]: tmdbId,
-                [TITLES_FIELDS.TYPE]: type,
-                [TITLES_FIELDS.TITLE]: titleJsonb,
-                [TITLES_FIELDS.OVERVIEW]: Object.keys(overviewJsonb).length > 0 ? overviewJsonb : null,
-                [TITLES_FIELDS.POSTER_PATH]: Object.keys(posterPathJsonb).length > 0 ? posterPathJsonb : null,
-                [TITLES_FIELDS.GENRES]: (fullResponse.genres || []).length > 0 ? fullResponse.genres : (existingTitle?.genres || null),
-                [TITLES_FIELDS.BACKDROP_PATH]: fullResponse.backdrop_path || existingTitle?.backdrop_path || null,
-                [TITLES_FIELDS.VOTE_AVERAGE]: fullResponse.vote_average ?? existingTitle?.vote_average ?? null,
-                [TITLES_FIELDS.RELEASE_DATE]: fullResponse.release_date || existingTitle?.release_date || null,
-                [TITLES_FIELDS.FIRST_AIR_DATE]: fullResponse.first_air_date || existingTitle?.first_air_date || null,
+                [TITLES_COLUMNS.TMDB_ID]: tmdbId,
+                [TITLES_COLUMNS.TYPE]: type,
+                [TITLES_COLUMNS.TITLE]: titleJsonb,
+                [TITLES_COLUMNS.OVERVIEW]: Object.keys(overviewJsonb).length > 0 ? overviewJsonb : null,
+                [TITLES_COLUMNS.POSTER_PATH]: Object.keys(posterPathJsonb).length > 0 ? posterPathJsonb : null,
+                [TITLES_COLUMNS.GENRES]: (fullResponse.genres || []).length > 0 ? fullResponse.genres : (existingTitle?.genres || null),
+                [TITLES_COLUMNS.BACKDROP_PATH]: fullResponse.backdrop_path || existingTitle?.backdrop_path || null,
+                [TITLES_COLUMNS.VOTE_AVERAGE]: fullResponse.vote_average ?? existingTitle?.vote_average ?? null,
+                [TITLES_COLUMNS.RELEASE_DATE]: fullResponse.release_date || existingTitle?.release_date || null,
+                [TITLES_COLUMNS.FIRST_AIR_DATE]: fullResponse.first_air_date || existingTitle?.first_air_date || null,
               }, {
-                onConflict: TITLES_FIELDS.TMDB_ID,
+                onConflict: TITLES_COLUMNS.TMDB_ID,
               })
               .catch((error) => {
                 if (import.meta.dev) {

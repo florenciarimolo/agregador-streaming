@@ -1,3 +1,5 @@
+import { STORAGE_KEYS } from '@/constants/storage/keys';
+
 // Use Nuxt's useState for SSR-safe state management
 export const useTheme = () => {
   // Use useState for SSR-safe singleton state
@@ -10,8 +12,8 @@ export const useTheme = () => {
       document.documentElement.classList.add(newTheme);
 
       if (isManualChange) {
-        localStorage.setItem('theme', newTheme);
-        localStorage.setItem('theme-manual', 'true');
+        localStorage.setItem(STORAGE_KEYS.THEME, newTheme);
+        localStorage.setItem(STORAGE_KEYS.THEME_MANUAL, 'true');
       }
     }
   };
@@ -30,14 +32,14 @@ export const useTheme = () => {
       theme.value = currentTheme;
 
       // Set up system preference listener
-      const hasManualTheme = localStorage.getItem('theme-manual') === 'true';
+      const hasManualTheme = localStorage.getItem(STORAGE_KEYS.THEME_MANUAL) === 'true';
       if (!hasManualTheme) {
         const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
         const win = window as Window & { __themeListenerAdded?: boolean };
         if (!win.__themeListenerAdded) {
           win.__themeListenerAdded = true;
           const listener = (e: MediaQueryListEvent) => {
-            if (localStorage.getItem('theme-manual') !== 'true') {
+            if (localStorage.getItem(STORAGE_KEYS.THEME_MANUAL) !== 'true') {
               setTheme(e.matches ? 'dark' : 'light', false);
             }
           };

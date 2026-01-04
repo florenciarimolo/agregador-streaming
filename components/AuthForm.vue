@@ -1,8 +1,9 @@
 <script setup lang="ts">
+import { STORAGE_KEYS } from '@/constants/storage/keys';
 import {
   validatePassword,
   getPasswordHelperText,
-} from '../utils/passwordValidation';
+} from '@/utils/passwordValidation';
 import Input from '@/components/ui/Input.vue';
 import TabButton from '@/components/ui/TabButton.vue';
 import IconButton from '@/components/ui/IconButton.vue';
@@ -145,7 +146,7 @@ const handlePasswordAuth = async () => {
         // Step: Eliminar el flag auth:recovery si existe (después de recuperar contraseña)
         // Esto se hace cuando el usuario inicia sesión manualmente después de recuperar la contraseña
         if (typeof window !== 'undefined') {
-          const recoveryFlag = localStorage.getItem('auth:recovery');
+          const recoveryFlag = localStorage.getItem(STORAGE_KEYS.AUTH_RECOVERY);
           if (recoveryFlag) {
             // Check both new format (JSON) and legacy format (string '1')
             let hasRecoveryFlag = false;
@@ -160,7 +161,7 @@ const handlePasswordAuth = async () => {
               console.log(
                 '[AuthForm] Removing auth:recovery flag after successful login'
               );
-              localStorage.removeItem('auth:recovery');
+              localStorage.removeItem(STORAGE_KEYS.AUTH_RECOVERY);
             }
           }
         }

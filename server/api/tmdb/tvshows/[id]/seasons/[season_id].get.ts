@@ -1,6 +1,6 @@
 import { Season, Episode } from '@/types/TVShow';
-import { getTMDBConfig } from '../../../../../utils/config';
-import { getUserTMDBParams } from '../../../../../utils/user-preferences';
+import { getTMDBConfig } from '@/server/utils/config';
+import { getUserTMDBParams } from '@/server/utils/user-preferences';
 import { getPrimaryLanguageForRegion } from '@/utils/language-detection';
 import {
   createError,

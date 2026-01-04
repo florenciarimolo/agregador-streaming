@@ -1,5 +1,5 @@
-import { getTMDBConfig } from '../../../../utils/config';
-import { getUserTMDBParams } from '../../../../utils/user-preferences';
+import { getTMDBConfig } from '@/server/utils/config';
+import { getUserTMDBParams } from '@/server/utils/user-preferences';
 import { createError, defineEventHandler } from 'h3';
 import type { AlternativeTitlesResponse } from '@/types/AlternativeTitle';
 

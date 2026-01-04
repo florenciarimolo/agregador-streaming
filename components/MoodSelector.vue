@@ -82,10 +82,12 @@ type Attention = AttentionEnumType | null;
 const route = useRoute();
 const router = useRouter();
 
+import { QUERY_PARAMS } from '@/constants/api/queryParams';
+
 // Initialize from query params
-const mood = ref<Mood>((route.query.mood as MoodEnumType) || null);
+const mood = ref<Mood>((route.query[QUERY_PARAMS.MOOD] as MoodEnumType) || null);
 const attention = ref<Attention>(
-  (route.query.attention as AttentionEnumType) || null
+  (route.query[QUERY_PARAMS.ATTENTION] as AttentionEnumType) || null
 );
 
 const moodOptions = computed(() => [
@@ -145,15 +147,15 @@ const updateQuery = () => {
   });
 
   if (mood.value) {
-    query.mood = mood.value;
+    query[QUERY_PARAMS.MOOD] = mood.value;
   } else {
-    delete query.mood;
+    delete query[QUERY_PARAMS.MOOD];
   }
 
   if (attention.value) {
-    query.attention = attention.value;
+    query[QUERY_PARAMS.ATTENTION] = attention.value;
   } else {
-    delete query.attention;
+    delete query[QUERY_PARAMS.ATTENTION];
   }
 
   router.replace({ query });
@@ -161,14 +163,14 @@ const updateQuery = () => {
 
 // Watch for external query changes
 watch(
-  () => route.query.mood,
+  () => route.query[QUERY_PARAMS.MOOD],
   (newMood) => {
     mood.value = (newMood as MoodEnumType) || null;
   }
 );
 
 watch(
-  () => route.query.attention,
+  () => route.query[QUERY_PARAMS.ATTENTION],
   (newAttention) => {
     attention.value = (newAttention as AttentionEnumType) || null;
   }

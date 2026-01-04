@@ -128,7 +128,7 @@
                     variant="ghost"
                     size="small"
                     custom-class="justify-start w-full text-left"
-                    @click.stop.prevent="handleAction(TitleStatus.WATCHLIST)"
+                    @click.stop.prevent="handleAction(TITLE_STATUS.WATCHLIST)"
                   >
                     <template #icon>
                       <IconClock icon-class="w-4 h-4" />
@@ -142,7 +142,7 @@
                       variant="ghost"
                       size="small"
                       custom-class="justify-start mb-2 w-full text-left"
-                      @click.stop.prevent="handleAction(TitleStatus.SEEN)"
+                      @click.stop.prevent="handleAction(TITLE_STATUS.SEEN)"
                     >
                       <template #icon>
                         <IconCheck icon-class="w-4 h-4" />
@@ -167,7 +167,7 @@
                       size="small"
                       custom-class="justify-start mb-2 w-full text-left"
                       @click.stop.prevent="
-                        handleAction(TitleStatus.NOT_INTERESTED)
+                        handleAction(TITLE_STATUS.NOT_INTERESTED)
                       "
                     >
                       <template #icon>
@@ -180,7 +180,7 @@
                       variant="ghost"
                       size="small"
                       custom-class="justify-start w-full text-left"
-                      @click.stop.prevent="handleAction(TitleStatus.WATCHLIST)"
+                      @click.stop.prevent="handleAction(TITLE_STATUS.WATCHLIST)"
                     >
                       <template #icon>
                         <IconClock icon-class="w-4 h-4" />
@@ -244,7 +244,7 @@ import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 import type { Recommendation } from '@/types/Recommendation';
-import { TitleStatus } from '@/types/TitleStatus';
+import { TITLE_STATUS } from '@/constants/domain/titleStatus';
 import IconImage from './icons/IconImage.vue';
 import Badge from './Badge.vue';
 import RatingBadge from './RatingBadge.vue';
@@ -369,15 +369,15 @@ const handleAction = (action: TitleStatus | 'liked' | 'remove-liked') => {
   // Close dropdown when action is triggered
   dropdownRef.value?.close();
 
-  if (action === TitleStatus.SEEN) {
+  if (action === TITLE_STATUS.SEEN) {
     emit('mark-seen', props.recommendation);
   } else if (action === 'liked') {
     emit('mark-liked', props.recommendation);
   } else if (action === 'remove-liked') {
     emit('remove-liked', props.recommendation);
-  } else if (action === TitleStatus.NOT_INTERESTED) {
+  } else if (action === TITLE_STATUS.NOT_INTERESTED) {
     emit('mark-not-interested', props.recommendation);
-  } else if (action === TitleStatus.WATCHLIST) {
+  } else if (action === TITLE_STATUS.WATCHLIST) {
     emit('mark-watchlist', props.recommendation);
   }
 };

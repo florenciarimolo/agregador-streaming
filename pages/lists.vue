@@ -156,7 +156,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
 import { useUserStore } from '@/stores/user';
-import { TitleStatus } from '@/types/TitleStatus';
+import { TITLE_STATUS } from '@/constants/domain/titleStatus';
 import Button from '@/components/ui/Button.vue';
 import Modal from '@/components/ui/Modal.vue';
 import Tabs from '@/components/ui/Tabs.vue';
@@ -630,7 +630,7 @@ const handleRemoveLikedClick = async (title: {
                 user_id: userId.value!,
                 tmdb_id: titleToRestore.tmdb_id,
                 type: titleToRestore.type,
-                status: TitleStatus.SEEN,
+                status: TITLE_STATUS.SEEN,
                 liked: true,
               });
               // Refetch will use the correct language
@@ -695,7 +695,7 @@ const handleRemoveSeen = async (title: {
               user_id: userId.value!,
               tmdb_id: titleToRestore.tmdb_id,
               type: titleToRestore.type,
-              status: TitleStatus.SEEN,
+              status: TITLE_STATUS.SEEN,
               liked: titleToRestore.liked || false,
             });
             await fetchSeenTitles();
@@ -764,7 +764,7 @@ const handleAddToLiked = async (title: {
       user_id: id,
       tmdb_id: title.tmdb_id,
       type: title.type,
-      status: TitleStatus.SEEN,
+      status: TITLE_STATUS.SEEN,
       liked: true,
     });
 
@@ -872,7 +872,7 @@ const confirmRemoveLikeFromSeen = async () => {
       user_id: id,
       tmdb_id: title.tmdb_id,
       type: title.type,
-      status: TitleStatus.SEEN, // Keep status as seen, just remove liked
+      status: TITLE_STATUS.SEEN, // Keep status as seen, just remove liked
       liked: false,
     });
 
@@ -917,7 +917,7 @@ const confirmRemoveLikeFromSeen = async () => {
               user_id: userId.value!,
               tmdb_id: titleToRestore.tmdb_id,
               type: titleToRestore.type,
-              status: TitleStatus.SEEN,
+              status: TITLE_STATUS.SEEN,
               liked: true,
             });
             // Refresh both lists to ensure consistency
@@ -1003,7 +1003,7 @@ const handleRemoveNotInterested = async (title: {
             type:
               notInterestedTitles.value.find((t) => t.tmdb_id === title.tmdb_id)
                 ?.type || MediaTypeEnum.movie,
-            status: TitleStatus.NOT_INTERESTED,
+            status: TITLE_STATUS.NOT_INTERESTED,
           });
           await fetchNotInterestedTitles();
         },
@@ -1054,7 +1054,9 @@ onMounted(async () => {
 
   // Check if we should open a specific tab from query params
   const route = useRoute();
-  const tabFromQuery = route.query.tab as string;
+import { QUERY_PARAMS } from '@/constants/api/queryParams';
+
+  const tabFromQuery = route.query[QUERY_PARAMS.TAB] as string;
   if (tabFromQuery) {
     const validTabs: Array<'liked' | 'seen' | 'not-interested'> = [
       'liked',

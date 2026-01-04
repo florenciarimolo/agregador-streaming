@@ -1,8 +1,9 @@
 import { serverSupabaseUser } from '#supabase/server';
 import { createClient } from '@supabase/supabase-js';
-import { devLog, devError, safeError } from '../../utils/logger';
+import { devLog, devError, safeError } from '@/server/utils/logger';
 import { Recommendation, Provider } from '@/types/Recommendation';
-import { TitleStatus } from '@/types/TitleStatus';
+import { TITLE_STATUS } from '@/constants/domain/titleStatus';
+import { QUERY_PARAMS } from '@/constants/api/queryParams';
 import {
   MoodEnum,
   type MoodEnum as MoodEnumType,
@@ -11,19 +12,16 @@ import {
   AttentionEnum,
   type AttentionEnum as AttentionEnumType,
 } from '@/types/enums/AttentionEnum';
-import { getTMDBConfig } from '../../utils/config';
-import { getUserTMDBParams } from '../../utils/user-preferences';
+import { getTMDBConfig } from '@/server/utils/config';
+import { getUserTMDBParams } from '@/server/utils/user-preferences';
+import { type TitleData } from '@/services/recommendationPool';
+import { TABLES } from '@/constants/db/tables';
+import { RECOMMENDATION_POOL_COLUMNS } from '@/constants/db/columns';
 import {
-  RECOMMENDATION_POOL_FIELDS,
-  RECOMMENDATION_POOL_TABLES,
-  type TitleData,
-} from '@/services/recommendationPool';
-import {
-  TABLES,
-  TITLES_FIELDS,
-  USER_TITLE_STATUS_FIELDS,
-  USER_PREFERENCES_FIELDS,
-} from '@/services/constants';
+  USER_PREFERENCES_COLUMNS,
+  TITLES_COLUMNS,
+  USER_TITLE_STATUS_COLUMNS,
+} from '@/constants/db/columns';
 import type { MultiLanguageText } from '@/services/titles';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 import { TmdbGenreId } from '@/types/enums/TmdbGenreId';
@@ -42,7 +40,7 @@ import {
  * Calculate mood and attention boost factors for a recommendation
  * Returns multiplicative factors (e.g., 0.1 = +10%, -0.15 = -15%)
  * Priority: Attention > Mood (weighted combination)
- * Uses constants from @/constants/recommendations for all boost values
+ * Uses constants from '@/constants/recommendations for all boost values
  *
  * @returns { attentionFactor: number, moodFactor: number }
  */
@@ -280,8 +278,10 @@ export default defineEventHandler(async (event) => {
     ? Number(query.excluded_tmdb_id)
     : null;
   const excludedType = query.excluded_type as 'movie' | 'tv' | undefined;
-  const mood = query.mood as MoodEnumType | undefined;
-  const attention = query.attention as AttentionEnumType | undefined;
+  const mood = query[QUERY_PARAMS.MOOD] as MoodEnumType | undefined;
+  const attention = query[QUERY_PARAMS.ATTENTION] as
+    | AttentionEnumType
+    | undefined;
 
   if (!excludedTmdbId || !excludedType) {
     throw createError({
@@ -353,24 +353,24 @@ export default defineEventHandler(async (event) => {
     // Get user preferences for providers
     const { data: userPreferences } = await supabase
       .from(TABLES.USER_PREFERENCES)
-      .select(USER_PREFERENCES_FIELDS.INCLUDED_PROVIDERS)
-      .eq(USER_PREFERENCES_FIELDS.USER_ID, userId)
+      .select(USER_PREFERENCES_COLUMNS.INCLUDED_PROVIDERS)
+      .eq(USER_PREFERENCES_COLUMNS.USER_ID, userId)
       .maybeSingle();
 
     const includedProviders =
-      (userPreferences?.[USER_PREFERENCES_FIELDS.INCLUDED_PROVIDERS] as
+      (userPreferences?.[USER_PREFERENCES_COLUMNS.INCLUDED_PROVIDERS] as
         | number[]
         | null) || [];
 
     // Get excluded titles (seen + not_interested + watchlist + the one being replaced)
     const { data: excludedStatuses, error: statusError } = await supabase
       .from(TABLES.USER_TITLE_STATUS)
-      .select(USER_TITLE_STATUS_FIELDS.TMDB_ID)
-      .eq(USER_TITLE_STATUS_FIELDS.USER_ID, userId)
-      .in(USER_TITLE_STATUS_FIELDS.STATUS, [
-        TitleStatus.SEEN,
-        TitleStatus.NOT_INTERESTED,
-        TitleStatus.WATCHLIST,
+      .select(USER_TITLE_STATUS_COLUMNS.TMDB_ID)
+      .eq(USER_TITLE_STATUS_COLUMNS.USER_ID, userId)
+      .in(USER_TITLE_STATUS_COLUMNS.STATUS, [
+        TITLE_STATUS.SEEN,
+        TITLE_STATUS.NOT_INTERESTED,
+        TITLE_STATUS.WATCHLIST,
       ]);
 
     if (statusError) {
@@ -388,9 +388,9 @@ export default defineEventHandler(async (event) => {
     // Get watchlist titles to mark them in recommendations
     const { data: watchlistStatuses } = await supabase
       .from(TABLES.USER_TITLE_STATUS)
-      .select(USER_TITLE_STATUS_FIELDS.TMDB_ID)
-      .eq(USER_TITLE_STATUS_FIELDS.USER_ID, userId)
-      .eq(USER_TITLE_STATUS_FIELDS.STATUS, TitleStatus.WATCHLIST);
+      .select(USER_TITLE_STATUS_COLUMNS.TMDB_ID)
+      .eq(USER_TITLE_STATUS_COLUMNS.USER_ID, userId)
+      .eq(USER_TITLE_STATUS_COLUMNS.STATUS, TITLE_STATUS.WATCHLIST);
 
     const watchlistTmdbIds = new Set<number>();
     if (watchlistStatuses) {
@@ -401,20 +401,20 @@ export default defineEventHandler(async (event) => {
 
     // Fetch recommendations from pool
     const { data: poolEntries, error: poolError } = await supabase
-      .from(RECOMMENDATION_POOL_TABLES.RECOMMENDATION_POOL)
+      .from(TABLES.RECOMMENDATION_POOL)
       .select(
         `
-        ${RECOMMENDATION_POOL_FIELDS.TMDB_ID},
-        ${RECOMMENDATION_POOL_FIELDS.TYPE},
-        ${RECOMMENDATION_POOL_FIELDS.SOURCE},
-        ${RECOMMENDATION_POOL_FIELDS.SCORE},
-        ${RECOMMENDATION_POOL_FIELDS.EXPLANATION_CODE},
-        ${RECOMMENDATION_POOL_FIELDS.CREATED_AT}
+        ${RECOMMENDATION_POOL_COLUMNS.TMDB_ID},
+        ${RECOMMENDATION_POOL_COLUMNS.TYPE},
+        ${RECOMMENDATION_POOL_COLUMNS.SOURCE},
+        ${RECOMMENDATION_POOL_COLUMNS.SCORE},
+        ${RECOMMENDATION_POOL_COLUMNS.EXPLANATION_CODE},
+        ${RECOMMENDATION_POOL_COLUMNS.CREATED_AT}
         `
       )
-      .eq(RECOMMENDATION_POOL_FIELDS.USER_ID, userId)
-      .order(RECOMMENDATION_POOL_FIELDS.SCORE, { ascending: false })
-      .order(RECOMMENDATION_POOL_FIELDS.CREATED_AT, { ascending: false })
+      .eq(RECOMMENDATION_POOL_COLUMNS.USER_ID, userId)
+      .order(RECOMMENDATION_POOL_COLUMNS.SCORE, { ascending: false })
+      .order(RECOMMENDATION_POOL_COLUMNS.CREATED_AT, { ascending: false })
       .limit(100); // Get more to filter
 
     if (poolError) {
@@ -537,8 +537,8 @@ export default defineEventHandler(async (event) => {
       const { data: titleFromDb, error: dbError } = await supabase
         .from(TABLES.TITLES)
         .select('*')
-        .eq(TITLES_FIELDS.TMDB_ID, entry.tmdb_id)
-        .eq(TITLES_FIELDS.TYPE, entry.type)
+        .eq(TITLES_COLUMNS.TMDB_ID, entry.tmdb_id)
+        .eq(TITLES_COLUMNS.TYPE, entry.type)
         .maybeSingle();
 
       let titleJsonb: MultiLanguageText | null = null;
@@ -570,8 +570,7 @@ export default defineEventHandler(async (event) => {
         overviewJsonb[language] !== undefined;
 
       // Extract text in user's language from titles table (may return fallback if language missing)
-      const { getTitleInLanguage } =
-        await import('@/services/titles');
+      const { getTitleInLanguage } = await import('@/services/titles');
       const extractedTitle = getTitleInLanguage(
         titleJsonb,
         language,
@@ -688,10 +687,10 @@ export default defineEventHandler(async (event) => {
           const { data: existingTitle } = await supabase
             .from(TABLES.TITLES)
             .select(
-              `${TITLES_FIELDS.TITLE}, ${TITLES_FIELDS.OVERVIEW}, ${TITLES_FIELDS.POSTER_PATH}, ${TITLES_FIELDS.GENRES}, ${TITLES_FIELDS.BACKDROP_PATH}, ${TITLES_FIELDS.VOTE_AVERAGE}, ${TITLES_FIELDS.RELEASE_DATE}, ${TITLES_FIELDS.FIRST_AIR_DATE}`
+              `${TITLES_COLUMNS.TITLE}, ${TITLES_COLUMNS.OVERVIEW}, ${TITLES_COLUMNS.POSTER_PATH}, ${TITLES_COLUMNS.GENRES}, ${TITLES_COLUMNS.BACKDROP_PATH}, ${TITLES_COLUMNS.VOTE_AVERAGE}, ${TITLES_COLUMNS.RELEASE_DATE}, ${TITLES_COLUMNS.FIRST_AIR_DATE}`
             )
-            .eq(TITLES_FIELDS.TMDB_ID, entry.tmdb_id)
-            .eq(TITLES_FIELDS.TYPE, entry.type)
+            .eq(TITLES_COLUMNS.TMDB_ID, entry.tmdb_id)
+            .eq(TITLES_COLUMNS.TYPE, entry.type)
             .maybeSingle();
 
           // Merge with existing data to preserve all language keys
@@ -725,40 +724,40 @@ export default defineEventHandler(async (event) => {
             .from(TABLES.TITLES)
             .upsert(
               {
-                [TITLES_FIELDS.TMDB_ID]: entry.tmdb_id,
-                [TITLES_FIELDS.TYPE]: entry.type,
-                [TITLES_FIELDS.TITLE]: finalTitleJsonb,
-                [TITLES_FIELDS.OVERVIEW]:
+                [TITLES_COLUMNS.TMDB_ID]: entry.tmdb_id,
+                [TITLES_COLUMNS.TYPE]: entry.type,
+                [TITLES_COLUMNS.TITLE]: finalTitleJsonb,
+                [TITLES_COLUMNS.OVERVIEW]:
                   Object.keys(finalOverviewJsonb).length > 0
                     ? finalOverviewJsonb
                     : null,
-                [TITLES_FIELDS.POSTER_PATH]:
+                [TITLES_COLUMNS.POSTER_PATH]:
                   Object.keys(finalPosterPathJsonb).length > 0
                     ? finalPosterPathJsonb
                     : null,
-                [TITLES_FIELDS.GENRES]:
+                [TITLES_COLUMNS.GENRES]:
                   (tmdbResponse.genres || []).length > 0
                     ? tmdbResponse.genres
                     : existingTitle?.genres || null,
-                [TITLES_FIELDS.BACKDROP_PATH]:
+                [TITLES_COLUMNS.BACKDROP_PATH]:
                   tmdbResponse.backdrop_path ||
                   existingTitle?.backdrop_path ||
                   null,
-                [TITLES_FIELDS.VOTE_AVERAGE]:
+                [TITLES_COLUMNS.VOTE_AVERAGE]:
                   tmdbResponse.vote_average ??
                   existingTitle?.vote_average ??
                   null,
-                [TITLES_FIELDS.RELEASE_DATE]:
+                [TITLES_COLUMNS.RELEASE_DATE]:
                   tmdbResponse.release_date ||
                   existingTitle?.release_date ||
                   null,
-                [TITLES_FIELDS.FIRST_AIR_DATE]:
+                [TITLES_COLUMNS.FIRST_AIR_DATE]:
                   tmdbResponse.first_air_date ||
                   existingTitle?.first_air_date ||
                   null,
               },
               {
-                onConflict: TITLES_FIELDS.TMDB_ID,
+                onConflict: TITLES_COLUMNS.TMDB_ID,
               }
             );
 

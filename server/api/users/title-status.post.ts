@@ -1,12 +1,10 @@
 import { serverSupabaseUser } from '#supabase/server';
 import { createClient } from '@supabase/supabase-js';
-import { TitleStatus } from '@/types/TitleStatus';
+import { TITLE_STATUS, type TitleStatusType } from '@/constants/domain/titleStatus';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
-import {
-  TABLES,
-  USER_TITLE_STATUS_FIELDS,
-  SCORE_WEIGHTS,
-} from '@/services/constants';
+import { TABLES } from '@/constants/db/tables';
+import { USER_TITLE_STATUS_COLUMNS } from '@/constants/db/columns';
+import { SCORE_WEIGHTS } from '@/constants/domain/scoring';
 import {
   updatePoolScore,
   removeFromPool,
@@ -101,13 +99,13 @@ export default defineEventHandler(async (event) => {
   }
 
   if (
-    status !== TitleStatus.SEEN &&
-    status !== TitleStatus.NOT_INTERESTED &&
-    status !== TitleStatus.WATCHLIST
+    status !== TITLE_STATUS.SEEN &&
+    status !== TITLE_STATUS.NOT_INTERESTED &&
+    status !== TITLE_STATUS.WATCHLIST
   ) {
     throw createError({
       statusCode: 400,
-      message: `status must be '${TitleStatus.SEEN}', '${TitleStatus.NOT_INTERESTED}', or '${TitleStatus.WATCHLIST}'`,
+      message: `status must be '${TITLE_STATUS.SEEN}', '${TITLE_STATUS.NOT_INTERESTED}', or '${TITLE_STATUS.WATCHLIST}'`,
     });
   }
 
@@ -179,16 +177,16 @@ export default defineEventHandler(async (event) => {
     const { data: previousStatus } = await supabase
       .from(TABLES.USER_TITLE_STATUS)
       .select(
-        `${USER_TITLE_STATUS_FIELDS.STATUS}, ${USER_TITLE_STATUS_FIELDS.LIKED}`
+        `${USER_TITLE_STATUS_COLUMNS.STATUS}, ${USER_TITLE_STATUS_COLUMNS.LIKED}`
       )
-      .eq(USER_TITLE_STATUS_FIELDS.USER_ID, userId)
-      .eq(USER_TITLE_STATUS_FIELDS.TMDB_ID, tmdb_id)
+      .eq(USER_TITLE_STATUS_COLUMNS.USER_ID, userId)
+      .eq(USER_TITLE_STATUS_COLUMNS.TMDB_ID, tmdb_id)
       .maybeSingle();
 
     const { error } = await supabase
       .from(TABLES.USER_TITLE_STATUS)
       .upsert(upsertData, {
-        onConflict: `${USER_TITLE_STATUS_FIELDS.USER_ID},${USER_TITLE_STATUS_FIELDS.TMDB_ID}`,
+        onConflict: `${USER_TITLE_STATUS_COLUMNS.USER_ID},${USER_TITLE_STATUS_COLUMNS.TMDB_ID}`,
       });
 
     if (error) {
@@ -205,7 +203,7 @@ export default defineEventHandler(async (event) => {
     // Official scoring logic: each signal is applied independently and reversibly
     try {
       const previousStatusValue = previousStatus?.status as
-        | TitleStatus
+        | TitleStatusType
         | undefined;
       const previousLiked = previousStatus?.liked ?? false;
       // Only consider liked change if it was explicitly provided in the request
@@ -216,7 +214,7 @@ export default defineEventHandler(async (event) => {
       if (
         previousStatusValue &&
         previousStatusValue !== status &&
-        previousStatusValue !== TitleStatus.WATCHLIST
+        previousStatusValue !== TITLE_STATUS.WATCHLIST
       ) {
         // Revert: score -= SCORE_WEIGHTS[previousStatus]
         const previousWeight = SCORE_WEIGHTS[
@@ -241,7 +239,7 @@ export default defineEventHandler(async (event) => {
       // 3. Apply new status impact (if status changed and not watchlist)
       if (
         previousStatusValue !== status &&
-        status !== TitleStatus.WATCHLIST
+        status !== TITLE_STATUS.WATCHLIST
       ) {
         const newWeight =
           SCORE_WEIGHTS[status as keyof typeof SCORE_WEIGHTS];
@@ -257,7 +255,7 @@ export default defineEventHandler(async (event) => {
       }
 
       // 5. Handle not_interested: remove from pool after score update
-      if (status === TitleStatus.NOT_INTERESTED) {
+      if (status === TITLE_STATUS.NOT_INTERESTED) {
         await removeFromPool(userId, tmdb_id, supabase);
       }
     } catch (poolError) {

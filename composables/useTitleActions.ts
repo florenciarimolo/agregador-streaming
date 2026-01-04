@@ -6,8 +6,9 @@ import { useUserStore } from '@/stores/user';
 import { getSession } from '@/services/auth';
 import { getUserLikedTitle } from '@/services/userTitleStatus';
 import { useUndoToast } from '@/composables/useUndoToast';
+import { QUERY_PARAMS } from '@/constants/api/queryParams';
 import type { Recommendation } from '@/types/Recommendation';
-import { TitleStatus } from '@/types/TitleStatus';
+import { TITLE_STATUS } from '@/constants/domain/titleStatus';
 
 // Helper function to safely get user ID from Supabase user object
 type SupabaseUserWithSub = {
@@ -65,7 +66,7 @@ export const useTitleActions = (
       originalTitleIndex = recommendations.value.findIndex(
         (r: Recommendation) => r.tmdb_id === title.tmdb_id
       );
-      if (originalTitleIndex !== -1 && status === TitleStatus.WATCHLIST) {
+      if (originalTitleIndex !== -1 && status === TITLE_STATUS.WATCHLIST) {
         originalInWatchlist =
           recommendations.value[originalTitleIndex].in_watchlist;
       }
@@ -89,7 +90,7 @@ export const useTitleActions = (
       }
 
       // Show toast with appropriate message and action based on status
-      if (status === TitleStatus.NOT_INTERESTED) {
+      if (status === TITLE_STATUS.NOT_INTERESTED) {
         showToast(
           t('home.titleMarkedNotInterested', { title: title.title }),
           {
@@ -110,7 +111,7 @@ export const useTitleActions = (
           },
           7000
         );
-      } else if (status === TitleStatus.SEEN) {
+      } else if (status === TITLE_STATUS.SEEN) {
         showToast(t('home.titleMarkedSeen', { title: title.title }), {
           label: t('home.viewSeen'),
           variant: 'secondary',
@@ -118,7 +119,7 @@ export const useTitleActions = (
             await router.push('/lists?tab=seen');
           },
         }, 5000);
-      } else if (status === TitleStatus.WATCHLIST) {
+      } else if (status === TITLE_STATUS.WATCHLIST) {
         showToast(t('home.titleSavedWatchlist', { title: title.title }), {
           label: t('home.viewList'),
           variant: 'secondary',
@@ -144,9 +145,9 @@ export const useTitleActions = (
             excluded_tmdb_id: title.tmdb_id.toString(),
             excluded_type: title.type,
           };
-          if (route.query.mood) queryParams.mood = route.query.mood as string;
-          if (route.query.attention)
-            queryParams.attention = route.query.attention as string;
+          if (route.query[QUERY_PARAMS.MOOD]) queryParams[QUERY_PARAMS.MOOD] = route.query[QUERY_PARAMS.MOOD] as string;
+          if (route.query[QUERY_PARAMS.ATTENTION])
+            queryParams[QUERY_PARAMS.ATTENTION] = route.query[QUERY_PARAMS.ATTENTION] as string;
 
           const replacement = await $fetch<Recommendation | null>(
             '/api/recommendations/replacement',
@@ -175,7 +176,7 @@ export const useTitleActions = (
     } catch (error) {
       // Rollback optimistic update if error occurred
       if (originalTitleIndex !== -1) {
-        if (status === TitleStatus.WATCHLIST) {
+        if (status === TITLE_STATUS.WATCHLIST) {
           recommendations.value[originalTitleIndex] = {
             ...recommendations.value[originalTitleIndex],
             in_watchlist: originalInWatchlist,
@@ -195,9 +196,9 @@ export const useTitleActions = (
         console.error('[handleTitleStatus] Error:', error);
       }
       const errorMessage =
-        status === TitleStatus.WATCHLIST
+        status === TITLE_STATUS.WATCHLIST
           ? t('home.errorSavingWatchlist', { title: title.title })
-          : status === TitleStatus.SEEN
+          : status === TITLE_STATUS.SEEN
             ? t('home.errorMarkingSeen', { title: title.title })
             : t('home.errorUpdatingStatus', { title: title.title });
       showToast(errorMessage, null, 3000);
@@ -245,7 +246,7 @@ export const useTitleActions = (
         body: {
           tmdb_id: title.tmdb_id,
           type: title.type,
-          status: TitleStatus.SEEN,
+          status: TITLE_STATUS.SEEN,
           liked: true,
         },
       });
@@ -277,9 +278,9 @@ export const useTitleActions = (
             excluded_tmdb_id: title.tmdb_id.toString(),
             excluded_type: title.type,
           };
-          if (route.query.mood) queryParams.mood = route.query.mood as string;
-          if (route.query.attention)
-            queryParams.attention = route.query.attention as string;
+          if (route.query[QUERY_PARAMS.MOOD]) queryParams[QUERY_PARAMS.MOOD] = route.query[QUERY_PARAMS.MOOD] as string;
+          if (route.query[QUERY_PARAMS.ATTENTION])
+            queryParams[QUERY_PARAMS.ATTENTION] = route.query[QUERY_PARAMS.ATTENTION] as string;
 
           const replacement = await $fetch<Recommendation | null>(
             '/api/recommendations/replacement',
@@ -350,7 +351,7 @@ export const useTitleActions = (
         body: {
           tmdb_id: title.tmdb_id,
           type: title.type,
-          status: TitleStatus.SEEN,
+          status: TITLE_STATUS.SEEN,
           liked: false,
         },
       });

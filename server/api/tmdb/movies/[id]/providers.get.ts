@@ -2,8 +2,8 @@ import {
   WatchProviderResponse,
   WatchProviderTypes,
 } from '@/types/WatchProvider';
-import { getTMDBConfig } from '../../../../utils/config';
-import { getUserTMDBParams } from '../../../../utils/user-preferences';
+import { getTMDBConfig } from '@/server/utils/config';
+import { getUserTMDBParams } from '@/server/utils/user-preferences';
 import { createError, getRouterParams } from 'h3';
 
 export default defineEventHandler(async (event) => {

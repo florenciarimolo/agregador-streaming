@@ -1,8 +1,8 @@
 import { ref, computed, readonly } from 'vue';
 
-export type CookieConsentStatus = 'accepted' | 'rejected' | 'unset';
+import { STORAGE_KEYS } from '@/constants/storage/keys';
 
-const COOKIE_CONSENT_KEY = 'cookie_consent';
+export type CookieConsentStatus = 'accepted' | 'rejected' | 'unset';
 
 /**
  * Composable to manage cookie consent
@@ -12,7 +12,7 @@ export function useCookieConsent() {
   // Initialize from localStorage
   const getStoredConsent = (): CookieConsentStatus => {
     if (import.meta.client) {
-      const stored = localStorage.getItem(COOKIE_CONSENT_KEY);
+      const stored = localStorage.getItem(STORAGE_KEYS.COOKIE_CONSENT);
       if (stored === 'accepted' || stored === 'rejected') {
         return stored as CookieConsentStatus;
       }
@@ -27,7 +27,7 @@ export function useCookieConsent() {
    */
   const saveConsent = (status: 'accepted' | 'rejected') => {
     if (import.meta.client) {
-      localStorage.setItem(COOKIE_CONSENT_KEY, status);
+      localStorage.setItem(STORAGE_KEYS.COOKIE_CONSENT, status);
       consentStatus.value = status;
     }
   };

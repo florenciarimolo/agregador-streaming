@@ -35,6 +35,9 @@ dist-ssr
 .cache
 
 # Generated files by Nuxt/TypeScript
+# TypeScript build info
+*.tsbuildinfo
+
 # Vue component compiled files
 *.vue.js
 app.vue.js

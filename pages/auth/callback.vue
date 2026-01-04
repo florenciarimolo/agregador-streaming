@@ -26,6 +26,7 @@
 </template>
 
 <script setup lang="ts">
+import { STORAGE_KEYS } from '@/constants/storage/keys';
 // Callback page - MINIMAL RESPONSIBILITY
 // Only exchanges code for session and redirects
 // Recovery detection happens in this page, not in middleware
@@ -160,7 +161,7 @@ onMounted(async () => {
   // Check for recovery flow flag BEFORE any other logic
   // This must be the first thing we check, even before checking session
   if (typeof window !== 'undefined') {
-    const recoveryFlag = localStorage.getItem('auth:recovery');
+    const recoveryFlag = localStorage.getItem(STORAGE_KEYS.AUTH_RECOVERY);
     let isRecoveryFlow = false;
 
     if (recoveryFlag) {
@@ -173,7 +174,7 @@ onMounted(async () => {
           isRecoveryFlow = true;
         } else {
           // Flag expired, remove it
-          localStorage.removeItem('auth:recovery');
+          localStorage.removeItem(STORAGE_KEYS.AUTH_RECOVERY);
         }
       } catch {
         // Legacy format: '1' (string)

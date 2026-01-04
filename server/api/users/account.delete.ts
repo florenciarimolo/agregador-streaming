@@ -1,7 +1,8 @@
 import { serverSupabaseUser } from '#supabase/server';
 import { createClient } from '@supabase/supabase-js';
 import { getSession } from '@/services/auth';
-import { TABLES } from '@/services/constants';
+import { TABLES } from '@/constants/db/tables';
+import { SCORE_WEIGHTS } from '@/constants/domain/scoring';
 
 export default defineEventHandler(async (event) => {
   try {

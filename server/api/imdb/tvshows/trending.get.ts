@@ -1,4 +1,4 @@
-import { getTMDBConfig } from '../../../utils/config';
+import { getTMDBConfig } from '@/server/utils/config';
 import { createError, setHeader } from 'h3';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 import type { MediaResponse } from '@/types/Media';

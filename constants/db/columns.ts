@@ -1,18 +1,12 @@
 /**
- * Database table names
+ * Database column/field names
+ * Centralized to avoid hardcoding column names in multiple places
  */
-export const TABLES = {
-  PROFILES: 'profiles',
-  TITLES: 'titles',
-  USER_TITLE_STATUS: 'user_title_status',
-  USER_PREFERENCES: 'user_preferences',
-  RECOMMENDATION_POOL: 'recommendation_pool',
-} as const;
 
 /**
  * Field names for profiles table
  */
-export const PROFILES_FIELDS = {
+export const PROFILES_COLUMNS = {
   ID: 'id',
   EMAIL: 'email',
   DISPLAY_NAME: 'display_name',
@@ -26,7 +20,7 @@ export const PROFILES_FIELDS = {
 /**
  * Field names for titles table
  */
-export const TITLES_FIELDS = {
+export const TITLES_COLUMNS = {
   ID: 'id',
   TMDB_ID: 'tmdb_id',
   TITLE: 'title',
@@ -45,7 +39,7 @@ export const TITLES_FIELDS = {
 /**
  * Field names for user_title_status table
  */
-export const USER_TITLE_STATUS_FIELDS = {
+export const USER_TITLE_STATUS_COLUMNS = {
   ID: 'id',
   USER_ID: 'user_id',
   TMDB_ID: 'tmdb_id',
@@ -58,7 +52,7 @@ export const USER_TITLE_STATUS_FIELDS = {
 /**
  * Field names for user_preferences table
  */
-export const USER_PREFERENCES_FIELDS = {
+export const USER_PREFERENCES_COLUMNS = {
   ID: 'id',
   USER_ID: 'user_id',
   FAVORITE_GENRES: 'favorite_genres',
@@ -71,19 +65,17 @@ export const USER_PREFERENCES_FIELDS = {
 } as const;
 
 /**
- * Score weights for user title status changes
- * Official scoring logic: score represents real affinity, not future intention
- * 
- * Rules:
- * - Each signal is applied independently
- * - All signals must be reversible
- * - When removing a state, reverse exactly its impact: score -= SCORE_WEIGHTS[state]
- * - watchlist never modifies the score, neither when adding nor removing
+ * Field names for recommendation_pool table
  */
-export const SCORE_WEIGHTS = {
-  liked: 30,
-  seen: -50,
-  not_interested: -100,
-  watchlist: 0,
+export const RECOMMENDATION_POOL_COLUMNS = {
+  ID: 'id',
+  USER_ID: 'user_id',
+  TMDB_ID: 'tmdb_id',
+  TYPE: 'type',
+  SOURCE: 'source',
+  SCORE: 'score',
+  EXPLANATION_CODE: 'explanation_code',
+  CREATED_AT: 'created_at',
+  LAST_SHOWN_AT: 'last_shown_at',
 } as const;
 

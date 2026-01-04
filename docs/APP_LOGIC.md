@@ -5,11 +5,12 @@ This document describes the business logic, data rules, and architecture of the 
 ## Table of Contents
 
 1. [Architecture](#architecture)
-2. [Title States](#title-states)
-3. [Scoring System](#scoring-system)
-4. [Recommendation Pool](#recommendation-pool)
-5. [Data Model](#data-model)
-6. [Business Rules](#business-rules)
+2. [Constants Philosophy](#constants-philosophy)
+3. [Title States](#title-states)
+4. [Scoring System](#scoring-system)
+5. [Recommendation Pool](#recommendation-pool)
+6. [Data Model](#data-model)
+7. [Business Rules](#business-rules)
 
 ---
 
@@ -79,15 +80,107 @@ A service:
 
 ---
 
+## Constants Philosophy
+
+### Principle
+
+**Constants exist only to:**
+
+- Avoid errors
+- Facilitate refactors
+- Express domain
+
+If they don't provide one of these values, they should not exist.
+
+### When to use constants
+
+Use constants for:
+
+- Database table names
+- Database column names
+- Domain enums (status, types, etc.)
+- Values shared between frontend and server
+- Keys used in multiple places (query params, localStorage)
+
+**Especially important in Supabase:**
+
+- Do NOT hardcode table or column names in more than one place
+
+### When NOT to use constants
+
+- Strings used only once
+- Obvious literals (`'POST'`, `true`, `1`)
+- Constants created "for organization" without clear benefit
+
+### Where to define them
+
+Use a `/constants` folder structured by domain:
+
+```
+/constants
+  /db
+    tables.ts
+    columns.ts
+    errorCodes.ts
+  /domain
+    titleStatus.ts
+    scoring.ts
+  /api
+    queryParams.ts
+  /storage
+    keys.ts
+```
+
+**Do NOT use a single giant `constants.ts` file.**
+
+### Style rules
+
+- Constants in **UPPERCASE**
+- Use `as const`
+- **Do NOT use TypeScript enums** (use const objects instead)
+- Clear and semantic names
+
+### Goal
+
+- Code easy to refactor
+- Fewer magic strings
+- Better autocomplete and type safety
+- Do not create constants that don't improve code understanding
+
+### Current structure
+
+**Database constants:**
+
+- `/constants/db/tables.ts` - Table names (`TABLES`)
+- `/constants/db/columns.ts` - Column names (`*_COLUMNS`)
+- `/constants/db/errorCodes.ts` - Error codes (`POSTGREST_ERROR_CODES`, `POSTGRES_ERROR_CODES`)
+
+**Domain constants:**
+
+- `/constants/domain/titleStatus.ts` - Title status values (`TITLE_STATUS`)
+- `/constants/domain/scoring.ts` - Score weights (`SCORE_WEIGHTS`)
+
+**API constants:**
+
+- `/constants/api/queryParams.ts` - Query parameter names (`QUERY_PARAMS`)
+
+**Storage constants:**
+
+- `/constants/storage/keys.ts` - localStorage keys (`STORAGE_KEYS`)
+
+---
+
 ## Title States
 
 ### Available States
 
 A title can have **one active state** at a time:
 
-- `watchlist`: Title saved to watch later
-- `seen`: Title already watched by the user
-- `not_interested`: Title that doesn't interest the user
+- `TITLE_STATUS.WATCHLIST`: Title saved to watch later
+- `TITLE_STATUS.SEEN`: Title already watched by the user
+- `TITLE_STATUS.NOT_INTERESTED`: Title that doesn't interest the user
+
+**Constants:** Defined in `/constants/domain/titleStatus.ts` as `TITLE_STATUS` (replaces the old `TitleStatus` enum)
 
 ### `liked` Attribute
 
@@ -145,7 +238,7 @@ The score represents **real affinity**, not future intention.
 
 ### Score Weights
 
-Defined in `services/constants.ts`:
+Defined in `/constants/domain/scoring.ts`:
 
 ```typescript
 export const SCORE_WEIGHTS = {
@@ -153,7 +246,7 @@ export const SCORE_WEIGHTS = {
   seen: -50, // -50 points
   not_interested: -100, // -100 points
   watchlist: 0, // 0 points (no effect)
-};
+} as const;
 ```
 
 ### Application Rules
@@ -747,11 +840,24 @@ Stores user preferences.
 
 ### Constants
 
-Defined in `services/constants.ts`:
+**Database constants** (`/constants/db/`):
 
-- `TABLES`: Table names
-- `SCORE_WEIGHTS`: Scoring weights
-- `*_FIELDS`: Field names for each table
+- `TABLES`: Table names (`/constants/db/tables.ts`)
+- `*_COLUMNS`: Column names for each table (`/constants/db/columns.ts`)
+- `POSTGREST_ERROR_CODES`, `POSTGRES_ERROR_CODES`: Error codes (`/constants/db/errorCodes.ts`)
+
+**Domain constants** (`/constants/domain/`):
+
+- `TITLE_STATUS`: Title status values (`/constants/domain/titleStatus.ts`)
+- `SCORE_WEIGHTS`: Scoring weights (`/constants/domain/scoring.ts`)
+
+**API constants** (`/constants/api/`):
+
+- `QUERY_PARAMS`: Query parameter names (`/constants/api/queryParams.ts`)
+
+**Storage constants** (`/constants/storage/`):
+
+- `STORAGE_KEYS`: localStorage keys (`/constants/storage/keys.ts`)
 
 ---
 
@@ -760,6 +866,8 @@ Defined in `services/constants.ts`:
 ### `auth:recovery` Flag Lifecycle
 
 The `auth:recovery` flag is a localStorage flag used to track the password recovery flow and prevent false authentication states.
+
+**Constant:** `STORAGE_KEYS.AUTH_RECOVERY` (defined in `/constants/storage/keys.ts`)
 
 #### Flag Format
 
@@ -834,8 +942,12 @@ Flag removed → normal navigation
 
 ## References
 
-- `types/TitleStatus.ts`: State definitions
-- `services/constants.ts`: Constants and weights
+- `/constants/domain/titleStatus.ts`: Title status constants
+- `/constants/domain/scoring.ts`: Score weights
+- `/constants/db/tables.ts`: Database table names
+- `/constants/db/columns.ts`: Database column names
+- `/constants/storage/keys.ts`: localStorage keys (including `auth:recovery`)
+- `/constants/api/queryParams.ts`: Query parameter names
 - `server/api/users/title-status.post.ts`: Update logic
 - `server/api/users/title-status.delete.ts`: Delete logic
 - `supabase/schema.sql`: Database schema

@@ -1,7 +1,9 @@
 import { serverSupabaseUser } from '#supabase/server';
 import { createClient } from '@supabase/supabase-js';
 import { getSession } from '@/services/auth';
-import { TABLES, PROFILES_FIELDS } from '@/services/constants';
+import { PROFILES_COLUMNS, USER_PREFERENCES_COLUMNS, TITLES_COLUMNS } from '@/constants/db/columns';
+import { TABLES, PROFILES_COLUMNS } from '@/constants/db/tables';
+import { SCORE_WEIGHTS } from '@/constants/domain/scoring';
 
 export default defineEventHandler(async (event) => {
   try {
@@ -45,11 +47,11 @@ export default defineEventHandler(async (event) => {
     const updateData: Record<string, unknown> = {};
 
     if (typeof body.display_name === 'string') {
-      updateData[PROFILES_FIELDS.DISPLAY_NAME] = body.display_name.trim() || null;
+      updateData[PROFILES_COLUMNS.DISPLAY_NAME] = body.display_name.trim() || null;
     }
 
     if (typeof body.avatar_url === 'string') {
-      updateData[PROFILES_FIELDS.AVATAR_URL] = body.avatar_url || null;
+      updateData[PROFILES_COLUMNS.AVATAR_URL] = body.avatar_url || null;
     }
 
     // Create Supabase client for server-side operations
@@ -67,7 +69,7 @@ export default defineEventHandler(async (event) => {
     const { data, error } = await supabase
       .from(TABLES.PROFILES)
       .update(updateData)
-      .eq(PROFILES_FIELDS.ID, userId)
+      .eq(PROFILES_COLUMNS.ID, userId)
       .select()
       .single();
 

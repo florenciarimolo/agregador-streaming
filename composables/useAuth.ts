@@ -1,4 +1,5 @@
-import { validatePassword } from '../utils/passwordValidation';
+import { validatePassword } from '@/utils/passwordValidation';
+import { STORAGE_KEYS } from '@/constants/storage/keys';
 
 /**
  * Authentication composable for UpNext
@@ -154,7 +155,7 @@ export const useAuth = () => {
       // Flag includes timestamp to prevent indefinite persistence if user abandons flow
       if (!error && typeof window !== 'undefined') {
         localStorage.setItem(
-          'auth:recovery',
+          STORAGE_KEYS.AUTH_RECOVERY,
           JSON.stringify({ value: 1, ts: Date.now() })
         );
       }

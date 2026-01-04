@@ -1,9 +1,7 @@
 import { serverSupabaseUser } from '#supabase/server';
 import { createClient } from '@supabase/supabase-js';
-import {
-  TABLES,
-  USER_PREFERENCES_FIELDS,
-} from '@/services/constants';
+import { TABLES } from '@/constants/db/tables';
+import { USER_PREFERENCES_COLUMNS } from '@/constants/db/columns';
 
 export default defineEventHandler(async (event) => {
   try {
@@ -67,7 +65,7 @@ export default defineEventHandler(async (event) => {
     const { data, error } = await supabase
       .from(TABLES.USER_PREFERENCES)
       .select('*')
-      .eq(USER_PREFERENCES_FIELDS.USER_ID, userId)
+      .eq(USER_PREFERENCES_COLUMNS.USER_ID, userId)
       .maybeSingle();
 
     if (error && error.code !== 'PGRST116') {

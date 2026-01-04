@@ -1,8 +1,10 @@
-import { getTMDBConfig } from '../../../utils/config';
-import { getUserTMDBParams } from '../../../utils/user-preferences';
+import { getTMDBConfig } from '@/server/utils/config';
+import { getUserTMDBParams } from '@/server/utils/user-preferences';
 import { createError, defineEventHandler } from 'h3';
 import { createClient } from '@supabase/supabase-js';
-import { TABLES, TITLES_FIELDS } from '@/services/constants';
+import { PROFILES_COLUMNS, USER_PREFERENCES_COLUMNS, TITLES_COLUMNS } from '@/constants/db/columns';
+import { TABLES, TITLES_COLUMNS } from '@/constants/db/tables';
+import { SCORE_WEIGHTS } from '@/constants/domain/scoring';
 import { type MultiLanguageText } from '@/services/titles';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 import {
@@ -48,8 +50,8 @@ export default defineEventHandler(async (event) => {
     const { data: titleFromDb, error: dbError } = await supabase
       .from(TABLES.TITLES)
       .select('*')
-      .eq(TITLES_FIELDS.TMDB_ID, tmdbId)
-      .eq(TITLES_FIELDS.TYPE, MediaTypeEnum.tv)
+      .eq(TITLES_COLUMNS.TMDB_ID, tmdbId)
+      .eq(TITLES_COLUMNS.TYPE, MediaTypeEnum.tv)
       .maybeSingle();
 
     // If found in DB, check if we have the required language
@@ -117,8 +119,8 @@ export default defineEventHandler(async (event) => {
             overview: updatedOverview,
             poster_path: Object.keys(updatedPosterPath).length > 0 ? updatedPosterPath : null,
           })
-          .eq(TITLES_FIELDS.TMDB_ID, tmdbId)
-          .eq(TITLES_FIELDS.TYPE, MediaTypeEnum.tv);
+          .eq(TITLES_COLUMNS.TMDB_ID, tmdbId)
+          .eq(TITLES_COLUMNS.TYPE, MediaTypeEnum.tv);
         
         // Update local references to use the updated JSONB
         titleJsonb = updatedTitle;
