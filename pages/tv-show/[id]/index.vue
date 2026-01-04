@@ -3,8 +3,13 @@
     <PageContainer>
       <div class="w-full pt-6 pb-6">
         <!-- Loading state -->
-        <div v-if="isLoading" class="flex items-center justify-center min-h-screen">
-          <div class="text-xl dark:text-gray-300 text-gray-800">{{ $t('common.loading') }}</div>
+        <div
+          v-if="isLoading"
+          class="flex items-center justify-center min-h-screen"
+        >
+          <div class="text-xl dark:text-gray-300 text-gray-800">{{
+            $t('common.loading')
+          }}</div>
         </div>
 
         <!-- Error state -->
@@ -12,7 +17,9 @@
           v-else-if="hasError"
           class="flex items-center justify-center min-h-screen"
         >
-          <div class="text-xl text-red-500">{{ $t('media.errorLoadingTvShow') }}</div>
+          <div class="text-xl text-red-500">{{
+            $t('media.errorLoadingTvShow')
+          }}</div>
         </div>
 
         <!-- Content -->
@@ -27,67 +34,82 @@
           <Section>
             <SectionTitle>{{ $t('media.seasons') }}</SectionTitle>
             <div class="w-full">
-    <div
-      class="relative grid grid-cols-2 gap-4 justify-items-stretch lg:grid-cols-3 xl:grid-cols-4"
-    >
-      <article
-        v-for="season in tvShowWithProviders.seasons"
-        :key="season.id"
-        class="rounded-3xl relative flex flex-col text-sm overflow-hidden bg-white/60 dark:bg-gray-900/40 backdrop-blur-xl border border-gray-300/50 dark:border-white/10 w-full cursor-pointer group hover:border-primary/50 dark:hover:border-purple-500/30 transition-colors shadow-lg"
-      >
-        <nuxt-link
-          :to="`/tv-show/${tvShowId}/season/${season.season_number}`"
-          class="block"
-        >
-          <div class="aspect-[2/3] overflow-hidden relative">
-            <img
-              v-if="season.poster_path"
-              :src="`https://image.tmdb.org/t/p/w780${season.poster_path}`"
-              :alt="season.name"
-              class="w-full h-full object-cover"
-            />
-            <!-- RatingBadge in image (mobile only) -->
-            <div class="absolute top-2 right-2 md:hidden">
-              <RatingBadge
-                v-if="season.vote_average"
-                :rating="season.vote_average"
-              />
-            </div>
-            <div
-              class="absolute bottom-0 left-0 flex flex-col items-center justify-center w-full h-full px-4 transition-all duration-300 rounded opacity-0 group-hover:opacity-100 backdrop-blur-md w-inherit dark:bg-black/80 bg-white/80"
-            >
-              <p class="dark:text-gray-300 text-gray-800 font-semibold"
-                >Ver episodios</p
+              <div
+                class="relative grid grid-cols-2 gap-4 justify-items-stretch lg:grid-cols-3 xl:grid-cols-4"
               >
-            </div>
-          </div>
-        </nuxt-link>
+                <article
+                  v-for="season in tvShowWithProviders.seasons"
+                  :key="season.id"
+                  class="rounded-3xl relative flex flex-col text-sm overflow-hidden bg-white/60 dark:bg-gray-900/40 backdrop-blur-xl border border-gray-300/50 dark:border-white/10 w-full cursor-pointer group hover:border-primary/50 dark:hover:border-purple-500/30 transition-colors shadow-lg"
+                >
+                  <nuxt-link
+                    :to="`/tv-show/${tvShowId}/season/${season.season_number}`"
+                    class="block"
+                  >
+                    <div class="aspect-[2/3] overflow-hidden relative">
+                      <img
+                        v-if="season.poster_path"
+                        :src="`https://image.tmdb.org/t/p/w780${season.poster_path}`"
+                        :alt="season.name"
+                        class="w-full h-full object-cover"
+                      />
+                      <!-- RatingBadge in image (mobile only) -->
+                      <div class="absolute top-2 right-2 md:hidden">
+                        <RatingBadge
+                          v-if="season.vote_average"
+                          :rating="season.vote_average"
+                        />
+                      </div>
+                      <div
+                        class="absolute bottom-0 left-0 flex flex-col items-center justify-center w-full h-full px-4 transition-all duration-300 rounded opacity-0 group-hover:opacity-100 backdrop-blur-md w-inherit dark:bg-black/80 bg-white/80"
+                      >
+                        <p
+                          class="dark:text-gray-300 text-gray-800 font-semibold"
+                          >{{ $t('media.viewEpisodes') }}</p
+                        >
+                      </div>
+                    </div>
+                  </nuxt-link>
 
-        <div class="flex flex-col justify-around py-3 px-3 md:py-5 md:px-6 min-h-[120px]">
-          <div class="flex flex-col gap-2 md:flex-row md:items-center md:gap-3">
-            <p
-              class="text-sm md:text-lg font-semibold uppercase dark:text-gray-300 text-gray-800 line-clamp-2 md:line-clamp-1"
-              >{{ season.name }}</p
-            >
-            <!-- RatingBadge in content (desktop only) -->
-            <div class="hidden md:block flex-shrink-0">
-              <RatingBadge
-                v-if="season.vote_average"
-                :rating="season.vote_average"
-              />
-            </div>
-          </div>
-          <div class="flex items-center gap-2 dark:text-gray-300 text-gray-800 text-xs md:text-sm">
-            <IconCalendar icon-class="w-3 h-3 md:w-4 md:h-4" />
-            <span class="truncate">{{ formatDateToSpanish(season.air_date) }}</span>
-          </div>
-          <div class="flex items-center gap-2 dark:text-gray-300 text-gray-800 text-xs md:text-sm">
-            <IconEpisodes icon-class="w-3 h-3 md:w-4 md:h-4" />
-            <span class="truncate">{{ season.episode_count || 0 }} episodios</span>
-          </div>
-        </div>
-      </article>
-    </div>
+                  <div
+                    class="flex flex-col justify-around py-3 px-3 md:py-5 md:px-6 min-h-[120px]"
+                  >
+                    <div
+                      class="flex flex-col gap-2 md:flex-row md:items-center md:gap-3"
+                    >
+                      <p
+                        class="text-sm md:text-lg font-semibold uppercase dark:text-gray-300 text-gray-800 line-clamp-2 md:line-clamp-1"
+                        >{{ season.name }}</p
+                      >
+                      <!-- RatingBadge in content (desktop only) -->
+                      <div class="hidden md:block flex-shrink-0">
+                        <RatingBadge
+                          v-if="season.vote_average"
+                          :rating="season.vote_average"
+                        />
+                      </div>
+                    </div>
+                    <div
+                      class="flex items-center gap-2 dark:text-gray-300 text-gray-800 text-xs md:text-sm"
+                    >
+                      <IconCalendar icon-class="w-3 h-3 md:w-4 md:h-4" />
+                      <span class="truncate">{{
+                        formatDateToSpanish(season.air_date)
+                      }}</span>
+                    </div>
+                    <div
+                      class="flex items-center gap-2 dark:text-gray-300 text-gray-800 text-xs md:text-sm"
+                    >
+                      <IconEpisodes icon-class="w-3 h-3 md:w-4 md:h-4" />
+                      <span class="truncate">{{
+                        $t('media.episodesCount', {
+                          count: season.episode_count || 0,
+                        })
+                      }}</span>
+                    </div>
+                  </div>
+                </article>
+              </div>
             </div>
           </Section>
         </template>
@@ -244,7 +266,7 @@ onMounted(() => {
   if (import.meta.client) {
     const referrer = document.referrer;
     const currentOrigin = window.location.origin;
-    
+
     // Only save if the referrer is from the same origin (within the app)
     if (referrer && referrer.startsWith(currentOrigin)) {
       try {
@@ -281,4 +303,3 @@ onMounted(() => {
   line-clamp: 3;
 }
 </style>
-

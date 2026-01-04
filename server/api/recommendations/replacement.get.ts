@@ -20,6 +20,7 @@ import {
 } from '@/composables/database/recommendationPool';
 import {
   TABLES,
+  TITLES_FIELDS,
   USER_TITLE_STATUS_FIELDS,
   USER_PREFERENCES_FIELDS,
 } from '@/composables/database/constants';
@@ -260,6 +261,15 @@ function calculateBoostFactors(
  * - attention: Optional attention filter
  */
 export default defineEventHandler(async (event) => {
+  // Disable caching for replacement recommendations
+  setHeader(
+    event,
+    'Cache-Control',
+    'no-cache, no-store, must-revalidate, private'
+  );
+  setHeader(event, 'Pragma', 'no-cache');
+  setHeader(event, 'Expires', '0');
+
   const config = useRuntimeConfig();
   let user = null;
   let userId: string | null = null;
@@ -399,7 +409,6 @@ export default defineEventHandler(async (event) => {
         ${RECOMMENDATION_POOL_FIELDS.SOURCE},
         ${RECOMMENDATION_POOL_FIELDS.SCORE},
         ${RECOMMENDATION_POOL_FIELDS.EXPLANATION_CODE},
-        ${RECOMMENDATION_POOL_FIELDS.TITLE_DATA},
         ${RECOMMENDATION_POOL_FIELDS.CREATED_AT}
         `
       )
@@ -519,76 +528,111 @@ export default defineEventHandler(async (event) => {
       );
     }
 
-    // Helper to fetch title_data from TMDB if missing
-    const ensureTitleData = async (
+    // Helper to fetch title data from titles table (or TMDB if missing)
+    // IMPORTANT: title_data has been removed from recommendation_pool, all data comes from titles table
+    const getTitleData = async (
       entry: (typeof filteredEntries)[0]
     ): Promise<TitleData | null> => {
-      if (entry.title_data) {
-        const titleData = entry.title_data as TitleData & {
-          title?: string | MultiLanguageText;
-          overview?: string | MultiLanguageText;
-        };
+      // First try to get from titles table
+      const { data: titleFromDb, error: dbError } = await supabase
+        .from(TABLES.TITLES)
+        .select('*')
+        .eq(TITLES_FIELDS.TMDB_ID, entry.tmdb_id)
+        .eq(TITLES_FIELDS.TYPE, entry.type)
+        .maybeSingle();
 
-        const { getTitleInLanguage } =
-          await import('@/composables/database/titles');
+      let titleJsonb: MultiLanguageText | null = null;
+      let overviewJsonb: MultiLanguageText | null = null;
+      let posterPathJsonb: MultiLanguageText | null = null;
+      let genresFromDb: Array<{ id: number; name: string }> | null = null;
 
-        let extractedTitle = '';
-        if (typeof titleData.title === 'string') {
-          const titleAsMultiLanguage: MultiLanguageText = {
-            [language]: titleData.title,
-          };
-          extractedTitle = getTitleInLanguage(
-            titleAsMultiLanguage,
-            language,
-            region,
-            false
-          );
-          if (!extractedTitle) {
-            extractedTitle = titleData.title;
-          }
-        } else if (titleData.title && typeof titleData.title === 'object') {
-          extractedTitle = getTitleInLanguage(
-            titleData.title,
-            language,
-            region,
-            false
-          );
-        }
-
-        let extractedOverview = '';
-        if (typeof titleData.overview === 'string') {
-          const overviewAsMultiLanguage: MultiLanguageText = {
-            [language]: titleData.overview,
-          };
-          extractedOverview = getTitleInLanguage(
-            overviewAsMultiLanguage,
-            language,
-            region,
-            false
-          );
-          if (!extractedOverview) {
-            extractedOverview = titleData.overview;
-          }
-        } else if (
-          titleData.overview &&
-          typeof titleData.overview === 'object'
-        ) {
-          extractedOverview = getTitleInLanguage(
-            titleData.overview,
-            language,
-            region,
-            false
-          );
-        }
-
-        return {
-          ...titleData,
-          title: extractedTitle || '',
-          overview: extractedOverview || '',
-        } as TitleData;
+      // If found in DB, extract from JSONB
+      if (titleFromDb && !dbError) {
+        titleJsonb = titleFromDb.title as MultiLanguageText;
+        overviewJsonb = titleFromDb.overview as MultiLanguageText | null;
+        posterPathJsonb = titleFromDb.poster_path as MultiLanguageText | null;
+        genresFromDb = titleFromDb.genres as Array<{
+          id: number;
+          name: string;
+        }> | null;
       }
 
-      // Fetch from TMDB
+      // Check if the requested language exists in the JSONB (explicit check, no fallbacks)
+      // IMPORTANT: We need to check if the exact language exists, not rely on getTitleInLanguage
+      // which may return fallbacks. This ensures we fetch from TMDB when the language is missing.
+      const hasExactLanguage =
+        titleJsonb &&
+        typeof titleJsonb === 'object' &&
+        titleJsonb[language] !== undefined;
+      const hasExactOverviewLanguage =
+        overviewJsonb &&
+        typeof overviewJsonb === 'object' &&
+        overviewJsonb[language] !== undefined;
+
+      // Extract text in user's language from titles table (may return fallback if language missing)
+      const { getTitleInLanguage } =
+        await import('@/composables/database/titles');
+      const extractedTitle = getTitleInLanguage(
+        titleJsonb,
+        language,
+        region,
+        false
+      );
+      const extractedOverview = getTitleInLanguage(
+        overviewJsonb,
+        language,
+        region,
+        false
+      );
+      const extractedPosterPath = getTitleInLanguage(
+        posterPathJsonb,
+        language,
+        region,
+        true
+      );
+
+      if (import.meta.dev) {
+        const availableLanguages = titleJsonb ? Object.keys(titleJsonb) : [];
+        devLog(
+          `[Replacement] For ${entry.tmdb_id}: requested language=${language}, available=${availableLanguages.join(', ')}, hasExactLanguage=${hasExactLanguage}`
+        );
+      }
+
+      // Check if we need to fetch from TMDB
+      // IMPORTANT: Check if exact language exists, not just if getTitleInLanguage returns something
+      // (getTitleInLanguage may return fallbacks, which we don't want)
+      const needsTitleFallback =
+        !hasExactLanguage || !extractedTitle || extractedTitle.trim() === '';
+      const needsOverviewFallback =
+        !hasExactOverviewLanguage ||
+        !extractedOverview ||
+        extractedOverview.trim() === '';
+      const needsFullFetch =
+        !titleFromDb || needsTitleFallback || needsOverviewFallback;
+
+      // If we have everything from titles table in the exact language, use it
+      // IMPORTANT: Only use if we have the exact language (no fallbacks)
+      if (
+        !needsFullFetch &&
+        hasExactLanguage &&
+        hasExactOverviewLanguage &&
+        extractedTitle &&
+        extractedOverview
+      ) {
+        return {
+          title: extractedTitle,
+          overview: extractedOverview,
+          poster_path: extractedPosterPath || null,
+          backdrop_path: titleFromDb.backdrop_path || null,
+          vote_average: titleFromDb.vote_average || null,
+          genres: genresFromDb || [],
+          release_date: titleFromDb.release_date || null,
+          first_air_date: titleFromDb.first_air_date || null,
+          language: language,
+        };
+      }
+
+      // Fetch from TMDB if needed (missing in titles table or missing in language)
       try {
         const endpoint =
           entry.type === MediaTypeEnum.movie
@@ -614,8 +658,131 @@ export default defineEventHandler(async (event) => {
 
         if (!tmdbResponse) return null;
 
-        const titleData: TitleData = {
-          title: tmdbResponse.title || tmdbResponse.name || '',
+        // Merge with existing DB data for titles table update
+        // IMPORTANT: Preserve all existing language keys, only add/update the current language
+        const mergedTitleJsonb: MultiLanguageText = { ...(titleJsonb || {}) };
+        const mergedOverviewJsonb: MultiLanguageText = {
+          ...(overviewJsonb || {}),
+        };
+        const mergedPosterPathJsonb: MultiLanguageText = {
+          ...(posterPathJsonb || {}),
+        };
+
+        // Add TMDB data in ISO format (merge, don't overwrite existing languages)
+        const titleText = tmdbResponse.title || tmdbResponse.name || '';
+        if (titleText) {
+          mergedTitleJsonb[language] = titleText;
+        }
+        if (tmdbResponse.overview) {
+          mergedOverviewJsonb[language] = tmdbResponse.overview;
+        }
+        if (tmdbResponse.poster_path) {
+          mergedPosterPathJsonb[language] = tmdbResponse.poster_path;
+        }
+
+        // Update titles table with TMDB data
+        // IMPORTANT: Use upsert to merge, preserving all existing language keys in JSONB
+        // We do this synchronously to ensure data is saved before returning
+        try {
+          // First, get existing data to ensure we preserve all languages
+          const { data: existingTitle } = await supabase
+            .from(TABLES.TITLES)
+            .select(
+              `${TITLES_FIELDS.TITLE}, ${TITLES_FIELDS.OVERVIEW}, ${TITLES_FIELDS.POSTER_PATH}, ${TITLES_FIELDS.GENRES}, ${TITLES_FIELDS.BACKDROP_PATH}, ${TITLES_FIELDS.VOTE_AVERAGE}, ${TITLES_FIELDS.RELEASE_DATE}, ${TITLES_FIELDS.FIRST_AIR_DATE}`
+            )
+            .eq(TITLES_FIELDS.TMDB_ID, entry.tmdb_id)
+            .eq(TITLES_FIELDS.TYPE, entry.type)
+            .maybeSingle();
+
+          // Merge with existing data to preserve all language keys
+          const finalTitleJsonb: MultiLanguageText = existingTitle?.title
+            ? {
+                ...(existingTitle.title as MultiLanguageText),
+                ...mergedTitleJsonb,
+              }
+            : mergedTitleJsonb;
+          const finalOverviewJsonb: MultiLanguageText = existingTitle?.overview
+            ? {
+                ...(existingTitle.overview as MultiLanguageText),
+                ...mergedOverviewJsonb,
+              }
+            : mergedOverviewJsonb;
+          const finalPosterPathJsonb: MultiLanguageText =
+            existingTitle?.poster_path
+              ? {
+                  ...(existingTitle.poster_path as MultiLanguageText),
+                  ...mergedPosterPathJsonb,
+                }
+              : mergedPosterPathJsonb;
+
+          if (import.meta.dev) {
+            devLog(
+              `[Replacement] Updating titles for ${entry.tmdb_id}: adding language ${language}, final languages=${Object.keys(finalTitleJsonb).join(', ')}`
+            );
+          }
+
+          const { error: upsertError } = await supabase
+            .from(TABLES.TITLES)
+            .upsert(
+              {
+                [TITLES_FIELDS.TMDB_ID]: entry.tmdb_id,
+                [TITLES_FIELDS.TYPE]: entry.type,
+                [TITLES_FIELDS.TITLE]: finalTitleJsonb,
+                [TITLES_FIELDS.OVERVIEW]:
+                  Object.keys(finalOverviewJsonb).length > 0
+                    ? finalOverviewJsonb
+                    : null,
+                [TITLES_FIELDS.POSTER_PATH]:
+                  Object.keys(finalPosterPathJsonb).length > 0
+                    ? finalPosterPathJsonb
+                    : null,
+                [TITLES_FIELDS.GENRES]:
+                  (tmdbResponse.genres || []).length > 0
+                    ? tmdbResponse.genres
+                    : existingTitle?.genres || null,
+                [TITLES_FIELDS.BACKDROP_PATH]:
+                  tmdbResponse.backdrop_path ||
+                  existingTitle?.backdrop_path ||
+                  null,
+                [TITLES_FIELDS.VOTE_AVERAGE]:
+                  tmdbResponse.vote_average ??
+                  existingTitle?.vote_average ??
+                  null,
+                [TITLES_FIELDS.RELEASE_DATE]:
+                  tmdbResponse.release_date ||
+                  existingTitle?.release_date ||
+                  null,
+                [TITLES_FIELDS.FIRST_AIR_DATE]:
+                  tmdbResponse.first_air_date ||
+                  existingTitle?.first_air_date ||
+                  null,
+              },
+              {
+                onConflict: TITLES_FIELDS.TMDB_ID,
+              }
+            );
+
+          if (upsertError) {
+            if (import.meta.dev) {
+              console.error(
+                '[Replacement] Error updating titles cache:',
+                upsertError
+              );
+            }
+          } else if (import.meta.dev) {
+            devLog(
+              `[Replacement] Successfully updated titles for ${entry.tmdb_id} with language ${language}`
+            );
+          }
+        } catch (error: unknown) {
+          if (import.meta.dev) {
+            console.error('[Replacement] Error updating titles cache:', error);
+          }
+        }
+
+        // Return title data for this request
+        return {
+          title: titleText,
           overview: tmdbResponse.overview || '',
           poster_path: tmdbResponse.poster_path || null,
           backdrop_path: tmdbResponse.backdrop_path || null,
@@ -626,30 +793,21 @@ export default defineEventHandler(async (event) => {
           })),
           release_date: tmdbResponse.release_date || null,
           first_air_date: tmdbResponse.first_air_date || null,
+          language: language,
         };
-
-        await supabase
-          .from(RECOMMENDATION_POOL_TABLES.RECOMMENDATION_POOL)
-          .update({
-            [RECOMMENDATION_POOL_FIELDS.TITLE_DATA]: titleData,
-          })
-          .eq(RECOMMENDATION_POOL_FIELDS.USER_ID, userId)
-          .eq(RECOMMENDATION_POOL_FIELDS.TMDB_ID, entry.tmdb_id);
-
-        return titleData;
       } catch (error) {
         safeError(
-          `[Replacement] Error fetching title_data for ${entry.tmdb_id}`,
+          `[Replacement] Error fetching title data for ${entry.tmdb_id}`,
           error
         );
         return null;
       }
     };
 
-    // Process entries with title_data and calculate scores
+    // Process entries with title data from titles table and calculate scores
     const entriesWithTitles = await Promise.all(
       filteredEntries.map(async (entry) => {
-        const titleData = await ensureTitleData(entry);
+        const titleData = await getTitleData(entry);
         if (!titleData) return null;
 
         const genreIds = titleData.genres.map((g) => g.id);

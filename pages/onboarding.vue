@@ -8,8 +8,8 @@ import { isUniqueViolationError } from '@/composables/database/errorCodes';
 import RegionSelector from '@/components/RegionSelector.vue';
 import CloseButton from '@/components/ui/CloseButton.vue';
 import Card from '@/components/ui/Card.vue';
-import Spinner from '@/components/Spinner.vue';
 import Button from '@/components/ui/Button.vue';
+import Modal from '@/components/ui/Modal.vue';
 import AppShell from '@/components/layout/AppShell.vue';
 import MediaTypeBadge from '@/components/MediaTypeBadge.vue';
 import GenreSelector from '@/components/GenreSelector.vue';
@@ -837,17 +837,24 @@ const saveSelections = async () => {
         </div>
       </div>
 
-      <!-- Saving Loading Overlay -->
-      <Spinner
-        v-if="saving || savingPreferences"
-        full-screen
-        size="md"
-        :message="
-          savingPreferences
-            ? $t('onboarding.savingPreferences')
-            : $t('onboarding.savingSelection')
-        "
-      />
+      <!-- Blocking Modal for Saving -->
+      <Modal
+        :is-open="saving || savingPreferences"
+        :close-on-overlay-click="false"
+      >
+        <div class="flex flex-col gap-4 items-center text-center">
+          <div
+            class="w-12 h-12 rounded-full border-b-2 animate-spin border-primary-600"
+          ></div>
+          <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-300">
+            {{
+              savingPreferences
+                ? $t('onboarding.savingPreferences')
+                : $t('onboarding.savingSelection')
+            }}
+          </h2>
+        </div>
+      </Modal>
     </div>
   </AppShell>
 </template>

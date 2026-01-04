@@ -30,10 +30,36 @@ export interface InsertTitleData {
 }
 
 /**
+ * Normalize language code to ISO/TMDB format (e.g., 'ca' -> 'ca-ES', 'es' -> 'es-ES')
+ * This ensures consistent format throughout the application
+ */
+function normalizeLanguageCode(
+  code: string,
+  region?: string | null
+): string {
+  if (!code) return '';
+  
+  // If already in ISO format (contains '-'), return as is
+  if (code.includes('-')) {
+    return code;
+  }
+  
+  // Convert legacy format to ISO format
+  // Default region is 'ES' for Spanish languages, 'US' for English
+  const defaultRegion = code === 'en' ? 'US' : 'ES';
+  const normalizedRegion = region?.toUpperCase() || defaultRegion;
+  
+  return `${code}-${normalizedRegion}`;
+}
+
+/**
  * Extract text in the specified language from multi-language JSONB
  * Falls back to 'es-ES' if language not available
  * If the title contains unexpected characters (non-Latin for ES region languages),
  * falls back to Spanish (primary language of ES region)
+ * 
+ * IMPORTANT: Always uses ISO/TMDB format (e.g., 'ca-ES') as standard.
+ * Legacy format (e.g., 'ca') is supported for backward compatibility but will be migrated.
  *
  * @param titleJsonb The multi-language JSONB object
  * @param language The requested language code in ISO/TMDB format (e.g., 'es-ES', 'ca-ES', 'eu-ES', 'gl-ES', 'en-US')
@@ -49,6 +75,9 @@ export function getTitleInLanguage(
     return '';
   }
 
+  // Normalize language to ISO/TMDB format (standard format)
+  const normalizedLanguage = normalizeLanguageCode(language, userRegion);
+  
   // Determine primary language for region
   const primaryLanguage = userRegion
     ? getPrimaryLanguageForRegion(userRegion)
@@ -67,9 +96,10 @@ export function getTitleInLanguage(
     LATIN_SCRIPT_LANGUAGE_ISO_CODES.includes(requestedLangCode as LanguageIsoCode) &&
     (userRegion?.toUpperCase() === 'ES' || !userRegion);
 
-  // Try requested language first (using ISO/TMDB format)
-  if (titleJsonb[language]) {
-    const titleText = titleJsonb[language];
+  // Try requested language first (using ISO/TMDB format - standard)
+  // First try normalized format, then try original format (in case it's already normalized)
+  const titleText = titleJsonb[normalizedLanguage] || titleJsonb[language];
+  if (titleText) {
 
     // Check alphabet if conditions are met
     if (shouldCheckAlphabet) {
@@ -103,7 +133,8 @@ export function getTitleInLanguage(
     return titleText;
   }
 
-  // Backward compatibility: try simple format (e.g., 'ca' instead of 'ca-ES')
+  // Backward compatibility: try legacy format (e.g., 'ca' instead of 'ca-ES')
+  // This supports existing data that hasn't been migrated yet
   const langCode = language.split('-')[0]?.toLowerCase() || '';
   if (langCode && titleJsonb[langCode]) {
     const legacyText = titleJsonb[langCode];

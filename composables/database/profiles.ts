@@ -14,7 +14,7 @@ export interface UpdateProfileData {
 
 export interface UserSettings {
   theme?: 'light' | 'dark' | 'system';
-  language?: string;
+  // Note: language is NOT stored in database, only in cookies
   region?: string;
   autoplayTrailers?: boolean;
   hideSpoilers?: boolean;

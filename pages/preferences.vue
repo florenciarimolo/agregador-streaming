@@ -325,7 +325,7 @@
         </Tabs>
 
         <!-- Generating Recommendations Modal -->
-        <Modal :is-open="showGeneratingModal" :closeable="false">
+        <Modal :is-open="showGeneratingModal" :close-on-overlay-click="false">
           <div class="flex flex-col gap-4 items-center text-center">
             <div
               class="w-12 h-12 rounded-full border-b-2 animate-spin border-primary-600"
@@ -1910,7 +1910,7 @@ const confirmSaveContentPreferences = async () => {
         });
       } catch (poolError) {
         console.error('Error regenerating pool:', poolError);
-        showToast(t('preferences.content.errorSaving'), null, 5000);
+        showToast(t('home.generateError'), null, 5000);
       } finally {
         showGeneratingModal.value = false;
       }
@@ -2146,6 +2146,56 @@ onMounted(async () => {
 
   // Add scroll and resize listeners
 });
+
+// Watch for app language changes and refresh all lists
+watch(
+  () => locale.value,
+  async (newLocale, oldLocale) => {
+    // Only refresh if language actually changed and user is authenticated
+    if (newLocale && oldLocale && newLocale !== oldLocale && userId.value) {
+      if (import.meta.dev) {
+        console.log(
+          '[preferences.vue] Language changed, updating pool language and refreshing all lists:',
+          {
+            oldLocale,
+            newLocale,
+          }
+        );
+      }
+
+      // Update title_data in recommendation pool with new language (don't regenerate pool)
+      try {
+        const {
+          data: { session },
+        } = await getSession();
+        if (session?.access_token) {
+          await $fetch(
+            `/api/recommendations/update-pool-language?language=${encodeURIComponent(newLocale)}`,
+            {
+              method: 'POST',
+              headers: {
+                Authorization: `Bearer ${session.access_token}`,
+              },
+            }
+          );
+          if (import.meta.dev) {
+            console.log('[preferences.vue] Pool language updated successfully');
+          }
+        }
+      } catch (poolError) {
+        console.error(
+          '[preferences.vue] Error updating pool language:',
+          poolError
+        );
+        // Continue anyway to refresh lists
+      }
+
+      // Refresh all lists with new language
+      await fetchAllLists();
+    }
+  },
+  { immediate: false }
+);
 
 // Handle navigation away with unsaved changes
 onBeforeRouteLeave((_to, _from, next) => {

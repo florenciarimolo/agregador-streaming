@@ -308,7 +308,15 @@ The pool should **only** be regenerated when the user's structural preferences c
 - **Favorite genres** (`favorite_genres`)
 - **Included providers** (`included_providers`)
 
-**Note:** Language is now managed through app settings and does not trigger pool regeneration. The app always uses the user's app language for TMDB API calls.
+#### Changes that update pool without regeneration:
+
+- **App language** (`language` in user settings): When the app language changes, the system updates the `title_data` field in all pool entries with the title and overview in the new language. This is done by:
+  1. First checking the `titles` table for existing title data in the new language
+  2. If missing, fetching from TMDB
+  3. Updating the `title_data` JSONB field in the pool entry
+  4. The pool entries themselves (scores, sources, etc.) remain unchanged
+
+**Note:** When the pool is regenerated, the system first checks the `titles` table for existing title data, and only fetches from TMDB if the information is missing or incomplete in the requested language. This ensures efficient caching and reduces API calls.
 
 When preferences change:
 1. The previous pool is discarded
@@ -514,7 +522,7 @@ Stores user preferences.
 - `exploration_mode`: Exploration mode
 - `prioritize_content`: Prioritized content type
 
-**Note:** Language is now managed through app settings (`profiles.settings.language`), not through user preferences. The app always uses the user's app language for TMDB API calls.
+**Note:** Language is managed through cookies (`i18n_redirected` cookie from Nuxt i18n), NOT stored in the database. The app always uses the user's app language from cookies for TMDB API calls. Region is stored in `profiles.settings.region` in the database.
 
 ---
 

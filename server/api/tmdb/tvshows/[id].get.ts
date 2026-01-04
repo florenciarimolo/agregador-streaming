@@ -38,9 +38,12 @@ export default defineEventHandler(async (event) => {
 
     // Get user preferences for language
     const { language: userLanguage, region } = await getUserTMDBParams(event);
-    // Extract base language code (e.g., 'es-ES' -> 'es')
+    // IMPORTANT: userLanguage is already in ISO format (e.g., 'ca-ES', 'es-ES')
+    // Extract base language code (e.g., 'es-ES' -> 'es') only for display purposes
     const userLangCode = extractLanguageCode(userLanguage) || LanguageIsoCode.SPANISH;
-    const supportedLanguages = SUPPORTED_LANGUAGE_ISO_CODES.map((code) => code);
+    // IMPORTANT: Use SUPPORTED_LANGUAGE_CODES (ISO format) not ISO_CODES (legacy format)
+    const { SUPPORTED_LANGUAGE_CODES } = await import('@/constants/languages');
+    const supportedLanguages = SUPPORTED_LANGUAGE_CODES.map((code) => code);
 
     const { data: titleFromDb, error: dbError } = await supabase
       .from(TABLES.TITLES)
@@ -62,8 +65,10 @@ export default defineEventHandler(async (event) => {
       }
       
       // Check if we need to fetch missing languages
-      // If title only has Spanish (or very few languages), fetch all supported languages
-      const supportedLanguagesList = SUPPORTED_LANGUAGE_ISO_CODES.map((code) => code);
+      // IMPORTANT: Use SUPPORTED_LANGUAGE_CODES (ISO format: 'es-ES', 'ca-ES') not ISO_CODES (legacy: 'es', 'ca')
+      // This ensures all data is stored in ISO format (xx-XX) consistently
+      const { SUPPORTED_LANGUAGE_CODES } = await import('@/constants/languages');
+      const supportedLanguagesList = SUPPORTED_LANGUAGE_CODES.map((code) => code);
       const missingLanguages = supportedLanguagesList.filter((lang) => !existingLanguages.has(lang));
       
       // If we're missing languages, fetch all missing ones from TMDB
@@ -71,13 +76,13 @@ export default defineEventHandler(async (event) => {
         const tmdbConfig = getTMDBConfig(userLanguage, region);
         
         // Fetch all missing languages in parallel
+        // IMPORTANT: lang is already in ISO format (e.g., 'ca-ES'), use it directly
         const languagePromises = missingLanguages.map(async (lang) => {
-          const langCode = toTMDBLanguageCode(lang);
           try {
             const response = await $fetch(`${tmdbConfig.baseUrl}/tv/${tmdbId}`, {
               query: {
                 api_key: tmdbConfig.apiKey,
-                language: langCode,
+                language: lang, // lang is already in ISO format (e.g., 'ca-ES')
                 region: tmdbConfig.region,
               },
             });
@@ -90,12 +95,14 @@ export default defineEventHandler(async (event) => {
         const languageResults = await Promise.all(languagePromises);
         
         // Build updated multi-language JSONB objects
+        // IMPORTANT: Use lang (ISO format) as key, not legacy format
         const updatedTitle = { ...(titleJsonb || {}) };
         const updatedOverview = { ...(overviewJsonb || {}) };
         const updatedPosterPath = { ...(posterPathJsonb || {}) };
         
         languageResults.forEach(({ lang, data }) => {
           if (data) {
+            // lang is in ISO format (e.g., 'ca-ES'), use it directly as key
             if (data.name) updatedTitle[lang] = data.name;
             if (data.overview) updatedOverview[lang] = data.overview || '';
             if (data.poster_path) updatedPosterPath[lang] = data.poster_path;
@@ -196,13 +203,13 @@ export default defineEventHandler(async (event) => {
     const tmdbConfig = getTMDBConfig(userLanguage, region);
 
     // Fetch TV show data for all supported languages
+    // IMPORTANT: lang is already in ISO format (e.g., 'ca-ES'), use it directly
     const languagePromises = supportedLanguages.map(async (lang) => {
-      const langCode = toTMDBLanguageCode(lang);
       try {
         const response = await $fetch(`${tmdbConfig.baseUrl}/tv/${tmdbId}`, {
           query: {
             api_key: tmdbConfig.apiKey,
-            language: langCode,
+            language: lang, // lang is already in ISO format (e.g., 'ca-ES')
             region: tmdbConfig.region,
           },
         });
@@ -215,6 +222,7 @@ export default defineEventHandler(async (event) => {
     const languageResults = await Promise.all(languagePromises);
 
     // Build multi-language JSONB objects
+    // IMPORTANT: Use lang (ISO format) as key, not legacy format
     const titleMultiLang: MultiLanguageText = {};
     const overviewMultiLang: MultiLanguageText = {};
     const posterPathMultiLang: MultiLanguageText = {};
@@ -225,6 +233,7 @@ export default defineEventHandler(async (event) => {
 
     languageResults.forEach(({ lang, data }) => {
       if (data) {
+        // lang is in ISO format (e.g., 'ca-ES'), use it directly as key
         if (data.name) titleMultiLang[lang] = data.name;
         if (data.overview) overviewMultiLang[lang] = data.overview;
         if (data.poster_path) posterPathMultiLang[lang] = data.poster_path;

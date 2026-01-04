@@ -12,8 +12,9 @@ import {
   type RecommendationPoolSource,
   RECOMMENDATION_POOL_FIELDS,
   TABLES as POOL_TABLES,
-  type TitleData,
 } from '@/composables/database/recommendationPool';
+import { TABLES, TITLES_FIELDS } from '@/composables/database/constants';
+import type { MultiLanguageText } from '@/composables/database/titles';
 
 const TARGET_POOL_SIZE = 200;
 
@@ -83,9 +84,10 @@ export default defineEventHandler(async (event) => {
     devLog('[RegeneratePool] Using language:', language, 'region:', region);
 
     // Get all pool entries for the user (DO NOT DELETE)
+    // Note: title_data has been removed from recommendation_pool
     const { data: poolEntries, error: fetchError } = await supabase
       .from(POOL_TABLES.RECOMMENDATION_POOL)
-      .select(`${RECOMMENDATION_POOL_FIELDS.TMDB_ID}, ${RECOMMENDATION_POOL_FIELDS.TYPE}, ${RECOMMENDATION_POOL_FIELDS.TITLE_DATA}`)
+      .select(`${RECOMMENDATION_POOL_FIELDS.TMDB_ID}, ${RECOMMENDATION_POOL_FIELDS.TYPE}`)
       .eq(RECOMMENDATION_POOL_FIELDS.USER_ID, userId);
 
     if (fetchError) {
@@ -104,18 +106,19 @@ export default defineEventHandler(async (event) => {
 
     devLog('[RegeneratePool] Found', poolEntries.length, 'pool entries to update');
 
-    // Update title and overview for each pool entry
+    // Ensure title data is in titles table for each pool entry
+    // Note: title_data has been removed from recommendation_pool, data comes from titles table
     let updatedCount = 0;
 
     for (const entry of poolEntries) {
       try {
-        const { tmdb_id, type, title_data } = entry;
+        const { tmdb_id, type } = entry;
         const endpoint =
           type === MediaTypeEnum.movie
             ? `/movie/${tmdb_id}`
             : `/tv/${tmdb_id}`;
 
-        // Fetch title and overview from TMDB with new language
+        // Fetch title and overview from TMDB with new language to ensure it's in titles table
         const tmdbResponse = await $fetch(`${tmdbConfig.baseUrl}${endpoint}`, {
           query: {
             api_key: tmdbConfig.apiKey,
@@ -129,33 +132,61 @@ export default defineEventHandler(async (event) => {
           continue;
         }
 
-        // Get existing title_data or create new structure
-        const existingTitleData = (title_data as TitleData | null) || {
-          title: '',
-          overview: '',
-          poster_path: null,
-          backdrop_path: null,
-          vote_average: null,
-          genres: [],
-          release_date: null,
-          first_air_date: null,
-        };
+        // Update titles table (title_data removed from pool, data comes from titles table)
+        // This ensures the title data is available when recommendations are fetched
+        const { getTitleInLanguage } = await import('@/composables/database/titles');
+        const { data: existingTitle } = await supabase
+          .from(TABLES.TITLES)
+          .select(
+            `${TITLES_FIELDS.TITLE}, ${TITLES_FIELDS.OVERVIEW}, ${TITLES_FIELDS.POSTER_PATH}`
+          )
+          .eq(TITLES_FIELDS.TMDB_ID, tmdb_id)
+          .eq(TITLES_FIELDS.TYPE, type)
+          .maybeSingle();
 
-        // Update only title and overview, keep everything else
-        const updatedTitleData: TitleData = {
-          ...existingTitleData,
-          title: tmdbResponse.title || tmdbResponse.name || existingTitleData.title,
-          overview: tmdbResponse.overview || existingTitleData.overview,
-        };
+        const titleJsonb: MultiLanguageText = existingTitle?.title 
+          ? { ...(existingTitle.title as MultiLanguageText) }
+          : {};
+        const overviewJsonb: MultiLanguageText = existingTitle?.overview
+          ? { ...(existingTitle.overview as MultiLanguageText) }
+          : {};
+        const posterPathJsonb: MultiLanguageText = existingTitle?.poster_path
+          ? { ...(existingTitle.poster_path as MultiLanguageText) }
+          : {};
 
-        // Update the pool entry
-        const { error: updateError } = await supabase
-          .from(POOL_TABLES.RECOMMENDATION_POOL)
-          .update({
-            [RECOMMENDATION_POOL_FIELDS.TITLE_DATA]: updatedTitleData,
+        // Add/update current language
+        if (tmdbResponse.title || tmdbResponse.name) {
+          titleJsonb[language] = tmdbResponse.title || tmdbResponse.name || '';
+        }
+        if (tmdbResponse.overview) {
+          overviewJsonb[language] = tmdbResponse.overview;
+        }
+        if (tmdbResponse.poster_path) {
+          posterPathJsonb[language] = tmdbResponse.poster_path;
+        }
+
+        // Update titles table (async, don't wait)
+        supabase
+          .from(TABLES.TITLES)
+          .upsert({
+            [TITLES_FIELDS.TMDB_ID]: tmdb_id,
+            [TITLES_FIELDS.TYPE]: type,
+            [TITLES_FIELDS.TITLE]: titleJsonb,
+            [TITLES_FIELDS.OVERVIEW]: Object.keys(overviewJsonb).length > 0 ? overviewJsonb : null,
+            [TITLES_FIELDS.POSTER_PATH]: Object.keys(posterPathJsonb).length > 0 ? posterPathJsonb : null,
+            [TITLES_FIELDS.GENRES]: (tmdbResponse.genres || []).length > 0 ? tmdbResponse.genres : null,
+            [TITLES_FIELDS.BACKDROP_PATH]: tmdbResponse.backdrop_path || null,
+            [TITLES_FIELDS.VOTE_AVERAGE]: tmdbResponse.vote_average || null,
+            [TITLES_FIELDS.RELEASE_DATE]: tmdbResponse.release_date || null,
+            [TITLES_FIELDS.FIRST_AIR_DATE]: tmdbResponse.first_air_date || null,
+          }, {
+            onConflict: TITLES_FIELDS.TMDB_ID,
           })
-          .eq(RECOMMENDATION_POOL_FIELDS.USER_ID, userId)
-          .eq(RECOMMENDATION_POOL_FIELDS.TMDB_ID, tmdb_id);
+          .catch((error) => {
+            if (import.meta.dev) {
+              console.error(`[RegeneratePool] Error updating titles for ${tmdb_id}:`, error);
+            }
+          });
 
         if (updateError) {
           safeError(`[RegeneratePool] Error updating pool entry ${tmdb_id}`, updateError);

@@ -10,6 +10,7 @@ import { getUserLikedTitle } from '@/composables/database/userTitleStatus';
 import AppShell from '@/components/layout/AppShell.vue';
 import PageContainer from '@/components/layout/PageContainer.vue';
 import Section from '@/components/layout/Section.vue';
+import Modal from '@/components/ui/Modal.vue';
 
 // Type for Supabase user that may have either 'id' or 'sub' as identifier
 type SupabaseUserWithSub = {
@@ -30,7 +31,7 @@ definePageMeta({
   middleware: ['auth'],
 });
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 
 // SEO: Home page - public version for non-authenticated users
 // If user is authenticated with personalized content, set noindex
@@ -96,6 +97,7 @@ const showAuthForm = ref(false);
 const loadingRecommendations = ref(false);
 const hasAttemptedLoad = ref(false); // Track if we've attempted to load recommendations at least once
 const populatingPool = ref(false);
+const updatingLanguage = ref(false); // Track language update in progress
 // Track loading state for individual title actions
 const loadingTitles = ref<Set<number>>(new Set());
 const recommendations = ref<Recommendation[]>([]);
@@ -192,9 +194,14 @@ const fetchRecommendations = async (): Promise<Recommendation[]> => {
     const data = await $fetch<Recommendation[]>('/api/recommendations', {
       headers: {
         Authorization: `Bearer ${session.access_token}`,
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        Pragma: 'no-cache',
+        Expires: '0',
       },
       credentials: 'include',
       query: queryParams,
+      // Disable Nuxt's built-in caching
+      getCachedData: () => null,
     });
 
     // Ensure it's an array
@@ -366,69 +373,66 @@ watch(
       }
 
       // Always fetch recommendations (language is always available from app settings)
-      {
-        const fetched = await fetchRecommendations();
-        allRecommendations.value = fetched;
-        recommendations.value = filterRecommendationsByType(fetched);
+      const fetched = await fetchRecommendations();
+      allRecommendations.value = fetched;
+      recommendations.value = filterRecommendationsByType(fetched);
 
-        if (import.meta.dev && fetched.length > 0) {
-          console.log('[Recommendations] Received recommendations:', {
-            count: fetched.length,
-            sampleTitles: fetched.slice(0, 5).map((r) => ({
-              tmdb_id: r.tmdb_id,
-              title: r.title,
-              type: r.type,
-              titleLength: r.title?.length || 0,
-            })),
-          });
-        }
+      if (import.meta.dev && fetched.length > 0) {
+        console.log('[Recommendations] Received recommendations:', {
+          count: fetched.length,
+          sampleTitles: fetched.slice(0, 5).map((r) => ({
+            tmdb_id: r.tmdb_id,
+            title: r.title,
+            type: r.type,
+            titleLength: r.title?.length || 0,
+          })),
+        });
+      }
 
-        // If no recommendations and onboarding is complete, regenerate pool automatically
-        if (
-          fetched.length === 0 &&
-          userStore.hasCompletedOnboarding &&
-          !populatingPool.value &&
-          !sessionStorage.getItem('generatingRecommendations')
-        ) {
-          // Get session for API call
-          const {
-            data: { session: sessionForPool },
-          } = await getSession();
+      // If no recommendations and onboarding is complete, regenerate pool automatically
+      if (
+        fetched.length === 0 &&
+        userStore.hasCompletedOnboarding &&
+        !populatingPool.value &&
+        !sessionStorage.getItem('generatingRecommendations')
+      ) {
+        // Get session for API call
+        const {
+          data: { session: sessionForPool },
+        } = await getSession();
 
-          if (sessionForPool?.access_token) {
-            // Set flag to prevent multiple calls
-            sessionStorage.setItem('generatingRecommendations', 'true');
-            populatingPool.value = true;
-            try {
-              await $fetch(
-                '/api/recommendations/populate-pool?clearPool=true',
-                {
-                  method: 'POST',
-                  headers: {
-                    Authorization: `Bearer ${sessionForPool.access_token}`,
-                  },
-                }
-              );
-              // After generation, fetch recommendations again
-              const newFetched = await fetchRecommendations();
-              allRecommendations.value = newFetched;
-              recommendations.value = filterRecommendationsByType(newFetched);
-            } catch (error) {
-              console.error('[index.vue] Error regenerating pool:', error);
-            } finally {
-              sessionStorage.removeItem('generatingRecommendations');
-              populatingPool.value = false;
-            }
+        if (sessionForPool?.access_token) {
+          // Set flag to prevent multiple calls
+          sessionStorage.setItem('generatingRecommendations', 'true');
+          populatingPool.value = true;
+          try {
+            await $fetch(
+              '/api/recommendations/populate-pool?clearPool=true',
+              {
+                method: 'POST',
+                headers: {
+                  Authorization: `Bearer ${sessionForPool.access_token}`,
+                },
+              }
+            );
+            // After generation, fetch recommendations again
+            const newFetched = await fetchRecommendations();
+            allRecommendations.value = newFetched;
+            recommendations.value = filterRecommendationsByType(newFetched);
+          } catch (error) {
+            console.error('[index.vue] Error regenerating pool:', error);
+            showToast(t('home.generateError'), null, 5000);
+          } finally {
+            sessionStorage.removeItem('generatingRecommendations');
+            populatingPool.value = false;
           }
-        } else if (
-          fetched.length === 0 &&
-          !populatingPool.value &&
-          !sessionStorage.getItem('generatingRecommendations')
-        ) {
-          await populatePool();
         }
-      } else {
-        recommendations.value = [];
+      } else if (
+        fetched.length === 0 &&
+        !populatingPool.value &&
+        !sessionStorage.getItem('generatingRecommendations')
+      ) {
+        await populatePool();
       }
 
       lastFetchedUserId.value = effectiveUserId;
@@ -1048,7 +1052,7 @@ const populatePool = async () => {
     await fetchRecommendations();
   } catch (error) {
     console.error('[PopulatePool] Error:', error);
-    showToast(t('home.generateError'), null, 3000);
+    showToast(t('home.generateError'), null, 5000);
   } finally {
     populatingPool.value = false;
     // Clear the flag after a delay to allow for refresh scenarios
@@ -1057,6 +1061,62 @@ const populatePool = async () => {
     }, 5000); // 5 seconds after completion
   }
 };
+
+// Watch for app language changes and refresh recommendations
+watch(
+  () => locale.value,
+  async (newLocale, oldLocale) => {
+    // Only refresh if language actually changed and user is authenticated
+    if (
+      newLocale &&
+      oldLocale &&
+      newLocale !== oldLocale &&
+      user.value &&
+      userStore.hasCompletedOnboarding &&
+      hasAttemptedLoad.value
+    ) {
+      if (import.meta.dev) {
+        console.log('[index.vue] Language changed, updating pool language and refreshing recommendations:', {
+          oldLocale,
+          newLocale,
+        });
+      }
+      
+      // Update title_data in recommendation pool with new language (don't regenerate pool)
+      updatingLanguage.value = true;
+      try {
+        const {
+          data: { session },
+        } = await getSession();
+        if (session?.access_token) {
+          const result = await $fetch<{ success: boolean; updated: number }>(
+            `/api/recommendations/update-pool-language?language=${encodeURIComponent(newLocale)}`,
+            {
+              method: 'POST',
+              headers: {
+                Authorization: `Bearer ${session.access_token}`,
+              },
+            }
+          );
+          if (import.meta.dev) {
+            console.log('[index.vue] Pool language updated successfully:', result);
+          }
+        }
+      } catch (poolError) {
+        console.error('[index.vue] Error updating pool language:', poolError);
+        // Continue anyway to refresh recommendations
+      } finally {
+        updatingLanguage.value = false;
+      }
+      
+      // Refresh recommendations with new language
+      const fetched = await fetchRecommendations();
+      allRecommendations.value = fetched;
+      recommendations.value = filterRecommendationsByType(fetched);
+    }
+  },
+  { immediate: false }
+);
 
 // Check if auth query param is present to show auth form
 onMounted(() => {
@@ -1227,13 +1287,15 @@ onMounted(() => {
 
               <!-- Loading State -->
               <div
-                v-if="loadingRecommendations || populatingPool"
+                v-if="loadingRecommendations || populatingPool || updatingLanguage"
                 class="w-full"
               >
                 <Spinner
                   :message="
                     populatingPool
                       ? $t('home.generatingButton')
+                      : updatingLanguage
+                      ? $t('home.updatingLanguage')
                       : $t('home.loadingRecommendations')
                   "
                 />
@@ -1439,5 +1501,20 @@ onMounted(() => {
         </PageContainer>
       </AppShell>
     </section>
+
+    <!-- Blocking Modal for Regenerating Recommendations -->
+    <Modal :is-open="populatingPool" :close-on-overlay-click="false">
+      <div class="flex flex-col gap-4 items-center text-center">
+        <div
+          class="w-12 h-12 rounded-full border-b-2 animate-spin border-primary-600"
+        ></div>
+        <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-300">
+          {{ $t('home.generatingRecommendations') }}
+        </h2>
+        <p class="text-gray-700 dark:text-gray-300">
+          {{ $t('home.generatingRecommendationsDescription') }}
+        </p>
+      </div>
+    </Modal>
   </div>
 </template>

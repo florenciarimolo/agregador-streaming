@@ -80,16 +80,12 @@ export async function getUserTMDBParamsByUserId(userId: string): Promise<{
   };
 
   try {
-    // Get settings (for app language/region)
+    // Get settings (for region only - language is NOT stored in DB, only in cookies)
     const settingsResult = await getSettingsServer(userId);
 
-    // Priority: settings.language > default
+    // Language is always from cookies, not from database
+    // This function should not be used for language, but we return default for compatibility
     let language = defaults.language;
-    if (settingsResult.data?.language) {
-      // Use app language setting
-      const lang = String(settingsResult.data.language);
-      language = toTMDBLanguageCode(lang);
-    }
 
     // Priority: settings.region > default
     let region = defaults.region;
@@ -110,6 +106,8 @@ export async function getUserTMDBParamsByUserId(userId: string): Promise<{
 
 /**
  * Get user's language and region preferences for TMDB API calls from event
+ * Language is read from cookies (i18n_redirected), NOT from database
+ * Region is read from database (profiles.settings.region)
  * Returns default values if user is not authenticated or preferences not set
  */
 export async function getUserTMDBParams(event?: H3Event): Promise<{
@@ -126,42 +124,64 @@ export async function getUserTMDBParams(event?: H3Event): Promise<{
   }
 
   try {
-    // Try to get user from event
-    const user = await serverSupabaseUser(event);
-
-    if (!user) {
-      return defaults;
+    // Get language from cookies (i18n_redirected cookie from Nuxt i18n)
+    let language = defaults.language;
+    try {
+      const cookies = parseCookies(event);
+      const i18nCookie = cookies['i18n_redirected'];
+      if (i18nCookie) {
+        language = toTMDBLanguageCode(i18nCookie);
+      }
+    } catch {
+      // If error reading cookies, use default
+      language = defaults.language;
     }
 
-    const userId = user.id || (user as { sub?: string }).sub;
+    // Get region from database (user settings)
+    let region = defaults.region;
+    try {
+      // Try to get user from event
+      const user = await serverSupabaseUser(event);
 
-    if (!userId) {
-      return defaults;
-    }
+      if (user) {
+        const userId = user.id || (user as { sub?: string }).sub;
 
-    return await getUserTMDBParamsByUserId(userId);
-  } catch (error) {
-    // If error is about missing session, this is expected and we should return defaults silently
-    // Only log unexpected errors
-    let isAuthError = false;
+        if (userId) {
+          // Get settings (for region only)
+          const settingsResult = await getSettingsServer(userId);
+          if (settingsResult.data?.region) {
+            region = String(settingsResult.data.region);
+          }
+        }
+      }
+    } catch (error) {
+      // If error is about missing session, this is expected and we should return defaults silently
+      // Only log unexpected errors
+      let isAuthError = false;
 
-    if (error && typeof error === 'object') {
-      if ('statusMessage' in error) {
-        const statusMsg = String(error.statusMessage);
-        isAuthError =
-          statusMsg === 'Auth session missing!' ||
-          statusMsg.includes('Auth session');
-      } else if ('message' in error && typeof error.message === 'string') {
-        isAuthError = error.message.includes('Auth session');
+      if (error && typeof error === 'object') {
+        if ('statusMessage' in error) {
+          const statusMsg = String(error.statusMessage);
+          isAuthError =
+            statusMsg === 'Auth session missing!' ||
+            statusMsg.includes('Auth session');
+        } else if ('message' in error && typeof error.message === 'string') {
+          isAuthError = error.message.includes('Auth session');
+        }
+      }
+
+      if (!isAuthError && import.meta.dev) {
+        // For other unexpected errors, log them
+        console.error('Error getting user region from database:', error);
       }
     }
 
-    if (isAuthError) {
-      // This is expected when user is not logged in, return defaults silently
-      return defaults;
-    }
-
-    // For other unexpected errors, log them
+    return {
+      language,
+      region,
+    };
+  } catch (error) {
+    // If any error occurs, return defaults
     if (import.meta.dev) {
       console.error('Error getting user TMDB params from event:', error);
     }

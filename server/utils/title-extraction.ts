@@ -172,62 +172,20 @@ export async function extractTitleDataWithFallback(
 }
 
 /**
- * Extract title and overview from recommendation pool title_data
- * Handles both string format (legacy) and MultiLanguageText format
- * Falls back to TMDB if missing in preferred language
+ * @deprecated This function is no longer needed as title_data has been removed from recommendation_pool.
+ * Title data is now fetched from the titles table when recommendations are requested.
+ * Use extractTitleDataWithFallback instead, which fetches from titles table or TMDB.
  */
 export async function extractTitleDataFromPoolWithFallback(
-  titleData: {
+  _titleData: {
     title?: string | MultiLanguageText;
     overview?: string | MultiLanguageText;
     poster_path?: string | MultiLanguageText | null;
   } | null,
   options: TitleExtractionOptions
 ): Promise<ExtractedTitleData> {
-  const { tmdbId, type, language, region, supabase, config } = options;
-
-  if (!titleData) {
-    // No title_data in pool, fetch from TMDB
-    return await extractTitleDataWithFallback(options);
-  }
-
-  // Extract from title_data (can be string or MultiLanguageText)
-  const extractedTitle = extractFromTitleData(titleData.title, language, region, false);
-  const extractedOverview = extractFromTitleData(titleData.overview, language, region, false);
-  const extractedPosterPath = extractFromTitleData(
-    titleData.poster_path,
-    language,
-    region,
-    true
-  );
-
-  // Check if we need to fetch from TMDB (missing in preferred language)
-  const needsTitleFallback = !extractedTitle || extractedTitle.trim() === '';
-  const needsOverviewFallback = !extractedOverview || extractedOverview.trim() === '';
-
-  // If missing, fetch from TMDB and update both DB and pool
-  if (needsTitleFallback || needsOverviewFallback) {
-    const tmdbData = await extractTitleDataWithFallback(options);
-    
-    // Also update the pool entry's title_data if we fetched from TMDB
-    // This ensures the pool has the latest data
-    if (tmdbData.title || tmdbData.overview) {
-      // Update pool entry asynchronously (don't wait)
-      const { RECOMMENDATION_POOL_TABLES } = await import('@/composables/database/recommendationPool');
-      const { RECOMMENDATION_POOL_FIELDS } = await import('@/composables/database/recommendationPool');
-      
-      // Get user_id from pool entry (we need to find the entry first)
-      // For now, just update the titles table - the pool will be updated on next regeneration
-      // This is acceptable since the pool is regenerated when language changes
-    }
-
-    return tmdbData;
-  }
-
-  return {
-    title: extractedTitle,
-    overview: extractedOverview,
-    poster_path: extractedPosterPath,
-  };
+  // title_data has been removed from recommendation_pool
+  // Always fetch from titles table or TMDB
+  return await extractTitleDataWithFallback(options);
 }
 

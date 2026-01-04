@@ -110,6 +110,7 @@ import {
 } from '@/constants/languages';
 import { LanguageCode } from '@/types/enums/LanguageCode';
 import IconChevronDown from '@/components/icons/IconChevronDown.vue';
+import { useRegions } from '@/composables/useRegions';
 
 const { locale, setLocale } = useI18n();
 

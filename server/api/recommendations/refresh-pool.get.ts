@@ -5,16 +5,17 @@ import {
   deleteLowestScoreEntries,
   insertPoolEntries,
   type RecommendationPoolSource,
-  type TitleData,
 } from '@/composables/database/recommendationPool';
 import { getTMDBConfig } from '../../utils/config';
 import { getUserTMDBParamsByUserId } from '../../utils/user-preferences';
 import { TitleStatus } from '@/types/TitleStatus';
 import {
   TABLES,
+  TITLES_FIELDS,
   PROFILES_FIELDS,
   USER_TITLE_STATUS_FIELDS,
 } from '@/composables/database/constants';
+import type { MultiLanguageText } from '@/composables/database/titles';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 
 /**
@@ -178,14 +179,14 @@ export default defineEventHandler(async (event) => {
           source: RecommendationPoolSource;
           score: number;
           explanation_code: string | null;
-          title_data: TitleData | null;
         }> = [];
 
-        // Helper to fetch full title details from TMDB (including full genre objects)
+        // Helper to ensure title details are in titles table (fetch from TMDB if needed)
+        // Returns void - we just need to ensure data is in titles table, not return it
         const fetchTitleDetails = async (
           tmdbId: number,
           type: 'movie' | 'tv'
-        ): Promise<TitleData | null> => {
+        ): Promise<void> => {
           try {
             const endpoint =
               type === MediaTypeEnum.movie
@@ -199,27 +200,65 @@ export default defineEventHandler(async (event) => {
               },
             });
 
-            if (!fullResponse) return null;
+            if (!fullResponse) return;
 
-            // Extract full genre objects (not just IDs)
-            const genres = fullResponse.genres || [];
+            // Get existing data to preserve all languages
+            const { data: existingTitle } = await supabase
+              .from(TABLES.TITLES)
+              .select(
+                `${TITLES_FIELDS.TITLE}, ${TITLES_FIELDS.OVERVIEW}, ${TITLES_FIELDS.POSTER_PATH}, ${TITLES_FIELDS.GENRES}, ${TITLES_FIELDS.BACKDROP_PATH}, ${TITLES_FIELDS.VOTE_AVERAGE}, ${TITLES_FIELDS.RELEASE_DATE}, ${TITLES_FIELDS.FIRST_AIR_DATE}`
+              )
+              .eq(TITLES_FIELDS.TMDB_ID, tmdbId)
+              .eq(TITLES_FIELDS.TYPE, type)
+              .maybeSingle();
 
-            return {
-              title: fullResponse.title || fullResponse.name || '',
-              overview: fullResponse.overview || '',
-              poster_path: fullResponse.poster_path || null,
-              backdrop_path: fullResponse.backdrop_path || null,
-              vote_average: fullResponse.vote_average || null,
-              genres: genres.map((g: { id: number; name: string }) => ({
-                id: g.id,
-                name: g.name,
-              })),
-              release_date: fullResponse.release_date || null,
-              first_air_date: fullResponse.first_air_date || null,
-            };
+            // Merge with existing data to preserve all language keys
+            const titleJsonb: MultiLanguageText = existingTitle?.title
+              ? { ...(existingTitle.title as MultiLanguageText) }
+              : {};
+            const overviewJsonb: MultiLanguageText = existingTitle?.overview
+              ? { ...(existingTitle.overview as MultiLanguageText) }
+              : {};
+            const posterPathJsonb: MultiLanguageText = existingTitle?.poster_path
+              ? { ...(existingTitle.poster_path as MultiLanguageText) }
+              : {};
+
+            // Add/update current language
+            if (fullResponse.title || fullResponse.name) {
+              titleJsonb[language] = fullResponse.title || fullResponse.name || '';
+            }
+            if (fullResponse.overview) {
+              overviewJsonb[language] = fullResponse.overview;
+            }
+            if (fullResponse.poster_path) {
+              posterPathJsonb[language] = fullResponse.poster_path;
+            }
+
+            // Update titles table (async, don't wait)
+            supabase
+              .from(TABLES.TITLES)
+              .upsert({
+                [TITLES_FIELDS.TMDB_ID]: tmdbId,
+                [TITLES_FIELDS.TYPE]: type,
+                [TITLES_FIELDS.TITLE]: titleJsonb,
+                [TITLES_FIELDS.OVERVIEW]: Object.keys(overviewJsonb).length > 0 ? overviewJsonb : null,
+                [TITLES_FIELDS.POSTER_PATH]: Object.keys(posterPathJsonb).length > 0 ? posterPathJsonb : null,
+                [TITLES_FIELDS.GENRES]: (fullResponse.genres || []).length > 0 ? fullResponse.genres : (existingTitle?.genres || null),
+                [TITLES_FIELDS.BACKDROP_PATH]: fullResponse.backdrop_path || existingTitle?.backdrop_path || null,
+                [TITLES_FIELDS.VOTE_AVERAGE]: fullResponse.vote_average ?? existingTitle?.vote_average ?? null,
+                [TITLES_FIELDS.RELEASE_DATE]: fullResponse.release_date || existingTitle?.release_date || null,
+                [TITLES_FIELDS.FIRST_AIR_DATE]: fullResponse.first_air_date || existingTitle?.first_air_date || null,
+              }, {
+                onConflict: TITLES_FIELDS.TMDB_ID,
+              })
+              .catch((error) => {
+                if (import.meta.dev) {
+                  console.error(`[RefreshPool] Error updating titles for ${tmdbId}:`, error);
+                }
+              });
           } catch (error) {
             safeError(`[RefreshPool] Error fetching title details for ${tmdbId}`, error);
-            return null;
+            // Continue - don't block pool refresh
           }
         };
 
@@ -271,8 +310,9 @@ export default defineEventHandler(async (event) => {
 
                 processed.add(result.id);
 
-                // Fetch full title details including complete genre objects
-                const titleData = await fetchTitleDetails(result.id, type);
+                // Fetch full title details to ensure they're in titles table
+                // (title_data removed from pool, data comes from titles table)
+                await fetchTitleDetails(result.id, type);
 
                 entriesToInsert.push({
                   tmdb_id: result.id,
@@ -280,7 +320,6 @@ export default defineEventHandler(async (event) => {
                   source,
                   score: 0,
                   explanation_code: explanationCode,
-                  title_data: titleData,
                 });
               }
 

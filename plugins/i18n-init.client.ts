@@ -94,7 +94,7 @@ export default defineNuxtPlugin({
             detectedLocale = getDefaultI18nCode();
           }
 
-          // Set the locale using the i18n instance
+          // Set the locale using the i18n instance and save to cookie
           if (detectedLocale) {
             const nuxtApp = useNuxtApp();
             const i18n = nuxtApp.$i18n as
@@ -103,6 +103,18 @@ export default defineNuxtPlugin({
             if (i18n?.setLocale) {
               await i18n.setLocale(detectedLocale);
             }
+            
+            // Ensure cookie is saved with the same format as when selecting from selector
+            // Use useCookie to match the same format and options as Nuxt i18n
+            // This ensures the cookie is saved even if setLocale doesn't save it immediately
+            const cookie = useCookie('i18n_redirected', {
+              path: '/',
+              sameSite: 'lax',
+              secure: false, // Will be true in production with HTTPS
+              httpOnly: false, // Must be false for client-side access
+              maxAge: 60 * 60 * 24 * 365, // 1 year (same as Nuxt i18n default)
+            });
+            cookie.value = detectedLocale;
           }
         } catch (error) {
           // If detection fails, fall back to default

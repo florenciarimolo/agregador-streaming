@@ -9,6 +9,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 
 interface Props {
@@ -17,11 +18,11 @@ interface Props {
 }
 
 const props = defineProps<Props>();
+const { t } = useI18n();
 
 const label = computed(() => {
   if (props.label) return props.label;
   if (!props.type) return '';
-  const { t } = useI18n();
   return props.type === MediaTypeEnum.movie
     ? t('media.movie')
     : t('media.series');

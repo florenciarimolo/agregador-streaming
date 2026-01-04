@@ -41,9 +41,8 @@ export default defineEventHandler(async (event) => {
       settings.theme = body.theme;
     }
 
-    if (typeof body.language === 'string') {
-      settings.language = body.language;
-    }
+    // Note: language is NOT stored in database, only in cookies
+    // Do not accept or save language in settings
 
     if (typeof body.region === 'string') {
       settings.region = body.region;

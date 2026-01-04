@@ -84,6 +84,8 @@ export default defineEventHandler(async (event) => {
 
   try {
     // Get user preferences for language and region
+    // IMPORTANT: language is in ISO/TMDB format (e.g., 'ca-ES', 'es-ES') from getUserTMDBParams
+    // This ensures all data is stored consistently in ISO format - no legacy format fallbacks
     const { language, region } = await getUserTMDBParams(event);
     const tmdbConfig = getTMDBConfig(language, region);
     devLog('[PopulatePool] Using language:', language, 'region:', region);
@@ -174,15 +176,74 @@ export default defineEventHandler(async (event) => {
       source: RecommendationPoolSource;
       score: number;
       explanation_code: string | null;
-      title_data: TitleData | null;
     }> = [];
 
-    // Helper to fetch full title details from TMDB (including full genre objects)
+    // Helper to fetch full title details from database first, then TMDB if needed
+    // This follows the same pattern as extractTitleDataWithFallback
     const fetchTitleDetails = async (
       tmdbId: number,
       type: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv
     ): Promise<TitleData | null> => {
       try {
+        // First, try to get title from database
+        const { data: titleFromDb, error: dbError } = await supabase
+          .from(TABLES.TITLES)
+          .select('*')
+          .eq(TITLES_FIELDS.TMDB_ID, tmdbId)
+          .eq(TITLES_FIELDS.TYPE, type)
+          .maybeSingle();
+
+        let titleJsonb: MultiLanguageText | null = null;
+        let overviewJsonb: MultiLanguageText | null = null;
+        let posterPathJsonb: MultiLanguageText | null = null;
+        let genresFromDb: Array<{ id: number; name: string }> | null = null;
+
+        // If found in DB, extract from JSONB
+        if (titleFromDb && !dbError) {
+          titleJsonb = titleFromDb.title as MultiLanguageText;
+          overviewJsonb = titleFromDb.overview as MultiLanguageText | null;
+          posterPathJsonb = titleFromDb.poster_path as MultiLanguageText | null;
+          genresFromDb = titleFromDb.genres as Array<{ id: number; name: string }> | null;
+        }
+
+        // Extract text in user's language (using ISO format - no fallbacks)
+        // IMPORTANT: language is already in ISO format (e.g., 'ca-ES') from getUserTMDBParams
+        const extractedTitle = getTitleInLanguage(
+          titleJsonb,
+          language,
+          region,
+          false
+        );
+        const extractedOverview = getTitleInLanguage(
+          overviewJsonb,
+          language,
+          region,
+          false
+        );
+        const extractedPosterPath = getTitleInLanguage(
+          posterPathJsonb,
+          language,
+          region,
+          true
+        );
+
+        // Check if we need to fetch from TMDB (missing in language or no DB entry)
+        // IMPORTANT: Only use DB data if we have the exact language (ISO format), no fallbacks
+        const hasExactLanguage = 
+          titleJsonb && 
+          typeof titleJsonb === 'object' && 
+          titleJsonb[language] !== undefined;
+        const needsTitleFallback = !extractedTitle || extractedTitle.trim() === '' || !hasExactLanguage;
+        const needsOverviewFallback = !extractedOverview || extractedOverview.trim() === '';
+        const needsGenres = !genresFromDb || genresFromDb.length === 0;
+        const needsFullFetch = !titleFromDb || needsTitleFallback || needsOverviewFallback || needsGenres;
+
+        // If we have everything from DB in the exact language (ISO format), we're done
+        if (!needsFullFetch && genresFromDb && hasExactLanguage) {
+          return; // Data is already in titles table, no need to fetch from TMDB
+        }
+
+        // Fetch from TMDB if needed
         const endpoint =
           type === MediaTypeEnum.movie ? `/movie/${tmdbId}` : `/tv/${tmdbId}`;
         const fullResponse = await $fetch<TMDBTitleDetails>(
@@ -196,25 +257,37 @@ export default defineEventHandler(async (event) => {
           }
         );
 
-        if (!fullResponse) return null;
+        if (!fullResponse) return;
 
         // Extract full genre objects (not just IDs)
         const genres = fullResponse.genres || [];
 
-        // Convert title to multi-language format and use alphabet detector
+        // Use TMDB data - guaranteed to be in the correct language (ISO format)
         const titleText = fullResponse.title || fullResponse.name || '';
-        const titleAsMultiLanguage: MultiLanguageText = {
-          [language]: titleText,
-        };
+        
+        if (!titleText) {
+          devError(
+            `[PopulatePool] No title returned from TMDB for ${tmdbId} in language ${language}`
+          );
+          return;
+        }
 
-        // Use getTitleInLanguage with alphabet detection
-        // If it returns empty, it means we need to fetch primary language from TMDB
-        let extractedTitle = getTitleInLanguage(
-          titleAsMultiLanguage,
-          language,
-          region,
-          false // isImagePath = false
-        );
+        // Merge with existing DB data
+        const mergedTitleJsonb: MultiLanguageText = { ...(titleJsonb || {}) };
+        const mergedOverviewJsonb: MultiLanguageText = { ...(overviewJsonb || {}) };
+        const mergedPosterPathJsonb: MultiLanguageText = { ...(posterPathJsonb || {}) };
+
+        // Add TMDB data to the appropriate language key (ISO format - standard)
+        // IMPORTANT: Always use ISO format (e.g., 'ca-ES'), no legacy format
+        if (titleText) mergedTitleJsonb[language] = titleText;
+        if (fullResponse.overview) mergedOverviewJsonb[language] = fullResponse.overview;
+        if (fullResponse.poster_path) mergedPosterPathJsonb[language] = fullResponse.poster_path;
+
+        // Extract final values - always use TMDB data when we fetch (guaranteed ISO format)
+        // Only use extracted from DB if it's in the exact ISO format (no fallbacks)
+        const finalTitle = titleText; // Always use TMDB title when we fetch (ISO format)
+        let finalOverview = fullResponse.overview || '';
+        const finalPosterPath = fullResponse.poster_path || null;
 
         // Determine primary language for region
         const primaryLanguage = region
@@ -224,9 +297,9 @@ export default defineEventHandler(async (event) => {
 
         // Check if we need to fetch primary language (title empty or overview empty)
         const needsPrimaryLanguage =
-          !extractedTitle ||
-          !fullResponse.overview ||
-          fullResponse.overview.trim() === '';
+          !finalTitle ||
+          !finalOverview ||
+          finalOverview.trim() === '';
         let primaryResponse: TMDBTitleDetails | null = null;
 
         if (needsPrimaryLanguage) {
@@ -255,46 +328,82 @@ export default defineEventHandler(async (event) => {
           }
         }
 
-        // Use primary language title if extracted title is empty
-        if (!extractedTitle && primaryResponse) {
-          extractedTitle =
-            primaryResponse.title || primaryResponse.name || titleText;
-        } else if (!extractedTitle) {
-          // Fallback to original title if primary language fetch failed
-          extractedTitle = titleText;
+        // Use primary language title if final title is empty (should not happen, but safety check)
+        if (!finalTitle && primaryResponse) {
+          const primaryTitle = primaryResponse.title || primaryResponse.name || '';
+          if (primaryTitle) {
+            // Store primary language in ISO format
+            mergedTitleJsonb[primaryLanguageKey] = primaryTitle;
+            // Use primary title as final (but this should not happen if TMDB returned data)
+            // This is a safety fallback only
+          }
         }
 
-        // Handle overview: if empty, use primary language overview
-        let overview = fullResponse.overview || '';
-        if (
-          (!overview || overview.trim() === '') &&
-          primaryResponse?.overview
-        ) {
-          overview = primaryResponse.overview;
-          devLog(
-            `[PopulatePool] Using primary language (${primaryLanguageKey}) overview for ${tmdbId}`
-          );
+        // Handle overview: if empty, use primary language overview (safety fallback)
+        if ((!finalOverview || finalOverview.trim() === '') && primaryResponse?.overview) {
+          finalOverview = primaryResponse.overview;
+          // Store primary language in ISO format
+          mergedOverviewJsonb[primaryLanguageKey] = primaryResponse.overview;
+          if (import.meta.dev) {
+            devLog(
+              `[PopulatePool] Using primary language (${primaryLanguageKey}) overview for ${tmdbId}`
+            );
+          }
         }
 
-        return {
-          title: extractedTitle,
-          overview: overview,
-          poster_path: fullResponse.poster_path || null,
-          backdrop_path: fullResponse.backdrop_path || null,
-          vote_average: fullResponse.vote_average || null,
-          genres: genres.map((g: { id: number; name: string }) => ({
-            id: g.id,
-            name: g.name,
-          })),
-          release_date: fullResponse.release_date || null,
-          first_air_date: fullResponse.first_air_date || null,
-        };
+        // Update database with TMDB data (preserve all existing languages)
+        // IMPORTANT: All language keys are in ISO/TMDB format (e.g., 'ca-ES', 'es-ES')
+        // No legacy format (e.g., 'ca') is stored - this ensures consistency
+        try {
+          // First, get existing data to ensure we preserve all languages
+          const { data: existingTitle } = await supabase
+            .from(TABLES.TITLES)
+            .select(
+              `${TITLES_FIELDS.TITLE}, ${TITLES_FIELDS.OVERVIEW}, ${TITLES_FIELDS.POSTER_PATH}, ${TITLES_FIELDS.GENRES}, ${TITLES_FIELDS.BACKDROP_PATH}, ${TITLES_FIELDS.VOTE_AVERAGE}, ${TITLES_FIELDS.RELEASE_DATE}, ${TITLES_FIELDS.FIRST_AIR_DATE}`
+            )
+            .eq(TITLES_FIELDS.TMDB_ID, tmdbId)
+            .eq(TITLES_FIELDS.TYPE, type)
+            .maybeSingle();
+
+          // Merge with existing data to preserve all language keys
+          const finalTitleJsonb: MultiLanguageText = existingTitle?.title
+            ? { ...(existingTitle.title as MultiLanguageText), ...mergedTitleJsonb }
+            : mergedTitleJsonb;
+          const finalOverviewJsonb: MultiLanguageText = existingTitle?.overview
+            ? { ...(existingTitle.overview as MultiLanguageText), ...mergedOverviewJsonb }
+            : mergedOverviewJsonb;
+          const finalPosterPathJsonb: MultiLanguageText = existingTitle?.poster_path
+            ? { ...(existingTitle.poster_path as MultiLanguageText), ...mergedPosterPathJsonb }
+            : mergedPosterPathJsonb;
+
+          await supabase
+            .from(TABLES.TITLES)
+            .upsert({
+              [TITLES_FIELDS.TMDB_ID]: tmdbId,
+              [TITLES_FIELDS.TYPE]: type,
+              [TITLES_FIELDS.TITLE]: finalTitleJsonb,
+              [TITLES_FIELDS.OVERVIEW]: Object.keys(finalOverviewJsonb).length > 0 ? finalOverviewJsonb : null,
+              [TITLES_FIELDS.POSTER_PATH]: Object.keys(finalPosterPathJsonb).length > 0 ? finalPosterPathJsonb : null,
+              [TITLES_FIELDS.GENRES]: genres.length > 0 ? genres : (existingTitle?.genres || null),
+              [TITLES_FIELDS.BACKDROP_PATH]: fullResponse.backdrop_path || existingTitle?.backdrop_path || null,
+              [TITLES_FIELDS.VOTE_AVERAGE]: fullResponse.vote_average ?? existingTitle?.vote_average ?? null,
+              [TITLES_FIELDS.RELEASE_DATE]: fullResponse.release_date || existingTitle?.release_date || null,
+              [TITLES_FIELDS.FIRST_AIR_DATE]: fullResponse.first_air_date || existingTitle?.first_air_date || null,
+            }, {
+              onConflict: TITLES_FIELDS.TMDB_ID,
+            });
+        } catch (error) {
+          // Log but don't fail the request
+          if (import.meta.dev) {
+            console.error('[PopulatePool] Error updating titles cache:', error);
+          }
+        }
       } catch (error) {
         safeError(
           `[PopulatePool] Error fetching title details for ${tmdbId}`,
           error
         );
-        return null;
+        // Continue - don't block pool population
       }
     };
 
@@ -438,8 +547,9 @@ export default defineEventHandler(async (event) => {
               );
             }
 
-            // Fetch full title details including complete genre objects
-            const titleData = await fetchTitleDetails(result.id, type);
+            // Fetch full title details to ensure they're in titles table
+            // (title_data removed from pool, data comes from titles table)
+            await fetchTitleDetails(result.id, type);
 
             entriesToInsert.push({
               tmdb_id: result.id,
@@ -447,7 +557,6 @@ export default defineEventHandler(async (event) => {
               source,
               score: 0, // Initial score
               explanation_code: explanationCode,
-              title_data: titleData,
             });
           }
 
