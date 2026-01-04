@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { PROFILES_COLUMNS, USER_PREFERENCES_COLUMNS, TITLES_COLUMNS } from '@/constants/db/columns';
-import { TABLES, TITLES_COLUMNS } from '@/constants/db/tables';
+import { TABLES } from '@/constants/db/tables';
 import { SCORE_WEIGHTS } from '@/constants/domain/scoring';
 import { getTMDBConfig } from './config';
 import type { Season } from '@/types/TVShow';

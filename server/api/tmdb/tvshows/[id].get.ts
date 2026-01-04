@@ -2,16 +2,14 @@ import { getTMDBConfig } from '@/server/utils/config';
 import { getUserTMDBParams } from '@/server/utils/user-preferences';
 import { createError, defineEventHandler } from 'h3';
 import { createClient } from '@supabase/supabase-js';
-import { PROFILES_COLUMNS, USER_PREFERENCES_COLUMNS, TITLES_COLUMNS } from '@/constants/db/columns';
-import { TABLES, TITLES_COLUMNS } from '@/constants/db/tables';
-import { SCORE_WEIGHTS } from '@/constants/domain/scoring';
+import { TITLES_COLUMNS } from '@/constants/db/columns';
+import { TABLES } from '@/constants/db/tables';
 import { type MultiLanguageText } from '@/services/titles';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
+import type { TVShow } from '@/types/TVShow';
 import {
   LanguageIsoCode,
-  SUPPORTED_LANGUAGE_ISO_CODES,
   extractLanguageCode,
-  toTMDBLanguageCode,
 } from '@/constants/languages';
 
 export default defineEventHandler(async (event) => {
@@ -42,7 +40,8 @@ export default defineEventHandler(async (event) => {
     const { language: userLanguage, region } = await getUserTMDBParams(event);
     // IMPORTANT: userLanguage is already in ISO format (e.g., 'ca-ES', 'es-ES')
     // Extract base language code (e.g., 'es-ES' -> 'es') only for display purposes
-    const userLangCode = extractLanguageCode(userLanguage) || LanguageIsoCode.SPANISH;
+    const userLangCode =
+      extractLanguageCode(userLanguage) || LanguageIsoCode.SPANISH;
     // IMPORTANT: Use SUPPORTED_LANGUAGE_CODES (ISO format) not ISO_CODES (legacy format)
     const { SUPPORTED_LANGUAGE_CODES } = await import('@/constants/languages');
     const supportedLanguages = SUPPORTED_LANGUAGE_CODES.map((code) => code);
@@ -65,43 +64,55 @@ export default defineEventHandler(async (event) => {
       if (titleJsonb && typeof titleJsonb === 'object') {
         Object.keys(titleJsonb).forEach((lang) => existingLanguages.add(lang));
       }
-      
+
       // Check if we need to fetch missing languages
       // IMPORTANT: Use SUPPORTED_LANGUAGE_CODES (ISO format: 'es-ES', 'ca-ES') not ISO_CODES (legacy: 'es', 'ca')
       // This ensures all data is stored in ISO format (xx-XX) consistently
-      const { SUPPORTED_LANGUAGE_CODES } = await import('@/constants/languages');
-      const supportedLanguagesList = SUPPORTED_LANGUAGE_CODES.map((code) => code);
-      const missingLanguages = supportedLanguagesList.filter((lang) => !existingLanguages.has(lang));
-      
+      const { SUPPORTED_LANGUAGE_CODES } =
+        await import('@/constants/languages');
+      const supportedLanguagesList = SUPPORTED_LANGUAGE_CODES.map(
+        (code) => code
+      );
+      const missingLanguages = supportedLanguagesList.filter(
+        (lang) => !existingLanguages.has(lang)
+      );
+
       // If we're missing languages, fetch all missing ones from TMDB
       if (missingLanguages.length > 0) {
         const tmdbConfig = getTMDBConfig(userLanguage, region);
-        
+
         // Fetch all missing languages in parallel
         // IMPORTANT: lang is already in ISO format (e.g., 'ca-ES'), use it directly
         const languagePromises = missingLanguages.map(async (lang) => {
           try {
-            const response = await $fetch(`${tmdbConfig.baseUrl}/tv/${tmdbId}`, {
-              query: {
-                api_key: tmdbConfig.apiKey,
-                language: lang, // lang is already in ISO format (e.g., 'ca-ES')
-                region: tmdbConfig.region,
-              },
-            });
+            const response = await $fetch<{
+              name?: string;
+              overview?: string;
+              poster_path?: string | null;
+            }>(
+              `${tmdbConfig.baseUrl}/tv/${tmdbId}`,
+              {
+                query: {
+                  api_key: tmdbConfig.apiKey,
+                  language: lang, // lang is already in ISO format (e.g., 'ca-ES')
+                  region: tmdbConfig.region,
+                },
+              }
+            );
             return { lang, data: response };
           } catch {
             return { lang, data: null };
           }
         });
-        
+
         const languageResults = await Promise.all(languagePromises);
-        
+
         // Build updated multi-language JSONB objects
         // IMPORTANT: Use lang (ISO format) as key, not legacy format
         const updatedTitle = { ...(titleJsonb || {}) };
         const updatedOverview = { ...(overviewJsonb || {}) };
         const updatedPosterPath = { ...(posterPathJsonb || {}) };
-        
+
         languageResults.forEach(({ lang, data }) => {
           if (data) {
             // lang is in ISO format (e.g., 'ca-ES'), use it directly as key
@@ -110,18 +121,21 @@ export default defineEventHandler(async (event) => {
             if (data.poster_path) updatedPosterPath[lang] = data.poster_path;
           }
         });
-        
+
         // Update database with all languages
         await supabase
           .from(TABLES.TITLES)
           .update({
             title: updatedTitle,
             overview: updatedOverview,
-            poster_path: Object.keys(updatedPosterPath).length > 0 ? updatedPosterPath : null,
+            poster_path:
+              Object.keys(updatedPosterPath).length > 0
+                ? updatedPosterPath
+                : null,
           })
           .eq(TITLES_COLUMNS.TMDB_ID, tmdbId)
           .eq(TITLES_COLUMNS.TYPE, MediaTypeEnum.tv);
-        
+
         // Update local references to use the updated JSONB
         titleJsonb = updatedTitle;
         overviewJsonb = updatedOverview;
@@ -134,21 +148,52 @@ export default defineEventHandler(async (event) => {
       // Fetch full TV show data, providers and alternative titles from TMDB
       const [fullTvShowResponse, providersResponse, alternativeTitlesResponse] =
         await Promise.all([
-          $fetch(`${tmdbConfig.baseUrl}/tv/${tmdbId}`, {
+          $fetch<{
+            name?: string;
+            original_name?: string;
+            overview?: string;
+            poster_path?: string | null;
+            backdrop_path?: string | null;
+            first_air_date?: string;
+            vote_average?: number;
+            genres?: Array<{ id: number; name: string }>;
+            genre_ids?: number[];
+            seasons?: Array<{
+              id: number;
+              name: string;
+              season_number: number;
+              overview: string;
+              air_date: string;
+              poster_path: string | null;
+              vote_average: number;
+              episode_count?: number;
+            }>;
+            number_of_seasons?: number;
+            number_of_episodes?: number;
+            in_production?: boolean;
+          }>(`${tmdbConfig.baseUrl}/tv/${tmdbId}`, {
             query: {
               api_key: tmdbConfig.apiKey,
               language: tmdbConfig.language,
               region: tmdbConfig.region,
             },
           }).catch(() => null),
-          $fetch(`${tmdbConfig.baseUrl}/tv/${tmdbId}/watch/providers`, {
+          $fetch<{
+            results?: Record<string, unknown>;
+          }>(`${tmdbConfig.baseUrl}/tv/${tmdbId}/watch/providers`, {
             query: {
               api_key: tmdbConfig.apiKey,
               language: tmdbConfig.language,
               region: tmdbConfig.region,
             },
           }).catch(() => null),
-          $fetch(`${tmdbConfig.baseUrl}/tv/${tmdbId}/alternative/titles`, {
+          $fetch<{
+            results?: Array<{
+              iso_3166_1: string;
+              title: string;
+              type: string;
+            }>;
+          }>(`${tmdbConfig.baseUrl}/tv/${tmdbId}/alternative/titles`, {
             query: {
               api_key: tmdbConfig.apiKey,
             },
@@ -156,8 +201,9 @@ export default defineEventHandler(async (event) => {
         ]);
 
       // Use unified extraction function with TMDB fallback
-      const { extractTitleDataWithFallback } = await import('../../../utils/title-extraction');
-      
+      const { extractTitleDataWithFallback } =
+        await import('../../../utils/title-extraction');
+
       const extracted = await extractTitleDataWithFallback({
         tmdbId,
         type: MediaTypeEnum.tv,
@@ -170,15 +216,26 @@ export default defineEventHandler(async (event) => {
       // Map DB title to TVShow format
       // IMPORTANT: Use extracted data (from titles table or TMDB) - it already handles language correctly
       // Don't use fullTvShowResponse as fallback since extractTitleDataWithFallback already fetches from TMDB if needed
-      const tvShow: any = {
+      const tvShow: Partial<TVShow> & {
+        id: number;
+        name: string;
+        overview: string;
+        poster_path: string | null;
+        backdrop_path: string;
+        first_air_date: string;
+        vote_average: number;
+        number_of_seasons: number;
+        in_production: boolean;
+        genre_ids?: number[];
+      } = {
         id: titleFromDb.tmdb_id,
         name: extracted.title || '',
         original_name: fullTvShowResponse?.original_name,
         overview: extracted.overview || '',
         poster_path: extracted.poster_path || null,
-        backdrop_path: titleFromDb.backdrop_path,
-        first_air_date: titleFromDb.first_air_date,
-        vote_average: titleFromDb.vote_average,
+        backdrop_path: titleFromDb.backdrop_path || '',
+        first_air_date: titleFromDb.first_air_date || '',
+        vote_average: titleFromDb.vote_average || 0,
         genres: fullTvShowResponse?.genres || titleFromDb.genres || [],
         genre_ids: fullTvShowResponse?.genre_ids || [],
         seasons: fullTvShowResponse?.seasons || [],
@@ -211,7 +268,15 @@ export default defineEventHandler(async (event) => {
     // IMPORTANT: lang is already in ISO format (e.g., 'ca-ES'), use it directly
     const languagePromises = supportedLanguages.map(async (lang) => {
       try {
-        const response = await $fetch(`${tmdbConfig.baseUrl}/tv/${tmdbId}`, {
+        const response = await $fetch<{
+          name?: string;
+          overview?: string;
+          poster_path?: string | null;
+          backdrop_path?: string | null;
+          first_air_date?: string;
+          vote_average?: number;
+          genres?: Array<{ id: number; name: string }>;
+        }>(`${tmdbConfig.baseUrl}/tv/${tmdbId}`, {
           query: {
             api_key: tmdbConfig.apiKey,
             language: lang, // lang is already in ISO format (e.g., 'ca-ES')
@@ -243,8 +308,10 @@ export default defineEventHandler(async (event) => {
         if (data.overview) overviewMultiLang[lang] = data.overview;
         if (data.poster_path) posterPathMultiLang[lang] = data.poster_path;
         // Use first successful response for non-language fields
-        if (!backdropPath && data.backdrop_path) backdropPath = data.backdrop_path;
-        if (!firstAirDate && data.first_air_date) firstAirDate = data.first_air_date;
+        if (!backdropPath && data.backdrop_path)
+          backdropPath = data.backdrop_path;
+        if (!firstAirDate && data.first_air_date)
+          firstAirDate = data.first_air_date;
         if (!voteAverage && data.vote_average) voteAverage = data.vote_average;
         if (genres.length === 0 && data.genres) genres = data.genres;
       }
@@ -252,25 +319,30 @@ export default defineEventHandler(async (event) => {
 
     // Save to database if we got at least one language
     if (Object.keys(titleMultiLang).length > 0) {
-      await supabase
-        .from(TABLES.TITLES)
-        .upsert({
+      await supabase.from(TABLES.TITLES).upsert(
+        {
           tmdb_id: tmdbId,
           type: MediaTypeEnum.tv,
           title: titleMultiLang,
           overview: overviewMultiLang,
-          poster_path: Object.keys(posterPathMultiLang).length > 0 ? posterPathMultiLang : null,
+          poster_path:
+            Object.keys(posterPathMultiLang).length > 0
+              ? posterPathMultiLang
+              : null,
           backdrop_path: backdropPath,
           first_air_date: firstAirDate,
           vote_average: voteAverage,
           genres: genres,
-        }, {
+        },
+        {
           onConflict: 'tmdb_id',
-        });
+        }
+      );
     }
 
     // Return response in user's language (or first available)
-    const userLangData = languageResults.find((r) => r.lang === userLangCode)?.data ||
+    const userLangData =
+      languageResults.find((r) => r.lang === userLangCode)?.data ||
       languageResults.find((r) => r.data)?.data;
 
     if (!userLangData) {

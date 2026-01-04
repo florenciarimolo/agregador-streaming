@@ -5,10 +5,8 @@ import { getUserTMDBParams } from '@/server/utils/user-preferences';
 import { devLog, devError, devWarn, safeError } from '@/server/utils/logger';
 import { TITLE_STATUS } from '@/constants/domain/titleStatus';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
-import {
-  TABLES,
-  USER_TITLE_STATUS_COLUMNS,
-} from '@/constants/db/tables';
+import { TABLES } from '@/constants/db/tables';
+import { USER_TITLE_STATUS_COLUMNS } from '@/constants/db/columns';
 import { SCORE_WEIGHTS } from '@/constants/domain/scoring';
 
 /**

@@ -9,8 +9,12 @@
 import { getTitleInLanguage, type MultiLanguageText } from '@/services/titles';
 import { getTMDBConfig } from './config';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
-import { PROFILES_COLUMNS, USER_PREFERENCES_COLUMNS, TITLES_COLUMNS } from '@/constants/db/columns';
-import { TABLES, TITLES_COLUMNS } from '@/constants/db/tables';
+import {
+  PROFILES_COLUMNS,
+  USER_PREFERENCES_COLUMNS,
+  TITLES_COLUMNS,
+} from '@/constants/db/columns';
+import { TABLES } from '@/constants/db/tables';
 import { SCORE_WEIGHTS } from '@/constants/domain/scoring';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
@@ -45,17 +49,22 @@ function extractFromTitleData(
   isImagePath: boolean = false
 ): string {
   if (!titleData) return '';
-  
+
   if (typeof titleData === 'string') {
     // Legacy format: string - convert to multi-language object
     const titleAsMultiLanguage: MultiLanguageText = {
       [language]: titleData,
     };
-    const extracted = getTitleInLanguage(titleAsMultiLanguage, language, region, isImagePath);
+    const extracted = getTitleInLanguage(
+      titleAsMultiLanguage,
+      language,
+      region,
+      isImagePath
+    );
     // If getTitleInLanguage returns empty, use original string as fallback
     return extracted || titleData;
   }
-  
+
   // Multi-language object format
   return getTitleInLanguage(titleData, language, region, isImagePath);
 }
@@ -90,9 +99,10 @@ export async function fetchOverviewWithPrimaryLanguageFallback(
 
   // Try fetching with primary language of region as fallback
   try {
-    const { getPrimaryLanguageForRegion } = await import('@/utils/language-detection');
+    const { getPrimaryLanguageForRegion } =
+      await import('@/utils/language-detection');
     const { DEFAULT_LANGUAGE_ISO } = await import('@/constants/languages');
-    
+
     const primaryLanguage = region
       ? getPrimaryLanguageForRegion(region)
       : DEFAULT_LANGUAGE_ISO;
@@ -116,24 +126,33 @@ export async function fetchOverviewWithPrimaryLanguageFallback(
       if (primaryResponse?.overview) {
         // Update database with primary language overview
         mergedOverviewJsonb[primaryLanguageKey] = primaryResponse.overview;
-        
+
         // Update database (async, don't wait)
         supabase
           .from(TABLES.TITLES)
-          .upsert({
-            tmdb_id: tmdbId,
-            type,
-            overview: Object.keys(mergedOverviewJsonb).length > 0 ? mergedOverviewJsonb : null,
-          }, {
-            onConflict: TITLES_COLUMNS.TMDB_ID,
-          })
+          .upsert(
+            {
+              tmdb_id: tmdbId,
+              type,
+              overview:
+                Object.keys(mergedOverviewJsonb).length > 0
+                  ? mergedOverviewJsonb
+                  : null,
+            },
+            {
+              onConflict: TITLES_COLUMNS.TMDB_ID,
+            }
+          )
           .then(() => {
             // Success - no action needed
           })
           .catch((error) => {
             // Log but don't fail the request
             if (import.meta.dev) {
-              console.error('[fetchOverviewWithPrimaryLanguageFallback] Error updating cache with primary language:', error);
+              console.error(
+                '[fetchOverviewWithPrimaryLanguageFallback] Error updating cache with primary language:',
+                error
+              );
             }
           });
 
@@ -149,7 +168,10 @@ export async function fetchOverviewWithPrimaryLanguageFallback(
   } catch (primaryError) {
     // Log but don't fail the request
     if (import.meta.dev) {
-      console.error('[fetchOverviewWithPrimaryLanguageFallback] Error fetching primary language overview:', primaryError);
+      console.error(
+        '[fetchOverviewWithPrimaryLanguageFallback] Error fetching primary language overview:',
+        primaryError
+      );
     }
   }
 
@@ -166,7 +188,7 @@ export async function extractTitleDataWithFallback(
   options: TitleExtractionOptions
 ): Promise<ExtractedTitleData> {
   const { tmdbId, type, language, region, supabase, config } = options;
-  
+
   // Get title from database
   const { data: titleFromDb, error: dbError } = await supabase
     .from(TABLES.TITLES)
@@ -199,9 +221,24 @@ export async function extractTitleDataWithFallback(
     overviewJsonb[language] !== undefined;
 
   // Extract text in user's preferred language (may return fallback if language missing)
-  const extractedTitle = extractFromTitleData(titleJsonb, language, region, false);
-  const extractedOverview = extractFromTitleData(overviewJsonb, language, region, false);
-  const extractedPosterPath = extractFromTitleData(posterPathJsonb, language, region, true);
+  const extractedTitle = extractFromTitleData(
+    titleJsonb,
+    language,
+    region,
+    false
+  );
+  const extractedOverview = extractFromTitleData(
+    overviewJsonb,
+    language,
+    region,
+    false
+  );
+  const extractedPosterPath = extractFromTitleData(
+    posterPathJsonb,
+    language,
+    region,
+    true
+  );
 
   // Check if we need to fetch from TMDB
   // IMPORTANT: Check if exact language exists, not just if extractFromTitleData returns something
@@ -221,8 +258,9 @@ export async function extractTitleDataWithFallback(
   if (needsTitleFallback || needsOverviewFallback) {
     try {
       const tmdbConfig = getTMDBConfig(language, region);
-      const endpoint = type === MediaTypeEnum.movie ? `/movie/${tmdbId}` : `/tv/${tmdbId}`;
-      
+      const endpoint =
+        type === MediaTypeEnum.movie ? `/movie/${tmdbId}` : `/tv/${tmdbId}`;
+
       const tmdbResponse = await $fetch<{
         title?: string;
         name?: string;
@@ -245,7 +283,9 @@ export async function extractTitleDataWithFallback(
         // Build updated multi-language JSONB objects
         const updatedTitle: MultiLanguageText = { ...(titleJsonb || {}) };
         const updatedOverview: MultiLanguageText = { ...(overviewJsonb || {}) };
-        const updatedPosterPath: MultiLanguageText = { ...(posterPathJsonb || {}) };
+        const updatedPosterPath: MultiLanguageText = {
+          ...(posterPathJsonb || {}),
+        };
 
         // Add TMDB data to the appropriate language key
         const langKey = language; // Use full language code (e.g., 'es-ES')
@@ -270,43 +310,64 @@ export async function extractTitleDataWithFallback(
         // Update database (async, don't wait)
         supabase
           .from(TABLES.TITLES)
-          .upsert({
-            tmdb_id: tmdbId,
-            type,
-            title: updatedTitle,
-            overview: Object.keys(updatedOverview).length > 0 ? updatedOverview : null,
-            poster_path: Object.keys(updatedPosterPath).length > 0 ? updatedPosterPath : null,
-          }, {
-            onConflict: TITLES_COLUMNS.TMDB_ID,
-          })
+          .upsert(
+            {
+              tmdb_id: tmdbId,
+              type,
+              title: updatedTitle,
+              overview:
+                Object.keys(updatedOverview).length > 0
+                  ? updatedOverview
+                  : null,
+              poster_path:
+                Object.keys(updatedPosterPath).length > 0
+                  ? updatedPosterPath
+                  : null,
+            },
+            {
+              onConflict: TITLES_COLUMNS.TMDB_ID,
+            }
+          )
           .then(() => {
             // Success - no action needed
           })
           .catch((error) => {
             // Log but don't fail the request
             if (import.meta.dev) {
-              console.error('[extractTitleDataWithFallback] Error updating cache:', error);
+              console.error(
+                '[extractTitleDataWithFallback] Error updating cache:',
+                error
+              );
             }
           });
       }
     } catch (error) {
       // Log but don't fail the request
       if (import.meta.dev) {
-        console.error('[extractTitleDataWithFallback] Error fetching from TMDB:', error);
+        console.error(
+          '[extractTitleDataWithFallback] Error fetching from TMDB:',
+          error
+        );
       }
     }
   }
 
   // Return data: use extracted if exact language exists, otherwise use TMDB result
   // If overview is empty, use getTitleInLanguage which will provide fallback to primary language
-  const finalOverview = hasExactOverviewLanguage && extractedOverview
-    ? extractedOverview
-    : (tmdbOverview || (overviewJsonb ? extractFromTitleData(overviewJsonb, language, region, false) : ''));
+  const finalOverview =
+    hasExactOverviewLanguage && extractedOverview
+      ? extractedOverview
+      : tmdbOverview ||
+        (overviewJsonb
+          ? extractFromTitleData(overviewJsonb, language, region, false)
+          : '');
 
   return {
-    title: hasExactLanguage ? extractedTitle : (tmdbTitle || ''),
+    title: hasExactLanguage ? extractedTitle : tmdbTitle || '',
     overview: finalOverview,
-    poster_path: hasExactLanguage ? extractedPosterPath : (tmdbPosterPath || null),
+    poster_path: hasExactLanguage
+      ? extractedPosterPath
+      : tmdbPosterPath || null,
   };
 }
 
@@ -327,4 +388,3 @@ export async function extractTitleDataFromPoolWithFallback(
   // Always fetch from titles table or TMDB
   return await extractTitleDataWithFallback(options);
 }
-
