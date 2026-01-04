@@ -16,7 +16,8 @@
     "previous": "Previous",
     "search": "Search",
     "noResults": "No results found",
-    "noImage": "No image"
+    "noImage": "No image",
+    "optional": "Optional"
   },
   "navbar": {
     "home": "Home",
@@ -148,6 +149,9 @@
   "home": {
     "generatingRecommendations": "Generating recommendations",
     "generatingRecommendationsDescription": "We're generating your personalized recommendations. This may take a few minutes. Please wait and don't reload the page.",
+    "noRegion": "Region not configured",
+    "noRegionDescription": "To receive personalized recommendations, you need to configure your region first. This helps us find content available in your area.",
+    "configurePreferences": "Configure preferences",
     "noRecommendations": "No recommendations yet",
     "generatingDescription": "We're preparing personalized recommendations based on your preferences. This may take a moment.",
     "noRecommendationsDescription": "To receive personalized recommendations, you first need to add movies and TV shows you like. This helps us get to know you better and suggest content you'll really enjoy.",
@@ -204,7 +208,8 @@
   "onboarding": {
     "title": "What do you like to watch?",
     "description": "Select up to 10 movies or TV shows you enjoy. This helps us recommend content you'll love.",
-    "preferencesDescription": "First, configure your language and region preferences to personalize your experience.",
+    "preferencesDescription": "Select your region (required) and optionally your favorite genres and streaming platforms you use. This helps us personalize your recommendations.",
+    "titlesDescription": "Select up to 10 movies or TV shows you like. These selections help us understand your preferences and create personalized recommendations for you.",
     "selected": "{count} / 10 selected",
     "searchPlaceholder": "Search movies or TV shows...",
     "yourSelections": "Your selections",
@@ -550,6 +555,8 @@
     "howItWorksDescription": "Learn how UpNext helps you find the perfect content to watch on streaming with personalized recommendations.",
     "faqTitle": "Frequently asked questions",
     "faqDescription": "Find answers to the most common questions about UpNext, how it works, and how to use the platform.",
+    "listsTitle": "Lists - UpNext",
+    "preferencesTitle": "Preferences - UpNext",
     "moviePrefix": "Movie",
     "tvShowPrefix": "TV Show",
     "movieDescription": "{title} is an {experience} movie. Discover if it fits what you feel like watching today on UpNext.",

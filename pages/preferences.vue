@@ -1,7 +1,24 @@
 <template>
   <AppShell>
     <PageContainer>
-      <div class="pt-6 pb-6 w-full">
+      <!-- Show loading while checking onboarding -->
+      <div v-if="profilePending" class="flex items-center justify-center py-12">
+        <div
+          class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"
+        ></div>
+      </div>
+      <div
+        v-else-if="!userStore.hasCompletedOnboarding"
+        class="pt-6 pb-6 w-full"
+      >
+        <!-- Redirecting message (shouldn't be visible for long) -->
+        <div class="flex items-center justify-center py-12">
+          <div
+            class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"
+          ></div>
+        </div>
+      </div>
+      <div v-else class="pt-6 pb-6 w-full">
         <!-- Undo Toast -->
         <Toast />
 
@@ -257,10 +274,12 @@ import GenrePill from '@/components/GenrePill.vue';
 import ProviderPill from '@/components/ProviderPill.vue';
 import { useUndoToast } from '@/composables/useUndoToast';
 import { DEFAULT_LANGUAGE, toTMDBLanguageCode } from '@/constants/languages';
+import { useUserStore } from '@/stores/user';
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore - Auto-imported
 const currentUser = useSupabaseUser();
+const userStore = useUserStore();
 const { t } = useI18n();
 const { showToast } = useUndoToast();
 
@@ -979,8 +998,42 @@ watch(
   { immediate: true }
 );
 
+// Preload profile and verify onboarding before content loads
+const { pending: profilePending } = useAsyncData(
+  'preferences-profile-check',
+  async () => {
+    // Ensure profile is loaded
+    await userStore.ensureProfile();
+
+    // Check onboarding status
+    const hasCompletedOnboarding = userStore.hasCompletedOnboarding;
+
+    // If onboarding not completed, redirect to onboarding
+    if (!hasCompletedOnboarding) {
+      await navigateTo('/onboarding', { replace: true });
+      return false; // Prevent content from loading
+    }
+
+    return true; // Allow content to load
+  },
+  {
+    server: false, // Only fetch on client
+    default: () => false,
+  }
+);
+
 // Lifecycle
 onMounted(async () => {
+  // Wait for profile check to complete
+  while (profilePending.value) {
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+
+  // If redirected, don't continue
+  if (!userStore.hasCompletedOnboarding) {
+    return;
+  }
+
   // Fetch content preferences
   await fetchContentPreferences();
 });
@@ -1002,7 +1055,7 @@ definePageMeta({
 
 // SEO: Private page - noindex, nofollow
 useHead({
-  title: t('preferences.title'),
+  title: t('seo.preferencesTitle'),
   meta: [
     {
       name: 'robots',

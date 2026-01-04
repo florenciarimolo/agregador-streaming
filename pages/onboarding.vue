@@ -17,6 +17,7 @@ import GenreSelector from '@/components/GenreSelector.vue';
 import ProviderSelector from '@/components/ProviderSelector.vue';
 import GenrePill from '@/components/GenrePill.vue';
 import ProviderPill from '@/components/ProviderPill.vue';
+import { useRegions } from '@/composables/useRegions';
 
 definePageMeta({
   middleware: 'auth',
@@ -106,6 +107,20 @@ const selectedProviderForSelector = ref<{
 
 const savingPreferences = ref(false);
 
+// Preload regions using useAsyncData - must load before content renders
+const { pending: regionsPending } = useAsyncData(
+  'onboarding-regions',
+  async () => {
+    const { loadRegions } = useRegions();
+    await loadRegions();
+    return true; // Just ensure regions are loaded
+  },
+  {
+    server: false, // Only fetch on client
+    default: () => true,
+  }
+);
+
 // Titles state
 const searchQuery = ref('');
 const searchResults = ref<TitleResult[]>([]);
@@ -177,6 +192,12 @@ const toggleTitle = (title: TitleResult) => {
 
 const removeTitle = (id: number) => {
   selectedTitles.value = selectedTitles.value.filter((t) => t.id !== id);
+};
+
+// Go back to preferences step
+const goBackToPreferences = () => {
+  currentStep.value = 'preferences';
+  // Preferences are already saved in state, so they will be maintained
 };
 
 // Preload genres using useAsyncData
@@ -524,7 +545,7 @@ const saveSelections = async () => {
           {{
             currentStep === 'preferences'
               ? $t('onboarding.preferencesDescription')
-              : $t('onboarding.description')
+              : $t('onboarding.titlesDescription')
           }}
         </p>
         <div v-if="currentStep === 'titles'" class="mt-4">
@@ -552,7 +573,15 @@ const saveSelections = async () => {
           <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
             {{ $t('preferences.content.region.description') }}
           </p>
-          <RegionSelector v-model="selectedRegion" />
+          <div
+            v-if="regionsPending"
+            class="flex items-center justify-center py-8"
+          >
+            <div
+              class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"
+            ></div>
+          </div>
+          <RegionSelector v-else v-model="selectedRegion" />
         </Card>
 
         <!-- Favorite Genres (Optional) -->
@@ -599,6 +628,14 @@ const saveSelections = async () => {
               />
             </div>
           </div>
+
+          <!-- Info Message -->
+          <p
+            v-if="selectedGenres.length === 0"
+            class="text-xs mt-2 italic text-gray-600 dark:text-gray-400"
+          >
+            {{ $t('preferences.content.favoriteGenres.noneSelected') }}
+          </p>
         </Card>
 
         <!-- Included Providers (Optional) -->
@@ -744,7 +781,7 @@ const saveSelections = async () => {
                 />
               </div>
               <p
-                class="mt-1 text-xs text-center dark:text-gray-300 text-gray-800 max-w-[96px] truncate"
+                class="mt-2 text-xs text-center dark:text-gray-300 text-gray-800 max-w-[96px] truncate"
               >
                 {{ title.title || title.name }}
               </p>
@@ -772,7 +809,7 @@ const saveSelections = async () => {
                 :class="[
                   'relative rounded-lg overflow-hidden shadow-lg transition-transform',
                   isSelected(result.id)
-                    ? 'ring-2 ring-primary dark:ring-primary-400 scale-105'
+                    ? 'ring-2 ring-primary dark:ring-primary-400'
                     : 'hover:scale-105',
                 ]"
               >
@@ -837,10 +874,13 @@ const saveSelections = async () => {
           ></div>
         </div>
 
-        <!-- Continue Button -->
-        <div class="mt-6 flex justify-center">
+        <!-- Action Buttons -->
+        <div class="mt-6 flex gap-3 justify-center">
+          <Button size="small" variant="outline" @click="goBackToPreferences">
+            {{ $t('common.back') }}
+          </Button>
           <Button
-            size="medium"
+            size="small"
             variant="primary"
             :disabled="selectedTitles.length === 0 || saving"
             @click="saveSelections"

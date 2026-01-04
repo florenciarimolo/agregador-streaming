@@ -16,7 +16,8 @@
     "previous": "Anterior",
     "search": "Cercar",
     "noResults": "No s'han trobat resultats",
-    "noImage": "Sense imatge"
+    "noImage": "Sense imatge",
+    "optional": "Opcional"
   },
   "navbar": {
     "home": "Inici",
@@ -148,6 +149,9 @@
   "home": {
     "generatingRecommendations": "Generant recomanacions",
     "generatingRecommendationsDescription": "Estem generant les teves recomanacions personalitzades. Això pot trigar uns minuts. Si us plau, espera i no recarreguis la pàgina.",
+    "noRegion": "Regió no configurada",
+    "noRegionDescription": "Per rebre recomanacions personalitzades, primer necessites configurar la teva regió. Això ens ajuda a trobar contingut disponible a la teva àrea.",
+    "configurePreferences": "Configurar preferències",
     "noRecommendations": "Encara no hi ha recomanacions",
     "generatingDescription": "Estem preparant recomanacions personalitzades basades en els teus gustos. Això pot trigar uns moments.",
     "noRecommendationsDescription": "Per rebre recomanacions personalitzades, primer necessites afegir pel·lícules i sèries que t'agradin. Això ens ajuda a conèixer-te millor i suggerir-te contingut que realment gaudiràs.",
@@ -204,7 +208,8 @@
   "onboarding": {
     "title": "Què t'agrada veure?",
     "description": "Selecciona fins a 10 pel·lícules o sèries que gaudeixes. Això ens ajuda a recomanar-te contingut que t'encantarà.",
-    "preferencesDescription": "Primer, configura les teves preferències d'idioma i regió per personalitzar la teva experiència.",
+    "preferencesDescription": "Selecciona la teva regió (obligatori) i, opcionalment, els teus gèneres favorits i les plataformes de streaming que utilitzes. Això ens ajuda a personalitzar les teves recomanacions.",
+    "titlesDescription": "Selecciona fins a 10 pel·lícules o sèries que t'agradin. Aquestes seleccions ens ajuden a entendre les teves preferències i crear recomanacions personalitzades per a tu.",
     "selected": "{count} / 10 seleccionats",
     "searchPlaceholder": "Cercar pel·lícules o sèries...",
     "yourSelections": "Les teves seleccions",
@@ -550,6 +555,8 @@
     "howItWorksDescription": "Aprèn com UpNext t'ajuda a trobar el contingut perfecte per veure en streaming amb recomanacions personalitzades.",
     "faqTitle": "Preguntes freqüents",
     "faqDescription": "Troba respostes a les preguntes més comunes sobre UpNext, com funciona i com usar la plataforma.",
+    "listsTitle": "Llistes - UpNext",
+    "preferencesTitle": "Preferències - UpNext",
     "moviePrefix": "Pel·lícula",
     "tvShowPrefix": "Sèrie",
     "movieDescription": "{title} és una pel·lícula {experience}. Descobreix si encaixa amb el que et ve de gust veure avui a UpNext.",

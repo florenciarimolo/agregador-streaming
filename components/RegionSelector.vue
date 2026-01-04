@@ -14,17 +14,19 @@
             >
               <IconSearch icon-class="w-4 h-4 text-gray-400" />
             </div>
-            <img
-              v-if="selectedRegionObj"
-              :src="`/icons/flags/${selectedRegionObj.code.toLowerCase()}.svg`"
-              :alt="selectedRegionObj.code"
-              class="object-contain flex-shrink-0 w-5 h-4"
-              loading="lazy"
-              @error="
-                (e) => ((e.target as HTMLImageElement).style.display = 'none')
-              "
-            />
-            <span class="text-sm truncate">{{ selectedRegionName }}</span>
+            <div class="flex gap-2 items-center pl-4">
+              <img
+                v-if="selectedRegionObj"
+                :src="`/icons/flags/${selectedRegionObj.code.toLowerCase()}.svg`"
+                :alt="selectedRegionObj.code"
+                class="object-contain flex-shrink-0 w-5 h-4"
+                loading="lazy"
+                @error="
+                  (e) => ((e.target as HTMLImageElement).style.display = 'none')
+                "
+              />
+              <span class="text-sm truncate">{{ selectedRegionName }}</span>
+            </div>
           </div>
           <IconChevronDown
             :icon-class="`flex-shrink-0 w-4 h-4 text-gray-400 transition-transform ui-open:rotate-180`"

@@ -14,7 +14,7 @@
             >
               <IconSearch icon-class="w-4 h-4 text-gray-400" />
             </div>
-            <span class="text-sm truncate pl-7">{{
+            <span class="text-sm truncate pl-4">{{
               selectedProviderObj?.provider_name ||
               placeholder
             }}</span>

@@ -34,9 +34,9 @@
                 </div>
               </DisclosureButton>
               <DisclosurePanel
-                class="px-6 pb-6 dark:text-gray-300 text-gray-800"
+                class="px-6 pt-6 pb-6 dark:text-gray-300 text-gray-800"
               >
-                <p class="pt-2">
+                <p>
                   {{ $t('faq.a1') }}
                 </p>
               </DisclosurePanel>
@@ -61,9 +61,9 @@
                 </div>
               </DisclosureButton>
               <DisclosurePanel
-                class="px-6 pb-6 dark:text-gray-300 text-gray-800"
+                class="px-6 pt-6 pb-6 dark:text-gray-300 text-gray-800"
               >
-                <p class="pt-2">
+                <p>
                   {{ $t('faq.a2') }}
                 </p>
               </DisclosurePanel>
@@ -88,9 +88,9 @@
                 </div>
               </DisclosureButton>
               <DisclosurePanel
-                class="px-6 pb-6 dark:text-gray-300 text-gray-800"
+                class="px-6 pt-6 pb-6 dark:text-gray-300 text-gray-800"
               >
-                <p class="pt-2">
+                <p>
                   {{ $t('faq.a3') }}
                 </p>
               </DisclosurePanel>
@@ -115,9 +115,9 @@
                 </div>
               </DisclosureButton>
               <DisclosurePanel
-                class="px-6 pb-6 dark:text-gray-300 text-gray-800"
+                class="px-6 pt-6 pb-6 dark:text-gray-300 text-gray-800"
               >
-                <p class="pt-2">
+                <p>
                   {{ $t('faq.a4') }}
                 </p>
               </DisclosurePanel>
@@ -142,9 +142,9 @@
                 </div>
               </DisclosureButton>
               <DisclosurePanel
-                class="px-6 pb-6 dark:text-gray-300 text-gray-800"
+                class="px-6 pt-6 pb-6 dark:text-gray-300 text-gray-800"
               >
-                <p class="pt-2">
+                <p>
                   {{ $t('faq.a5') }}
                 </p>
               </DisclosurePanel>
@@ -169,9 +169,9 @@
                 </div>
               </DisclosureButton>
               <DisclosurePanel
-                class="px-6 pb-6 dark:text-gray-300 text-gray-800"
+                class="px-6 pt-6 pb-6 dark:text-gray-300 text-gray-800"
               >
-                <p class="pt-2">
+                <p>
                   {{ $t('faq.a6') }}
                 </p>
               </DisclosurePanel>
@@ -196,9 +196,9 @@
                 </div>
               </DisclosureButton>
               <DisclosurePanel
-                class="px-6 pb-6 dark:text-gray-300 text-gray-800"
+                class="px-6 pt-6 pb-6 dark:text-gray-300 text-gray-800"
               >
-                <p class="pt-2">
+                <p>
                   {{ $t('faq.a7') }}
                 </p>
               </DisclosurePanel>
@@ -223,9 +223,9 @@
                 </div>
               </DisclosureButton>
               <DisclosurePanel
-                class="px-6 pb-6 dark:text-gray-300 text-gray-800"
+                class="px-6 pt-6 pb-6 dark:text-gray-300 text-gray-800"
               >
-                <p class="pt-2">
+                <p>
                   {{ $t('faq.a8') }}
                 </p>
               </DisclosurePanel>
@@ -250,9 +250,9 @@
                 </div>
               </DisclosureButton>
               <DisclosurePanel
-                class="px-6 pb-6 dark:text-gray-300 text-gray-800"
+                class="px-6 pt-6 pb-6 dark:text-gray-300 text-gray-800"
               >
-                <p class="pt-2">
+                <p>
                   {{ $t('faq.a9') }}
                 </p>
               </DisclosurePanel>
@@ -277,9 +277,9 @@
                 </div>
               </DisclosureButton>
               <DisclosurePanel
-                class="px-6 pb-6 dark:text-gray-300 text-gray-800"
+                class="px-6 pt-6 pb-6 dark:text-gray-300 text-gray-800"
               >
-                <p class="pt-2">
+                <p>
                   {{ $t('faq.a10') }}
                 </p>
               </DisclosurePanel>

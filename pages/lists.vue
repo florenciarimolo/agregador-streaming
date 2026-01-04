@@ -1,7 +1,21 @@
 <template>
   <AppShell>
     <PageContainer>
-      <div class="pt-6 pb-6 w-full">
+      <!-- Show loading while checking onboarding -->
+      <div v-if="profilePending" class="flex items-center justify-center py-12">
+        <div
+          class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"
+        ></div>
+      </div>
+      <div v-else-if="!userStore.hasCompletedOnboarding" class="pt-6 pb-6 w-full">
+        <!-- Redirecting message (shouldn't be visible for long) -->
+        <div class="flex items-center justify-center py-12">
+          <div
+            class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"
+          ></div>
+        </div>
+      </div>
+      <div v-else class="pt-6 pb-6 w-full">
         <!-- Undo Toast -->
         <Toast />
 
@@ -35,19 +49,6 @@
           <template #default="{ activeTab: currentTab }">
             <!-- Liked Tab -->
             <div v-if="currentTab === 'liked'">
-              <div class="mb-4">
-                <SearchBar
-                  :emit-on-select="true"
-                  @title-selected="handleTitleSelected"
-                />
-                <p
-                  v-if="likedTitles.length >= 10"
-                  class="mt-2 text-xs text-amber-600 dark:text-amber-400"
-                >
-                  {{ $t('preferences.limitReached') }}
-                </p>
-              </div>
-
               <Spinner v-if="isLoading" :message="$t('preferences.loading')" />
 
               <TitleGrid
@@ -174,13 +175,11 @@ import {
   isUniqueViolationError,
 } from '@/composables/database/errorCodes';
 import { getSession } from '@/composables/database/auth';
-import SearchBar from '@/components/SearchBar.vue';
 import TitleGrid from '@/components/TitleGrid.vue';
 import EmptyState from '@/components/EmptyState.vue';
 import Spinner from '@/components/Spinner.vue';
 import Toast from '@/components/ui/Toast.vue';
 import { useUndoToast } from '@/composables/useUndoToast';
-import type { TMDBSearchResult } from '@/types/tmdb/Search';
 import { DEFAULT_LANGUAGE, toTMDBLanguageCode } from '@/constants/languages';
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -567,122 +566,6 @@ const fetchWatchlistTitles = async () => {
 };
 
 // Title management
-const handleTitleSelected = async (result: TMDBSearchResult) => {
-  const id = userId.value;
-  if (!id) return;
-
-  if (likedTitles.value.length >= 10) {
-    showError(t('preferences.limitReached'));
-    return;
-  }
-
-  const alreadyLiked = likedTitles.value.some(
-    (t) => t.tmdb_id === result.id && t.type === result.media_type
-  );
-  if (alreadyLiked) {
-    showError(t('preferences.alreadyInPreferences'));
-    return;
-  }
-
-  try {
-    if (!result.media_type) {
-      showError(t('preferences.invalidMediaType'));
-      return;
-    }
-
-    const { data: existingTitle, error: titleCheckError } =
-      await getTitleByTmdbId(result.id, result.media_type);
-
-    if (titleCheckError && !isNotFoundError(titleCheckError)) {
-      throw titleCheckError;
-    }
-
-    const { data: existingLike } = await getUserLikedTitle(id, result.id);
-
-    if (existingLike) {
-      showError(t('preferences.alreadyInPreferences'));
-      await fetchLikedTitles();
-      return;
-    }
-
-    if (!existingTitle && result.media_type) {
-      const { error: insertError } = await insertTitle({
-        tmdb_id: result.id,
-        title: { es: result.title || result.name || 'Unknown' }, // Multi-language JSONB
-        type: result.media_type,
-        poster_path: result.poster_path ? { es: result.poster_path } : null, // Multi-language JSONB
-        backdrop_path: result.backdrop_path || null,
-        overview: result.overview ? { es: result.overview } : null, // Multi-language JSONB
-        release_date: result.release_date || null,
-        first_air_date: result.first_air_date || null,
-        genres: null,
-        vote_average: result.vote_average || null,
-      });
-
-      if (insertError) throw insertError;
-    }
-
-    const { data: newLike, error: likeError } = await upsertUserTitleStatus({
-      user_id: id,
-      tmdb_id: result.id,
-      type: result.media_type,
-      status: TitleStatus.SEEN,
-      liked: true,
-    });
-
-    if (likeError) {
-      if (isUniqueViolationError(likeError)) {
-        showError(t('preferences.alreadyInPreferences'));
-        await fetchLikedTitles();
-        return;
-      }
-      throw likeError;
-    }
-
-    // Get title in user's preferred language (using ISO/TMDB format)
-    const preferredLang = getAppLanguage();
-    const { data: titleData } = await getTitleByTmdbIdWithLanguage(
-      result.id,
-      result.media_type!,
-      preferredLang,
-      contentPreferences.value.region
-    );
-
-    if (titleData) {
-      likedTitles.value.unshift({
-        id: newLike.id,
-        title: titleData.title,
-        type: titleData.type,
-        poster_path: titleData.poster_path,
-        tmdb_id: titleData.tmdb_id,
-      });
-    }
-
-    await userStore.fetchProfile();
-    showSuccess(t('preferences.titleAdded'));
-
-    // Regenerate recommendation pool in background
-    try {
-      const {
-        data: { session },
-      } = await getSession();
-      if (session?.access_token) {
-        await $fetch('/api/recommendations/populate-pool', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-          },
-        });
-      }
-    } catch (poolError) {
-      console.error('Error regenerating pool:', poolError);
-      // Don't show error to user, pool regeneration is background task
-    }
-  } catch {
-    showError(t('preferences.errorAdding'));
-  }
-};
-
 const handleRemoveLikedClick = async (title: {
   id: string;
   title: string;
@@ -860,13 +743,8 @@ const handleAddToLiked = async (title: {
 
     console.log('[UNLIKE DEBUG] Title is not liked, adding it');
 
-    // Check if limit reached
-    if (likedTitles.value.length >= 10) {
-      showError(t('preferences.limitReached'));
-      return;
-    }
-
     // Update the title status to liked=true
+    // Note: 10-title limit only applies during onboarding, not after completion
     const { error: likeError } = await upsertUserTitleStatus({
       user_id: id,
       tmdb_id: title.tmdb_id,
@@ -1123,8 +1001,42 @@ const handleRemoveNotInterested = async (title: {
   }
 };
 
+// Preload profile and verify onboarding before content loads
+const { pending: profilePending } = useAsyncData(
+  'lists-profile-check',
+  async () => {
+    // Ensure profile is loaded
+    await userStore.ensureProfile();
+    
+    // Check onboarding status
+    const hasCompletedOnboarding = userStore.hasCompletedOnboarding;
+    
+    // If onboarding not completed, redirect to onboarding
+    if (!hasCompletedOnboarding) {
+      await navigateTo('/onboarding', { replace: true });
+      return false; // Prevent content from loading
+    }
+    
+    return true; // Allow content to load
+  },
+  {
+    server: false, // Only fetch on client
+    default: () => false,
+  }
+);
+
 // Lifecycle
 onMounted(async () => {
+  // Wait for profile check to complete
+  while (profilePending.value) {
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+  
+  // If redirected, don't continue
+  if (!userStore.hasCompletedOnboarding) {
+    return;
+  }
+
   // Check if we should open a specific tab from query params
   const route = useRoute();
   const tabFromQuery = route.query.tab as string;
@@ -1201,7 +1113,7 @@ definePageMeta({
 
 // SEO: Private page - noindex, nofollow
 useHead({
-  title: t('profile.lists'),
+  title: t('seo.listsTitle'),
   meta: [
     {
       name: 'robots',

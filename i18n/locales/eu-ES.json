@@ -16,7 +16,8 @@
     "previous": "Aurrekoa",
     "search": "Bilatu",
     "noResults": "Ez da emaitzarik aurkitu",
-    "noImage": "Irudirik ez"
+    "noImage": "Irudirik ez",
+    "optional": "Aukerakoa"
   },
   "navbar": {
     "home": "Inicio",
@@ -148,6 +149,9 @@
   "home": {
     "generatingRecommendations": "Generando recomendaciones",
     "generatingRecommendationsDescription": "Estamos generando tus recomendaciones personalizadas. Esto puede tardar unos minutos. Mesedez, espera y no recargues la página.",
+    "noRegion": "Eskualdea ez dago konfiguratuta",
+    "noRegionDescription": "Gomendio pertsonalizatuak jasotzeko, lehenik zure eskualdea konfiguratu behar duzu. Honek zure eremuan eskuragarri dagoen edukia aurkitzeko laguntzen digu.",
+    "configurePreferences": "Konfiguratu hobespenak",
     "noRecommendations": "Aún no hay recomendaciones",
     "generatingDescription": "Estamos preparando recomendaciones personalizadas basadas en tus gustos. Esto puede tardar unos momentos.",
     "noRecommendationsDescription": "Para recibir recomendaciones personalizadas, primero necesitas agregar filmak y telesailak que te gusten. Esto nos ayuda a conocerte mejor y sugerirte contenido que realmente disfrutarás.",
@@ -204,7 +208,8 @@
   "onboarding": {
     "title": "¿Qué te gusta ver?",
     "description": "Selecciona hasta 10 filmak o telesailak que disfrutes. Esto nos ayuda a recomendarte contenido que te encantará.",
-    "preferencesDescription": "Primero, configura tus preferencias de idioma y región para personalizar tu experiencia.",
+    "preferencesDescription": "Aukeratu zure eskualdea (beharrezkoa) eta, aukeran, zure genero gogokoenak eta erabiltzen dituzun streaming plataformak. Honek gomendioak pertsonalizatzen laguntzen digu.",
+    "titlesDescription": "Selecciona hasta 10 filmak o telesailak que te gusten. Estas selecciones nos ayudan a entender tus preferencias y crear recomendaciones personalizadas para ti.",
     "selected": "{count} / 10 seleccionados",
     "searchPlaceholder": "Bilatu filmak o telesailak...",
     "yourSelections": "Tus selecciones",
@@ -550,6 +555,8 @@
     "howItWorksDescription": "Aprende cómo UpNext te ayuda a encontrar el contenido perfecto para ver en streaming con recomendaciones personalizadas.",
     "faqTitle": "Preguntas frecuentes",
     "faqDescription": "Encuentra respuestas a las preguntas más comunes sobre UpNext, cómo funciona y cómo usar la plataforma.",
+    "listsTitle": "Listas - UpNext",
+    "preferencesTitle": "Preferencias - UpNext",
     "moviePrefix": "Filma",
     "tvShowPrefix": "Telesaila",
     "movieDescription": "{title} es una filma {experience}. Descubre si encaja con lo que te apetece ver hoy en UpNext.",

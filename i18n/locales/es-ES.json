@@ -16,7 +16,8 @@
     "previous": "Anterior",
     "search": "Buscar",
     "noResults": "No se encontraron resultados",
-    "noImage": "Sin imagen"
+    "noImage": "Sin imagen",
+    "optional": "Opcional"
   },
   "navbar": {
     "home": "Inicio",
@@ -148,6 +149,9 @@
   "home": {
     "generatingRecommendations": "Generando recomendaciones",
     "generatingRecommendationsDescription": "Estamos generando tus recomendaciones personalizadas. Esto puede tardar unos minutos. Por favor, espera y no recargues la página.",
+    "noRegion": "Región no configurada",
+    "noRegionDescription": "Para recibir recomendaciones personalizadas, primero necesitas configurar tu región. Esto nos ayuda a encontrar contenido disponible en tu área.",
+    "configurePreferences": "Configurar preferencias",
     "noRecommendations": "Aún no hay recomendaciones",
     "generatingDescription": "Estamos preparando recomendaciones personalizadas basadas en tus gustos. Esto puede tardar unos momentos.",
     "noRecommendationsDescription": "Para recibir recomendaciones personalizadas, primero necesitas agregar películas y series que te gusten. Esto nos ayuda a conocerte mejor y sugerirte contenido que realmente disfrutarás.",
@@ -204,7 +208,8 @@
   "onboarding": {
     "title": "¿Qué te gusta ver?",
     "description": "Selecciona hasta 10 películas o series que disfrutes. Esto nos ayuda a recomendarte contenido que te encantará.",
-    "preferencesDescription": "Primero, configura tus preferencias de idioma y región para personalizar tu experiencia.",
+    "preferencesDescription": "Selecciona tu región (obligatorio) y, opcionalmente, tus géneros favoritos y las plataformas de streaming que utilizas. Esto nos ayuda a personalizar tus recomendaciones.",
+    "titlesDescription": "Selecciona hasta 10 películas o series que te gusten. Estas selecciones nos ayudan a entender tus preferencias y crear recomendaciones personalizadas para ti.",
     "selected": "{count} / 10 seleccionados",
     "searchPlaceholder": "Buscar películas o series...",
     "yourSelections": "Tus selecciones",
@@ -550,6 +555,8 @@
     "howItWorksDescription": "Aprende cómo UpNext te ayuda a encontrar el contenido perfecto para ver en streaming con recomendaciones personalizadas.",
     "faqTitle": "Preguntas frecuentes",
     "faqDescription": "Encuentra respuestas a las preguntas más comunes sobre UpNext, cómo funciona y cómo usar la plataforma.",
+    "listsTitle": "Listas - UpNext",
+    "preferencesTitle": "Preferencias - UpNext",
     "moviePrefix": "Película",
     "tvShowPrefix": "Serie",
     "movieDescription": "{title} es una película {experience}. Descubre si encaja con lo que te apetece ver hoy en UpNext.",

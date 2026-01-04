@@ -33,11 +33,11 @@
 
     <!-- Content -->
     <div v-else>
-      <div v-if="watchlistTitles.length === 0" class="py-12 text-center">
-        <p class="text-gray-500 dark:text-gray-400">
-          {{ $t('watchlist.empty') }}
-        </p>
-      </div>
+      <EmptyState
+        v-if="watchlistTitles.length === 0"
+        :message="$t('watchlist.empty')"
+        icon="bookmark"
+      />
 
       <div
         v-else
@@ -88,6 +88,7 @@ import PageContainer from '@/components/layout/PageContainer.vue';
 import TitleCard from '@/components/TitleCard.vue';
 import IconX from '@/components/icons/IconX.vue';
 import Tooltip from '@/components/ui/Tooltip.vue';
+import EmptyState from '@/components/EmptyState.vue';
 
 const { t, locale } = useI18n();
 
