@@ -239,7 +239,7 @@
                         'preferences.content.includedProviders.searchPlaceholder'
                       )
                     "
-                    :max-results="10"
+                    :max-results="0"
                     @select="(provider: any) => addProvider(provider)"
                   />
 
@@ -1578,8 +1578,9 @@ const selectedGenreForSelector = ref<{
 const { data: providersData } = useAsyncData(
   'watch-providers',
   async () => {
-    // Get current region from contentPreferences or use undefined to use saved preference
+    // Get current region and language from contentPreferences or use undefined to use saved preference
     const region = contentPreferences.value.region;
+    const language = currentLanguageCode.value;
 
     const response = await $fetch<{
       results: Array<{
@@ -1589,7 +1590,10 @@ const { data: providersData } = useAsyncData(
       }>;
     }>('/api/tmdb/watch-providers', {
       credentials: 'include', // Include cookies for authentication
-      query: region ? { region } : undefined,
+      query: {
+        ...(region ? { region } : {}),
+        ...(language ? { language } : {}),
+      },
     });
 
     return response;
@@ -1600,10 +1604,11 @@ const { data: providersData } = useAsyncData(
   }
 );
 
-// Wrapper to refresh providers with current region
+// Wrapper to refresh providers with current region and language
 const refreshProviders = async () => {
-  // Manually fetch with current region since useAsyncData doesn't react to contentPreferences changes
+  // Manually fetch with current region and language since useAsyncData doesn't react to contentPreferences changes
   const region = contentPreferences.value.region;
+  const language = currentLanguageCode.value;
   const response = await $fetch<{
     results: Array<{
       provider_id: number;
@@ -1612,7 +1617,10 @@ const refreshProviders = async () => {
     }>;
   }>('/api/tmdb/watch-providers', {
     credentials: 'include',
-    query: region ? { region } : undefined,
+    query: {
+      ...(region ? { region } : {}),
+      ...(language ? { language } : {}),
+    },
   });
 
   // Update the data directly

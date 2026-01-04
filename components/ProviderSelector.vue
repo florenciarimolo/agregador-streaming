@@ -124,7 +124,7 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   selectedProviders: () => [],
-  maxResults: 10,
+  maxResults: 0, // 0 means no limit - show all providers
 });
 
 const emit = defineEmits<{
