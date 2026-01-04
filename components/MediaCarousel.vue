@@ -60,7 +60,8 @@
           >
             {{
               formatDateToSpanish(
-                (mediaObject.release_date || mediaObject.first_air_date) ?? ''
+                (mediaObject.release_date || mediaObject.first_air_date) ?? '',
+                userRegion
               )
             }}
           </p>
@@ -146,7 +147,8 @@
         >
           {{
             formatDateToSpanish(
-              (mediaObject.release_date || mediaObject.first_air_date) ?? ''
+              (mediaObject.release_date || mediaObject.first_air_date) ?? '',
+              userRegion.value
             )
           }}
         </p>
@@ -173,6 +175,7 @@ import type { Media } from '@/types/Media';
 import RatingBadge from './RatingBadge.vue';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 import Button from '@/components/ui/Button.vue';
+import { useUserRegion } from '@/composables/useUserRegion';
 
 const props = defineProps({
   mediaTrendingList: {
@@ -186,6 +189,8 @@ const props = defineProps({
 // On client, we'll detect and update
 const isMobile = ref(false);
 const isTablet = ref(false);
+const { getUserRegion } = useUserRegion();
+const userRegion = ref<string | null>(null);
 
 // Detect mobile screen size
 const checkMobile = () => {
@@ -233,11 +238,13 @@ const handleResize = () => {
   checkMobile();
 };
 
-onMounted(() => {
+onMounted(async () => {
   // Check on mount (client-side only)
   if (typeof window !== 'undefined') {
     checkMobile();
     window.addEventListener('resize', handleResize);
+    // Get user region for date formatting
+    userRegion.value = await getUserRegion();
   }
 });
 

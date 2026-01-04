@@ -81,7 +81,7 @@
           class="mt-2 flex items-center gap-2 dark:text-gray-300 text-gray-800"
         >
           <IconCalendar icon-class="w-5 h-5" />
-          <span>{{ formatDateToSpanish(season?.air_date || '') }}</span>
+          <span>{{ formatDateToSpanish(season?.air_date || '', userRegion) }}</span>
         </div>
         <div class="flex items-center gap-2 dark:text-gray-300 text-gray-800">
           <IconEpisodes icon-class="w-5 h-5" />
@@ -144,6 +144,7 @@ import IconArrowLeft from '@/components/icons/IconArrowLeft.vue';
 import IconCalendar from '@/components/icons/IconCalendar.vue';
 import IconEpisodes from '@/components/icons/IconEpisodes.vue';
 import Section from '@/components/layout/Section.vue';
+import { useUserRegion } from '@/composables/useUserRegion';
 
 interface Props {
   season: (Season & { providers?: WatchProviderTypes }) | null | undefined;
@@ -155,6 +156,8 @@ const props = defineProps<Props>();
 
 const router = useRouter();
 const isMobile = ref(false);
+const { getUserRegion } = useUserRegion();
+const userRegion = ref<string | null>(null);
 
 // Detect mobile/tablet screen size (use mobile style for tablet too)
 const checkMobile = () => {
@@ -192,9 +195,11 @@ const sectionStyle = computed(() => ({
   backgroundPosition: isMobile.value ? 'center' : 'center',
 }));
 
-onMounted(() => {
+onMounted(async () => {
   checkMobile();
   window.addEventListener('resize', handleResize);
+  // Get user region for date formatting
+  userRegion.value = await getUserRegion();
 });
 
 onUnmounted(() => {

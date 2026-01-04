@@ -281,7 +281,8 @@
             formatDateToSpanish(
               mediaWithProviders.release_date ||
                 (mediaWithProviders as any).first_air_date ||
-                ''
+                '',
+              userRegion
             )
           }}</span>
         </div>
@@ -432,6 +433,7 @@ import {
 } from '@/composables/database/userTitleStatus';
 import { useRouter } from 'vue-router';
 import Section from '@/components/layout/Section.vue';
+import { useUserRegion } from '@/composables/useUserRegion';
 
 const props = defineProps({
   media: {
@@ -486,6 +488,8 @@ const isInWatchlist = ref(false);
 const isSeen = ref(false);
 const isNotInterested = ref(false);
 const router = useRouter();
+const { getUserRegion } = useUserRegion();
+const userRegion = ref<string | null>(null);
 
 // Check if user has session
 const user = useSupabaseUser();
@@ -545,6 +549,8 @@ const fetchTitleStatus = async () => {
 onMounted(async () => {
   checkMobile();
   window.addEventListener('resize', handleResize);
+  // Get user region for date formatting
+  userRegion.value = await getUserRegion();
   // Only fetch title status if user has session
   if (hasSession.value) {
     await fetchTitleStatus();

@@ -83,7 +83,7 @@
                     >
                       <IconCalendar icon-class="w-3 h-3 md:w-4 md:h-4" />
                       <span class="truncate">{{
-                        formatDateToSpanish(season.air_date)
+                        formatDateToSpanish(season.air_date, userRegion)
                       }}</span>
                     </div>
                     <div
@@ -131,6 +131,8 @@ import Section from '@/components/layout/Section.vue';
 
 const route = useRoute();
 const { locale } = useI18n();
+const { getUserRegion } = useUserRegion();
+const userRegion = ref<string | null>(null);
 
 const tvShowId = route.params.id;
 
@@ -303,7 +305,9 @@ useSeoMeta({
 });
 
 // Save the previous route when mounting
-onMounted(() => {
+onMounted(async () => {
+  // Get user region for date formatting
+  userRegion.value = await getUserRegion();
   if (import.meta.client) {
     const referrer = document.referrer;
     const currentOrigin = window.location.origin;

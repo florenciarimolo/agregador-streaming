@@ -75,7 +75,7 @@
                     >
                       <IconCalendar icon-class="w-3 h-3 md:w-4 md:h-4" />
                       <span class="truncate">{{
-                        formatDateToSpanish(episode.air_date)
+                        formatDateToSpanish(episode.air_date, userRegion)
                       }}</span>
                     </div>
                     <!-- Duration -->
@@ -117,7 +117,7 @@
 <script setup lang="ts">
 import { useRoute } from 'vue-router';
 import { useFetch } from 'nuxt/app';
-import { computed, watch } from 'vue';
+import { computed, watch, onMounted, ref } from 'vue';
 
 import { Season, TVShow } from '@/types/TVShow';
 import { WatchProviderTypes } from '@/types/WatchProvider';
@@ -130,9 +130,12 @@ import RatingBadge from '@/components/RatingBadge.vue';
 import IconCalendar from '@/components/icons/IconCalendar.vue';
 import IconClock from '@/components/icons/IconClock.vue';
 import { formatDateToSpanish } from '@/utils/formatDate';
+import { useUserRegion } from '@/composables/useUserRegion';
 
 const route = useRoute();
 const { locale } = useI18n();
+const { getUserRegion } = useUserRegion();
+const userRegion = ref<string | null>(null);
 
 // Necesitamos obtener el seriesId desde la URL padre y el seasonId de los parámetros actuales
 const seriesId = route.params.id;
@@ -235,6 +238,10 @@ useSeoMeta({
   }),
 });
 
+onMounted(async () => {
+  // Get user region for date formatting
+  userRegion.value = await getUserRegion();
+});
 </script>
 
 <style scoped>
