@@ -269,7 +269,7 @@
                   <!-- Info Message -->
                   <p
                     v-if="selectedProviders.length === 0"
-                    class="text-sm italic text-gray-600 dark:text-gray-400"
+                    class="text-xs mt-2 italic text-gray-600 dark:text-gray-400"
                   >
                     {{
                       $t('preferences.content.includedProviders.allIncluded')
@@ -322,7 +322,7 @@
                   <!-- Info Message -->
                   <p
                     v-if="selectedGenres.length === 0"
-                    class="text-sm italic text-gray-600 dark:text-gray-400"
+                    class="text-xs mt-2 italic text-gray-600 dark:text-gray-400"
                   >
                     {{ $t('preferences.content.favoriteGenres.noneSelected') }}
                   </p>
@@ -1578,6 +1578,9 @@ const selectedGenreForSelector = ref<{
 const { data: providersData } = useAsyncData(
   'watch-providers',
   async () => {
+    // Get current region from contentPreferences or use undefined to use saved preference
+    const region = contentPreferences.value.region;
+
     const response = await $fetch<{
       results: Array<{
         provider_id: number;
@@ -1586,6 +1589,7 @@ const { data: providersData } = useAsyncData(
       }>;
     }>('/api/tmdb/watch-providers', {
       credentials: 'include', // Include cookies for authentication
+      query: region ? { region } : undefined,
     });
 
     return response;
@@ -1595,6 +1599,25 @@ const { data: providersData } = useAsyncData(
     default: () => ({ results: [] }),
   }
 );
+
+// Wrapper to refresh providers with current region
+const refreshProviders = async () => {
+  // Manually fetch with current region since useAsyncData doesn't react to contentPreferences changes
+  const region = contentPreferences.value.region;
+  const response = await $fetch<{
+    results: Array<{
+      provider_id: number;
+      provider_name: string;
+      logo_path: string | null;
+    }>;
+  }>('/api/tmdb/watch-providers', {
+    credentials: 'include',
+    query: region ? { region } : undefined,
+  });
+
+  // Update the data directly
+  providersData.value = response;
+};
 
 const availableProviders = computed(() => {
   if (!providersData.value) {
@@ -1850,7 +1873,14 @@ const removeGenre = (genreId: number) => {
 };
 
 // Handle region change
-const handleRegionChange = () => {
+const handleRegionChange = async () => {
+  // Clear selected providers since they may not be available in the new region
+  selectedProviders.value = [];
+  contentPreferences.value.included_providers = [];
+
+  // Refresh providers for the new region
+  await refreshProviders();
+
   markContentPreferencesChanged();
 };
 

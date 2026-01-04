@@ -1,12 +1,17 @@
 import { getTMDBConfig } from '../../utils/config';
 import { getUserTMDBParams } from '../../utils/user-preferences';
-import { createError, defineEventHandler } from 'h3';
+import { createError, defineEventHandler, getQuery } from 'h3';
 
 export default defineEventHandler(async (event) => {
   try {
     // Get user preferences for language and region
     const params = await getUserTMDBParams(event);
-    const config = getTMDBConfig(params.language, params.region);
+    
+    // Allow override of region via query parameter (for preview before saving)
+    const query = getQuery(event);
+    const region = (query.region as string) || params.region;
+    
+    const config = getTMDBConfig(params.language, region);
 
     // Fetch watch providers for movies (they're the same for TV)
     // TMDB returns providers available in the specified region
