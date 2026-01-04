@@ -72,11 +72,11 @@
                     v-if="provider.logo_path"
                     :src="`https://image.tmdb.org/t/p/w45${provider.logo_path}`"
                     :alt="provider.provider_name"
-                    class="object-contain flex-shrink-0 w-auto h-8"
+                    class="object-contain flex-shrink-0 w-auto h-5 md:h-8"
                   />
                   <div
                     v-else
-                    class="flex flex-shrink-0 justify-center items-center w-8 h-8 bg-gray-200 rounded dark:bg-gray-700"
+                    class="flex flex-shrink-0 justify-center items-center w-5 h-5 md:w-8 md:h-8 bg-gray-200 rounded dark:bg-gray-700"
                   >
                     <span class="text-xs text-gray-600 dark:text-gray-300">{{
                       String(provider.provider_name || '').charAt(0)
