@@ -1,5 +1,7 @@
 <template>
-  <section class="space-y-12 md:space-y-16 lg:space-y-24 section-container">
+  <section
+    class="pt-6 pb-6 w-full space-y-4 md:space-y-8 section-container"
+  >
     <slot />
   </section>
 </template>
@@ -12,34 +14,6 @@
 </script>
 
 <style scoped>
-/* Reduce espacio entre SectionTitle y su contenido para mejor jerarquía visual */
-/* El space-y aplica mucho espacio, pero queremos menos entre título y contenido */
-.section-container :deep(h2 + *) {
-  margin-top: 1rem !important; /* mb-4 equivalente - menor que space-y-12 */
-}
-
-/* Espacio entre descripción (p) y contenido siguiente */
-.section-container :deep(p + *) {
-  margin-top: 1rem !important; /* Espacio después de descripción */
-}
-
-@media (min-width: 768px) {
-  .section-container :deep(h2 + *) {
-    margin-top: 1.25rem !important; /* md:mb-5 equivalente - menor que space-y-16 */
-  }
-
-  .section-container :deep(p + *) {
-    margin-top: 1.25rem !important;
-  }
-}
-
-@media (min-width: 1024px) {
-  .section-container :deep(h2 + *) {
-    margin-top: 1.5rem !important; /* lg:mb-6 equivalente - menor que space-y-24 */
-  }
-
-  .section-container :deep(p + *) {
-    margin-top: 1.5rem !important;
-  }
-}
+/* Section: Contenedor estándar para secciones */
+/* El espaciado entre elementos se maneja directamente en los componentes hijos */
 </style>

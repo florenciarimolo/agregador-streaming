@@ -1,12 +1,9 @@
 <template>
-  <div v-if="recommendations.length > 0 || isFilterLoading" class="relative">
-    <SectionTitle>{{ title }}</SectionTitle>
-    <p
-      v-if="description"
-      class="text-sm text-gray-800 dark:text-gray-300 md:text-base"
-    >
-      {{ description }}
-    </p>
+  <div
+    v-if="recommendations.length > 0 || isFilterLoading"
+    class="relative space-y-4 md:space-y-8"
+  >
+    <SectionTitle :description="description">{{ title }}</SectionTitle>
 
     <!-- Show skeletons when filter is loading -->
     <div
@@ -26,10 +23,11 @@
       v-else
       class="grid grid-cols-2 gap-4 md:grid-cols-5 lg:grid-cols-6 overflow-visible"
     >
-      <RecommendationCard
+      <TitleCard
         v-for="recommendation in recommendations"
         :key="recommendation.id"
-        :title="recommendation"
+        :recommendation="recommendation"
+        :show-content="true"
         @mark-seen="$emit('mark-seen', $event)"
         @mark-not-interested="$emit('mark-not-interested', $event)"
         @mark-liked="
@@ -50,6 +48,7 @@ import { computed } from 'vue';
 import type { Recommendation } from '@/types/Recommendation';
 import SectionTitle from '@/components/layout/SectionTitle.vue';
 import SkeletonMediaCard from '@/components/SkeletonMediaCard.vue';
+import TitleCard from '@/components/TitleCard.vue';
 
 const props = defineProps<{
   title: string;

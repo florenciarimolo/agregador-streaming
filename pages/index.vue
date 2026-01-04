@@ -6,6 +6,7 @@ import { getSession } from '@/composables/database/auth';
 import { useUndoToast } from '@/composables/useUndoToast';
 import { nextTick, onMounted, computed, watch, watchEffect, ref } from 'vue';
 import Card from '@/components/ui/Card.vue';
+import Button from '@/components/ui/Button.vue';
 import { getUserLikedTitle } from '@/composables/database/userTitleStatus';
 import AppShell from '@/components/layout/AppShell.vue';
 import PageContainer from '@/components/layout/PageContainer.vue';
@@ -505,6 +506,27 @@ watch(
 
 // Undo toast for not_interested actions
 const { showToast } = useUndoToast();
+
+// Remove all filters: Reset mood and attention to default (no filters)
+const removeFilters = async () => {
+  const query: Record<string, string> = {};
+
+  // Copy existing query params (excluding mood and attention)
+  Object.keys(route.query).forEach((key) => {
+    if (key !== 'mood' && key !== 'attention') {
+      const value = route.query[key];
+      if (value !== null && value !== undefined) {
+        const strValue = Array.isArray(value) ? value[0] : value;
+        if (strValue !== null) {
+          query[key] = strValue;
+        }
+      }
+    }
+  });
+
+  // Navigate without mood and attention (this will trigger the watch and refetch)
+  await navigateTo({ query }, { replace: true });
+};
 
 // Handle marking a title with different statuses
 // New logic: Single active status (watchlist/seen/not_interested)
@@ -1334,130 +1356,166 @@ onMounted(() => {
               />
             </div>
 
-            <!-- Skeleton loading for initial load (after delay) -->
-            <div
-              v-else-if="
-                showSkeleton && loadingRecommendations && !hasAttemptedLoad
+            <!-- Filtros Section - Always visible when onboarding is completed -->
+            <Section
+              v-if="
+                userStore.hasCompletedOnboarding &&
+                !populatingPool &&
+                !updatingLanguage &&
+                !fetchingReplacement
               "
-              class="pt-6 pb-6 w-full"
             >
-              <Section>
-                <SectionTitle>{{
-                  $t('home.recommendationsTitle')
-                }}</SectionTitle>
-                <p
-                  class="text-sm text-gray-800 dark:text-gray-300 md:text-base"
-                >
-                  {{ $t('home.recommendationsDescription') }}
-                </p>
+              <div class="flex flex-col gap-4">
+                <!-- Mood Selector -->
+                <MoodSelector />
+
+                <!-- Content Type Filter -->
                 <div
-                  class="grid grid-cols-2 gap-4 md:grid-cols-4 overflow-visible"
+                  class="p-6 rounded-3xl border backdrop-blur-xl bg-white/60 dark:bg-gray-900/40 border-gray-300/50 dark:border-white/10 md:p-8"
                 >
-                  <SkeletonMediaCard
-                    v-for="i in 8"
-                    :key="`skeleton-${i}`"
-                    :show-rating="i % 3 !== 0"
-                    :show-watchlist="i % 4 === 0"
-                  />
-                </div>
-              </Section>
-            </div>
-
-            <div v-else class="pt-6 pb-6 w-full">
-              <!-- Filtros Section -->
-              <Section v-if="userStore.hasCompletedOnboarding">
-                <div class="flex flex-col gap-4">
-                  <!-- Mood Selector -->
-                  <MoodSelector />
-
-                  <!-- Content Type Filter -->
-                  <div
-                    class="p-6 rounded-3xl border backdrop-blur-xl bg-white/60 dark:bg-gray-900/40 border-gray-300/50 dark:border-white/10 md:p-8"
-                  >
-                    <div class="flex flex-col gap-2">
-                      <label
-                        class="text-xs font-semibold tracking-wide text-gray-800 uppercase dark:text-gray-300"
+                  <div class="flex flex-col gap-2">
+                    <label
+                      class="text-xs font-semibold tracking-wide text-gray-800 uppercase dark:text-gray-300"
+                    >
+                      {{ $t('home.contentTypeFilter') }}
+                    </label>
+                    <div class="flex flex-wrap gap-2">
+                      <button
+                        v-for="typeOption in [
+                          { value: 'all', label: $t('home.contentTypeAll') },
+                          {
+                            value: 'movie',
+                            label: $t('home.contentTypeMovie'),
+                          },
+                          { value: 'tv', label: $t('home.contentTypeTv') },
+                        ]"
+                        :key="typeOption.value"
+                        :class="[
+                          'px-3 py-1.5 rounded-full font-medium transition-all text-xs',
+                          selectedContentType === typeOption.value
+                            ? 'bg-primary-800 text-white border border-gray-700/50 dark:border-gray-600/50'
+                            : 'bg-gray-100/50 dark:bg-gray-800/50 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700/50 hover:bg-gray-200 dark:hover:bg-gray-700/50 hover:border-primary/50 dark:hover:border-purple-500/30',
+                        ]"
+                        @click="
+                          selectedContentType = typeOption.value as
+                            | 'all'
+                            | 'movie'
+                            | 'tv'
+                        "
                       >
-                        {{ $t('home.contentTypeFilter') }}
-                      </label>
-                      <div class="flex flex-wrap gap-2">
-                        <button
-                          v-for="typeOption in [
-                            { value: 'all', label: $t('home.contentTypeAll') },
-                            {
-                              value: 'movie',
-                              label: $t('home.contentTypeMovie'),
-                            },
-                            { value: 'tv', label: $t('home.contentTypeTv') },
-                          ]"
-                          :key="typeOption.value"
-                          :class="[
-                            'px-3 py-1.5 rounded-full font-medium transition-all text-xs',
-                            selectedContentType === typeOption.value
-                              ? 'bg-primary-800 text-white border border-gray-700/50 dark:border-gray-600/50'
-                              : 'bg-gray-100/50 dark:bg-gray-800/50 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700/50 hover:bg-gray-200 dark:hover:bg-gray-700/50 hover:border-primary/50 dark:hover:border-purple-500/30',
-                          ]"
-                          @click="
-                            selectedContentType = typeOption.value as
-                              | 'all'
-                              | 'movie'
-                              | 'tv'
-                          "
-                        >
-                          {{ typeOption.label }}
-                        </button>
-                      </div>
+                        {{ typeOption.label }}
+                      </button>
                     </div>
                   </div>
                 </div>
-              </Section>
+              </div>
+            </Section>
 
+            <!-- Skeleton loading for initial load (after delay) -->
+            <Section
+              v-if="showSkeleton && loadingRecommendations && !hasAttemptedLoad"
+            >
+              <div
+                class="grid grid-cols-2 gap-4 md:grid-cols-5 lg:grid-cols-6 overflow-visible"
+              >
+                <SkeletonMediaCard
+                  v-for="i in 8"
+                  :key="`skeleton-${i}`"
+                  :show-rating="i % 3 !== 0"
+                  :show-watchlist="i % 4 === 0"
+                />
+              </div>
+            </Section>
+
+            <template
+              v-else-if="
+                !populatingPool && !updatingLanguage && !fetchingReplacement
+              "
+            >
               <!-- Empty State (only show if not populating and user has no likes) -->
               <!-- When pool is empty and user has likes, we automatically generate, so we don't show this -->
-              <div
+              <Section
                 v-if="
                   !populatingPool &&
                   hasAttemptedLoad &&
                   recommendations.length === 0 &&
                   !userStore.hasLikes
                 "
-                class="py-6 text-center"
               >
-                <div class="mx-auto w-full max-w-md">
-                  <svg
-                    class="mx-auto mb-4 w-16 h-16 text-gray-600 dark:text-gray-500"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
-                    />
-                  </svg>
-                  <h3
-                    class="mb-2 text-xl font-semibold text-gray-800 dark:text-gray-300 font-heading"
-                  >
-                    {{ $t('home.noRecommendations') }}
-                  </h3>
-                  <p class="mb-6 text-gray-800 dark:text-gray-300">
-                    {{ $t('home.noRecommendationsDescription') }}
-                  </p>
-                  <nuxt-link
-                    to="/onboarding"
-                    class="inline-block px-6 py-3 text-base font-medium text-white rounded-lg border shadow-lg backdrop-blur-sm transition-all duration-300 bg-primary-800 dark:bg-primary hover:bg-primary-900 dark:hover:bg-primary-600 border-primary-600/50"
-                  >
-                    {{ $t('home.addFavorites') }}
-                  </nuxt-link>
+                <div class="py-6 text-center">
+                  <div class="mx-auto w-full max-w-md">
+                    <svg
+                      class="mx-auto mb-4 w-16 h-16 text-gray-600 dark:text-gray-500"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+                      />
+                    </svg>
+                    <h3
+                      class="mb-2 text-xl font-semibold text-gray-800 dark:text-gray-300 font-heading"
+                    >
+                      {{ $t('home.noRecommendations') }}
+                    </h3>
+                    <p class="mb-6 text-gray-800 dark:text-gray-300">
+                      {{ $t('home.noRecommendationsDescription') }}
+                    </p>
+                    <nuxt-link
+                      to="/onboarding"
+                      class="inline-block px-6 py-3 text-base font-medium text-white rounded-lg border shadow-lg backdrop-blur-sm transition-all duration-300 bg-primary-800 dark:bg-primary hover:bg-primary-900 dark:hover:bg-primary-600 border-primary-600/50"
+                    >
+                      {{ $t('home.addFavorites') }}
+                    </nuxt-link>
+                  </div>
                 </div>
-              </div>
+              </Section>
+
+              <!-- Empty State for filters (when results.length === 0 and request completed) -->
+              <Section
+                v-else-if="
+                  hasAttemptedLoad &&
+                  recommendations.length === 0 &&
+                  !loadingRecommendations &&
+                  !isFilterLoading &&
+                  !populatingPool &&
+                  !updatingLanguage &&
+                  !fetchingReplacement &&
+                  userStore.hasLikes
+                "
+              >
+                <div class="py-12 text-center">
+                  <div class="mx-auto w-full max-w-md">
+                    <h3
+                      class="mb-3 text-xl font-semibold text-gray-800 dark:text-gray-300"
+                    >
+                      {{ $t('home.noResultsWithFilters') }}
+                    </h3>
+                    <p class="mb-6 text-gray-600 dark:text-gray-400">
+                      {{ $t('home.noResultsWithFiltersDescription') }}
+                    </p>
+                    <div class="flex justify-center">
+                      <Button
+                        variant="outline"
+                        size="small"
+                        @click="removeFilters"
+                      >
+                        {{ $t('home.removeFilters') }}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </Section>
 
               <!-- Recommendations Section -->
-              <Section v-else>
+              <Section
+                v-else-if="recommendations && recommendations.length > 0"
+              >
                 <RecommendationSection
-                  v-if="recommendations && recommendations.length > 0"
                   :key="`rec-${recommendations.length}`"
                   :title="$t('home.recommendationsTitle')"
                   :description="$t('home.recommendationsDescription')"
@@ -1475,7 +1533,7 @@ onMounted(() => {
                   "
                 />
               </Section>
-            </div>
+            </template>
           </PageContainer>
         </AppShell>
       </section>

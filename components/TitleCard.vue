@@ -1,40 +1,40 @@
 <template>
   <article
     :class="[
-      'overflow-visible relative rounded-lg border backdrop-blur-xl transition-all duration-300',
+      'overflow-visible relative rounded-3xl border backdrop-blur-xl transition-all duration-300',
       'dark:bg-gray-900/40 bg-gray-100/80 border-gray-300/50 dark:border-white/10',
       'hover:border-gray-400/50 dark:hover:border-white/20 hover:shadow-lg hover:shadow-gray-900/20',
       customClass,
     ]"
-    :aria-label="ariaLabel || $t('media.titleCardLabel', { title: title })"
+    :aria-label="computedAriaLabel"
   >
     <!-- Poster Container -->
     <div
       :class="[
         'relative bg-gray-800 overflow-visible',
-        showContent ? 'rounded-t-lg' : 'rounded-lg',
+        showContent ? 'rounded-t-3xl' : 'rounded-3xl',
         aspectRatio === 'video' ? 'aspect-video' : 'aspect-[2/3]',
       ]"
     >
       <nuxt-link
-        :to="linkTo"
-        :aria-label="linkAriaLabel"
+        :to="computedLinkTo"
+        :aria-label="computedLinkAriaLabel"
         :class="[
           'block overflow-hidden relative w-full h-full focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 group',
-          showContent ? 'rounded-t-lg' : 'rounded-lg',
+          showContent ? 'rounded-t-3xl' : 'rounded-3xl',
         ]"
       >
         <!-- Image or Placeholder -->
         <div
-          v-if="posterPath"
+          v-if="computedPosterPath"
           :class="[
             'overflow-hidden w-full h-full',
-            showContent ? 'rounded-t-lg' : 'rounded-lg',
+            showContent ? 'rounded-t-3xl' : 'rounded-3xl',
           ]"
         >
           <img
-            :src="`https://image.tmdb.org/t/p/w500${posterPath}`"
-            :alt="imageAlt"
+            :src="`https://image.tmdb.org/t/p/w500${computedPosterPath}`"
+            :alt="computedImageAlt"
             class="object-cover w-full h-full transition-transform duration-300 group-hover:scale-105"
             loading="lazy"
             decoding="async"
@@ -45,10 +45,10 @@
           :class="[
             'flex overflow-hidden justify-center items-center w-full h-full',
             'text-gray-600 dark:text-gray-500',
-            showContent ? 'rounded-t-lg' : 'rounded-lg',
+            showContent ? 'rounded-t-3xl' : 'rounded-3xl',
           ]"
           role="img"
-          :aria-label="noImageAriaLabel"
+          :aria-label="computedNoImageAriaLabel"
         >
           <IconImage icon-class="w-12 h-12" />
         </div>
@@ -68,33 +68,202 @@
         class="flex overflow-visible absolute top-2 left-2 z-10 flex-col gap-2 items-start"
       >
         <div class="relative z-20">
-          <slot name="top-left-badges" />
+          <slot name="top-left-badges">
+            <!-- Default recommendation badges if recommendation prop is provided -->
+            <template v-if="recommendation">
+              <RatingBadge
+                v-if="recommendation.vote_average"
+                :rating="recommendation.vote_average"
+              />
+              <div
+                v-if="recommendation.in_watchlist"
+                class="p-2 rounded-full backdrop-blur-sm bg-primary/80"
+                :class="recommendation.vote_average ? 'mt-2' : ''"
+                :title="t('media.savedWatchlist')"
+              >
+                <IconClock icon-class="w-4 h-4 text-white" />
+              </div>
+            </template>
+          </slot>
         </div>
-        <MediaTypeBadge v-if="showType" :type="type" />
+        <MediaTypeBadge v-if="showType" :type="computedType" />
       </div>
 
       <!-- Top-right actions slot - Outside the link to prevent navigation -->
       <div class="overflow-visible absolute top-2 right-2 z-30">
-        <slot name="top-right-actions" />
+        <slot name="top-right-actions">
+          <!-- Default recommendation action menu if recommendation prop is provided -->
+          <template v-if="recommendation && showRecommendationActions">
+            <div class="overflow-visible">
+              <ActionMenu ref="dropdownRef" width="w-48" position="right">
+                <template #trigger>
+                  <IconButton
+                    :icon="IconMoreVertical"
+                    :aria-label="
+                      t('media.actionsMenuFor', { title: recommendation.title })
+                    "
+                    size="small"
+                    variant="default"
+                    custom-class="menu-button p-2 rounded-full bg-black/50 hover:bg-gray-700/80 backdrop-blur-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-black/50 [&>svg]:text-white"
+                  />
+                </template>
+                <div class="p-4">
+                  <!-- If title has a state, only show option to remove that state -->
+                  <Button
+                    v-if="recommendation.liked"
+                    type="button"
+                    variant="ghost"
+                    size="small"
+                    custom-class="justify-start w-full text-left"
+                    @click.stop.prevent="handleAction('remove-liked')"
+                  >
+                    <template #icon>
+                      <IconHeart icon-class="w-4 h-4" />
+                    </template>
+                    {{ t('media.removeFromLiked') }}
+                  </Button>
+                  <Button
+                    v-else-if="recommendation.in_watchlist"
+                    type="button"
+                    variant="ghost"
+                    size="small"
+                    custom-class="justify-start w-full text-left"
+                    @click.stop.prevent="handleAction(TitleStatus.WATCHLIST)"
+                  >
+                    <template #icon>
+                      <IconClock icon-class="w-4 h-4" />
+                    </template>
+                    {{ t('media.removeFromWatchlist') }}
+                  </Button>
+                  <!-- If title has no state, show all options to add states -->
+                  <template v-else>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="small"
+                      custom-class="justify-start mb-2 w-full text-left"
+                      @click.stop.prevent="handleAction(TitleStatus.SEEN)"
+                    >
+                      <template #icon>
+                        <IconCheck icon-class="w-4 h-4" />
+                      </template>
+                      {{ t('media.seen') }}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="small"
+                      custom-class="justify-start mb-2 w-full text-left"
+                      @click.stop.prevent="handleAction('liked')"
+                    >
+                      <template #icon>
+                        <IconHeart icon-class="w-4 h-4" />
+                      </template>
+                      {{ t('media.liked') }}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="small"
+                      custom-class="justify-start mb-2 w-full text-left"
+                      @click.stop.prevent="
+                        handleAction(TitleStatus.NOT_INTERESTED)
+                      "
+                    >
+                      <template #icon>
+                        <IconX icon-class="w-4 h-4" />
+                      </template>
+                      {{ t('media.notInterested') }}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="small"
+                      custom-class="justify-start w-full text-left"
+                      @click.stop.prevent="handleAction(TitleStatus.WATCHLIST)"
+                    >
+                      <template #icon>
+                        <IconClock icon-class="w-4 h-4" />
+                      </template>
+                      {{ t('media.watchLater') }}
+                    </Button>
+                  </template>
+                </div>
+              </ActionMenu>
+            </div>
+          </template>
+        </slot>
       </div>
     </div>
 
     <!-- Content slot - Optional content area below the poster -->
-    <div v-if="showContent" class="p-4">
-      <slot name="content" />
-    </div>
+    <section v-if="showContent" class="p-4">
+      <slot name="content">
+        <!-- Default recommendation content if recommendation prop is provided -->
+        <template v-if="recommendation">
+          <section class="flex flex-col gap-3">
+            <!-- Overview -->
+            <p
+              v-if="recommendation.overview"
+              class="text-xs text-gray-800 dark:text-gray-300 line-clamp-3"
+            >
+              {{ recommendation.overview }}
+            </p>
+            <p v-else class="text-xs italic text-gray-700 dark:text-gray-300">
+              {{ t('media.noDescriptionAvailable') }}
+            </p>
+
+            <!-- Providers (logos only, no names) -->
+            <div
+              v-if="
+                recommendation.providers && recommendation.providers.length > 0
+              "
+              class="flex flex-wrap gap-2"
+            >
+              <img
+                v-for="provider in providersWithLogos"
+                :key="provider.provider_id"
+                :src="`https://image.tmdb.org/t/p/w45${provider.logo_path}`"
+                :alt="provider.provider_name"
+                class="object-contain w-4 h-4 md:w-8 md:h-8 rounded"
+                :title="provider.provider_name"
+              />
+            </div>
+            <div v-else class="text-xs italic text-gray-700 dark:text-gray-300">
+              {{ t('media.noPlatforms') }}
+            </div>
+          </section>
+        </template>
+      </slot>
+    </section>
   </article>
 </template>
 
 <script setup lang="ts">
+import { computed, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
+import type { Recommendation } from '@/types/Recommendation';
+import { TitleStatus } from '@/types/TitleStatus';
 import IconImage from './icons/IconImage.vue';
 import MediaTypeBadge from './MediaTypeBadge.vue';
+import RatingBadge from './RatingBadge.vue';
+import IconMoreVertical from './icons/IconMoreVertical.vue';
+import IconClock from './icons/IconClock.vue';
+import IconCheck from './icons/IconCheck.vue';
+import IconHeart from './icons/IconHeart.vue';
+import IconX from './icons/IconX.vue';
+import IconButton from './ui/IconButton.vue';
+import Button from './ui/Button.vue';
+import ActionMenu from './ui/ActionMenu.vue';
+
+const { t } = useI18n();
 
 interface Props {
-  // Required
-  title: string;
-  linkTo: string;
+  // Required - either title/linkTo OR recommendation
+  title?: string;
+  linkTo?: string;
+  recommendation?: Recommendation;
 
   // Optional display
   posterPath?: string | null;
@@ -102,6 +271,7 @@ interface Props {
   showType?: boolean;
   type?: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv;
   showContent?: boolean;
+  showRecommendationActions?: boolean;
 
   // Optional customization
   customClass?: string;
@@ -112,12 +282,16 @@ interface Props {
   hoverText?: string;
 }
 
-withDefaults(defineProps<Props>(), {
-  posterPath: null,
+const props = withDefaults(defineProps<Props>(), {
+  title: undefined,
+  linkTo: undefined,
+  recommendation: undefined,
+  posterPath: undefined,
   aspectRatio: 'poster',
   showType: true,
   type: undefined,
   showContent: false,
+  showRecommendationActions: true,
   customClass: '',
   ariaLabel: undefined,
   linkAriaLabel: undefined,
@@ -125,6 +299,88 @@ withDefaults(defineProps<Props>(), {
   noImageAriaLabel: undefined,
   hoverText: undefined,
 });
+
+const emit = defineEmits<{
+  'mark-seen': [title: Recommendation];
+  'mark-not-interested': [title: Recommendation];
+  'mark-liked': [title: Recommendation];
+  'remove-liked': [title: Recommendation];
+  'mark-watchlist': [title: Recommendation];
+}>();
+
+const dropdownRef = ref<InstanceType<typeof ActionMenu> | null>(null);
+
+// Computed values based on recommendation or individual props
+const computedTitle = computed(
+  () => props.recommendation?.title || props.title || ''
+);
+const computedLinkTo = computed(() => {
+  if (props.recommendation) {
+    const mediaType =
+      props.recommendation.type === MediaTypeEnum.movie ? 'movie' : 'tv-show';
+    return `/${mediaType}/${props.recommendation.tmdb_id}`;
+  }
+  return props.linkTo || '#';
+});
+const computedPosterPath = computed(
+  () => props.posterPath ?? props.recommendation?.poster_path ?? null
+);
+const computedType = computed(() => props.type || props.recommendation?.type);
+const computedImageAlt = computed(() => {
+  if (props.imageAlt) return props.imageAlt;
+  if (props.recommendation)
+    return t('media.posterOf', { title: props.recommendation.title });
+  return '';
+});
+const computedNoImageAriaLabel = computed(() => {
+  if (props.noImageAriaLabel) return props.noImageAriaLabel;
+  if (props.recommendation)
+    return t('media.noPosterAvailableFor', {
+      title: props.recommendation.title,
+    });
+  return '';
+});
+const computedLinkAriaLabel = computed(() => {
+  if (props.linkAriaLabel) return props.linkAriaLabel;
+  if (props.recommendation)
+    return t('media.viewDetailsOf', { title: props.recommendation.title });
+  return '';
+});
+const computedAriaLabel = computed(() => {
+  if (props.ariaLabel) return props.ariaLabel;
+  if (props.recommendation)
+    return t('media.recommendationLabel', {
+      title: props.recommendation.title,
+    });
+  return t('media.titleCardLabel', { title: computedTitle.value });
+});
+
+// Filter providers that have logos
+const providersWithLogos = computed(() => {
+  if (!props.recommendation?.providers) return [];
+  return props.recommendation.providers
+    .filter((provider) => provider.logo_path)
+    .slice(0, 6);
+});
+
+const handleAction = (action: TitleStatus | 'liked' | 'remove-liked') => {
+  if (!props.recommendation) return;
+
+  // Close dropdown when action is triggered
+  dropdownRef.value?.close();
+
+  if (action === TitleStatus.SEEN) {
+    emit('mark-seen', props.recommendation);
+  } else if (action === 'liked') {
+    emit('mark-liked', props.recommendation);
+  } else if (action === 'remove-liked') {
+    emit('remove-liked', props.recommendation);
+  } else if (action === TitleStatus.NOT_INTERESTED) {
+    emit('mark-not-interested', props.recommendation);
+  } else if (action === TitleStatus.WATCHLIST) {
+    emit('mark-watchlist', props.recommendation);
+  }
+};
 </script>
 
 <style scoped>

@@ -1,14 +1,14 @@
 <template>
   <article
-    class="overflow-visible relative rounded-lg border backdrop-blur-xl transition-all duration-300 dark:bg-gray-900/40 bg-gray-100/80 border-gray-300/50 dark:border-white/10"
+    class="overflow-visible relative rounded-3xl border backdrop-blur-xl transition-all duration-300 dark:bg-gray-900/40 bg-gray-100/80 border-gray-300/50 dark:border-white/10"
   >
     <!-- Poster Container -->
     <div
-      class="relative bg-gray-800 overflow-visible rounded-t-lg aspect-[2/3]"
+      class="relative bg-gray-800 overflow-visible rounded-t-3xl aspect-[2/3]"
     >
       <!-- Skeleton Poster -->
       <div
-        class="overflow-hidden w-full h-full rounded-t-lg skeleton-shimmer"
+        class="overflow-hidden w-full h-full rounded-t-3xl skeleton-shimmer"
       ></div>
 
       <!-- Top-left badges skeleton -->
@@ -26,9 +26,7 @@
           class="p-2 w-8 h-8 rounded-full skeleton-shimmer"
         ></div>
         <!-- MediaType Badge Skeleton -->
-        <div
-          class="px-2 py-1 w-12 h-5 rounded-full skeleton-shimmer"
-        ></div>
+        <div class="px-2 py-1 w-12 h-5 rounded-full skeleton-shimmer"></div>
       </div>
 
       <!-- Top-right actions skeleton -->
@@ -39,14 +37,23 @@
 
     <!-- Content skeleton -->
     <div class="p-4">
-      <!-- Overview skeleton - 3 lines -->
-      <div class="mb-3 space-y-2">
-        <div class="h-3 rounded skeleton-shimmer" :style="{ width: '100%' }"></div>
-        <div class="h-3 rounded skeleton-shimmer" :style="{ width: '95%' }"></div>
-        <div class="h-3 rounded skeleton-shimmer" :style="{ width: '85%' }"></div>
+      <!-- Overview skeleton - 3 lines matching text-xs line-clamp-3 -->
+      <div class="mb-3 space-y-1.5">
+        <div
+          class="h-3 rounded skeleton-shimmer"
+          :style="{ width: '100%' }"
+        ></div>
+        <div
+          class="h-3 rounded skeleton-shimmer"
+          :style="{ width: '95%' }"
+        ></div>
+        <div
+          class="h-3 rounded skeleton-shimmer"
+          :style="{ width: '80%' }"
+        ></div>
       </div>
 
-      <!-- Providers skeleton - 6 small logos -->
+      <!-- Providers skeleton - matching w-4 h-4 md:w-8 md:h-8 -->
       <div class="flex flex-wrap gap-2">
         <div
           v-for="i in 6"
@@ -116,4 +123,3 @@ withDefaults(defineProps<Props>(), {
   }
 }
 </style>
-
