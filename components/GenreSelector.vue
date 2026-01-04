@@ -4,11 +4,17 @@
       <div v-show="false">{{ updateOpenState(open) }}</div>
       <ComboboxButton
         ref="buttonRef"
-        class="px-4 py-2 w-full text-left text-gray-800 rounded-lg border border-gray-300 opacity-90 dark:bg-gray-800/50 bg-white/80 dark:border-gray-600 dark:text-gray-300 backdrop-blur-xs hover:opacity-100 transition-all focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+        class="px-4 py-2 pr-4 pl-10 w-full text-left text-gray-800 rounded-lg opacity-90 dark:bg-gray-800/50 bg-white/80 dark:text-gray-300 backdrop-blur-xs hover:opacity-100 transition-all focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
       >
         <span class="flex gap-2 justify-between items-center w-full">
           <div class="flex overflow-hidden flex-1 gap-2 items-center min-w-0">
-            <span class="text-sm truncate">{{
+            <!-- Search Icon -->
+            <div
+              class="flex absolute inset-y-0 left-0 items-center pl-3 pointer-events-none"
+            >
+              <IconSearch icon-class="w-4 h-4 text-gray-400" />
+            </div>
+            <span class="text-sm truncate pl-7">{{
               selectedGenreObj?.name ||
               t('preferences.content.favoriteGenres.searchPlaceholder')
             }}</span>
@@ -83,6 +89,7 @@
                           ? 'dark:bg-gray-800/30 bg-gray-100/50'
                           : '',
                       ]"
+                      @click="handleGenreSelect(genre)"
                     >
                       <span
                         class="text-sm text-gray-800 dark:text-gray-300 whitespace-nowrap"
@@ -180,11 +187,22 @@ const updateOpenState = (value: boolean) => {
   }
 };
 
-// Watch openState for position updates
-watch(openState, async (isOpen) => {
-  if (!isOpen) return;
-  await nextTick();
-  updateDropdownPosition();
+// Track if selection is from explicit user action
+const isExplicitSelection = ref(false);
+
+// Watch openState for position updates and clearing selection
+watch(openState, async (isOpen, wasOpen) => {
+  if (isOpen) {
+    // Opening: update position
+    await nextTick();
+    updateDropdownPosition();
+  } else if (wasOpen) {
+    // Closing: clear selection if no explicit selection was made
+    if (!isExplicitSelection.value && selectedGenreObj.value) {
+      selectedGenreObj.value = null;
+    }
+    isExplicitSelection.value = false; // Reset flag
+  }
 });
 
 // Update position on scroll and resize when open
@@ -202,14 +220,22 @@ onUnmounted(() => {
 const selectedGenreObj = computed({
   get: () => props.modelValue || null,
   set: (genre: Genre | null) => {
-    if (genre) {
-      emit('update:modelValue', genre);
+    emit('update:modelValue', genre);
+    // Only emit select if it was an explicit selection (click on option)
+    if (isExplicitSelection.value && genre) {
       emit('select', genre);
-    } else {
-      emit('update:modelValue', null);
+      isExplicitSelection.value = false; // Reset flag
+      // Clear search input after selection
+      searchQuery.value = '';
     }
   },
 });
+
+// Handle explicit selection via click
+const handleGenreSelect = (genre: Genre) => {
+  isExplicitSelection.value = true;
+  selectedGenreObj.value = genre;
+};
 
 // Filtered genres based on search query and excluding already selected
 const filteredGenres = computed(() => {
@@ -244,14 +270,6 @@ const filteredGenres = computed(() => {
     });
 });
 
-// Reset search when genre is selected
-watch(
-  () => selectedGenreObj.value,
-  () => {
-    if (selectedGenreObj.value) {
-      searchQuery.value = '';
-    }
-  }
-);
+// Note: search is cleared in handleGenreSelect, no need for separate watch
 </script>
 

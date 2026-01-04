@@ -4,10 +4,16 @@
       <div v-show="false">{{ updateOpenState(open) }}</div>
       <ComboboxButton
         ref="buttonRef"
-        class="px-4 py-2 w-full text-left text-gray-800 rounded-lg border border-gray-300 opacity-90 dark:bg-gray-800/50 bg-white/80 dark:border-gray-600 dark:text-gray-300 backdrop-blur-xs hover:opacity-100 transition-all focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+        class="px-4 py-2 pr-4 pl-10 w-full text-left text-gray-800 rounded-lg opacity-90 dark:bg-gray-800/50 bg-white/80 dark:text-gray-300 backdrop-blur-xs hover:opacity-100 transition-all focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
       >
         <span class="flex gap-2 justify-between items-center w-full">
           <div class="flex overflow-hidden flex-1 gap-2 items-center min-w-0">
+            <!-- Search Icon -->
+            <div
+              class="flex absolute inset-y-0 left-0 items-center pl-3 pointer-events-none"
+            >
+              <IconSearch icon-class="w-4 h-4 text-gray-400" />
+            </div>
             <img
               v-if="selectedRegionObj"
               :src="`/icons/flags/${selectedRegionObj.code.toLowerCase()}.svg`"

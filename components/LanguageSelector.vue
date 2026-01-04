@@ -4,7 +4,7 @@
       <div v-show="false">{{ updateOpenState(open) }}</div>
       <ListboxButton
         ref="buttonRef"
-        class="px-4 py-2 w-full text-left text-gray-800 rounded-lg border border-gray-300 opacity-90 dark:bg-gray-800/50 bg-white/80 dark:border-gray-600 dark:text-gray-300 backdrop-blur-xs hover:opacity-100 transition-all focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+        class="px-4 py-2 w-full text-left text-gray-800 rounded-lg opacity-90 dark:bg-gray-800/50 bg-white/80 dark:text-gray-300 backdrop-blur-xs hover:opacity-100 transition-all focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
       >
         <span class="flex gap-2 justify-between items-center w-full">
           <div class="flex overflow-hidden flex-1 gap-2 items-center min-w-0">

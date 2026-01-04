@@ -4,7 +4,7 @@
       <div v-show="false">{{ updateOpenState(open) }}</div>
       <ComboboxButton
         ref="buttonRef"
-        class="px-4 py-2 pr-4 pl-10 w-full text-sm text-gray-800 rounded-lg border-gray-300 opacity-90 transition-all dark:text-gray-300 dark:bg-gray-800/50 bg-white/80 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-transparent focus:border-transparent backdrop-blur-xs hover:opacity-100"
+        class="px-4 py-2 pr-4 pl-10 w-full text-sm text-gray-800 rounded-lg opacity-90 transition-all dark:text-gray-300 dark:bg-gray-800/50 bg-white/80 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-transparent focus:border-transparent backdrop-blur-xs hover:opacity-100"
       >
         <span class="flex gap-2 justify-between items-center w-full">
           <div class="flex overflow-hidden flex-1 gap-2 items-center min-w-0">
@@ -66,6 +66,7 @@
                       ? 'dark:bg-gray-800/30 bg-gray-100/50'
                       : '',
                   ]"
+                  @click="handleProviderSelect(provider)"
                 >
                   <img
                     v-if="provider.logo_path"
@@ -176,11 +177,19 @@ const updateOpenState = (value: boolean) => {
   }
 };
 
-// Watch openState for position updates
-watch(openState, async (isOpen) => {
-  if (!isOpen) return;
-  await nextTick();
-  updateDropdownPosition();
+// Watch openState for position updates and clearing selection
+watch(openState, async (isOpen, wasOpen) => {
+  if (isOpen) {
+    // Opening: update position
+    await nextTick();
+    updateDropdownPosition();
+  } else if (wasOpen) {
+    // Closing: clear selection if no explicit selection was made
+    if (!isExplicitSelection.value && selectedProviderObj.value) {
+      selectedProviderObj.value = null;
+    }
+    isExplicitSelection.value = false; // Reset flag
+  }
 });
 
 // Update position on scroll and resize when open
@@ -194,18 +203,29 @@ onUnmounted(() => {
   window.removeEventListener('resize', updateDropdownPosition);
 });
 
+// Track if selection is from explicit user action
+const isExplicitSelection = ref(false);
+
 // Selected provider for Combobox
 const selectedProviderObj = computed({
   get: () => props.modelValue || null,
   set: (provider: Provider | null) => {
-    if (provider) {
-      emit('update:modelValue', provider);
+    emit('update:modelValue', provider);
+    // Only emit select if it was an explicit selection (click on option)
+    if (isExplicitSelection.value && provider) {
       emit('select', provider);
-    } else {
-      emit('update:modelValue', null);
+      isExplicitSelection.value = false; // Reset flag
     }
   },
 });
+
+// Handle explicit selection via click
+const handleProviderSelect = (provider: Provider) => {
+  isExplicitSelection.value = true;
+  selectedProviderObj.value = provider;
+  // Clear search input after selection
+  searchQuery.value = '';
+};
 
 // Filtered providers based on search query and excluding already selected
 const filteredProviders = computed(() => {
@@ -237,14 +257,6 @@ const filteredProviders = computed(() => {
   return props.maxResults > 0 ? sorted.slice(0, props.maxResults) : sorted;
 });
 
-// Reset search when provider is selected
-watch(
-  () => selectedProviderObj.value,
-  () => {
-    if (selectedProviderObj.value) {
-      searchQuery.value = '';
-    }
-  }
-);
+// Note: search is cleared in handleProviderSelect, no need for separate watch
 </script>
 

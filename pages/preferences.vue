@@ -187,7 +187,7 @@
                   >
                     {{ $t('preferences.content.region.title') }}
                   </h2>
-                  <p class="mb-4 text-sm text-gray-600 dark:text-gray-400">
+                  <p class="mb-6 text-sm text-gray-600 dark:text-gray-400">
                     {{ $t('preferences.content.region.description') }}
                   </p>
                   <RegionSelector
@@ -203,7 +203,7 @@
                   >
                     {{ $t('preferences.content.preferredLanguage.title') }}
                   </h2>
-                  <p class="mb-4 text-sm text-gray-600 dark:text-gray-400">
+                  <p class="mb-6 text-sm text-gray-600 dark:text-gray-400">
                     {{
                       $t('preferences.content.preferredLanguage.description')
                     }}
@@ -223,7 +223,7 @@
                   >
                     {{ $t('preferences.content.includedProviders.title') }}
                   </h2>
-                  <p class="mb-4 text-sm text-gray-600 dark:text-gray-400">
+                  <p class="mb-6 text-sm text-gray-600 dark:text-gray-400">
                     {{
                       $t('preferences.content.includedProviders.description')
                     }}
@@ -252,31 +252,17 @@
                       ({{ selectedProviders.length }})
                     </p>
                     <div class="flex flex-wrap gap-2">
-                      <div
+                      <ProviderPill
                         v-for="provider in selectedProviders"
                         :key="provider.provider_id"
-                        class="flex gap-2 items-center px-4 py-1.5 rounded-full border backdrop-blur-xl dark:bg-gray-900/40 bg-gray-100/80 border-gray-300/50 dark:border-white/10"
-                      >
-                        <img
-                          v-if="provider.logo_path"
-                          :src="`https://image.tmdb.org/t/p/w45${provider.logo_path}`"
-                          :alt="provider.provider_name"
-                          class="object-contain w-auto h-5"
-                        />
-                        <span
-                          class="text-xs font-semibold text-gray-800 dark:text-gray-300"
-                          >{{ provider.provider_name }}</span
-                        >
-                        <CloseButton
-                          custom-class="ml-1"
-                          :aria-label="
-                            $t('preferences.content.includedProviders.remove', {
-                              name: provider.provider_name,
-                            })
-                          "
-                          @click="removeProvider(provider.provider_id)"
-                        />
-                      </div>
+                        :provider="provider"
+                        :aria-label="
+                          $t('preferences.content.includedProviders.remove', {
+                            name: provider.provider_name,
+                          })
+                        "
+                        @remove="removeProvider(provider.provider_id)"
+                      />
                     </div>
                   </div>
 
@@ -298,7 +284,7 @@
                   >
                     {{ $t('preferences.content.favoriteGenres.title') }}
                   </h2>
-                  <p class="mb-4 text-sm text-gray-600 dark:text-gray-400">
+                  <p class="mb-6 text-sm text-gray-600 dark:text-gray-400">
                     {{ $t('preferences.content.favoriteGenres.description') }}
                   </p>
 
@@ -319,25 +305,17 @@
                       ({{ selectedGenres.length }})
                     </p>
                     <div class="flex flex-wrap gap-2">
-                      <div
+                      <GenrePill
                         v-for="genre in selectedGenres"
                         :key="genre.id"
-                        class="flex gap-2 items-center px-4 py-1.5 rounded-full border backdrop-blur-xl md:py-2.5 dark:bg-gray-900/40 bg-gray-100/80 border-gray-300/50 dark:border-white/10"
-                      >
-                        <span
-                          class="text-xs font-medium text-gray-800 md:text-sm dark:text-gray-300"
-                          >{{ genre.name }}</span
-                        >
-                        <CloseButton
-                          custom-class="ml-1"
-                          :aria-label="
-                            $t('preferences.content.favoriteGenres.remove', {
-                              name: genre.name,
-                            })
-                          "
-                          @click="removeGenre(genre.id)"
-                        />
-                      </div>
+                        :genre="genre"
+                        :aria-label="
+                          $t('preferences.content.favoriteGenres.remove', {
+                            name: genre.name,
+                          })
+                        "
+                        @remove="removeGenre(genre.id)"
+                      />
                     </div>
                   </div>
 
@@ -521,7 +499,6 @@ import { ref, computed, onMounted, watch, nextTick, onUnmounted } from 'vue';
 import { onBeforeRouteLeave } from 'vue-router';
 import { useUserStore } from '@/stores/user';
 import { TitleStatus } from '@/types/TitleStatus';
-import CloseButton from '@/components/ui/CloseButton.vue';
 import Button from '@/components/ui/Button.vue';
 import Modal from '@/components/ui/Modal.vue';
 import Tabs from '@/components/ui/Tabs.vue';
@@ -562,6 +539,8 @@ import LanguageSelector from '@/components/LanguageSelector.vue';
 import RegionSelector from '@/components/RegionSelector.vue';
 import GenreSelector from '@/components/GenreSelector.vue';
 import ProviderSelector from '@/components/ProviderSelector.vue';
+import GenrePill from '@/components/GenrePill.vue';
+import ProviderPill from '@/components/ProviderPill.vue';
 import { useUndoToast } from '@/composables/useUndoToast';
 import type { TMDBSearchResult } from '@/types/tmdb/Search';
 import {
@@ -1658,7 +1637,6 @@ const selectedProviderForSelector = ref<{
   logo_path: string | null;
 } | null>(null);
 
-
 // Fetch content preferences
 const fetchContentPreferences = async () => {
   const id = userId.value;
@@ -1689,7 +1667,8 @@ const fetchContentPreferences = async () => {
 
     if (response.success && response.preferences) {
       // Use the value from DB directly, only default to DEFAULT_LANGUAGE if it's truly null/undefined
-      const dbLanguage = response.preferences.preferred_language || DEFAULT_LANGUAGE;
+      const dbLanguage =
+        response.preferences.preferred_language || DEFAULT_LANGUAGE;
 
       contentPreferences.value = {
         preferred_language: dbLanguage ?? LanguageCode.SPANISH, // Only default if null/undefined
