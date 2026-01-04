@@ -66,7 +66,8 @@
                       ? 'dark:bg-gray-800/30 bg-gray-100/50'
                       : '',
                   ]"
-                  @click="handleProviderSelect(provider)"
+                  @mousedown.stop="handleProviderSelect(provider)"
+                  @touchstart.stop="handleProviderSelect(provider)"
                 >
                   <img
                     v-if="provider.logo_path"
@@ -216,15 +217,17 @@ const selectedProviderObj = computed({
 
 // Handle explicit selection via click
 const handleProviderSelect = (provider: Provider) => {
-  isExplicitSelection.value = true;
-  selectedProviderObj.value = provider;
-  // Emit select event directly
+  // Emit select event first, before any other operations
   emit('select', provider);
-  // Clear search input and selection after selection
+  
+  // Clear search input immediately
   searchQuery.value = '';
+  
   // Clear the selection so the placeholder shows again
+  isExplicitSelection.value = true;
   nextTick(() => {
     selectedProviderObj.value = null;
+    isExplicitSelection.value = false;
   });
 };
 

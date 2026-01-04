@@ -244,7 +244,7 @@
                   />
 
                   <!-- Selected Providers List -->
-                  <div v-if="selectedProviders.length > 0" class="mb-4">
+                  <div v-if="selectedProviders.length > 0" class="my-4">
                     <p
                       class="mb-2 text-sm font-medium text-gray-800 dark:text-gray-300"
                     >
@@ -297,7 +297,7 @@
                   />
 
                   <!-- Selected Genres List -->
-                  <div v-if="selectedGenres.length > 0" class="mb-4">
+                  <div v-if="selectedGenres.length > 0" class="my-4">
                     <p
                       class="mb-2 text-sm font-medium text-gray-800 dark:text-gray-300"
                     >

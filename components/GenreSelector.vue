@@ -89,7 +89,8 @@
                           ? 'dark:bg-gray-800/30 bg-gray-100/50'
                           : '',
                       ]"
-                      @click="handleGenreSelect(genre)"
+                      @mousedown.stop="handleGenreSelect(genre)"
+                      @touchstart.stop="handleGenreSelect(genre)"
                     >
                       <span
                         class="text-sm text-gray-800 dark:text-gray-300 whitespace-nowrap"
@@ -226,15 +227,17 @@ const selectedGenreObj = computed({
 
 // Handle explicit selection via click
 const handleGenreSelect = (genre: Genre) => {
-  isExplicitSelection.value = true;
-  selectedGenreObj.value = genre;
-  // Emit select event directly
+  // Emit select event first, before any other operations
   emit('select', genre);
-  // Clear search input and selection after selection
+  
+  // Clear search input immediately
   searchQuery.value = '';
+  
   // Clear the selection so the placeholder shows again
+  isExplicitSelection.value = true;
   nextTick(() => {
     selectedGenreObj.value = null;
+    isExplicitSelection.value = false;
   });
 };
 
