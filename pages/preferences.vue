@@ -72,10 +72,15 @@
                 ({{ selectedProviders.length }})
               </p>
               <div class="flex flex-wrap gap-2">
-                <ProviderPill
+                <FilterPill
                   v-for="provider in selectedProviders"
                   :key="provider.provider_id"
-                  :provider="provider"
+                  :label="provider.provider_name"
+                  :icon="
+                    provider.logo_path
+                      ? `https://image.tmdb.org/t/p/w45${provider.logo_path}`
+                      : undefined
+                  "
                   :aria-label="
                     $t('preferences.content.includedProviders.remove', {
                       name: provider.provider_name,
@@ -123,10 +128,10 @@
                 ({{ selectedGenres.length }})
               </p>
               <div class="flex flex-wrap gap-2">
-                <GenrePill
+                <FilterPill
                   v-for="genre in selectedGenres"
                   :key="genre.id"
-                  :genre="genre"
+                  :label="genre.name"
                   :aria-label="
                     $t('preferences.content.favoriteGenres.remove', {
                       name: genre.name,
@@ -270,8 +275,7 @@ import Toast from '@/components/ui/Toast.vue';
 import RegionSelector from '@/components/RegionSelector.vue';
 import GenreSelector from '@/components/GenreSelector.vue';
 import ProviderSelector from '@/components/ProviderSelector.vue';
-import GenrePill from '@/components/GenrePill.vue';
-import ProviderPill from '@/components/ProviderPill.vue';
+import FilterPill from '@/components/ui/FilterPill.vue';
 import { useUndoToast } from '@/composables/useUndoToast';
 import { DEFAULT_LANGUAGE, toTMDBLanguageCode } from '@/constants/languages';
 import { useUserStore } from '@/stores/user';

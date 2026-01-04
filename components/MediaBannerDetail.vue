@@ -102,8 +102,8 @@
                 :rating="mediaWithProviders.vote_average"
                 class="xl:hidden"
               />
-              <!-- MediaStatusBagde -->
-              <MediaStatusBagde
+              <!-- MediaStatusBadge -->
+              <MediaStatusBadge
                 v-if="mediaType === MediaTypeEnum.tv || inTheaters"
                 :in-production="inProduction"
                 :in-theaters="inTheaters"
@@ -409,7 +409,7 @@ import type { Genre } from '@/types/Genre';
 import ProviderList from './ProviderList.vue';
 import type { Movie } from '@/types/Movie';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
-import MediaStatusBagde from './MediaStatusBagde.vue';
+import MediaStatusBadge from './MediaStatusBadge.vue';
 import IconArrowLeft from './icons/IconArrowLeft.vue';
 import IconCalendar from './icons/IconCalendar.vue';
 import IconTag from './icons/IconTag.vue';

@@ -14,11 +14,21 @@
     </div>
 
     <!-- Alert Messages -->
-    <AlertMessage v-if="errorMessage" :message="errorMessage" type="error" />
-    <AlertMessage
+    <Alert
+      v-if="errorMessage"
+      :message="errorMessage"
+      variant="error"
+      :with-transition="true"
+      custom-class="mb-4"
+      :show-icon="false"
+    />
+    <Alert
       v-if="successMessage"
       :message="successMessage"
-      type="success"
+      variant="success"
+      :with-transition="true"
+      custom-class="mb-4"
+      :show-icon="false"
     />
 
     <!-- Loading State -->
@@ -83,7 +93,7 @@
 import { ref, onMounted, watch } from 'vue';
 import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 import { getSession } from '@/services/auth';
-import AlertMessage from '@/components/AlertMessage.vue';
+import Alert from '@/components/ui/Alert.vue';
 import IconButton from '@/components/ui/IconButton.vue';
 import AppShell from '@/components/layout/AppShell.vue';
 import PageContainer from '@/components/layout/PageContainer.vue';

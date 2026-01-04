@@ -7,6 +7,7 @@ import {
 import Input from '@/components/ui/Input.vue';
 import TabButton from '@/components/ui/TabButton.vue';
 import IconButton from '@/components/ui/IconButton.vue';
+import Alert from '@/components/ui/Alert.vue';
 import IconEye from '@/components/icons/IconEye.vue';
 import IconEyeSlash from '@/components/icons/IconEyeSlash.vue';
 import IconCheck from '@/components/icons/IconCheck.vue';
@@ -342,10 +343,17 @@ const backToLogin = () => {
         </div>
 
         <!-- Error message -->
-        <AlertMessage v-if="error" :message="error" type="error" />
+        <Alert
+          v-if="error"
+          :message="error"
+          variant="error"
+          :with-transition="true"
+          custom-class="mb-4"
+          :show-icon="false"
+        />
 
         <!-- Success message -->
-        <AlertMessage
+        <Alert
           v-if="signUpSuccess || magicLinkSent || forgotPasswordSent"
           :message="
             signUpSuccess
@@ -354,7 +362,10 @@ const backToLogin = () => {
                 ? t('auth.checkEmailRecovery')
                 : t('auth.checkEmailMagicLink')
           "
-          type="success"
+          variant="success"
+          :with-transition="true"
+          custom-class="mb-4"
+          :show-icon="false"
         />
 
         <!-- Password form -->

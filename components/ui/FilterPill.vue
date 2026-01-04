@@ -2,15 +2,21 @@
   <div
     class="flex gap-2 items-center px-4 py-1.5 rounded-full border backdrop-blur-xl dark:bg-gray-900/40 bg-gray-100/80 border-gray-300/50 dark:border-white/10"
   >
+    <!-- Icon slot or image -->
     <img
-      v-if="provider.logo_path"
-      :src="`https://image.tmdb.org/t/p/w45${provider.logo_path}`"
-      :alt="provider.provider_name"
+      v-if="icon && typeof icon === 'string'"
+      :src="icon"
+      :alt="label"
       class="object-contain w-auto h-5"
     />
+    <slot v-else-if="$slots.icon" name="icon" />
+    
+    <!-- Label -->
     <span class="text-xs font-semibold text-gray-800 dark:text-gray-300">{{
-      provider.provider_name
+      label
     }}</span>
+    
+    <!-- Close button -->
     <CloseButton
       custom-class="ml-1"
       :aria-label="ariaLabel"
@@ -22,18 +28,14 @@
 <script setup lang="ts">
 import CloseButton from '@/components/ui/CloseButton.vue';
 
-interface Provider {
-  provider_id: number;
-  provider_name: string;
-  logo_path: string | null;
-}
-
 interface Props {
-  provider: Provider;
+  label: string;
+  icon?: string; // Image URL
   ariaLabel?: string;
 }
 
-const props = withDefaults(defineProps<Props>(), {
+withDefaults(defineProps<Props>(), {
+  icon: undefined,
   ariaLabel: '',
 });
 

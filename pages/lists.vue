@@ -51,12 +51,37 @@
             <div v-if="currentTab === 'liked'">
               <Spinner v-if="isLoading" :message="$t('preferences.loading')" />
 
-              <TitleGrid
+              <div
                 v-else-if="likedTitles.length > 0"
-                :titles="likedTitles"
-                :on-remove="handleRemoveLikedClick"
-                :remove-label="$t('preferences.removeFromList')"
-              />
+                class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
+              >
+                <TitleCard
+                  v-for="title in likedTitles"
+                  :key="title.id"
+                  :title="title.title"
+                  :poster-path="title.poster_path"
+                  :link-to="`/${title.type === MediaTypeEnum.movie ? 'movie' : 'tv-show'}/${title.tmdb_id}`"
+                  :link-aria-label="$t('media.viewDetailsOf', { title: title.title })"
+                  :image-alt="$t('media.posterOf', { title: title.title })"
+                  :no-image-aria-label="$t('media.noPosterAvailableFor', { title: title.title })"
+                  :type="title.type"
+                  :aria-label="$t('media.titleCardLabel', { title: title.title })"
+                >
+                  <template #top-right-actions>
+                    <Tooltip :text="$t('common.delete')">
+                      <IconButton
+                        :aria-label="$t('common.delete')"
+                        size="small"
+                        variant="default"
+                        custom-class="p-2 rounded-full backdrop-blur-sm pointer-events-auto w-fit h-fit bg-black/50 hover:bg-red-600/80"
+                        @click.stop.prevent="handleRemoveLikedClick(title)"
+                      >
+                        <IconX icon-class="w-4 h-4 text-white" />
+                      </IconButton>
+                    </Tooltip>
+                  </template>
+                </TitleCard>
+              </div>
 
               <EmptyState
                 v-else
@@ -71,14 +96,58 @@
             <div v-if="currentTab === 'seen'">
               <Spinner v-if="isLoading" :message="$t('seen.loading')" />
 
-              <TitleGrid
+              <div
                 v-else-if="seenTitles.length > 0"
-                :titles="seenTitles"
-                :on-remove="handleRemoveSeen"
-                :remove-label="$t('seen.removeFromList')"
-                :on-like="handleAddToLiked"
-                :like-label="$t('media.liked')"
-              />
+                class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
+              >
+                <TitleCard
+                  v-for="title in seenTitles"
+                  :key="title.id"
+                  :title="title.title"
+                  :poster-path="title.poster_path"
+                  :link-to="`/${title.type === MediaTypeEnum.movie ? 'movie' : 'tv-show'}/${title.tmdb_id}`"
+                  :link-aria-label="$t('media.viewDetailsOf', { title: title.title })"
+                  :image-alt="$t('media.posterOf', { title: title.title })"
+                  :no-image-aria-label="$t('media.noPosterAvailableFor', { title: title.title })"
+                  :type="title.type"
+                  :aria-label="$t('media.titleCardLabel', { title: title.title })"
+                >
+                  <template #top-left-badges>
+                    <Tooltip :text="$t('media.liked')">
+                      <IconButton
+                        :aria-label="$t('media.liked')"
+                        size="small"
+                        variant="default"
+                        :custom-class="`p-2 rounded-full backdrop-blur-sm pointer-events-auto w-fit h-fit ${
+                          title.liked === true
+                            ? 'bg-primary-800 text-white border border-gray-700/50 dark:bg-primary-600/70 dark:border-primary-800 hover:bg-primary-900 dark:hover:bg-primary-600'
+                            : 'bg-black/50 hover:bg-primary-900 dark:hover:bg-primary-600'
+                        }`"
+                        @click.stop.prevent="handleAddToLiked(title)"
+                      >
+                        <IconHeartFilled
+                          v-if="title.liked === true"
+                          icon-class="w-4 h-4 text-white"
+                        />
+                        <IconHeart v-else icon-class="w-4 h-4 text-white" />
+                      </IconButton>
+                    </Tooltip>
+                  </template>
+                  <template #top-right-actions>
+                    <Tooltip :text="$t('seen.removeFromList')">
+                      <IconButton
+                        :aria-label="$t('seen.removeFromList')"
+                        size="small"
+                        variant="default"
+                        custom-class="p-2 rounded-full backdrop-blur-sm pointer-events-auto w-fit h-fit bg-black/50 hover:bg-red-600/80"
+                        @click.stop.prevent="handleRemoveSeen(title)"
+                      >
+                        <IconX icon-class="w-4 h-4 text-white" />
+                      </IconButton>
+                    </Tooltip>
+                  </template>
+                </TitleCard>
+              </div>
 
               <EmptyState
                 v-else
@@ -96,12 +165,37 @@
                 :message="$t('notInterested.loading')"
               />
 
-              <TitleGrid
+              <div
                 v-else-if="notInterestedTitles.length > 0"
-                :titles="notInterestedTitles"
-                :on-remove="handleRemoveNotInterested"
-                :remove-label="$t('common.delete')"
-              />
+                class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
+              >
+                <TitleCard
+                  v-for="title in notInterestedTitles"
+                  :key="title.id"
+                  :title="title.title"
+                  :poster-path="title.poster_path"
+                  :link-to="`/${title.type === MediaTypeEnum.movie ? 'movie' : 'tv-show'}/${title.tmdb_id}`"
+                  :link-aria-label="$t('media.viewDetailsOf', { title: title.title })"
+                  :image-alt="$t('media.posterOf', { title: title.title })"
+                  :no-image-aria-label="$t('media.noPosterAvailableFor', { title: title.title })"
+                  :type="title.type"
+                  :aria-label="$t('media.titleCardLabel', { title: title.title })"
+                >
+                  <template #top-right-actions>
+                    <Tooltip :text="$t('common.delete')">
+                      <IconButton
+                        :aria-label="$t('common.delete')"
+                        size="small"
+                        variant="default"
+                        custom-class="p-2 rounded-full backdrop-blur-sm pointer-events-auto w-fit h-fit bg-black/50 hover:bg-red-600/80"
+                        @click.stop.prevent="handleRemoveNotInterested(title)"
+                      >
+                        <IconX icon-class="w-4 h-4 text-white" />
+                      </IconButton>
+                    </Tooltip>
+                  </template>
+                </TitleCard>
+              </div>
 
               <EmptyState
                 v-else
@@ -185,7 +279,12 @@ import {
   isUniqueViolationError,
 } from '@/services/errorCodes';
 import { getSession } from '@/services/auth';
-import TitleGrid from '@/components/TitleGrid.vue';
+import TitleCard from '@/components/TitleCard.vue';
+import IconButton from '@/components/ui/IconButton.vue';
+import IconHeart from '@/components/icons/IconHeart.vue';
+import IconHeartFilled from '@/components/icons/IconHeartFilled.vue';
+import IconX from '@/components/icons/IconX.vue';
+import Tooltip from '@/components/ui/Tooltip.vue';
 import EmptyState from '@/components/EmptyState.vue';
 import Spinner from '@/components/Spinner.vue';
 import Toast from '@/components/ui/Toast.vue';

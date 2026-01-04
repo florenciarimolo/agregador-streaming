@@ -10,7 +10,14 @@
       <p v-if="loading" class="text-gray-800 dark:text-gray-300">
         {{ $t('auth.callbackCompleting') }}
       </p>
-      <AlertMessage v-if="error" :message="error" type="error" />
+      <Alert
+        v-if="error"
+        :message="error"
+        variant="error"
+        :with-transition="true"
+        custom-class="mb-4"
+        :show-icon="false"
+      />
       <div v-if="error" class="mt-4">
         <Button
           variant="primary"
@@ -27,6 +34,7 @@
 
 <script setup lang="ts">
 import { STORAGE_KEYS } from '@/constants/storage/keys';
+import Alert from '@/components/ui/Alert.vue';
 // Callback page - MINIMAL RESPONSIBILITY
 // Only exchanges code for session and redirects
 // Recovery detection happens in this page, not in middleware

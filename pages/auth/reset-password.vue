@@ -41,20 +41,33 @@
         </div>
 
         <!-- Error message from query param -->
-        <AlertMessage
+        <Alert
           v-if="errorMessage"
           :message="errorMessage"
-          type="error"
+          variant="error"
+          :with-transition="true"
+          custom-class="mb-4"
+          :show-icon="false"
         />
 
         <!-- Error message -->
-        <AlertMessage v-if="error" :message="error" type="error" />
+        <Alert
+          v-if="error"
+          :message="error"
+          variant="error"
+          :with-transition="true"
+          custom-class="mb-4"
+          :show-icon="false"
+        />
 
         <!-- Success message -->
-        <AlertMessage
+        <Alert
           v-if="passwordReset"
           :message="$t('auth.passwordUpdatedSuccess')"
-          type="success"
+          variant="success"
+          :with-transition="true"
+          custom-class="mb-4"
+          :show-icon="false"
         />
 
         <!-- Form -->
@@ -280,6 +293,7 @@ import Button from '@/components/ui/Button.vue';
 import IconButton from '@/components/ui/IconButton.vue';
 import IconEye from '@/components/icons/IconEye.vue';
 import IconEyeSlash from '@/components/icons/IconEyeSlash.vue';
+import Alert from '@/components/ui/Alert.vue';
 
 definePageMeta({
   layout: false,

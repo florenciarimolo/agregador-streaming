@@ -31,7 +31,8 @@
               {{ toast.undoAction.label }}
             </Button>
           </slot>
-          <ToastCloseButton
+          <CloseButton
+            variant="toast"
             :aria-label="closeAriaLabel || $t('common.close')"
             @click="handleClose"
           />
@@ -42,7 +43,7 @@
 </template>
 
 <script setup lang="ts">
-import ToastCloseButton from '@/components/ui/ToastCloseButton.vue';
+import CloseButton from '@/components/ui/CloseButton.vue';
 import Button from '@/components/ui/Button.vue';
 import { useUndoToast } from '@/composables/useUndoToast';
 

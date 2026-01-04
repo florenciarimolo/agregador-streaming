@@ -47,3 +47,4 @@ const badgeStyle = computed(() => {
 </script>
 
 <style scoped></style>
+

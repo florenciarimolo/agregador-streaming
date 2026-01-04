@@ -5,12 +5,13 @@ This document describes the business logic, data rules, and architecture of the 
 ## Table of Contents
 
 1. [Architecture](#architecture)
-2. [Constants Philosophy](#constants-philosophy)
-3. [Title States](#title-states)
-4. [Scoring System](#scoring-system)
-5. [Recommendation Pool](#recommendation-pool)
-6. [Data Model](#data-model)
-7. [Business Rules](#business-rules)
+2. [Component Rules](#component-rules)
+3. [Constants Philosophy](#constants-philosophy)
+4. [Title States](#title-states)
+5. [Scoring System](#scoring-system)
+6. [Recommendation Pool](#recommendation-pool)
+7. [Data Model](#data-model)
+8. [Business Rules](#business-rules)
 
 ---
 
@@ -77,6 +78,99 @@ A service:
 - Each API call lives where it makes semantic sense
 - Maintain flow clarity before abstraction
 - If a refactor doesn't improve flow understanding, don't do it
+
+---
+
+## Component Rules
+
+### Principle
+
+**A component should only exist if it introduces a new responsibility:**
+
+- Own behavior
+- Internal state
+- Real reusability
+- Clear props/emits contract
+
+### When to Create Components
+
+Create components when they:
+
+- ✅ Have their own behavior
+- ✅ Manage internal state
+- ✅ Are truly reusable
+- ✅ Have a clear contract (props/emits)
+- ✅ Encapsulate visual rules (layout primitives)
+- ✅ Centralize design system rules
+
+### When NOT to Create Components
+
+Do NOT create components that:
+
+- ❌ Are just wrappers without logic
+- ❌ Only contain template markup
+- ❌ Break the reading flow of the layout
+- ❌ Don't improve UI comprehension
+- ❌ Only exist to reduce lines or "organize" files
+- ❌ Just group HTML or classes
+
+### Layout Primitives
+
+Layout components that centralize visual rules should be kept:
+
+- `AppShell` - Defines shared width rules (`px-4 md:max-w-7xl md:mx-auto md:px-6`)
+- `PageContainer` - Ensures full width consistency within AppShell
+- `Section` - Centralizes spacing rules (`pt-6 pb-6 w-full space-y-4 md:space-y-8`)
+- `SectionTitle` - Standardizes section heading styles
+
+These components encapsulate visual rules and prevent duplication.
+
+### Component Structure
+
+```
+/components
+  /ui        → Reusable UI primitives with behavior/props
+  /layout    → Layout structure components with visual rules
+  /features  → Domain-specific feature components (if needed)
+```
+
+Avoid flat structures or extreme atomic design.
+
+### Naming Conventions
+
+- **PascalCase** always
+- **Semantic names** (what it is, not how it looks)
+- **Clear suffixes**: `Section`, `Card`, `Modal`, `Form`
+- **Avoid generic names**: `Wrapper`, `Container`, `Content`
+
+### Unification Criteria
+
+When evaluating similar components:
+
+- **Unify** if they share the same UI pattern and only differ in data/text
+- **Keep separate** if they represent distinct domain concepts
+
+Example: `FilterPill` unifies `GenrePill` and `ProviderPill` because they share the same UI pattern (pill with label, optional icon, remove action). The domain distinction (genre vs provider) belongs to the page/composable, not the component.
+
+### Refactoring Rules
+
+During code review, if a component:
+
+- Doesn't meet these rules
+- Has a non-semantic name
+- Is a wrapper without responsibility
+- Only exists due to unnecessary fragmentation
+
+→ **Rename, merge, or delete it without hesitation.**
+
+Don't keep components just for "historical respect."
+
+### Goal
+
+- Understand a page without jumping between files
+- Component tree aligned with visual layout
+- Fewer components, but better ones
+- If extracting or maintaining a component doesn't improve readability, remove it
 
 ---
 

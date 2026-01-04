@@ -1,5 +1,54 @@
 <template>
+  <Transition
+    v-if="withTransition"
+    enter-active-class="transition duration-200 ease-out"
+    enter-from-class="transform scale-95 opacity-0"
+    enter-to-class="transform scale-100 opacity-100"
+    leave-active-class="transition duration-150 ease-in"
+    leave-from-class="transform scale-100 opacity-100"
+    leave-to-class="transform scale-95 opacity-0"
+  >
+    <div
+      v-if="shouldShow"
+      :class="[
+        'rounded-3xl p-4 border',
+        variantClasses,
+        customClass,
+      ]"
+      role="alert"
+    >
+      <div class="flex items-start gap-3">
+        <div v-if="showIcon" class="flex-shrink-0">
+          <component
+            :is="iconComponent"
+            :class="iconClasses"
+          />
+        </div>
+        <div class="flex-1 min-w-0">
+          <p
+            v-if="title"
+            :class="[
+              'text-sm font-medium',
+              titleClasses,
+            ]"
+          >
+            {{ title }}
+          </p>
+          <p
+            :class="[
+              'text-sm',
+              messageClasses,
+            ]"
+          >
+            <slot />
+          </p>
+        </div>
+        <slot name="actions" />
+      </div>
+    </div>
+  </Transition>
   <div
+    v-else
     :class="[
       'rounded-3xl p-4 border',
       variantClasses,
@@ -49,12 +98,23 @@ const props = withDefaults(
     title?: string;
     showIcon?: boolean;
     customClass?: string;
+    withTransition?: boolean;
+    message?: string | null;
   }>(),
   {
     variant: 'info',
     showIcon: true,
+    withTransition: false,
+    message: null,
   }
 );
+
+const shouldShow = computed(() => {
+  if (props.withTransition && props.message !== undefined) {
+    return !!props.message;
+  }
+  return true;
+});
 
 const variantClasses = computed(() => {
   const classes: Record<AlertVariant, string> = {

@@ -15,8 +15,8 @@ import AppShell from '@/components/layout/AppShell.vue';
 import Badge from '@/components/Badge.vue';
 import GenreSelector from '@/components/GenreSelector.vue';
 import ProviderSelector from '@/components/ProviderSelector.vue';
-import GenrePill from '@/components/GenrePill.vue';
-import ProviderPill from '@/components/ProviderPill.vue';
+import FilterPill from '@/components/ui/FilterPill.vue';
+import Alert from '@/components/ui/Alert.vue';
 import { useRegions } from '@/composables/useRegions';
 
 definePageMeta({
@@ -558,8 +558,22 @@ const saveSelections = async () => {
       </div>
 
       <!-- Alert Messages -->
-      <AlertMessage v-if="error" :message="error" type="error" />
-      <AlertMessage v-if="success" :message="success" type="success" />
+      <Alert
+        v-if="error"
+        :message="error"
+        variant="error"
+        :with-transition="true"
+        custom-class="mb-4"
+        :show-icon="false"
+      />
+      <Alert
+        v-if="success"
+        :message="success"
+        variant="success"
+        :with-transition="true"
+        custom-class="mb-4"
+        :show-icon="false"
+      />
 
       <!-- Step 1: Preferences -->
       <div v-if="currentStep === 'preferences'" class="space-y-6">
@@ -615,10 +629,10 @@ const saveSelections = async () => {
               ({{ selectedGenres.length }})
             </p>
             <div class="flex flex-wrap gap-2">
-              <GenrePill
+              <FilterPill
                 v-for="genre in selectedGenres"
                 :key="genre.id"
-                :genre="genre"
+                :label="genre.name"
                 :aria-label="
                   $t('preferences.content.favoriteGenres.remove', {
                     name: genre.name,
@@ -673,10 +687,15 @@ const saveSelections = async () => {
               ({{ selectedProviders.length }})
             </p>
             <div class="flex flex-wrap gap-2">
-              <ProviderPill
+              <FilterPill
                 v-for="provider in selectedProviders"
                 :key="provider.provider_id"
-                :provider="provider"
+                :label="provider.provider_name"
+                :icon="
+                  provider.logo_path
+                    ? `https://image.tmdb.org/t/p/w45${provider.logo_path}`
+                    : undefined
+                "
                 :aria-label="
                   $t('preferences.content.includedProviders.remove', {
                     name: provider.provider_name,
