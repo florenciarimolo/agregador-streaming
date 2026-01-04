@@ -395,7 +395,7 @@
     "howItWorks": "How it works",
     "faq": "FAQ",
     "privacy": "Privacy Policy",
-    "copyright": "© 2025 UpNext. All rights reserved.",
+    "copyright": "© {year} UpNext. All rights reserved.",
     "developedBy": "Developed by",
     "contact": "Contact:"
   },

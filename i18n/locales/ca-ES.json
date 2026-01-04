@@ -395,7 +395,7 @@
     "howItWorks": "Com funciona",
     "faq": "FAQ",
     "privacy": "Política de Privacitat",
-    "copyright": "© 2025 UpNext. Tots els drets reservats.",
+    "copyright": "© {year} UpNext. Tots els drets reservats.",
     "developedBy": "Desenvolupat per",
     "contact": "Contacte:"
   },

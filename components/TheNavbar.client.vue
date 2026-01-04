@@ -50,9 +50,6 @@
                 </nuxt-link>
               </nav>
 
-              <!-- App Language Selector -->
-              <AppLanguageSelector />
-
               <!-- Theme Switcher -->
               <ThemeSwitcher />
 
@@ -135,9 +132,8 @@
               </div>
             </template>
 
-            <!-- When not logged in: App Language Selector and Theme Switcher -->
+            <!-- When not logged in: Theme Switcher -->
             <template v-else>
-              <AppLanguageSelector />
               <ThemeSwitcher />
             </template>
           </div>
