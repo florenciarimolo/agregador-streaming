@@ -40,7 +40,7 @@
               messageClasses,
             ]"
           >
-            <slot />
+            <slot>{{ message }}</slot>
           </p>
         </div>
         <slot name="actions" />
@@ -79,7 +79,7 @@
             messageClasses,
           ]"
         >
-          <slot />
+          <slot>{{ message }}</slot>
         </p>
       </div>
       <slot name="actions" />
