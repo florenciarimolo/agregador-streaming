@@ -674,6 +674,8 @@ export default defineEventHandler(async (event) => {
 
           // Add TMDB data in ISO format (merge, don't overwrite existing languages)
           const titleText = tmdbResponse.title || tmdbResponse.name || '';
+          let finalOverview = tmdbResponse.overview || '';
+          
           if (titleText) {
             mergedTitleJsonb[language] = titleText;
           }
@@ -682,6 +684,21 @@ export default defineEventHandler(async (event) => {
           }
           if (tmdbResponse.poster_path) {
             mergedPosterPathJsonb[language] = tmdbResponse.poster_path;
+          }
+
+          // If overview is still empty, try fetching with primary language of region as fallback
+          if (needsOverviewFallback) {
+            const { fetchOverviewWithPrimaryLanguageFallback } = await import('@/server/utils/title-extraction');
+            finalOverview = await fetchOverviewWithPrimaryLanguageFallback(
+              finalOverview,
+              entry.tmdb_id,
+              entry.type,
+              language,
+              region,
+              endpoint,
+              mergedOverviewJsonb,
+              supabase
+            );
           }
 
           // Update titles table with TMDB data
@@ -789,9 +806,10 @@ export default defineEventHandler(async (event) => {
           }
 
           // Return title data for this request
+          // Use finalOverview which may include primary language fallback
           return {
             title: titleText,
-            overview: tmdbResponse.overview || '',
+            overview: finalOverview,
             poster_path: tmdbResponse.poster_path || null,
             backdrop_path: tmdbResponse.backdrop_path || null,
             vote_average: tmdbResponse.vote_average || null,

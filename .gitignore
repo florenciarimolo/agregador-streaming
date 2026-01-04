@@ -51,6 +51,7 @@ server/api/**/*.js
 server/middleware/**/*.js
 server/plugins/**/*.js
 server/routes/**/*.js
+server/utils/**/*.js
 
 # Client-side compiled files
 middleware/**/*.js

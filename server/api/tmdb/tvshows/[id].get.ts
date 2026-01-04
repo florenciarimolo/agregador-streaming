@@ -166,12 +166,14 @@ export default defineEventHandler(async (event) => {
       });
 
       // Map DB title to TVShow format
+      // IMPORTANT: Use extracted data (from titles table or TMDB) - it already handles language correctly
+      // Don't use fullTvShowResponse as fallback since extractTitleDataWithFallback already fetches from TMDB if needed
       const tvShow: any = {
         id: titleFromDb.tmdb_id,
-        name: extracted.title || fullTvShowResponse?.name || '',
+        name: extracted.title || '',
         original_name: fullTvShowResponse?.original_name,
-        overview: extracted.overview || fullTvShowResponse?.overview || '',
-        poster_path: extracted.poster_path || fullTvShowResponse?.poster_path || null,
+        overview: extracted.overview || '',
+        poster_path: extracted.poster_path || null,
         backdrop_path: titleFromDb.backdrop_path,
         first_air_date: titleFromDb.first_air_date,
         vote_average: titleFromDb.vote_average,

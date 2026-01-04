@@ -167,11 +167,13 @@ export default defineEventHandler(async (event) => {
       });
 
       // Map DB title to Movie format
+      // IMPORTANT: Use extracted data (from titles table or TMDB) - it already handles language correctly
+      // Don't use fullMovieResponse as fallback since extractTitleDataWithFallback already fetches from TMDB if needed
       const movie: any = {
         id: titleFromDb.tmdb_id,
-        title: extracted.title || fullMovieResponse?.title || '',
-        overview: extracted.overview || fullMovieResponse?.overview || '',
-        poster_path: extracted.poster_path || fullMovieResponse?.poster_path || null,
+        title: extracted.title || '',
+        overview: extracted.overview || '',
+        poster_path: extracted.poster_path || null,
         backdrop_path: titleFromDb.backdrop_path,
         release_date: titleFromDb.release_date,
         vote_average: titleFromDb.vote_average,

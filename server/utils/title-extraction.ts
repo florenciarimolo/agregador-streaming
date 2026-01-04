@@ -59,6 +59,103 @@ function extractFromTitleData(
 }
 
 /**
+ * Fetch overview with fallback to primary language of region
+ * If overview is empty, tries to fetch from TMDB using the primary language of the region
+ * @param overview Initial overview (may be empty)
+ * @param tmdbId TMDB ID of the title
+ * @param type Type of media (movie or tv)
+ * @param language Requested language (e.g., 'ca-ES')
+ * @param region User's region (e.g., 'ES')
+ * @param endpoint TMDB API endpoint (e.g., '/movie/123' or '/tv/456')
+ * @param mergedOverviewJsonb JSONB object to update with primary language overview if found
+ * @param supabase Supabase client for database updates
+ * @returns Final overview (original or from primary language fallback)
+ */
+export async function fetchOverviewWithPrimaryLanguageFallback(
+  overview: string,
+  tmdbId: number,
+  type: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv,
+  language: string,
+  region: string | null,
+  endpoint: string,
+  mergedOverviewJsonb: MultiLanguageText,
+  supabase: SupabaseClient
+): Promise<string> {
+  // If overview is not empty, return it
+  if (overview && overview.trim() !== '') {
+    return overview;
+  }
+
+  // Try fetching with primary language of region as fallback
+  try {
+    const { getPrimaryLanguageForRegion } = await import('@/utils/language-detection');
+    const { DEFAULT_LANGUAGE_ISO } = await import('@/constants/languages');
+    
+    const primaryLanguage = region
+      ? getPrimaryLanguageForRegion(region)
+      : DEFAULT_LANGUAGE_ISO;
+    const primaryLanguageKey = `${primaryLanguage}-${region?.toUpperCase() || 'ES'}`;
+    const requestedLangCode = language.split('-')[0]?.toLowerCase() || '';
+    const primaryLangCode = primaryLanguage.split('-')[0]?.toLowerCase() || '';
+
+    // Only fetch primary language if it's different from requested language
+    if (requestedLangCode !== primaryLangCode) {
+      const primaryTmdbConfig = getTMDBConfig(primaryLanguageKey, region);
+      const primaryResponse = await $fetch<{
+        overview?: string;
+      }>(`${primaryTmdbConfig.baseUrl}${endpoint}`, {
+        query: {
+          api_key: primaryTmdbConfig.apiKey,
+          language: primaryTmdbConfig.language,
+          region: primaryTmdbConfig.region,
+        },
+      });
+
+      if (primaryResponse?.overview) {
+        // Update database with primary language overview
+        mergedOverviewJsonb[primaryLanguageKey] = primaryResponse.overview;
+        
+        // Update database (async, don't wait)
+        supabase
+          .from(TABLES.TITLES)
+          .upsert({
+            tmdb_id: tmdbId,
+            type,
+            overview: Object.keys(mergedOverviewJsonb).length > 0 ? mergedOverviewJsonb : null,
+          }, {
+            onConflict: TITLES_FIELDS.TMDB_ID,
+          })
+          .then(() => {
+            // Success - no action needed
+          })
+          .catch((error) => {
+            // Log but don't fail the request
+            if (import.meta.dev) {
+              console.error('[fetchOverviewWithPrimaryLanguageFallback] Error updating cache with primary language:', error);
+            }
+          });
+
+        if (import.meta.dev) {
+          console.log(
+            `[fetchOverviewWithPrimaryLanguageFallback] Using primary language (${primaryLanguageKey}) overview for ${tmdbId} as fallback`
+          );
+        }
+
+        return primaryResponse.overview;
+      }
+    }
+  } catch (primaryError) {
+    // Log but don't fail the request
+    if (import.meta.dev) {
+      console.error('[fetchOverviewWithPrimaryLanguageFallback] Error fetching primary language overview:', primaryError);
+    }
+  }
+
+  // Return empty string if no fallback found
+  return overview || '';
+}
+
+/**
  * Extract title and overview with fallback to TMDB
  * Returns extracted text in user's preferred language, with fallback to TMDB if missing
  * Updates database cache with TMDB data when fetched
@@ -87,14 +184,32 @@ export async function extractTitleDataWithFallback(
     posterPathJsonb = titleFromDb.poster_path as MultiLanguageText | null;
   }
 
-  // Extract text in user's preferred language
+  // Check if the requested language exists in the JSONB (explicit check, no fallbacks)
+  // IMPORTANT: We need to check if the exact language exists, not rely on getTitleInLanguage
+  // which may return fallbacks. This ensures we fetch from TMDB when the language is missing.
+  const hasExactLanguage =
+    titleJsonb &&
+    typeof titleJsonb === 'object' &&
+    titleJsonb[language] !== undefined;
+  const hasExactOverviewLanguage =
+    overviewJsonb &&
+    typeof overviewJsonb === 'object' &&
+    overviewJsonb[language] !== undefined;
+
+  // Extract text in user's preferred language (may return fallback if language missing)
   const extractedTitle = extractFromTitleData(titleJsonb, language, region, false);
   const extractedOverview = extractFromTitleData(overviewJsonb, language, region, false);
   const extractedPosterPath = extractFromTitleData(posterPathJsonb, language, region, true);
 
-  // Check if we need to fetch from TMDB (missing in preferred language)
-  const needsTitleFallback = !extractedTitle || extractedTitle.trim() === '';
-  const needsOverviewFallback = !extractedOverview || extractedOverview.trim() === '';
+  // Check if we need to fetch from TMDB
+  // IMPORTANT: Check if exact language exists, not just if extractFromTitleData returns something
+  // (extractFromTitleData may return fallbacks, which we don't want)
+  const needsTitleFallback =
+    !hasExactLanguage || !extractedTitle || extractedTitle.trim() === '';
+  const needsOverviewFallback =
+    !hasExactOverviewLanguage ||
+    !extractedOverview ||
+    extractedOverview.trim() === '';
 
   let tmdbTitle: string | null = null;
   let tmdbOverview: string | null = null;
@@ -136,6 +251,20 @@ export async function extractTitleDataWithFallback(
         if (tmdbOverview) updatedOverview[langKey] = tmdbOverview;
         if (tmdbPosterPath) updatedPosterPath[langKey] = tmdbPosterPath;
 
+        // If overview is still empty, try fetching with primary language of region as fallback
+        if (needsOverviewFallback) {
+          tmdbOverview = await fetchOverviewWithPrimaryLanguageFallback(
+            tmdbOverview || '',
+            tmdbId,
+            type,
+            language,
+            region,
+            endpoint,
+            updatedOverview,
+            supabase
+          );
+        }
+
         // Update database (async, don't wait)
         supabase
           .from(TABLES.TITLES)
@@ -147,6 +276,9 @@ export async function extractTitleDataWithFallback(
             poster_path: Object.keys(updatedPosterPath).length > 0 ? updatedPosterPath : null,
           }, {
             onConflict: TITLES_FIELDS.TMDB_ID,
+          })
+          .then(() => {
+            // Success - no action needed
           })
           .catch((error) => {
             // Log but don't fail the request
@@ -163,11 +295,16 @@ export async function extractTitleDataWithFallback(
     }
   }
 
-  // Return with fallback: extracted from DB or from TMDB
+  // Return data: use extracted if exact language exists, otherwise use TMDB result
+  // If overview is empty, use getTitleInLanguage which will provide fallback to primary language
+  const finalOverview = hasExactOverviewLanguage && extractedOverview
+    ? extractedOverview
+    : (tmdbOverview || (overviewJsonb ? extractFromTitleData(overviewJsonb, language, region, false) : ''));
+
   return {
-    title: extractedTitle || tmdbTitle || '',
-    overview: extractedOverview || tmdbOverview || '',
-    poster_path: extractedPosterPath || tmdbPosterPath || null,
+    title: hasExactLanguage ? extractedTitle : (tmdbTitle || ''),
+    overview: finalOverview,
+    poster_path: hasExactLanguage ? extractedPosterPath : (tmdbPosterPath || null),
   };
 }
 
