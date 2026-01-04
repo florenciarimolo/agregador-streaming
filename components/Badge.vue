@@ -1,9 +1,9 @@
 <template>
   <span
-    v-if="label"
+    v-if="displayLabel"
     class="inline-block w-fit px-2 py-1 text-xs font-medium text-white rounded-full backdrop-blur-sm pointer-events-none select-none bg-black/50 relative z-0"
   >
-    {{ label }}
+    {{ displayLabel }}
   </span>
 </template>
 
@@ -20,7 +20,7 @@ interface Props {
 const props = defineProps<Props>();
 const { t } = useI18n();
 
-const label = computed(() => {
+const displayLabel = computed(() => {
   if (props.label) return props.label;
   if (!props.type) return '';
   return props.type === MediaTypeEnum.movie
@@ -28,4 +28,3 @@ const label = computed(() => {
     : t('media.series');
 });
 </script>
-

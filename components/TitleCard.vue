@@ -86,7 +86,7 @@
             </template>
           </slot>
         </div>
-        <MediaTypeBadge v-if="showType" :type="computedType" />
+        <Badge v-if="showType" :type="computedType" />
       </div>
 
       <!-- Top-right actions slot - Outside the link to prevent navigation -->
@@ -246,7 +246,7 @@ import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 import type { Recommendation } from '@/types/Recommendation';
 import { TitleStatus } from '@/types/TitleStatus';
 import IconImage from './icons/IconImage.vue';
-import MediaTypeBadge from './MediaTypeBadge.vue';
+import Badge from './Badge.vue';
 import RatingBadge from './RatingBadge.vue';
 import IconMoreVertical from './icons/IconMoreVertical.vue';
 import IconClock from './icons/IconClock.vue';

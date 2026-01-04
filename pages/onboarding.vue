@@ -12,7 +12,7 @@ import Card from '@/components/ui/Card.vue';
 import Button from '@/components/ui/Button.vue';
 import Modal from '@/components/ui/Modal.vue';
 import AppShell from '@/components/layout/AppShell.vue';
-import MediaTypeBadge from '@/components/MediaTypeBadge.vue';
+import Badge from '@/components/Badge.vue';
 import GenreSelector from '@/components/GenreSelector.vue';
 import ProviderSelector from '@/components/ProviderSelector.vue';
 import GenrePill from '@/components/GenrePill.vue';
@@ -791,7 +791,7 @@ const saveSelections = async () => {
                   </div>
                   <!-- Media Type Badge - Top Left -->
                   <div class="absolute top-2 left-2 z-10">
-                    <MediaTypeBadge :type="result.media_type" />
+                    <Badge :type="result.media_type" />
                   </div>
                   <div
                     v-if="isSelected(result.id)"

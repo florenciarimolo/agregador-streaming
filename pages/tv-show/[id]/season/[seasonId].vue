@@ -39,7 +39,7 @@
               class="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3"
             >
               <article
-                v-for="(episode, index) in seasonWithProviders.episodes"
+                v-for="episode in seasonWithProviders.episodes"
                 :key="episode.id"
                 class="overflow-hidden bg-white/60 dark:bg-gray-900/40 backdrop-blur-xl border border-gray-300/50 dark:border-white/10 rounded-3xl group hover:border-primary/50 dark:hover:border-purple-500/30 transition-colors shadow-lg"
               >
@@ -56,35 +56,37 @@
                   >
                     <span class="text-4xl">📺</span>
                   </div>
-                  <div
-                    class="absolute px-2 py-1 text-xs dark:text-gray-300 text-gray-800 rounded-lg top-2 left-4 bg-white/60 dark:bg-gray-900/40 backdrop-blur-xl border border-gray-300/50 dark:border-white/10"
-                  >
-                    {{ $t('media.episodeNumber', { number: index + 1 }) }}
-                  </div>
-                  <!-- RatingBadge in image (mobile only) -->
-                  <div class="absolute top-2 right-2 md:hidden">
+                  <!-- RatingBadge - top right -->
+                  <div class="absolute top-2 right-2 z-10">
                     <RatingBadge :rating="episode.vote_average" />
                   </div>
                 </div>
                 <div class="p-4">
-                  <div class="flex items-center gap-3 mb-2">
+                  <div class="flex flex-col gap-3 mb-3">
+                    <!-- Episode name -->
                     <h4
-                      class="font-semibold dark:text-gray-300 text-gray-800 line-clamp-1"
-                      >{{ episode.name }}</h4
+                      class="font-semibold dark:text-gray-300 text-gray-800 text-sm md:text-base line-clamp-1"
                     >
-                    <!-- RatingBadge in content (desktop only) -->
-                    <div class="hidden md:block">
-                      <RatingBadge :rating="episode.vote_average" />
+                      {{ episode.name }}
+                    </h4>
+                    <!-- Date -->
+                    <div
+                      class="flex items-center gap-2 dark:text-gray-300 text-gray-800 text-xs md:text-sm"
+                    >
+                      <IconCalendar icon-class="w-3 h-3 md:w-4 md:h-4" />
+                      <span class="truncate">{{
+                        formatDateToSpanish(episode.air_date)
+                      }}</span>
+                    </div>
+                    <!-- Duration -->
+                    <div
+                      v-if="episode.runtime"
+                      class="flex items-center gap-2 dark:text-gray-300 text-gray-800 text-xs md:text-sm"
+                    >
+                      <IconClock icon-class="w-3 h-3 md:w-4 md:h-4" />
+                      <span class="truncate">{{ episode.runtime }} min</span>
                     </div>
                   </div>
-                  <p class="mb-2 text-sm dark:text-gray-300 text-gray-800">{{
-                    formatDateToSpanish(episode.air_date)
-                  }}</p>
-                  <p
-                    v-if="episode.runtime"
-                    class="mb-2 text-sm dark:text-gray-400 text-gray-600"
-                    >{{ episode.runtime }} min</p
-                  >
                   <p
                     :class="[
                       'text-sm dark:text-gray-300 text-gray-700 line-clamp-3',
@@ -117,7 +119,7 @@ import { useRoute } from 'vue-router';
 import { useFetch } from 'nuxt/app';
 import { computed, onMounted, watch } from 'vue';
 
-import { Season } from '@/types/TVShow';
+import { Season, TVShow } from '@/types/TVShow';
 import { WatchProviderTypes } from '@/types/WatchProvider';
 import SeasonBannerDetail from '@/components/SeasonBannerDetail.vue';
 import AppShell from '@/components/layout/AppShell.vue';
@@ -125,6 +127,8 @@ import PageContainer from '@/components/layout/PageContainer.vue';
 import Section from '@/components/layout/Section.vue';
 import SectionTitle from '@/components/layout/SectionTitle.vue';
 import RatingBadge from '@/components/RatingBadge.vue';
+import IconCalendar from '@/components/icons/IconCalendar.vue';
+import IconClock from '@/components/icons/IconClock.vue';
 import { formatDateToSpanish } from '@/utils/formatDate';
 
 const route = useRoute();
@@ -134,6 +138,14 @@ const { locale } = useI18n();
 const seriesId = route.params.id;
 const seasonId = route.params.seasonId;
 
+// Fetch TV show details to get the series name
+const {
+  data: tvShowData,
+  pending: tvShowPending,
+  error: tvShowError,
+  refresh: refreshTVShowDetails,
+} = await useFetch<TVShow>(`/api/tmdb/tvshows/${seriesId}`);
+
 const {
   data: seasonData,
   pending: seasonPending,
@@ -142,10 +154,11 @@ const {
 } = await useFetch<Season>(`/api/tmdb/tvshows/${seriesId}/seasons/${seasonId}`);
 
 const isLoading = computed(
-  () => seasonPending.value || seasonProvidersPending.value
+  () =>
+    seasonPending.value || seasonProvidersPending.value || tvShowPending.value
 );
 const hasError = computed(
-  () => seasonError.value || seasonProvidersError.value
+  () => seasonError.value || seasonProvidersError.value || tvShowError.value
 );
 
 const {
@@ -172,7 +185,11 @@ watch(
         );
       }
       // Refresh all data with new language
-      await Promise.all([refreshSeasonData(), refreshSeasonProviders()]);
+      await Promise.all([
+        refreshTVShowDetails(),
+        refreshSeasonData(),
+        refreshSeasonProviders(),
+      ]);
     }
   },
   { immediate: false }
@@ -189,8 +206,17 @@ const seasonWithProviders = computed(() => {
 const { t } = useI18n();
 
 const pageTitle = computed(() => {
-  if (seasonWithProviders.value?.name) {
-    return `${seasonWithProviders.value.name}`;
+  const seriesName = tvShowData.value?.name || '';
+  const seasonName = seasonWithProviders.value?.name || '';
+
+  if (seriesName && seasonName) {
+    return `${seasonName} – ${seriesName}`;
+  }
+  if (seasonName) {
+    return seasonName;
+  }
+  if (seriesName) {
+    return `${t('media.seasonTitle')} – ${seriesName}`;
   }
   return t('media.seasonTitle');
 });
@@ -223,9 +249,9 @@ onMounted(() => {
         if (!referrerPath.includes('/season/')) {
           sessionStorage.setItem('previousRoute', referrerPath);
         }
-        } catch {
-          // If URL parsing fails, ignore
-        }
+      } catch {
+        // If URL parsing fails, ignore
+      }
     }
   }
 });

@@ -51,7 +51,7 @@
               >
                 <!-- Season name badge - top left -->
                 <template #top-left-badges>
-                  <MediaTypeBadge :label="season.name" />
+                  <Badge :label="season.name" />
                 </template>
 
                 <!-- RatingBadge - top right -->
@@ -108,7 +108,7 @@ import type { Media } from '@/types/Media';
 import IconCalendar from '@/components/icons/IconCalendar.vue';
 import IconEpisodes from '@/components/icons/IconEpisodes.vue';
 import RatingBadge from '@/components/RatingBadge.vue';
-import MediaTypeBadge from '@/components/MediaTypeBadge.vue';
+import Badge from '@/components/Badge.vue';
 import TitleCard from '@/components/TitleCard.vue';
 import { useTVShowSchema } from '@/composables/useSchemaOrg';
 import { getTVShowSeoExperience } from '@/composables/useSeoExperience';
