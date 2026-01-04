@@ -7,6 +7,7 @@ import { getTitlesByTmdbIds, getTitleInLanguage, type MultiLanguageText } from '
 import { getSession } from '@/composables/database/auth';
 import { getUserPreferences } from '@/composables/database/preferences';
 import { DEFAULT_LANGUAGE } from '@/constants/languages';
+import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
 
 export default defineEventHandler(async (event) => {
   try {
@@ -96,7 +97,7 @@ export default defineEventHandler(async (event) => {
       }
 
       // Count movies vs series
-      if (title.type === 'movie') {
+      if (title.type === MediaTypeEnum.movie) {
         moviesCount++;
         // Estimate 2 hours per movie
         totalWatchTime += 120;
