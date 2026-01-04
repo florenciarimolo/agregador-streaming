@@ -104,7 +104,7 @@
               />
               <!-- MediaStatusBadge -->
               <MediaStatusBadge
-                v-if="mediaType === MediaTypeEnum.tv || inTheaters"
+                v-if="mediaType === MEDIA_TYPE.TV || inTheaters"
                 :in-production="inProduction"
                 :in-theaters="inTheaters"
               />
@@ -288,7 +288,7 @@
         </div>
         <div
           v-if="
-            mediaType === MediaTypeEnum.tv &&
+            mediaType === MEDIA_TYPE.TV &&
             ((mediaWithProviders as any).number_of_episodes ||
               (mediaWithProviders as any).number_of_seasons)
           "
@@ -408,7 +408,7 @@ import { formatDateToSpanish } from '@/utils/formatDate';
 import type { Genre } from '@/types/Genre';
 import ProviderList from './ProviderList.vue';
 import type { Movie } from '@/types/Movie';
-import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
+import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 import MediaStatusBadge from './MediaStatusBadge.vue';
 import IconArrowLeft from './icons/IconArrowLeft.vue';
 import IconCalendar from './icons/IconCalendar.vue';
@@ -441,7 +441,7 @@ const props = defineProps({
     required: true,
   },
   mediaType: {
-    type: String as PropType<MediaTypeEnum>,
+    type: String as PropType<MEDIA_TYPE>,
     required: true,
   },
   inProduction: {

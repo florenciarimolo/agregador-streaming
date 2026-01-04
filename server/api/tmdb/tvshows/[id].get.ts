@@ -5,7 +5,7 @@ import { createClient } from '@supabase/supabase-js';
 import { TITLES_COLUMNS } from '@/constants/db/columns';
 import { TABLES } from '@/constants/db/tables';
 import { type MultiLanguageText } from '@/services/titles';
-import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
+import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 import type { TVShow } from '@/types/TVShow';
 import {
   LanguageIsoCode,
@@ -50,7 +50,7 @@ export default defineEventHandler(async (event) => {
       .from(TABLES.TITLES)
       .select('*')
       .eq(TITLES_COLUMNS.TMDB_ID, tmdbId)
-      .eq(TITLES_COLUMNS.TYPE, MediaTypeEnum.tv)
+      .eq(TITLES_COLUMNS.TYPE, MEDIA_TYPE.TV)
       .maybeSingle();
 
     // If found in DB, check if we have the required language
@@ -134,7 +134,7 @@ export default defineEventHandler(async (event) => {
                 : null,
           })
           .eq(TITLES_COLUMNS.TMDB_ID, tmdbId)
-          .eq(TITLES_COLUMNS.TYPE, MediaTypeEnum.tv);
+          .eq(TITLES_COLUMNS.TYPE, MEDIA_TYPE.TV);
 
         // Update local references to use the updated JSONB
         titleJsonb = updatedTitle;
@@ -206,7 +206,7 @@ export default defineEventHandler(async (event) => {
 
       const extracted = await extractTitleDataWithFallback({
         tmdbId,
-        type: MediaTypeEnum.tv,
+        type: MEDIA_TYPE.TV,
         language: userLanguage,
         region,
         supabase,
@@ -322,7 +322,7 @@ export default defineEventHandler(async (event) => {
       await supabase.from(TABLES.TITLES).upsert(
         {
           tmdb_id: tmdbId,
-          type: MediaTypeEnum.tv,
+          type: MEDIA_TYPE.TV,
           title: titleMultiLang,
           overview: overviewMultiLang,
           poster_path:

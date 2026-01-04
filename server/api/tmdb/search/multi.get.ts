@@ -5,7 +5,7 @@ import type { MediaResponse } from '@/types/Media';
 import { hasUnexpectedCharacters } from '@/utils/language-detection';
 import { getPrimaryLanguageForRegion } from '@/utils/language-detection';
 import type { TMDBSearchResult } from '@/types/tmdb/Search';
-import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
+import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 
 export default defineEventHandler(async (event: H3Event) => {
   try {
@@ -63,8 +63,8 @@ export default defineEventHandler(async (event: H3Event) => {
     // Filter results to only movies and TV shows
     const filteredResults = (response.results || []).filter(
       (result: TMDBSearchResult) =>
-        result.media_type === MediaTypeEnum.movie ||
-        result.media_type === MediaTypeEnum.tv
+        result.media_type === MEDIA_TYPE.MOVIE ||
+        result.media_type === MEDIA_TYPE.TV
     ) as TMDBSearchResult[];
 
     // Detect titles with non-Latin alphabets and fetch titles in preferred language
@@ -122,7 +122,7 @@ export default defineEventHandler(async (event: H3Event) => {
             // Fetch title in preferred language from TMDB
             try {
               const endpoint =
-                result.media_type === MediaTypeEnum.movie
+                result.media_type === MEDIA_TYPE.MOVIE
                   ? `${config.baseUrl}/movie/${result.id}`
                   : `${config.baseUrl}/tv/${result.id}`;
 
@@ -148,7 +148,7 @@ export default defineEventHandler(async (event: H3Event) => {
 
                 if (!preferredHasNonLatin) {
                   // Use preferred title
-                  if (result.media_type === MediaTypeEnum.movie) {
+                  if (result.media_type === MEDIA_TYPE.MOVIE) {
                     result.title = preferredTitle;
                   } else {
                     result.name = preferredTitle;
@@ -179,7 +179,7 @@ export default defineEventHandler(async (event: H3Event) => {
                       );
 
                       if (!primaryHasNonLatin) {
-                        if (result.media_type === MediaTypeEnum.movie) {
+                        if (result.media_type === MEDIA_TYPE.MOVIE) {
                           result.title = primaryTitle;
                         } else {
                           result.name = primaryTitle;

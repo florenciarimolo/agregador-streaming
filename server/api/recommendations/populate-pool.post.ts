@@ -11,7 +11,7 @@ import {
   type RecommendationPoolSource,
   type TitleData,
 } from '@/services/recommendationPool';
-import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
+import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 import { TITLE_STATUS } from '@/constants/domain/titleStatus';
 import { DEFAULT_LANGUAGE_ISO } from '@/constants/languages';
 import type {
@@ -169,7 +169,7 @@ export default defineEventHandler(async (event) => {
 
     const entriesToInsert: Array<{
       tmdb_id: number;
-      type: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv;
+      type: typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV;
       source: RecommendationPoolSource;
       score: number;
       explanation_code: string | null;
@@ -179,7 +179,7 @@ export default defineEventHandler(async (event) => {
     // This follows the same pattern as extractTitleDataWithFallback
     const fetchTitleDetails = async (
       tmdbId: number,
-      type: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv
+      type: typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV
     ): Promise<TitleData | null> => {
       try {
         // First, try to get title from database
@@ -242,7 +242,7 @@ export default defineEventHandler(async (event) => {
 
         // Fetch from TMDB if needed
         const endpoint =
-          type === MediaTypeEnum.movie ? `/movie/${tmdbId}` : `/tv/${tmdbId}`;
+          type === MEDIA_TYPE.MOVIE ? `/movie/${tmdbId}` : `/tv/${tmdbId}`;
         const fullResponse = await $fetch<TMDBTitleDetails>(
           `${tmdbConfig.baseUrl}${endpoint}`,
           {
@@ -407,11 +407,11 @@ export default defineEventHandler(async (event) => {
     // Helper to fetch watch providers for a title
     const fetchWatchProviders = async (
       tmdbId: number,
-      type: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv
+      type: typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV
     ): Promise<number[]> => {
       try {
         const endpoint =
-          type === MediaTypeEnum.movie
+          type === MEDIA_TYPE.MOVIE
             ? `/movie/${tmdbId}/watch/providers`
             : `/tv/${tmdbId}/watch/providers`;
         const response = await $fetch<TMDBWatchProvidersResponse>(
@@ -472,7 +472,7 @@ export default defineEventHandler(async (event) => {
       queryParams: Record<string, unknown>,
       source: RecommendationPoolSource,
       explanationCode: string,
-      type: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv,
+      type: typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV,
       maxPages: number = 5
     ) => {
       let page = 1;
@@ -500,7 +500,7 @@ export default defineEventHandler(async (event) => {
 
             const meetsQuality =
               result.vote_average >= MIN_VOTE_AVERAGE_POOL &&
-              (type === MediaTypeEnum.movie
+              (type === MEDIA_TYPE.MOVIE
                 ? result.vote_count >= MIN_VOTE_COUNT_MOVIE
                 : result.vote_count >= MIN_VOTE_COUNT_TV);
 
@@ -585,7 +585,7 @@ export default defineEventHandler(async (event) => {
       if (likedTitlesData) {
         for (const likedTitle of likedTitlesData) {
           const recommendationPath =
-            likedTitle.type === MediaTypeEnum.movie
+            likedTitle.type === MEDIA_TYPE.MOVIE
               ? `/movie/${likedTitle.tmdb_id}/recommendations`
               : `/tv/${likedTitle.tmdb_id}/recommendations`;
 
@@ -595,8 +595,8 @@ export default defineEventHandler(async (event) => {
             'based_on_like',
             'BASED_ON_LIKE',
             likedTitle.type as
-              | typeof MediaTypeEnum.movie
-              | typeof MediaTypeEnum.tv,
+              | typeof MEDIA_TYPE.MOVIE
+              | typeof MEDIA_TYPE.TV,
             3
           );
         }
@@ -609,7 +609,7 @@ export default defineEventHandler(async (event) => {
       {},
       'trending',
       'TRENDING',
-      MediaTypeEnum.movie,
+      MEDIA_TYPE.MOVIE,
       3
     );
 
@@ -618,7 +618,7 @@ export default defineEventHandler(async (event) => {
       {},
       'trending',
       'TRENDING',
-      MediaTypeEnum.tv,
+      MEDIA_TYPE.TV,
       3
     );
 
@@ -676,7 +676,7 @@ export default defineEventHandler(async (event) => {
         },
         'discover',
         'DISCOVER',
-        MediaTypeEnum.movie,
+        MEDIA_TYPE.MOVIE,
         3
       );
 
@@ -689,7 +689,7 @@ export default defineEventHandler(async (event) => {
         },
         'discover',
         'DISCOVER',
-        MediaTypeEnum.tv,
+        MEDIA_TYPE.TV,
         3
       );
     }
@@ -709,7 +709,7 @@ export default defineEventHandler(async (event) => {
         },
         'easy',
         'EASY_TO_WATCH',
-        MediaTypeEnum.movie,
+        MEDIA_TYPE.MOVIE,
         2
       );
 
@@ -721,7 +721,7 @@ export default defineEventHandler(async (event) => {
         },
         'easy',
         'EASY_TO_WATCH',
-        MediaTypeEnum.tv,
+        MEDIA_TYPE.TV,
         2
       );
     }

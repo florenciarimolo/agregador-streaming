@@ -5,13 +5,13 @@ import { Recommendation, Provider } from '@/types/Recommendation';
 import { TITLE_STATUS } from '@/constants/domain/titleStatus';
 import { QUERY_PARAMS } from '@/constants/api/queryParams';
 import {
-  MoodEnum,
-  type MoodEnum as MoodEnumType,
-} from '@/types/enums/MoodEnum';
+  MOOD,
+  type Mood,
+} from '@/constants/domain/mood';
 import {
-  AttentionEnum,
-  type AttentionEnum as AttentionEnumType,
-} from '@/types/enums/AttentionEnum';
+  ATTENTION,
+  type Attention,
+} from '@/constants/domain/attention';
 import { getTMDBConfig } from '@/server/utils/config';
 import { getUserTMDBParams } from '@/server/utils/user-preferences';
 import { type TitleData } from '@/services/recommendationPool';
@@ -23,7 +23,7 @@ import {
   USER_TITLE_STATUS_COLUMNS,
 } from '@/constants/db/columns';
 import type { MultiLanguageText } from '@/services/titles';
-import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
+import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 import { TmdbGenreId } from '@/types/enums/TmdbGenreId';
 import { WatchProviderType } from '@/types/enums/WatchProviderType';
 import {
@@ -49,24 +49,24 @@ function calculateBoostFactors(
   voteAverage: number | null,
   runtime: number | null,
   episodeCount: number | null,
-  type: 'movie' | 'tv',
-  mood?: MoodEnumType,
-  attention?: AttentionEnumType
+  type: typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV,
+  mood?: Mood,
+  attention?: Attention
 ): { attentionFactor: number; moodFactor: number } {
   let attentionFactor = 0;
   let moodFactor = 0;
 
   // Attention boost factors (priority)
-  if (attention === AttentionEnum.LOW) {
+  if (attention === ATTENTION.LOW) {
     // Short runtime/single episode boosts
     if (
-      type === MediaTypeEnum.movie &&
+      type === MEDIA_TYPE.MOVIE &&
       runtime &&
       runtime < DURATION_THRESHOLDS.SHORT_MOVIE_MINUTES
     ) {
       attentionFactor += ATTENTION_BOOSTS.LOW.SHORT_RUNTIME;
     } else if (
-      type === MediaTypeEnum.tv &&
+      type === MEDIA_TYPE.TV &&
       episodeCount &&
       episodeCount <= DURATION_THRESHOLDS.SINGLE_EPISODE
     ) {
@@ -86,7 +86,7 @@ function calculateBoostFactors(
       attentionFactor +=
         ATTENTION_BOOSTS.LOW.COMPLEX_GENRES_PENALTY * attenuationFactor;
     }
-  } else if (attention === AttentionEnum.HIGH) {
+  } else if (attention === ATTENTION.HIGH) {
     // Complex genres boost
     if (
       genreIds.includes(TmdbGenreId.DRAMA) ||
@@ -120,7 +120,7 @@ function calculateBoostFactors(
       attentionFactor +=
         ATTENTION_BOOSTS.HIGH.TRIVIAL_CONTENT_PENALTY * attenuationFactor;
     }
-  } else if (attention === AttentionEnum.MEDIUM) {
+  } else if (attention === ATTENTION.MEDIUM) {
     // Family genres boost
     if (
       genreIds.includes(TmdbGenreId.FAMILY) ||
@@ -131,7 +131,7 @@ function calculateBoostFactors(
   }
 
   // Mood boost factors (applied after attention)
-  if (mood === MoodEnum.RELAX) {
+  if (mood === MOOD.RELAX) {
     // Comedy, animation, family boosts
     if (
       genreIds.includes(TmdbGenreId.COMEDY) ||
@@ -162,7 +162,7 @@ function calculateBoostFactors(
     ) {
       moodFactor += MOOD_BOOSTS.RELAX.DENSE_DRAMA_PENALTY * ATTENUATION.FACTOR;
     }
-  } else if (mood === MoodEnum.LIGERO) {
+  } else if (mood === MOOD.LIGERO) {
     // Comedy boost
     if (genreIds.includes(TmdbGenreId.COMEDY)) {
       moodFactor += MOOD_BOOSTS.LIGERO.COMEDY;
@@ -182,7 +182,7 @@ function calculateBoostFactors(
     ) {
       moodFactor += MOOD_BOOSTS.LIGERO.HEAVY_DRAMA_PENALTY * ATTENUATION.FACTOR;
     }
-  } else if (mood === MoodEnum.INTENSO) {
+  } else if (mood === MOOD.INTENSO) {
     // Thriller, action, crime boost
     if (
       genreIds.includes(TmdbGenreId.THRILLER) ||
@@ -204,7 +204,7 @@ function calculateBoostFactors(
       moodFactor +=
         MOOD_BOOSTS.INTENSO.CHILD_ANIMATION_PENALTY * ATTENUATION.FACTOR;
     }
-  } else if (mood === MoodEnum.EMOCIONAL) {
+  } else if (mood === MOOD.EMOCIONAL) {
     // Drama, romance boost
     if (
       genreIds.includes(TmdbGenreId.DRAMA) ||
@@ -224,7 +224,7 @@ function calculateBoostFactors(
       moodFactor +=
         MOOD_BOOSTS.EMOCIONAL.EMPTY_ACTION_PENALTY * ATTENUATION.FACTOR;
     }
-  } else if (mood === MoodEnum.REFLEXIVO) {
+  } else if (mood === MOOD.REFLEXIVO) {
     // Sci-Fi, mystery boost
     if (
       genreIds.includes(TmdbGenreId.SCI_FI) ||
@@ -278,9 +278,9 @@ export default defineEventHandler(async (event) => {
     ? Number(query.excluded_tmdb_id)
     : null;
   const excludedType = query.excluded_type as 'movie' | 'tv' | undefined;
-  const mood = query[QUERY_PARAMS.MOOD] as MoodEnumType | undefined;
+  const mood = query[QUERY_PARAMS.MOOD] as Mood | undefined;
   const attention = query[QUERY_PARAMS.ATTENTION] as
-    | AttentionEnumType
+    | Attention
     | undefined;
 
   if (!excludedTmdbId || !excludedType) {
@@ -442,7 +442,7 @@ export default defineEventHandler(async (event) => {
     ): Promise<number[]> => {
       try {
         const endpoint =
-          type === MediaTypeEnum.movie
+          type === MEDIA_TYPE.MOVIE
             ? `/movie/${tmdbId}/watch/providers`
             : `/tv/${tmdbId}/watch/providers`;
         const response = await $fetch<{
@@ -634,7 +634,7 @@ export default defineEventHandler(async (event) => {
       // Fetch from TMDB if needed (missing in titles table or missing in language)
       try {
         const endpoint =
-          entry.type === MediaTypeEnum.movie
+          entry.type === MEDIA_TYPE.MOVIE
             ? `/movie/${entry.tmdb_id}`
             : `/tv/${entry.tmdb_id}`;
         const tmdbResponse = await $fetch<{
@@ -892,7 +892,7 @@ export default defineEventHandler(async (event) => {
     let providers: Provider[] = [];
     try {
       const providerPath =
-        replacementEntry.type === MediaTypeEnum.movie
+        replacementEntry.type === MEDIA_TYPE.MOVIE
           ? `/movie/${replacementEntry.tmdb_id}/watch/providers`
           : `/tv/${replacementEntry.tmdb_id}/watch/providers`;
       const providerResponse = await $fetch<{
@@ -937,8 +937,8 @@ export default defineEventHandler(async (event) => {
       tmdb_id: replacementEntry.tmdb_id,
       title: replacementEntry.titleData.title || '',
       type: replacementEntry.type as
-        | typeof MediaTypeEnum.movie
-        | typeof MediaTypeEnum.tv,
+        | typeof MEDIA_TYPE.MOVIE
+        | typeof MEDIA_TYPE.TV,
       poster_path: replacementEntry.titleData.poster_path,
       overview: replacementEntry.titleData.overview || null,
       vote_average: replacementEntry.titleData.vote_average,

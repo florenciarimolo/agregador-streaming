@@ -1,4 +1,4 @@
-import { MediaTypeEnum } from './enums/MediaTypeEnum';
+import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 import type { WatchProviderTypes } from './WatchProvider';
 
 export type Media = {
@@ -13,7 +13,7 @@ export type Media = {
   release_date?: string; //For movies
   first_air_date?: string; //For TV shows
   vote_average: number;
-  media_type: MediaTypeEnum;
+  media_type: typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV;
   original_language: string;
   imdb_id?: string; // Optional, as not all movies may have an IMDb ID
   path?: string; // Internal URL path

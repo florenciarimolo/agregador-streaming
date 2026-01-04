@@ -4,7 +4,7 @@ import { getTMDBConfig } from '@/server/utils/config';
 import { getUserTMDBParams } from '@/server/utils/user-preferences';
 import { devLog, devError, devWarn, safeError } from '@/server/utils/logger';
 import { TITLE_STATUS } from '@/constants/domain/titleStatus';
-import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
+import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 import { TABLES } from '@/constants/db/tables';
 import { USER_TITLE_STATUS_COLUMNS } from '@/constants/db/columns';
 import { SCORE_WEIGHTS } from '@/constants/domain/scoring';
@@ -159,7 +159,7 @@ export default defineEventHandler(async (event) => {
     for (const status of statuses) {
       // Use the type stored in the database to fetch from the correct endpoint
       const endpoint =
-        status.type === MediaTypeEnum.movie ? MediaTypeEnum.movie : MediaTypeEnum.tv;
+        status.type === MEDIA_TYPE.MOVIE ? MEDIA_TYPE.MOVIE : MEDIA_TYPE.TV;
       const fetchPromise = $fetch<TMDBTitle>(
         `${tmdbConfig.baseUrl}/${endpoint}/${status.tmdb_id}`,
         {

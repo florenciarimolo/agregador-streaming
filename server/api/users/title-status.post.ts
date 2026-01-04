@@ -1,7 +1,7 @@
 import { serverSupabaseUser } from '#supabase/server';
 import { createClient } from '@supabase/supabase-js';
 import { TITLE_STATUS, type TitleStatusType } from '@/constants/domain/titleStatus';
-import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
+import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 import { TABLES } from '@/constants/db/tables';
 import { USER_TITLE_STATUS_COLUMNS } from '@/constants/db/columns';
 import { SCORE_WEIGHTS } from '@/constants/domain/scoring';
@@ -91,10 +91,10 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  if (type !== MediaTypeEnum.movie && type !== MediaTypeEnum.tv) {
+  if (type !== MEDIA_TYPE.MOVIE && type !== MEDIA_TYPE.TV) {
     throw createError({
       statusCode: 400,
-      message: `type must be '${MediaTypeEnum.movie}' or '${MediaTypeEnum.tv}'`,
+      message: `type must be '${MEDIA_TYPE.MOVIE}' or '${MEDIA_TYPE.TV}'`,
     });
   }
 
@@ -133,7 +133,7 @@ export default defineEventHandler(async (event) => {
     // If title doesn't exist, fetch it from TMDB endpoint (this will auto-create it)
     if (!existingTitle) {
       try {
-        const endpoint = type === MediaTypeEnum.movie ? 'movie' : 'tv';
+        const endpoint = type === MEDIA_TYPE.MOVIE ? 'movie' : 'tv';
         
         // Call internal TMDB endpoint which will fetch and create the title
         await $fetch(`/api/tmdb/${endpoint}s/${tmdb_id}`, {

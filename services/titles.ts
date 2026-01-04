@@ -1,7 +1,7 @@
 // useSupabaseClient is auto-imported by Nuxt
 import { TABLES } from '@/constants/db/tables';
 import { TITLES_COLUMNS } from '@/constants/db/columns';
-import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
+import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 import {
   hasUnexpectedCharacters,
   getPrimaryLanguageForRegion,
@@ -25,7 +25,7 @@ export type MultiLanguageText = Record<string, string>;
 export interface InsertTitleData {
   tmdb_id: number;
   title: MultiLanguageText; // JSONB multi-language
-  type: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv;
+  type: typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV;
   poster_path: MultiLanguageText | null; // JSONB multi-language
   backdrop_path?: string | null;
   overview?: MultiLanguageText | null; // JSONB multi-language
@@ -244,7 +244,7 @@ export async function insertTitle(data: InsertTitleData) {
  */
 export async function getTitleByTmdbId(
   tmdbId: number,
-  type: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv
+  type: typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV
 ) {
   const supabase = useSupabaseClient();
   return await supabase
@@ -528,7 +528,7 @@ export async function getTitlesByTmdbIds(
   // (when non-Latin alphabet detected and primary language not found)
   const titlesNeedingPrimaryLanguageFallback: Array<{
     tmdb_id: number;
-    type: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv;
+    type: typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV;
     needsOverview: boolean; // If overview is empty in preferred language, also fetch it
   }> = [];
 
@@ -670,7 +670,7 @@ export async function getTitlesByTmdbIds(
  */
 export async function getTitleByTmdbIdWithLanguage(
   tmdbId: number,
-  type: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv,
+  type: typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV,
   language: string = DEFAULT_LANGUAGE,
   userRegion?: string | null
 ) {

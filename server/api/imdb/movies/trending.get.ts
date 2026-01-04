@@ -1,6 +1,6 @@
 import { getTMDBConfig } from '@/server/utils/config';
 import { createError, setHeader } from 'h3';
-import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
+import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 import type { MediaResponse } from '@/types/Media';
 import type { Media } from '@/types/Media';
 import { LanguageCode, LanguageIsoCode } from '@/constants/languages';
@@ -118,10 +118,10 @@ export default defineCachedEventHandler(
           });
 
           if (
-            findResponse.movie_results &&
-            findResponse.movie_results.length > 0
+            findResponse.MOVIE_results &&
+            findResponse.MOVIE_results.length > 0
           ) {
-            const tmdbId = findResponse.movie_results[0].id;
+            const tmdbId = findResponse.MOVIE_results[0].id;
 
             // Fetch full movie details from TMDB in Spanish first
             // Don't type as Media - TMDB returns full Movie object with all fields including overview
@@ -196,7 +196,7 @@ export default defineCachedEventHandler(
               backdrop_path: movieResponse.backdrop_path,
               release_date: movieResponse.release_date,
               vote_average: movieResponse.vote_average,
-              media_type: MediaTypeEnum.movie,
+              media_type: MEDIA_TYPE.MOVIE,
               original_language: movieResponse.original_language,
               imdb_id: imdbId,
             };

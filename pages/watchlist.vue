@@ -60,7 +60,7 @@
           :key="`watchlist-${title.tmdb_id}`"
           :title="title.title"
           :poster-path="title.poster_path"
-          :link-to="`/${title.type === MediaTypeEnum.movie ? 'movie' : 'tv-show'}/${title.tmdb_id}`"
+          :link-to="`/${title.type === MEDIA_TYPE.MOVIE ? 'movie' : 'tv-show'}/${title.tmdb_id}`"
           :link-aria-label="$t('media.viewDetailsOf', { title: title.title })"
           :image-alt="title.title"
           :no-image-aria-label="$t('media.noPosterAvailableFor', { title: title.title })"
@@ -91,7 +91,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue';
-import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
+import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 import { getSession } from '@/services/auth';
 import Alert from '@/components/ui/Alert.vue';
 import IconButton from '@/components/ui/IconButton.vue';
@@ -124,7 +124,7 @@ useSeoMeta({
 type WatchlistTitle = {
   tmdb_id: number;
   title: string;
-  type: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv;
+  type: typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV;
   poster_path: string | null;
   created_at: string;
 };
@@ -132,7 +132,7 @@ type WatchlistTitle = {
 type WatchlistResponseItem = {
   tmdb_id: number;
   title: string;
-  type: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv;
+  type: typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV;
   poster_path: string | null;
   created_at: string;
 };

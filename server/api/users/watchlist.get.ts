@@ -11,7 +11,7 @@ import {
   type MultiLanguageText,
 } from '@/services/titles';
 import { getTMDBConfig } from '@/server/utils/config';
-import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
+import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 
 /**
  * Get user watchlist (watchlist status)
@@ -189,7 +189,7 @@ export default defineEventHandler(async (event) => {
 
         try {
           const endpoint =
-            type === 'movie' ? MediaTypeEnum.movie : MediaTypeEnum.tv;
+            type === 'movie' ? MEDIA_TYPE.MOVIE : MEDIA_TYPE.TV;
           await $fetch(`${tmdbConfig.baseUrl}/${endpoint}/${tmdbId}`, {
             query: {
               api_key: tmdbConfig.apiKey,

@@ -8,7 +8,7 @@
 
 import { getTitleInLanguage, type MultiLanguageText } from '@/services/titles';
 import { getTMDBConfig } from './config';
-import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
+import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 import {
   PROFILES_COLUMNS,
   USER_PREFERENCES_COLUMNS,
@@ -26,7 +26,7 @@ export interface ExtractedTitleData {
 
 export interface TitleExtractionOptions {
   tmdbId: number;
-  type: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv;
+  type: typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV;
   language: string; // User's preferred language (e.g., 'es-ES', 'ca-ES')
   region: string; // User's region (e.g., 'ES')
   supabase: SupabaseClient;
@@ -85,7 +85,7 @@ function extractFromTitleData(
 export async function fetchOverviewWithPrimaryLanguageFallback(
   overview: string,
   tmdbId: number,
-  type: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv,
+  type: typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV,
   language: string,
   region: string | null,
   endpoint: string,
@@ -259,7 +259,7 @@ export async function extractTitleDataWithFallback(
     try {
       const tmdbConfig = getTMDBConfig(language, region);
       const endpoint =
-        type === MediaTypeEnum.movie ? `/movie/${tmdbId}` : `/tv/${tmdbId}`;
+        type === MEDIA_TYPE.MOVIE ? `/movie/${tmdbId}` : `/tv/${tmdbId}`;
 
       const tmdbResponse = await $fetch<{
         title?: string;

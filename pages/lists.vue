@@ -60,7 +60,7 @@
                   :key="title.id"
                   :title="title.title"
                   :poster-path="title.poster_path"
-                  :link-to="`/${title.type === MediaTypeEnum.movie ? 'movie' : 'tv-show'}/${title.tmdb_id}`"
+                  :link-to="`/${title.type === MEDIA_TYPE.MOVIE ? 'movie' : 'tv-show'}/${title.tmdb_id}`"
                   :link-aria-label="$t('media.viewDetailsOf', { title: title.title })"
                   :image-alt="$t('media.posterOf', { title: title.title })"
                   :no-image-aria-label="$t('media.noPosterAvailableFor', { title: title.title })"
@@ -105,7 +105,7 @@
                   :key="title.id"
                   :title="title.title"
                   :poster-path="title.poster_path"
-                  :link-to="`/${title.type === MediaTypeEnum.movie ? 'movie' : 'tv-show'}/${title.tmdb_id}`"
+                  :link-to="`/${title.type === MEDIA_TYPE.MOVIE ? 'movie' : 'tv-show'}/${title.tmdb_id}`"
                   :link-aria-label="$t('media.viewDetailsOf', { title: title.title })"
                   :image-alt="$t('media.posterOf', { title: title.title })"
                   :no-image-aria-label="$t('media.noPosterAvailableFor', { title: title.title })"
@@ -174,7 +174,7 @@
                   :key="title.id"
                   :title="title.title"
                   :poster-path="title.poster_path"
-                  :link-to="`/${title.type === MediaTypeEnum.movie ? 'movie' : 'tv-show'}/${title.tmdb_id}`"
+                  :link-to="`/${title.type === MEDIA_TYPE.MOVIE ? 'movie' : 'tv-show'}/${title.tmdb_id}`"
                   :link-aria-label="$t('media.viewDetailsOf', { title: title.title })"
                   :image-alt="$t('media.posterOf', { title: title.title })"
                   :no-image-aria-label="$t('media.noPosterAvailableFor', { title: title.title })"
@@ -257,7 +257,7 @@ import Tabs from '@/components/ui/Tabs.vue';
 import AppShell from '@/components/layout/AppShell.vue';
 import PageContainer from '@/components/layout/PageContainer.vue';
 import TabButton from '@/components/ui/TabButton.vue';
-import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
+import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 import {
   getUserLikedTitles,
   deleteUserTitleStatus,
@@ -311,14 +311,14 @@ const titleToRemoveLike = ref<{
   id: string;
   title: string;
   tmdb_id: number;
-  type: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv;
+  type: typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV;
 } | null>(null);
 
 const likedTitles = ref<
   Array<{
     id: string;
     title: string;
-    type: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv;
+    type: typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV;
     poster_path: string | null;
     tmdb_id: number;
   }>
@@ -327,7 +327,7 @@ const seenTitles = ref<
   Array<{
     id: string;
     title: string;
-    type: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv;
+    type: typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV;
     poster_path: string | null;
     tmdb_id: number;
     liked?: boolean;
@@ -337,7 +337,7 @@ const notInterestedTitles = ref<
   Array<{
     id: string;
     title: string;
-    type: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv;
+    type: typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV;
     poster_path: string | null;
     tmdb_id: number;
   }>
@@ -346,7 +346,7 @@ const watchlistTitles = ref<
   Array<{
     id: string;
     title: string;
-    type: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv;
+    type: typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV;
     poster_path: string | null;
     tmdb_id: number;
   }>
@@ -772,7 +772,7 @@ const handleRemoveSeen = async (title: {
   id: string;
   title: string;
   tmdb_id: number;
-  type: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv;
+  type: typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV;
   liked?: boolean;
 }) => {
   const titleToRestore = seenTitles.value.find((t) => t.id === title.id);
@@ -813,7 +813,7 @@ const handleAddToLiked = async (title: {
   id: string;
   title: string;
   tmdb_id: number;
-  type: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv;
+  type: typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV;
   liked?: boolean;
 }) => {
   console.log('[UNLIKE DEBUG] handleAddToLiked called', {
@@ -1101,7 +1101,7 @@ const handleRemoveNotInterested = async (title: {
             tmdb_id: title.tmdb_id,
             type:
               notInterestedTitles.value.find((t) => t.tmdb_id === title.tmdb_id)
-                ?.type || MediaTypeEnum.movie,
+                ?.type || MEDIA_TYPE.MOVIE,
             status: TITLE_STATUS.NOT_INTERESTED,
           });
           await fetchNotInterestedTitles();

@@ -26,7 +26,7 @@
         <MediaBannerDetail
           v-else
           :media="movieWithProviders as unknown as Media"
-          :media-type="MediaTypeEnum.movie"
+          :media-type="MEDIA_TYPE.MOVIE"
           :in-production="false"
           :in-theaters="isInTheaters"
         />
@@ -42,7 +42,7 @@ import { useFetch, useSeoMeta, useHead } from 'nuxt/app';
 import type { Movie } from '@/types/Movie';
 import { WatchProviderTypes } from '@/types/WatchProvider';
 import MediaBannerDetail from '@/components/MediaBannerDetail.vue';
-import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
+import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 import type { Media } from '@/types/Media';
 import type { AlternativeTitlesResponse } from '@/types/AlternativeTitle';
 import { isMovieInTheaters } from '@/utils/movieStatus';
@@ -122,7 +122,7 @@ const alternativeTitles = computed<AlternativeTitlesResponse>(
 
 const movieWithProviders = computed<Movie>(() => {
   return {
-    ...movie.value,
+    ...MOVIE.value,
     providers: providers.value,
     alternative_titles: alternativeTitles.value,
   };
@@ -202,14 +202,14 @@ const seoExperienceKey = computed(() => getMovieSeoExperience(movie.value));
 const seoExperience = computed(() => t(seoExperienceKey.value));
 
 const pageTitle = computed(() => {
-  const title = movie.value?.title || t('media.movie');
-  return `${title} – ${t('seo.moviePrefix')} ${seoExperience.value}`;
+  const title = movie.value?.title || t('media.MOVIE');
+  return `${title} – ${t('seo.MOVIEPrefix')} ${seoExperience.value}`;
 });
 
 const pageDescription = computed(() => {
-  const title = movie.value?.title || t('media.movie');
+  const title = movie.value?.title || t('media.MOVIE');
   const experience = seoExperience.value;
-  return t('seo.movieDescription', { title, experience });
+  return t('seo.MOVIEDescription', { title, experience });
 });
 
 const ogImage = computed(() => {
@@ -265,7 +265,7 @@ useSeoMeta({
   ogTitle: pageTitle,
   ogDescription: pageDescription,
   ogImage: ogImage,
-  ogType: 'video.movie',
+  ogType: 'video.MOVIE',
   ogUrl: canonicalUrl,
   twitterCard: 'summary_large_image',
   twitterTitle: pageTitle,

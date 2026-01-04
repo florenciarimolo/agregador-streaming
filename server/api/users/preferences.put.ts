@@ -1,13 +1,13 @@
 import { serverSupabaseUser } from '#supabase/server';
 import { createClient } from '@supabase/supabase-js';
 import type { UserPreferences } from '@/services/preferences';
-import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
+import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 import {
-  ExplorationModeEnum,
-} from '@/types/enums/ExplorationModeEnum';
+  EXPLORATION_MODE,
+} from '@/constants/domain/explorationMode';
 import {
-  PrioritizeContentEnum,
-} from '@/types/enums/PrioritizeContentEnum';
+  PRIORITIZE_CONTENT,
+} from '@/constants/domain/prioritizeContent';
 import { TABLES } from '@/constants/db/tables';
 import { USER_PREFERENCES_COLUMNS } from '@/constants/db/columns';
 import {
@@ -94,9 +94,9 @@ export default defineEventHandler(async (event) => {
 
     if (
       [
-        ExplorationModeEnum.similar,
-        ExplorationModeEnum.balanced,
-        ExplorationModeEnum.surprise,
+        EXPLORATION_MODE.SIMILAR,
+        EXPLORATION_MODE.BALANCED,
+        EXPLORATION_MODE.SURPRISE,
       ].includes(body.exploration_mode)
     ) {
       preferences.exploration_mode = body.exploration_mode;
@@ -104,9 +104,9 @@ export default defineEventHandler(async (event) => {
 
     if (
       [
-        PrioritizeContentEnum.new,
-        PrioritizeContentEnum.classics,
-        PrioritizeContentEnum.topRated,
+        PRIORITIZE_CONTENT.NEW,
+        PRIORITIZE_CONTENT.CLASSICS,
+        PRIORITIZE_CONTENT.TOP_RATED,
       ].includes(body.prioritize_content)
     ) {
       preferences.prioritize_content = body.prioritize_content;

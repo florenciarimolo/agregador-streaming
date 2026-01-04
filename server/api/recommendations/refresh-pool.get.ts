@@ -13,7 +13,7 @@ import { TABLES } from '@/constants/db/tables';
 import { PROFILES_COLUMNS, USER_PREFERENCES_COLUMNS, TITLES_COLUMNS, USER_TITLE_STATUS_COLUMNS } from '@/constants/db/columns';
 import { SCORE_WEIGHTS } from '@/constants/domain/scoring';
 import type { MultiLanguageText } from '@/services/titles';
-import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
+import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 
 /**
  * TMDB API response types
@@ -172,7 +172,7 @@ export default defineEventHandler(async (event) => {
 
         const entriesToInsert: Array<{
           tmdb_id: number;
-          type: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv;
+          type: typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV;
           source: RecommendationPoolSource;
           score: number;
           explanation_code: string | null;
@@ -186,7 +186,7 @@ export default defineEventHandler(async (event) => {
         ): Promise<void> => {
           try {
             const endpoint =
-              type === MediaTypeEnum.movie
+              type === MEDIA_TYPE.MOVIE
                 ? `/movie/${tmdbId}`
                 : `/tv/${tmdbId}`;
             const fullResponse = await $fetch(`${tmdbConfig.baseUrl}${endpoint}`, {
@@ -265,7 +265,7 @@ export default defineEventHandler(async (event) => {
           queryParams: Record<string, unknown>,
           source: RecommendationPoolSource,
           explanationCode: string,
-          type: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv,
+          type: typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV,
           maxPages: number = 2
         ) => {
           let page = 1;
@@ -293,7 +293,7 @@ export default defineEventHandler(async (event) => {
 
                 const meetsQuality =
                   result.vote_average >= MIN_VOTE_AVERAGE_POOL &&
-                  (type === MediaTypeEnum.movie
+                  (type === MEDIA_TYPE.MOVIE
                     ? result.vote_count >= MIN_VOTE_COUNT_MOVIE
                     : result.vote_count >= MIN_VOTE_COUNT_TV);
 
@@ -338,7 +338,7 @@ export default defineEventHandler(async (event) => {
           {},
           'trending',
           'TRENDING',
-          MediaTypeEnum.movie,
+          MEDIA_TYPE.MOVIE,
           2
         );
 
@@ -347,7 +347,7 @@ export default defineEventHandler(async (event) => {
           {},
           'trending',
           'TRENDING',
-          MediaTypeEnum.tv,
+          MEDIA_TYPE.TV,
           2
         );
 

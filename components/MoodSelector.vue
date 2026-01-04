@@ -58,13 +58,13 @@
 import { ref, watch, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import {
-  MoodEnum,
-  type MoodEnum as MoodEnumType,
-} from '@/types/enums/MoodEnum';
+  MOOD,
+  type Mood,
+} from '@/constants/domain/mood';
 import {
-  AttentionEnum,
-  type AttentionEnum as AttentionEnumType,
-} from '@/types/enums/AttentionEnum';
+  ATTENTION,
+  type Attention,
+} from '@/constants/domain/attention';
 import IconRelax from './icons/IconRelax.vue';
 import IconLigero from './icons/IconLigero.vue';
 import IconIntenso from './icons/IconIntenso.vue';
@@ -76,8 +76,8 @@ import IconBattery100 from './icons/IconBattery100.vue';
 
 const { t } = useI18n();
 
-type Mood = MoodEnumType | null;
-type Attention = AttentionEnumType | null;
+type MoodValue = Mood | null;
+type AttentionValue = Attention | null;
 
 const route = useRoute();
 const router = useRouter();
@@ -85,47 +85,47 @@ const router = useRouter();
 import { QUERY_PARAMS } from '@/constants/api/queryParams';
 
 // Initialize from query params
-const mood = ref<Mood>((route.query[QUERY_PARAMS.MOOD] as MoodEnumType) || null);
-const attention = ref<Attention>(
-  (route.query[QUERY_PARAMS.ATTENTION] as AttentionEnumType) || null
+const mood = ref<MoodValue>((route.query[QUERY_PARAMS.MOOD] as Mood) || null);
+const attention = ref<AttentionValue>(
+  (route.query[QUERY_PARAMS.ATTENTION] as Attention) || null
 );
 
 const moodOptions = computed(() => [
-  { value: MoodEnum.RELAX, label: t('mood.relaxed'), icon: IconRelax },
-  { value: MoodEnum.LIGERO, label: t('mood.light'), icon: IconLigero },
-  { value: MoodEnum.INTENSO, label: t('mood.intense'), icon: IconIntenso },
+  { value: MOOD.RELAX, label: t('mood.relaxed'), icon: IconRelax },
+  { value: MOOD.LIGERO, label: t('mood.light'), icon: IconLigero },
+  { value: MOOD.INTENSO, label: t('mood.intense'), icon: IconIntenso },
   {
-    value: MoodEnum.EMOCIONAL,
+    value: MOOD.EMOCIONAL,
     label: t('mood.emotional'),
     icon: IconEmocional,
   },
   {
-    value: MoodEnum.REFLEXIVO,
+    value: MOOD.REFLEXIVO,
     label: t('mood.reflective'),
     icon: IconReflexivo,
   },
 ]);
 
 const attentionOptions = computed(() => [
-  { value: AttentionEnum.LOW, label: t('attention.low'), icon: IconBattery0 },
+  { value: ATTENTION.LOW, label: t('attention.low'), icon: IconBattery0 },
   {
-    value: AttentionEnum.MEDIUM,
+    value: ATTENTION.MEDIUM,
     label: t('attention.medium'),
     icon: IconBattery50,
   },
   {
-    value: AttentionEnum.HIGH,
+    value: ATTENTION.HIGH,
     label: t('attention.high'),
     icon: IconBattery100,
   },
 ]);
 
-const selectMood = (value: Mood) => {
+const selectMood = (value: MoodValue) => {
   mood.value = mood.value === value ? null : value;
   updateQuery();
 };
 
-const selectAttention = (value: Attention) => {
+const selectAttention = (value: AttentionValue) => {
   attention.value = attention.value === value ? null : value;
   updateQuery();
 };

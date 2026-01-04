@@ -4,7 +4,7 @@ import { getTMDBConfig } from '@/server/utils/config';
 import { getUserTMDBParams } from '@/server/utils/user-preferences';
 import { devLog, devError, safeError } from '@/server/utils/logger';
 import { TITLE_STATUS } from '@/constants/domain/titleStatus';
-import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
+import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 import {
   getPoolCount,
   deleteLowestScoreEntries,
@@ -115,7 +115,7 @@ export default defineEventHandler(async (event) => {
       try {
         const { tmdb_id, type } = entry;
         const endpoint =
-          type === MediaTypeEnum.movie
+          type === MEDIA_TYPE.MOVIE
             ? `/movie/${tmdb_id}`
             : `/tv/${tmdb_id}`;
 

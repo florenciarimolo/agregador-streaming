@@ -13,10 +13,10 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
+import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 
 interface Props {
-  type?: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv;
+  type?: typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV;
   label?: string;
   size?: 'xs' | 'sm' | 'md' | 'lg';
 }
@@ -43,8 +43,8 @@ const { t } = useI18n();
 const displayLabel = computed(() => {
   if (props.label) return props.label;
   if (!props.type) return '';
-  return props.type === MediaTypeEnum.movie
-    ? t('media.movie')
+  return props.type === MEDIA_TYPE.MOVIE
+    ? t('media.MOVIE')
     : t('media.series');
 });
 </script>

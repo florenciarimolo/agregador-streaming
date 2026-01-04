@@ -99,7 +99,7 @@
               v-if="season?.providers?.flatrate?.length"
               :media-provider-prop-list="season.providers.flatrate"
               :watch-type-prop="$t('media.watchIn')"
-              :media-type="MediaTypeEnum.tv"
+              :media-type="MEDIA_TYPE.TV"
               :media-title="season?.name || ''"
               :tmdb-id="tmdbId"
             />
@@ -108,7 +108,7 @@
               v-if="season?.providers?.buy?.length"
               :media-provider-prop-list="season.providers.buy"
               :watch-type-prop="$t('media.buyIn')"
-              :media-type="MediaTypeEnum.tv"
+              :media-type="MEDIA_TYPE.TV"
               :media-title="season?.name || ''"
               :tmdb-id="tmdbId"
             />
@@ -117,7 +117,7 @@
               v-if="season?.providers?.rent?.length"
               :media-provider-prop-list="season.providers.rent"
               :watch-type-prop="$t('media.rentIn')"
-              :media-type="MediaTypeEnum.tv"
+              :media-type="MEDIA_TYPE.TV"
               :media-title="season?.name || ''"
               :tmdb-id="tmdbId"
             />
@@ -139,7 +139,7 @@ import { formatDateToSpanish } from '@/utils/formatDate';
 import type { WatchProviderTypes } from '@/types/WatchProvider';
 import ProviderList from '@/components/ProviderList.vue';
 import RatingBadge from '@/components/RatingBadge.vue';
-import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
+import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 import IconArrowLeft from '@/components/icons/IconArrowLeft.vue';
 import IconCalendar from '@/components/icons/IconCalendar.vue';
 import IconEpisodes from '@/components/icons/IconEpisodes.vue';

@@ -1,6 +1,6 @@
 import { getTMDBConfig } from '@/server/utils/config';
 import { createError, setHeader } from 'h3';
-import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
+import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 import type { MediaResponse } from '@/types/Media';
 import type { Media } from '@/types/Media';
 import { LanguageCode, LanguageIsoCode } from '@/constants/languages';
@@ -117,8 +117,8 @@ export default defineCachedEventHandler(
             },
           });
 
-          if (findResponse.tv_results && findResponse.tv_results.length > 0) {
-            const tmdbId = findResponse.tv_results[0].id;
+          if (findResponse.TV_results && findResponse.TV_results.length > 0) {
+            const tmdbId = findResponse.TV_results[0].id;
 
             // Fetch full TV show details from TMDB in Spanish first
             // Don't type as Media - TMDB returns full TVShow object with all fields including overview
@@ -193,7 +193,7 @@ export default defineCachedEventHandler(
               backdrop_path: tvShowResponse.backdrop_path,
               first_air_date: tvShowResponse.first_air_date,
               vote_average: tvShowResponse.vote_average,
-              media_type: MediaTypeEnum.tv,
+              media_type: MEDIA_TYPE.TV,
               original_language: tvShowResponse.original_language,
               imdb_id: imdbId,
             };

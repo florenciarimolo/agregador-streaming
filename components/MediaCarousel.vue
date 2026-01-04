@@ -173,7 +173,7 @@ import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { formatDateToSpanish } from '@/utils/formatDate';
 import type { Media } from '@/types/Media';
 import RatingBadge from './RatingBadge.vue';
-import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
+import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 import Button from '@/components/ui/Button.vue';
 import { useUserRegion } from '@/composables/useUserRegion';
 
@@ -258,7 +258,7 @@ watch(
     mediaList.value = newList;
 
     mediaList.value.forEach((media) => {
-      if (media.media_type === MediaTypeEnum.movie) {
+      if (media.media_type === MEDIA_TYPE.MOVIE) {
         media.path = `/movie/${media.id}`;
       } else {
         media.path = `/tv-show/${media.id}`;

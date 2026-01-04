@@ -1,4 +1,4 @@
-import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
+import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 
 // Provider mapping with their base URLs and search patterns (only TMDB available providers for Spain)
 export const PROVIDER_LINKS: Record<
@@ -108,17 +108,17 @@ export const PROVIDER_LINKS: Record<
     name: 'Netflix Estándar con Anuncios',
   },
   Plex: {
-    baseUrl: 'https://www.plex.tv',
+    baseUrl: 'https://www.plex.TV',
     searchUrl: '/search/?query=',
     name: 'Plex',
   },
   'Pluto TV': {
-    baseUrl: 'https://pluto.tv/es',
+    baseUrl: 'https://pluto.TV/es',
     searchUrl: '/es/search?term=',
     name: 'Pluto TV',
   },
   'Rakuten TV': {
-    baseUrl: 'https://rakuten.tv/es',
+    baseUrl: 'https://rakuten.TV/es',
     searchUrl: '/es/search?q=',
     name: 'Rakuten TV',
   },
@@ -133,7 +133,7 @@ export const PROVIDER_LINKS: Record<
     name: 'SkyShowtime',
   },
   Tivify: {
-    baseUrl: 'https://www.tivify.tv',
+    baseUrl: 'https://www.tivify.TV',
     name: 'Tivify',
   },
   'YouTube Premium': {
@@ -142,7 +142,7 @@ export const PROVIDER_LINKS: Record<
     name: 'YouTube Premium',
   },
   fuboTV: {
-    baseUrl: 'https://www.fubo.tv/es',
+    baseUrl: 'https://www.fubo.TV/es',
     name: 'fuboTV',
   },
   rtve: {
@@ -231,7 +231,7 @@ export async function generateProviderSearchUrl(
   mediaTitle: string,
   originalTitle?: string,
   alternativeTitles?: Array<{ title: string; type: string }>,
-  mediaType?: MediaTypeEnum,
+  mediaType?: MEDIA_TYPE,
   region?: string,
   tmdbId?: number,
   mediaTypeForDb?: 'movie' | 'tv'
@@ -259,7 +259,7 @@ export async function generateProviderSearchUrl(
   if (providerName === 'Atres Player' || providerName === 'atresplayer') {
     // Use the best title based on provider preference and available alternatives
     let searchTitle = '';
-    if (mediaType === MediaTypeEnum.movie) {
+    if (mediaType === MEDIA_TYPE.MOVIE) {
       searchTitle = getBestTitleForProvider(
         providerName,
         titleToUse,
@@ -285,7 +285,7 @@ export async function generateProviderSearchUrl(
   if (provider.searchUrl) {
     // Use the best title based on provider preference and available alternatives
     let searchTitle = '';
-    if (mediaType === MediaTypeEnum.movie) {
+    if (mediaType === MEDIA_TYPE.MOVIE) {
       searchTitle = getBestTitleForProvider(
         providerName,
         titleToUse,

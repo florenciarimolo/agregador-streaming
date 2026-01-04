@@ -31,7 +31,7 @@ import {
   generateProviderSearchUrl,
   getFallbackSearchUrl,
 } from '@/utils/providerLinks';
-import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
+import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 import { getSession } from '@/services/auth';
 // @ts-expect-error - Used in template, linter doesn't detect template usage
 import IconPlay from '@/components/icons/IconPlay.vue';
@@ -58,7 +58,7 @@ const props = defineProps({
     default: () => [],
   },
   mediaType: {
-    type: String as PropType<MediaTypeEnum>,
+    type: String as PropType<MEDIA_TYPE>,
     required: true,
   },
   tmdbId: {
@@ -119,9 +119,9 @@ onMounted(async () => {
     // Keep default 'ES'
   }
 
-  // Convert MediaTypeEnum to 'movie' | 'tv' for database
+  // Convert MEDIA_TYPE to 'movie' | 'tv' for database
   const mediaTypeForDb: 'movie' | 'tv' =
-    props.mediaType === MediaTypeEnum.movie ? 'movie' : 'tv';
+    props.mediaType === MEDIA_TYPE.MOVIE ? 'movie' : 'tv';
 
   for (const provider of props.mediaProviderPropList) {
     const providerName = provider.provider_name;

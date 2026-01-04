@@ -116,8 +116,8 @@
                   </h3>
                   <p class="mt-1 text-xs text-gray-600 dark:text-gray-400">
                     {{
-                      result.media_type === MediaTypeEnum.movie
-                        ? $t('media.movie')
+                      result.media_type === MEDIA_TYPE.MOVIE
+                        ? $t('media.MOVIE')
                         : $t('media.series')
                     }}
                     <span v-if="getYear(result)" class="ml-1">
@@ -183,7 +183,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
+import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 import type { TMDBSearchResult } from '@/types/tmdb/Search';
 
 const router = useRouter();
@@ -249,9 +249,9 @@ const navigateToDetail = (result: TMDBSearchResult) => {
   if (props.emitOnSelect) {
     emit('title-selected', result);
   } else {
-    if (result.media_type === MediaTypeEnum.movie) {
+    if (result.media_type === MEDIA_TYPE.MOVIE) {
       router.push(`/movie/${result.id}`);
-    } else if (result.media_type === MediaTypeEnum.tv) {
+    } else if (result.media_type === MEDIA_TYPE.TV) {
       router.push(`/tv-show/${result.id}`);
     }
   }
@@ -299,8 +299,8 @@ const handleSearch = () => {
       searchResults.value = response.data.results
         .filter(
           (result: TMDBSearchResult) =>
-            result.media_type === MediaTypeEnum.movie ||
-            result.media_type === MediaTypeEnum.tv
+            result.media_type === MEDIA_TYPE.MOVIE ||
+            result.media_type === MEDIA_TYPE.TV
         )
         .slice(0, 8);
     } catch (error) {

@@ -22,7 +22,7 @@
           <Section>
             <MediaBannerDetail
               :media="tvShowWithProviders as unknown as Media"
-              :media-type="MediaTypeEnum.tv"
+              :media-type="MEDIA_TYPE.TV"
               :in-production="tvShowWithProviders.in_production"
             />
           </Section>
@@ -116,7 +116,7 @@ import { TVShow } from '@/types/TVShow';
 import { formatDateToSpanish } from '@/utils/formatDate';
 import { WatchProviderTypes } from '@/types/WatchProvider';
 import MediaBannerDetail from '@/components/MediaBannerDetail.vue';
-import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
+import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 import type { Media } from '@/types/Media';
 import IconCalendar from '@/components/icons/IconCalendar.vue';
 import IconEpisodes from '@/components/icons/IconEpisodes.vue';
@@ -215,7 +215,7 @@ const tvShowProviders = computed(
 
 const tvShowWithProviders = computed<TVShow>(() => {
   return {
-    ...tvShow.value,
+    ...TVShow.value,
     providers: tvShowProviders.value,
   };
 });
@@ -233,13 +233,13 @@ const seoExperience = computed(() => t(seoExperienceKey.value));
 // Meta tags dinámicos
 const pageTitle = computed(() => {
   const name = tvShow.value?.name || t('media.series');
-  return `${name} – ${t('seo.tvShowPrefix')} ${seoExperience.value}`;
+  return `${name} – ${t('seo.TVShowPrefix')} ${seoExperience.value}`;
 });
 
 const pageDescription = computed(() => {
   const title = tvShow.value?.name || t('media.series');
   const experience = seoExperience.value;
-  return t('seo.tvShowDescription', { title, experience });
+  return t('seo.TVShowDescription', { title, experience });
 });
 
 const ogImage = computed(() => {
@@ -295,7 +295,7 @@ useSeoMeta({
   ogTitle: pageTitle,
   ogDescription: pageDescription,
   ogImage: ogImage,
-  ogType: 'video.tv_show',
+  ogType: 'video.TV_show',
   ogUrl: canonicalUrl,
   twitterCard: 'summary_large_image',
   twitterTitle: pageTitle,

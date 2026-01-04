@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted } from 'vue';
 import { TITLE_STATUS } from '@/constants/domain/titleStatus';
-import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
+import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 import { getTitleByTmdbId } from '@/services/titles';
 import { upsertUserTitleStatus } from '@/services/userTitleStatus';
 import { getSession } from '@/services/auth';
@@ -51,7 +51,7 @@ interface TitleResult {
   overview: string;
   release_date?: string;
   first_air_date?: string;
-  media_type: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv;
+  media_type: typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV;
   genre_ids?: number[];
   vote_average?: number;
   popularity?: number;
@@ -86,7 +86,7 @@ const selectedGenres = ref<Array<{ id: number; name: string }>>([]);
 const selectedGenreForSelector = ref<{
   id: number;
   name: string;
-  type?: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv;
+  type?: typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV;
 } | null>(null);
 
 // Selected providers
@@ -155,8 +155,8 @@ const handleSearch = () => {
       searchResults.value = response.data.results
         .filter(
           (r) =>
-            r.media_type === MediaTypeEnum.movie ||
-            r.media_type === MediaTypeEnum.tv
+            r.media_type === MEDIA_TYPE.MOVIE ||
+            r.media_type === MEDIA_TYPE.TV
         )
         .sort((a, b) => (b.popularity || 0) - (a.popularity || 0))
         .slice(0, 20);
@@ -207,10 +207,10 @@ const { data: genresData } = useAsyncData(
     // Fetch both movie and TV genres
     const [movieResponse, tvResponse] = await Promise.all([
       $fetch<{ genres: Array<{ id: number; name: string }> }>(
-        `/api/tmdb/genres?type=${MediaTypeEnum.movie}`
+        `/api/tmdb/genres?type=${MEDIA_TYPE.MOVIE}`
       ),
       $fetch<{ genres: Array<{ id: number; name: string }> }>(
-        `/api/tmdb/genres?type=${MediaTypeEnum.tv}`
+        `/api/tmdb/genres?type=${MEDIA_TYPE.TV}`
       ),
     ]);
     return { movie: movieResponse, tv: tvResponse };
@@ -228,20 +228,20 @@ const availableGenres = computed(() => {
   const allGenres: Array<{
     id: number;
     name: string;
-    type: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv;
+    type: typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV;
   }> = [];
 
   // Add movie genres
-  genresData.value.movie.genres.forEach((g: { id: number; name: string }) => {
+  genresData.value.MOVIE.genres.forEach((g: { id: number; name: string }) => {
     if (g.name) {
-      allGenres.push({ id: g.id, name: g.name, type: MediaTypeEnum.movie });
+      allGenres.push({ id: g.id, name: g.name, type: MEDIA_TYPE.MOVIE });
     }
   });
 
   // Add TV genres
-  genresData.value.tv.genres.forEach((g: { id: number; name: string }) => {
+  genresData.value.TV.genres.forEach((g: { id: number; name: string }) => {
     if (g.name) {
-      allGenres.push({ id: g.id, name: g.name, type: MediaTypeEnum.tv });
+      allGenres.push({ id: g.id, name: g.name, type: MEDIA_TYPE.TV });
     }
   });
 
@@ -251,7 +251,7 @@ const availableGenres = computed(() => {
     .sort((a, b) => {
       // First sort by type: movie comes before tv
       if (a.type !== b.type) {
-        return a.type === MediaTypeEnum.movie ? -1 : 1;
+        return a.type === MEDIA_TYPE.MOVIE ? -1 : 1;
       }
       // Then sort alphabetically by name
       return (a.name || '').localeCompare(b.name || '');
@@ -304,7 +304,7 @@ const availableProviders = computed(() => {
 const addGenre = (genre: {
   id: number;
   name: string;
-  type?: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv;
+  type?: typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV;
 }) => {
   // Check if already selected
   if (selectedGenres.value.some((g) => g.id === genre.id)) {

@@ -6,7 +6,7 @@ import {
 import { getTitlesByTmdbIds, getTitleInLanguage, type MultiLanguageText } from '@/services/titles';
 import { getSession } from '@/services/auth';
 import { getUserTMDBParams } from '@/server/utils/user-preferences';
-import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
+import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 
 export default defineEventHandler(async (event) => {
   try {
@@ -96,7 +96,7 @@ export default defineEventHandler(async (event) => {
       }
 
       // Count movies vs series
-      if (title.type === MediaTypeEnum.movie) {
+      if (title.type === MEDIA_TYPE.MOVIE) {
         moviesCount++;
         // Estimate 2 hours per movie
         totalWatchTime += 120;

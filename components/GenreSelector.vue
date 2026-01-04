@@ -69,9 +69,9 @@
                     "
                   >
                     {{
-                      genre.type === MediaTypeEnum.movie
-                        ? t('preferences.content.contentTypes.movie')
-                        : t('preferences.content.contentTypes.tv')
+                      genre.type === MEDIA_TYPE.MOVIE
+                        ? t('preferences.content.contentTypes.MOVIE')
+                        : t('preferences.content.contentTypes.TV')
                     }}
                   </div>
                   <ComboboxOption
@@ -116,14 +116,14 @@ import {
   ComboboxOptions,
   ComboboxOption,
 } from '@headlessui/vue';
-import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
+import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 import IconChevronDown from '@/components/icons/IconChevronDown.vue';
 import IconSearch from '@/components/icons/IconSearch.vue';
 
 interface Genre {
   id: number;
   name: string;
-  type?: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv;
+  type?: typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV;
 }
 
 interface Props {
@@ -251,7 +251,7 @@ const filteredGenres = computed(() => {
     return available.sort((a, b) => {
       // First sort by type: movie comes before tv
       if (a.type !== b.type) {
-        return a.type === MediaTypeEnum.movie ? -1 : 1;
+        return a.type === MEDIA_TYPE.MOVIE ? -1 : 1;
       }
       // Then sort alphabetically by name
       return (a.name || '').localeCompare(b.name || '');
@@ -267,7 +267,7 @@ const filteredGenres = computed(() => {
     .sort((a, b) => {
       // First sort by type: movie comes before tv
       if (a.type !== b.type) {
-        return a.type === MediaTypeEnum.movie ? -1 : 1;
+        return a.type === MEDIA_TYPE.MOVIE ? -1 : 1;
       }
       // Then sort alphabetically by name
       return (a.name || '').localeCompare(b.name || '');

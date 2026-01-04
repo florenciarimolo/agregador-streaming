@@ -269,7 +269,7 @@ import Modal from '@/components/ui/Modal.vue';
 import AppShell from '@/components/layout/AppShell.vue';
 import PageContainer from '@/components/layout/PageContainer.vue';
 import Card from '@/components/ui/Card.vue';
-import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
+import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 import { getSession } from '@/services/auth';
 import Toast from '@/components/ui/Toast.vue';
 import RegionSelector from '@/components/RegionSelector.vue';
@@ -340,10 +340,10 @@ const { data: genresData } = useAsyncData(
     // Fetch both movie and TV genres
     const [movieResponse, tvResponse] = await Promise.all([
       $fetch<{ genres: Array<{ id: number; name: string }> }>(
-        `/api/tmdb/genres?type=${MediaTypeEnum.movie}`
+        `/api/tmdb/genres?type=${MEDIA_TYPE.MOVIE}`
       ),
       $fetch<{ genres: Array<{ id: number; name: string }> }>(
-        `/api/tmdb/genres?type=${MediaTypeEnum.tv}`
+        `/api/tmdb/genres?type=${MEDIA_TYPE.TV}`
       ),
     ]);
     return { movie: movieResponse, tv: tvResponse };
@@ -361,20 +361,20 @@ const availableGenres = computed(() => {
   const allGenres: Array<{
     id: number;
     name: string;
-    type: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv;
+    type: typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV;
   }> = [];
 
   // Add movie genres
   genresData.value.movie.genres.forEach((g: { id: number; name: string }) => {
     if (g.name) {
-      allGenres.push({ id: g.id, name: g.name, type: MediaTypeEnum.movie });
+      allGenres.push({ id: g.id, name: g.name, type: MEDIA_TYPE.MOVIE });
     }
   });
 
   // Add TV genres
   genresData.value.tv.genres.forEach((g: { id: number; name: string }) => {
     if (g.name) {
-      allGenres.push({ id: g.id, name: g.name, type: MediaTypeEnum.tv });
+      allGenres.push({ id: g.id, name: g.name, type: MEDIA_TYPE.TV });
     }
   });
 
@@ -384,7 +384,7 @@ const availableGenres = computed(() => {
     .sort((a, b) => {
       // First sort by type: movie comes before tv
       if (a.type !== b.type) {
-        return a.type === MediaTypeEnum.movie ? -1 : 1;
+        return a.type === MEDIA_TYPE.MOVIE ? -1 : 1;
       }
       // Then sort alphabetically by name
       return (a.name || '').localeCompare(b.name || '');
@@ -403,7 +403,7 @@ const selectedGenres = ref<
 const selectedGenreForSelector = ref<{
   id: number;
   name: string;
-  type?: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv;
+  type?: typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV;
 } | null>(null);
 
 // Preload providers using useAsyncData (runs during setup, before mount)
@@ -635,7 +635,7 @@ const removeProvider = (providerId: number) => {
 const addGenre = (genre: {
   id: number;
   name: string;
-  type?: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv;
+  type?: typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV;
 }) => {
   // Check if already selected
   if (selectedGenres.value.some((g) => g.id === genre.id)) {

@@ -170,7 +170,7 @@ import IconCheck from './icons/IconCheck.vue';
 import IconHeart from './icons/IconHeart.vue';
 import IconX from './icons/IconX.vue';
 import { TITLE_STATUS } from '@/constants/domain/titleStatus';
-import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
+import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 import type { Recommendation } from '@/types/Recommendation';
 import IconButton from '@/components/ui/IconButton.vue';
 import Button from '@/components/ui/Button.vue';
@@ -211,7 +211,7 @@ const handleAction = (action: TitleStatus | 'liked' | 'remove-liked') => {
 };
 
 const mediaType = computed(() =>
-  props.title.type === MediaTypeEnum.movie ? 'movie' : 'tv-show'
+  props.title.type === MEDIA_TYPE.MOVIE ? 'movie' : 'tv-show'
 );
 
 // Filter providers that have logos

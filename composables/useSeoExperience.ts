@@ -1,4 +1,4 @@
-import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
+import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 import type { Movie } from '@/types/Movie';
 import type { TVShow } from '@/types/TVShow';
 
@@ -58,7 +58,7 @@ const TV_GENRE_EXPERIENCE_MAP: Record<number, string> = {
  * @returns i18n key for the experience descriptor, or fallback key
  */
 export function getSeoExperience(
-  type: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv,
+  type: typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV,
   genres?: Array<{ id: number }> | null
 ): string {
   // Use first genre as dominant
@@ -70,7 +70,7 @@ export function getSeoExperience(
 
   // Select appropriate map based on type
   const experienceMap =
-    type === MediaTypeEnum.movie ? MOVIE_GENRE_EXPERIENCE_MAP : TV_GENRE_EXPERIENCE_MAP;
+    type === MEDIA_TYPE.MOVIE ? MOVIE_GENRE_EXPERIENCE_MAP : TV_GENRE_EXPERIENCE_MAP;
 
   // Return experience key or fallback
   return experienceMap[dominantGenreId] || 'seo.experience.fallback';
@@ -83,7 +83,7 @@ export function getMovieSeoExperience(movie: Movie | null | undefined): string {
   if (!movie) {
     return 'seo.experience.fallback';
   }
-  return getSeoExperience(MediaTypeEnum.movie, movie.genres);
+  return getSeoExperience(MEDIA_TYPE.MOVIE, movie.genres);
 }
 
 /**
@@ -93,6 +93,6 @@ export function getTVShowSeoExperience(tvShow: TVShow | null | undefined): strin
   if (!tvShow) {
     return 'seo.experience.fallback';
   }
-  return getSeoExperience(MediaTypeEnum.tv, tvShow.genres);
+  return getSeoExperience(MEDIA_TYPE.TV, tvShow.genres);
 }
 

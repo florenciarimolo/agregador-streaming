@@ -242,7 +242,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { MediaTypeEnum } from '@/types/enums/MediaTypeEnum';
+import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 import type { Recommendation } from '@/types/Recommendation';
 import { TITLE_STATUS } from '@/constants/domain/titleStatus';
 import IconImage from './icons/IconImage.vue';
@@ -269,7 +269,7 @@ interface Props {
   posterPath?: string | null;
   aspectRatio?: 'poster' | 'video';
   showType?: boolean;
-  type?: typeof MediaTypeEnum.movie | typeof MediaTypeEnum.tv;
+  type?: typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV;
   showContent?: boolean;
   showRecommendationActions?: boolean;
 
@@ -317,7 +317,7 @@ const computedTitle = computed(
 const computedLinkTo = computed(() => {
   if (props.recommendation) {
     const mediaType =
-      props.recommendation.type === MediaTypeEnum.movie ? 'movie' : 'tv-show';
+      props.recommendation.type === MEDIA_TYPE.MOVIE ? 'movie' : 'tv-show';
     return `/${mediaType}/${props.recommendation.tmdb_id}`;
   }
   return props.linkTo || '#';
