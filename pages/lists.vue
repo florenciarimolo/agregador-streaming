@@ -62,6 +62,8 @@
                 v-else
                 :message="$t('preferences.emptyState')"
                 icon="heart"
+                :cta-text="$t('preferences.emptyStateCta')"
+                :cta-action="goToRecommendations"
               />
             </div>
 
@@ -78,7 +80,13 @@
                 :like-label="$t('media.liked')"
               />
 
-              <EmptyState v-else :message="$t('seen.empty')" icon="eye" />
+              <EmptyState
+                v-else
+                :message="$t('seen.empty')"
+                icon="eye"
+                :cta-text="$t('seen.emptyCta')"
+                :cta-action="goToRecommendations"
+              />
             </div>
 
             <!-- Not Interested Tab -->
@@ -99,6 +107,8 @@
                 v-else
                 :message="$t('notInterested.empty')"
                 icon="x"
+                :cta-text="$t('notInterested.emptyCta')"
+                :cta-action="goToRecommendations"
               />
             </div>
           </template>
@@ -302,6 +312,11 @@ const handleTabChange = (tabId: 'liked' | 'seen' | 'not-interested') => {
     },
     { replace: true }
   );
+};
+
+// Navigate to recommendations (home page)
+const goToRecommendations = () => {
+  navigateTo('/', { replace: false });
 };
 
 // Fetch content preferences region only (for API calls)

@@ -37,6 +37,8 @@
         v-if="watchlistTitles.length === 0"
         :message="$t('watchlist.empty')"
         icon="bookmark"
+        :cta-text="$t('watchlist.emptyCta')"
+        :cta-action="goToRecommendations"
       />
 
       <div
@@ -184,6 +186,11 @@ const showSuccess = (message: string) => {
   setTimeout(() => {
     successMessage.value = null;
   }, 5000);
+};
+
+// Navigate to recommendations (home page)
+const goToRecommendations = () => {
+  navigateTo('/', { replace: false });
 };
 
 const handleRemoveTitle = async (title: WatchlistTitle) => {

@@ -1,25 +1,35 @@
 <template>
   <div
-    class="text-center py-12 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg"
+    class="text-center py-12 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-3xl"
   >
     <component
       :is="iconComponent"
       class="w-16 h-16 mx-auto mb-4 text-gray-400"
     />
-    <p class="text-gray-800 dark:text-gray-300">{{ message }}</p>
+    <p class="text-gray-800 dark:text-gray-300 mb-6">{{ message }}</p>
+    <div v-if="ctaText && ctaAction" class="flex justify-center">
+      <Button variant="primary" size="small" @click="ctaAction">
+        {{ ctaText }}
+      </Button>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, h } from 'vue';
+import Button from '@/components/ui/Button.vue';
 
 interface Props {
   message: string;
   icon?: 'heart' | 'eye' | 'x' | 'bookmark' | 'default';
+  ctaText?: string;
+  ctaAction?: () => void;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   icon: 'default',
+  ctaText: undefined,
+  ctaAction: undefined,
 });
 
 const iconComponent = computed(() => {
@@ -80,4 +90,3 @@ const iconComponent = computed(() => {
   return icons[props.icon] || icons.default;
 });
 </script>
-
