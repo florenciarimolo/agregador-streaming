@@ -211,11 +211,6 @@ const selectedProviderObj = computed({
   get: () => props.modelValue || null,
   set: (provider: Provider | null) => {
     emit('update:modelValue', provider);
-    // Only emit select if it was an explicit selection (click on option)
-    if (isExplicitSelection.value && provider) {
-      emit('select', provider);
-      isExplicitSelection.value = false; // Reset flag
-    }
   },
 });
 
@@ -223,8 +218,14 @@ const selectedProviderObj = computed({
 const handleProviderSelect = (provider: Provider) => {
   isExplicitSelection.value = true;
   selectedProviderObj.value = provider;
-  // Clear search input after selection
+  // Emit select event directly
+  emit('select', provider);
+  // Clear search input and selection after selection
   searchQuery.value = '';
+  // Clear the selection so the placeholder shows again
+  nextTick(() => {
+    selectedProviderObj.value = null;
+  });
 };
 
 // Filtered providers based on search query and excluding already selected

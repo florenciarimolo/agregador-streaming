@@ -221,13 +221,6 @@ const selectedGenreObj = computed({
   get: () => props.modelValue || null,
   set: (genre: Genre | null) => {
     emit('update:modelValue', genre);
-    // Only emit select if it was an explicit selection (click on option)
-    if (isExplicitSelection.value && genre) {
-      emit('select', genre);
-      isExplicitSelection.value = false; // Reset flag
-      // Clear search input after selection
-      searchQuery.value = '';
-    }
   },
 });
 
@@ -235,6 +228,14 @@ const selectedGenreObj = computed({
 const handleGenreSelect = (genre: Genre) => {
   isExplicitSelection.value = true;
   selectedGenreObj.value = genre;
+  // Emit select event directly
+  emit('select', genre);
+  // Clear search input and selection after selection
+  searchQuery.value = '';
+  // Clear the selection so the placeholder shows again
+  nextTick(() => {
+    selectedGenreObj.value = null;
+  });
 };
 
 // Filtered genres based on search query and excluding already selected
