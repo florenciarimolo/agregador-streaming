@@ -732,8 +732,6 @@
     "seedDescription": "Engade todos os títulos desta lista ao teu pool de recomendacións para personalizar as túas recomendacións",
     "seedSuccess": "Engadíronse {count} títulos ás túas recomendacións",
     "seedError": "Erro ao engadir a lista ás túas recomendacións",
-    "registerCta": "Rexistrate para personalizar as túas recomendacións e usar esta lista como semente",
-    "registerButton": "Rexistrarse",
     "loginCta": "Inicia sesión para personalizar as túas recomendacións e usar esta lista como semente",
     "listNotFound": "Lista non atopada",
     "items": "títulos",

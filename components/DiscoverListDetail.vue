@@ -109,7 +109,6 @@ import EmptyState from './EmptyState.vue';
 import { getSession } from '@/services/auth';
 import { getUserLikedTitle, getTitleStatus } from '@/services/userTitleStatus';
 import { useUndoToast } from '@/composables/useUndoToast';
-import { useTitleMenuActions } from '@/composables/useTitleMenuActions';
 
 const { t } = useI18n();
 const router = useRouter();
