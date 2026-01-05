@@ -513,14 +513,18 @@
     "tryAgain": "Tornar-ho a intentar",
     "notFoundTitle": "Pàgina no trobada",
     "notFoundDescription": "La pàgina que busques no existeix o ha estat moguda.",
+    "serverErrorTitle": "Error del servidor",
+    "serverErrorDescription": "Els nostres servidors estan experimentant problemes. Estem treballant per solucionar-ho el més aviat possible.",
     "genericErrorDescription": "Sembla que alguna cosa ha sortit malament. Si us plau, intenta-ho de nou més tard.",
     "alsoCan": "També pots:",
     "viewHowItWorks": "Veure com funciona",
     "viewFaq": "Preguntes freqüents",
     "contactSupport": "Contactar suport",
     "pageTitle404": "404 - Pàgina no trobada",
+    "pageTitle500": "500 - Error del servidor",
     "pageTitleError": "Error",
     "pageDescription404": "La pàgina que busques no existeix.",
+    "pageDescription500": "Error intern del servidor. Si us plau, intenta-ho de nou més tard.",
     "pageDescriptionError": "S'ha produït un error."
   },
   "undo": {
