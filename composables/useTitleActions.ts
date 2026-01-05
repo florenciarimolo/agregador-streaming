@@ -4,6 +4,8 @@ import { useI18n } from 'vue-i18n';
 import { useSupabaseUser } from '#imports';
 import { getSession } from '@/services/auth';
 import { getUserLikedTitle } from '@/services/userTitleStatus';
+import { getTitleByTmdbIdWithLanguage } from '@/services/titles';
+import { useUserRegion } from '@/composables/useUserRegion';
 import { useTitleStatusAction } from '@/composables/useTitleStatusAction';
 import { QUERY_PARAMS } from '@/constants/api/queryParams';
 import type { Recommendation } from '@/types/Recommendation';
@@ -33,9 +35,40 @@ export const useTitleActions = (
 ) => {
   const router = useRouter();
   const route = useRoute();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const user = useSupabaseUser();
+  const { getUserRegion } = useUserRegion();
   const { executeAction, executeLikedAction } = useTitleStatusAction();
+
+  // Helper function to get title with alphabet detection
+  const getTitleWithAlphabetDetection = async (
+    title: Recommendation
+  ): Promise<string> => {
+    try {
+      // Get user region from preferences
+      const userRegion = await getUserRegion();
+      
+      // Get title from database with language detection
+      const { data: titleData } = await getTitleByTmdbIdWithLanguage(
+        title.tmdb_id,
+        title.type,
+        locale.value || 'es-ES',
+        userRegion
+      );
+      
+      // If we got a title from database (with alphabet detection), use it
+      if (titleData?.title) {
+        return titleData.title;
+      }
+    } catch (error) {
+      if (process.env.NODE_ENV === 'development') {
+        console.error('[getTitleWithAlphabetDetection] Error:', error);
+      }
+    }
+    
+    // Fallback to original title if database fetch fails
+    return title.title;
+  };
 
   const loadingTitles = ref<Set<number>>(new Set());
   const fetchingReplacement = ref(false);
@@ -109,12 +142,15 @@ export const useTitleActions = (
         ? TITLE_STATUS.WATCHLIST
         : null; // For recommendations, we don't track seen/not_interested in the object
 
+      // Get title with alphabet detection
+      const titleWithDetection = await getTitleWithAlphabetDetection(title);
+
       // Use unified composable for API call and toast
       const result = await executeAction(
         {
           tmdb_id: title.tmdb_id,
           type: title.type,
-          title: title.title,
+          title: titleWithDetection,
           currentStatus,
           isLiked: liked,
         },
@@ -194,12 +230,15 @@ export const useTitleActions = (
         ? TITLE_STATUS.WATCHLIST
         : null;
 
+      // Get title with alphabet detection
+      const titleWithDetection = await getTitleWithAlphabetDetection(title);
+
       // Use unified composable for API call and toast
       const result = await executeLikedAction(
         {
           tmdb_id: title.tmdb_id,
           type: title.type,
-          title: title.title,
+          title: titleWithDetection,
           currentStatus,
           isLiked: false,
         },
@@ -249,12 +288,15 @@ export const useTitleActions = (
         ? TITLE_STATUS.WATCHLIST
         : TITLE_STATUS.SEEN; // If it's liked, it must have SEEN status
 
+      // Get title with alphabet detection
+      const titleWithDetection = await getTitleWithAlphabetDetection(title);
+
       // Use unified composable for API call and toast
       const result = await executeLikedAction(
         {
           tmdb_id: title.tmdb_id,
           type: title.type,
-          title: title.title,
+          title: titleWithDetection,
           currentStatus,
           isLiked: true,
         },

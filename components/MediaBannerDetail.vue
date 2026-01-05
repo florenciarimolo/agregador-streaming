@@ -30,7 +30,10 @@
             class="w-full h-full object-cover lg:rounded-3xl"
           />
           <!-- Informative icons overlay (only show if user has session) -->
-          <div v-if="hasSession" class="flex absolute top-2 right-2 gap-2">
+          <div
+            v-if="hasSession"
+            class="media-banner-tooltips flex absolute top-2 right-2 gap-2 z-20"
+          >
             <Tooltip v-if="isLiked" :text="$t('media.liked')">
               <div
                 class="flex justify-center items-center w-8 h-8 rounded-full backdrop-blur-sm bg-primary-600/90"
@@ -930,3 +933,16 @@ const handleRemoveFromWatchlist = async () => {
   }
 };
 </script>
+
+<style>
+/* Global styles for tooltip z-index priority in MediaBannerDetail */
+/* Ensure the tooltip container has higher z-index when hovered */
+/* This matches the same pattern used in watchlist and preferences pages */
+.media-banner-tooltips .tooltip-container {
+  z-index: 10000;
+}
+
+.media-banner-tooltips .tooltip-container:hover {
+  z-index: 10001 !important;
+}
+</style>
