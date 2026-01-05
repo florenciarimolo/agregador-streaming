@@ -13,37 +13,30 @@
       </p>
     </div>
 
-    <!-- Alert Messages -->
-    <Alert
-      v-if="errorMessage"
-      :message="errorMessage"
-      variant="error"
-      :with-transition="true"
-      custom-class="mb-4"
-      :show-icon="false"
-    />
-    <Alert
-      v-if="successMessage"
-      :message="successMessage"
-      variant="success"
-      :with-transition="true"
-      custom-class="mb-4"
-      :show-icon="false"
-    />
-
-    <!-- Loading State -->
-    <div v-if="isLoading" class="py-12 text-center">
+    <!-- Show loading while checking profile -->
+    <div v-if="!isProfileReady" class="flex items-center justify-center py-12">
       <div
-        class="mx-auto mb-4 w-12 h-12 rounded-full border-b-2 animate-spin border-primary"
+        class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"
       ></div>
-      <p class="text-gray-800 dark:text-gray-300">
-        {{ $t('watchlist.loading') }}
-      </p>
     </div>
 
-    <!-- Content -->
     <div v-else>
-      <EmptyState
+      <!-- Toast component for notifications -->
+      <Toast />
+
+      <!-- Loading State -->
+      <div v-if="isLoading" class="py-12 text-center">
+        <div
+          class="mx-auto mb-4 w-12 h-12 rounded-full border-b-2 animate-spin border-primary"
+        ></div>
+        <p class="text-gray-800 dark:text-gray-300">
+          {{ $t('watchlist.loading') }}
+        </p>
+      </div>
+
+      <!-- Content -->
+      <div v-else>
+        <EmptyState
         v-if="watchlistTitles.length === 0"
         :message="$t('watchlist.empty')"
         icon="bookmark"
@@ -53,7 +46,7 @@
 
       <div
         v-else
-        class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
+        class="watchlist-grid grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
       >
         <TitleCard
           v-for="title in watchlistTitles"
@@ -83,6 +76,7 @@
           </template>
         </TitleCard>
       </div>
+      </div>
     </div>
     </div>
     </PageContainer>
@@ -93,7 +87,10 @@
 import { ref, onMounted, watch } from 'vue';
 import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 import { getSession } from '@/services/auth';
-import Alert from '@/components/ui/Alert.vue';
+import { useUndoToast } from '@/composables/useUndoToast';
+import { useUserStore } from '@/stores/user';
+import { useRouteWithLang } from '@/composables/useRouteWithLang';
+import Toast from '@/components/ui/Toast.vue';
 import IconButton from '@/components/ui/IconButton.vue';
 import AppShell from '@/components/layout/AppShell.vue';
 import PageContainer from '@/components/layout/PageContainer.vue';
@@ -103,6 +100,9 @@ import Tooltip from '@/components/ui/Tooltip.vue';
 import EmptyState from '@/components/EmptyState.vue';
 
 const { t, locale } = useI18n();
+
+// Get userStore - it must exist at this point
+const userStore = useUserStore();
 
 // SEO: Private page - noindex, nofollow
 useHead({
@@ -139,9 +139,10 @@ type WatchlistResponseItem = {
 
 const isLoading = ref(true);
 const watchlistTitles = ref<WatchlistTitle[]>([]);
-const errorMessage = ref<string | null>(null);
-const successMessage = ref<string | null>(null);
 const isRemoving = ref(false);
+const { showToast } = useUndoToast();
+// Profile ready flag - controls main render, separate from isLoading
+const isProfileReady = ref(false);
 
 const fetchWatchlist = async () => {
   try {
@@ -176,30 +177,12 @@ const fetchWatchlist = async () => {
     if (process.env.NODE_ENV === 'development') {
       console.error('Error fetching watchlist:', error);
     }
-    showError(t('watchlist.errorLoading'));
+    showToast(t('watchlist.errorLoading'), null, 5000);
   } finally {
     isLoading.value = false;
   }
 };
 
-const showError = (message: string) => {
-  errorMessage.value = message;
-  successMessage.value = null;
-  setTimeout(() => {
-    errorMessage.value = null;
-  }, 5000);
-};
-
-const showSuccess = (message: string) => {
-  successMessage.value = message;
-  errorMessage.value = null;
-  setTimeout(() => {
-    successMessage.value = null;
-  }, 5000);
-};
-
-// Get routeWithLang for building language-prefixed links
-const { routeWithLang } = useRouteWithLang();
 
 // Helper function to generate link with language prefix
 const getTitleLink = (type: typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV, tmdbId: number): string => {
@@ -216,19 +199,23 @@ const handleRemoveTitle = async (title: WatchlistTitle) => {
   if (isRemoving.value) return;
 
   isRemoving.value = true;
+  
+  // Store original title for undo
+  const titleToRestore = { ...title };
+  
   try {
     const {
       data: { session },
     } = await getSession();
 
     if (!session?.access_token) {
-      showError(t('watchlist.notAuthenticated'));
+      showToast(t('watchlist.notAuthenticated'), null, 5000);
       isRemoving.value = false;
       return;
     }
 
-    // Delete title status
-    await $fetch('/api/users/title-status', {
+    // Delete title status using the delete endpoint
+    await $fetch('/api/users/title-status/delete', {
       method: 'DELETE',
       headers: {
         Authorization: `Bearer ${session.access_token}`,
@@ -243,12 +230,45 @@ const handleRemoveTitle = async (title: WatchlistTitle) => {
       (t) => t.tmdb_id !== title.tmdb_id
     );
 
-    showSuccess(t('watchlist.titleRemoved'));
+    // Show toast with undo button
+    showToast(t('watchlist.titleRemoved'), {
+      label: t('undo.undo'),
+      variant: 'secondary',
+      action: async () => {
+        // Undo: Re-add to watchlist
+        try {
+          const {
+            data: { session: undoSession },
+          } = await getSession();
+          if (!undoSession?.access_token) return;
+
+          await $fetch('/api/users/title-status', {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${undoSession.access_token}`,
+            },
+            body: {
+              tmdb_id: titleToRestore.tmdb_id,
+              type: titleToRestore.type,
+              status: 'watchlist',
+              liked: false,
+            },
+          });
+
+          // Restore title in UI
+          watchlistTitles.value.push(titleToRestore);
+        } catch (error) {
+          console.error('[watchlist.vue] Error undoing:', error);
+          // Refresh on error
+          await fetchWatchlist();
+        }
+      },
+    }, 7000);
   } catch (error) {
     if (process.env.NODE_ENV === 'development') {
       console.error('Error removing title:', error);
     }
-    showError(t('watchlist.errorRemoving'));
+    showToast(t('watchlist.errorRemoving'), null, 5000);
     await fetchWatchlist();
   } finally {
     isRemoving.value = false;
@@ -273,15 +293,40 @@ watch(
   { immediate: false }
 );
 
-onMounted(() => {
-  fetchWatchlist();
+onMounted(async () => {
+  // Ensure profile is loaded
+  await userStore.ensureProfile();
+
+  // Check onboarding status
+  if (!userStore.hasCompletedOnboarding) {
+    const { routeWithLang } = useRouteWithLang();
+    await navigateTo(routeWithLang('/onboarding'), { replace: true });
+    return;
+  }
+
+  // Profile is ready, show content
+  isProfileReady.value = true;
+
+  // Fetch watchlist
+  await fetchWatchlist();
 });
 </script>
 
 <style scoped>
+/* Styles for watchlist page */
+</style>
+
+<style>
+/* Global styles for tooltip z-index priority in watchlist page */
 /* Ensure the card container has higher z-index when tooltip is hovered */
-.group:has(.tooltip-container:hover) {
-  z-index: 10002;
+/* This matches the same pattern used in preferences page for tooltip priority */
+.watchlist-grid article:has(.tooltip-container:hover) {
+  z-index: 10002 !important;
+  position: relative;
+}
+
+.watchlist-grid .tooltip-container:hover {
+  z-index: 10001 !important;
   position: relative;
 }
 </style>

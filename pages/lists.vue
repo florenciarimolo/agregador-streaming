@@ -1,22 +1,14 @@
 <template>
   <AppShell>
     <PageContainer>
-      <!-- Show loading while checking onboarding -->
-      <div v-if="profilePending" class="flex items-center justify-center py-12">
+      <!-- Show loading while checking profile -->
+      <div
+        v-if="!isProfileReady"
+        class="flex items-center justify-center py-12"
+      >
         <div
           class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"
         ></div>
-      </div>
-      <div
-        v-else-if="!userStore.value?.hasCompletedOnboarding"
-        class="pt-6 pb-6 w-full"
-      >
-        <!-- Redirecting message (shouldn't be visible for long) -->
-        <div class="flex items-center justify-center py-12">
-          <div
-            class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"
-          ></div>
-        </div>
       </div>
       <div v-else class="pt-6 pb-6 w-full">
         <!-- Undo Toast -->
@@ -25,9 +17,7 @@
         <!-- Tabs for Lists -->
         <Tabs
           :default-tab="activeTab"
-          @tab-change="
-            (tab) => handleTabChange(tab as 'liked' | 'seen' | 'not-interested')
-          "
+          @tab-change="(tab) => handleTabChange(tab as ListTab)"
         >
           <template #buttons="{ activeTab: currentTab, setActiveTab }">
             <TabButton
@@ -39,19 +29,14 @@
                   ? tab.count
                   : undefined
               "
-              @click="
-                handleTabButtonClick(
-                  tab.id as 'liked' | 'seen' | 'not-interested',
-                  setActiveTab
-                )
-              "
+              @click="handleTabButtonClick(tab.id as ListTab, setActiveTab)"
             >
               {{ tab.label }}
             </TabButton>
           </template>
           <template #default="{ activeTab: currentTab }">
             <!-- Liked Tab -->
-            <div v-if="currentTab === 'liked'">
+            <div v-if="currentTab === LIST_TAB.LIKED">
               <Spinner v-if="isLoading" :message="$t('preferences.loading')" />
 
               <div
@@ -102,7 +87,7 @@
             </div>
 
             <!-- Seen Tab -->
-            <div v-if="currentTab === 'seen'">
+            <div v-if="currentTab === LIST_TAB.SEEN">
               <Spinner v-if="isLoading" :message="$t('seen.loading')" />
 
               <div
@@ -174,7 +159,7 @@
             </div>
 
             <!-- Not Interested Tab -->
-            <div v-if="currentTab === 'not-interested'">
+            <div v-if="currentTab === LIST_TAB.NOT_INTERESTED">
               <Spinner
                 v-if="isLoading"
                 :message="$t('notInterested.loading')"
@@ -306,42 +291,17 @@ import EmptyState from '@/components/EmptyState.vue';
 import Spinner from '@/components/Spinner.vue';
 import Toast from '@/components/ui/Toast.vue';
 import { useUndoToast } from '@/composables/useUndoToast';
+import { useRouteWithLang } from '@/composables/useRouteWithLang';
 import { DEFAULT_LANGUAGE, toTMDBLanguageCode } from '@/constants/languages';
 import { QUERY_PARAMS } from '@/constants/api/queryParams';
+import { LIST_TAB, type ListTab } from '@/constants/domain/listTab';
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore - Auto-imported
 const currentUser = useSupabaseUser();
 
-// Safely get userStore - it may not be available immediately after Pinia initialization
-// Use a computed to lazy-load the store, but only on client side
-const userStore = computed(() => {
-  // Only try to get store on client side
-  if (import.meta.server) {
-    return {
-      profile: null,
-      authInitialized: false,
-      hasCompletedOnboarding: false,
-      fetchProfile: async () => {},
-      ensureProfile: async () => {},
-    };
-  }
-  
-  try {
-    return useUserStore();
-  } catch (error) {
-    if (process.env.NODE_ENV === 'development') {
-      console.warn('[pages/lists.vue] useUserStore not available:', error);
-    }
-    return {
-      profile: null,
-      authInitialized: false,
-      hasCompletedOnboarding: false,
-      fetchProfile: async () => {},
-      ensureProfile: async () => {},
-    };
-  }
-});
+// Get userStore - it must exist at this point
+const userStore = useUserStore();
 const { t, locale } = useI18n();
 const { showToast } = useUndoToast();
 
@@ -351,8 +311,14 @@ const getAppLanguage = () => {
 };
 
 // State
+const isFetching = ref(false);
+// Track if we've already loaded data to prevent re-loading on re-mount
+// Use a module-level variable that persists across component instances
+let hasLoadedData = false;
 const isLoading = ref(true);
-const activeTab = ref<'liked' | 'seen' | 'not-interested'>('liked');
+// Profile ready flag - controls main render, separate from isLoading
+const isProfileReady = ref(false);
+const activeTab = ref<ListTab>(LIST_TAB.LIKED);
 const showRemoveLikeModal = ref(false);
 const titleToRemoveLike = ref<{
   id: string;
@@ -407,7 +373,10 @@ const userId = computed(() => {
 const { routeWithLang } = useRouteWithLang();
 
 // Helper function to generate link with language prefix
-const getTitleLink = (type: typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV, tmdbId: number): string => {
+const getTitleLink = (
+  type: typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV,
+  tmdbId: number
+): string => {
   const mediaType = type === MEDIA_TYPE.MOVIE ? 'movie' : 'tv-show';
   return routeWithLang(`/${mediaType}/${tmdbId}`);
 };
@@ -421,34 +390,30 @@ const contentPreferences = ref<{
 
 const tabs = computed(() => [
   {
-    id: 'liked' as const,
+    id: LIST_TAB.LIKED,
     label: t('profile.tabs.liked'),
     count: likedTitles.value.length,
   },
   {
-    id: 'seen' as const,
+    id: LIST_TAB.SEEN,
     label: t('profile.tabs.seen'),
     count: seenTitles.value.length,
   },
   {
-    id: 'not-interested' as const,
+    id: LIST_TAB.NOT_INTERESTED,
     label: t('profile.tabs.notInterested'),
     count: notInterestedTitles.value.length,
   },
 ]);
 
-// Helper functions
+// Helper function
 const showError = (message: string) => {
-  showToast(message, null, 5000);
-};
-
-const showSuccess = (message: string) => {
   showToast(message, null, 5000);
 };
 
 // Handle tab button click - intercepts before Tabs component changes state
 const handleTabButtonClick = (
-  tabId: 'liked' | 'seen' | 'not-interested',
+  tabId: ListTab,
   setActiveTab: (tab: string) => void
 ) => {
   // No unsaved changes or same tab, proceed with change
@@ -456,17 +421,27 @@ const handleTabButtonClick = (
 };
 
 // Handle tab change and update URL (called after Tabs component changes state)
-const handleTabChange = (tabId: 'liked' | 'seen' | 'not-interested') => {
+const handleTabChange = (tabId: ListTab) => {
+  // Don't navigate if already on this tab (prevents unnecessary re-mounts)
+  if (activeTab.value === tabId) {
+    return;
+  }
+
   // Update local state and URL
   activeTab.value = tabId;
   const route = useRoute();
-  navigateTo(
-    {
-      path: route.path,
-      query: { ...route.query, tab: tabId },
-    },
-    { replace: true }
-  );
+  const currentTab = route.query[QUERY_PARAMS.TAB] as string;
+
+  // Only navigate if the URL tab is different from the new tab
+  if (currentTab !== tabId) {
+    navigateTo(
+      {
+        path: route.path,
+        query: { ...route.query, tab: tabId },
+      },
+      { replace: true }
+    );
+  }
 };
 
 // Navigate to recommendations (home page)
@@ -512,21 +487,53 @@ const fetchContentPreferencesRegion = async () => {
 
 // Fetch all lists
 const fetchAllLists = async () => {
-  const id = userId.value;
-  if (!id) return;
+  // Prevent concurrent executions
+  if (isFetching.value) {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[lists.vue] fetchAllLists already in progress, skipping');
+    }
+    return;
+  }
 
+  const id = userId.value;
+  if (!id) {
+    isLoading.value = false;
+    if (process.env.NODE_ENV === 'development') {
+      console.log(
+        '[lists.vue] fetchAllLists: no userId, setting isLoading to false'
+      );
+    }
+    return;
+  }
+
+  isFetching.value = true;
   isLoading.value = true;
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[lists.vue] fetchAllLists: starting fetch');
+  }
   try {
-    await Promise.all([
+    const results = await Promise.allSettled([
       fetchLikedTitles(),
       fetchSeenTitles(),
       fetchNotInterestedTitles(),
       fetchWatchlistTitles(),
     ]);
+    if (process.env.NODE_ENV === 'development') {
+      console.log(
+        '[lists.vue] fetchAllLists: all promises settled',
+        results.map((r) => r.status)
+      );
+    }
   } catch (error) {
-    console.error('Error fetching lists:', error);
+    console.error('[lists.vue] Error fetching lists:', error);
   } finally {
     isLoading.value = false;
+    isFetching.value = false;
+    if (process.env.NODE_ENV === 'development') {
+      console.log(
+        '[lists.vue] fetchAllLists: completed, isLoading set to false'
+      );
+    }
   }
 };
 
@@ -749,7 +756,7 @@ const handleRemoveLikedClick = async (title: {
     if (error) throw error;
 
     likedTitles.value = likedTitles.value.filter((t) => t.id !== title.id);
-    await userStore.value.fetchProfile();
+    await userStore.fetchProfile();
 
     // Regenerate recommendation pool in background
     try {
@@ -873,34 +880,16 @@ const handleAddToLiked = async (title: {
   type: typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV;
   liked?: boolean;
 }) => {
-  console.log('[UNLIKE DEBUG] handleAddToLiked called', {
-    title: title.title,
-    tmdb_id: title.tmdb_id,
-    type: title.type,
-    currentLiked: title.liked,
-  });
-
   try {
     const id = userId.value;
     if (!id) {
-      console.warn('[UNLIKE DEBUG] No userId available');
       return;
     }
 
     // Check if title is already liked using the database
-    const { data: likedTitle, error: likedError } = await getUserLikedTitle(
-      id,
-      title.tmdb_id
-    );
-
-    console.log('[UNLIKE DEBUG] getUserLikedTitle result', {
-      likedTitle,
-      error: likedError,
-      hasLikedTitle: !!likedTitle,
-    });
+    const { data: likedTitle } = await getUserLikedTitle(id, title.tmdb_id);
 
     if (likedTitle) {
-      console.log('[UNLIKE DEBUG] Title is already liked, showing modal');
       // Title is already liked, show confirmation modal
       titleToRemoveLike.value = {
         id: title.id,
@@ -911,8 +900,6 @@ const handleAddToLiked = async (title: {
       showRemoveLikeModal.value = true;
       return;
     }
-
-    console.log('[UNLIKE DEBUG] Title is not liked, adding it');
 
     // Update the title status to liked=true
     // Note: 10-title limit only applies during onboarding, not after completion
@@ -965,10 +952,23 @@ const handleAddToLiked = async (title: {
       }
     }
 
-    await userStore.value.fetchProfile();
+    await userStore.fetchProfile();
     // Refresh seen titles to ensure all titles have the correct liked status
     await fetchSeenTitles();
-    showSuccess(t('preferences.titleAdded'));
+
+    // Show toast with "View favorites" button (ADD action)
+    const { routeWithLang } = useRouteWithLang();
+    showToast(
+      t('preferences.titleAdded'),
+      {
+        label: t('home.viewFavorites'),
+        variant: 'secondary',
+        action: async () => {
+          await navigateTo(routeWithLang('/lists?tab=liked'));
+        },
+      },
+      5000
+    );
 
     // Regenerate recommendation pool in background
     try {
@@ -996,12 +996,7 @@ const handleAddToLiked = async (title: {
 
 // Handle removing like after confirmation (from Seen tab)
 const confirmRemoveLikeFromSeen = async () => {
-  console.log('[UNLIKE DEBUG] confirmRemoveLikeFromSeen called', {
-    title: titleToRemoveLike.value,
-  });
-
   if (!titleToRemoveLike.value) {
-    console.warn('[UNLIKE DEBUG] No title to remove like');
     return;
   }
 
@@ -1011,17 +1006,8 @@ const confirmRemoveLikeFromSeen = async () => {
   try {
     const id = userId.value;
     if (!id) {
-      console.warn(
-        '[UNLIKE DEBUG] No userId available in confirmRemoveLikeFromSeen'
-      );
       return;
     }
-
-    console.log('[UNLIKE DEBUG] Removing like', {
-      userId: id,
-      tmdb_id: title.tmdb_id,
-      type: title.type,
-    });
 
     // Remove like
     const { error: likeError } = await upsertUserTitleStatus({
@@ -1031,8 +1017,6 @@ const confirmRemoveLikeFromSeen = async () => {
       status: TITLE_STATUS.SEEN, // Keep status as seen, just remove liked
       liked: false,
     });
-
-    console.log('[UNLIKE DEBUG] Remove like result', { error: likeError });
 
     if (likeError) {
       throw likeError;
@@ -1115,13 +1099,17 @@ const confirmRemoveLikeFromSeen = async () => {
         });
       }
     } catch (poolError) {
-      console.error('[UNLIKE DEBUG] Error regenerating pool:', poolError);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error regenerating pool:', poolError);
+      }
       // Don't show error to user, pool regeneration is background task
     }
 
     titleToRemoveLike.value = null;
   } catch (error) {
-    console.error('[UNLIKE DEBUG] Error in confirmRemoveLikeFromSeen:', error);
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Error in confirmRemoveLikeFromSeen:', error);
+    }
     showToast(
       t('home.errorRemovingFavorites', { title: title.title }),
       null,
@@ -1172,40 +1160,31 @@ const handleRemoveNotInterested = async (title: {
   }
 };
 
-// Preload profile and verify onboarding before content loads
-const { pending: profilePending } = useAsyncData(
-  'lists-profile-check',
-  async () => {
-    // Ensure profile is loaded
-    await userStore.value.ensureProfile();
-
-    // Check onboarding status
-    const hasCompletedOnboarding = userStore.value.hasCompletedOnboarding;
-
-    // If onboarding not completed, redirect to onboarding
-    if (!hasCompletedOnboarding) {
-      const { routeWithLang } = useRouteWithLang();
-      await navigateTo(routeWithLang('/onboarding'), { replace: true });
-      return false; // Prevent content from loading
-    }
-
-    return true; // Allow content to load
-  },
-  {
-    server: false, // Only fetch on client
-    default: () => false,
-  }
-);
-
 // Lifecycle
 onMounted(async () => {
-  // Wait for profile check to complete
-  while (profilePending.value) {
-    await new Promise((resolve) => setTimeout(resolve, 50));
+  // Ensure profile is loaded
+  await userStore.ensureProfile();
+
+  // Check onboarding status
+  if (!userStore.hasCompletedOnboarding) {
+    const { routeWithLang } = useRouteWithLang();
+    await navigateTo(routeWithLang('/onboarding'), { replace: true });
+    return;
   }
 
-  // If redirected, don't continue
-  if (!userStore.value.hasCompletedOnboarding) {
+  // Profile is ready, show content
+  isProfileReady.value = true;
+
+  // Wait for user to be available
+  let retries = 0;
+  while (!userId.value && retries < 20) {
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    retries++;
+  }
+
+  // If still no user after waiting, set loading to false and return
+  if (!userId.value) {
+    isLoading.value = false;
     return;
   }
 
@@ -1214,23 +1193,41 @@ onMounted(async () => {
 
   const tabFromQuery = route.query[QUERY_PARAMS.TAB] as string;
   if (tabFromQuery) {
-    const validTabs: Array<'liked' | 'seen' | 'not-interested'> = [
-      'liked',
-      'seen',
-      'not-interested',
+    const validTabs: ListTab[] = [
+      LIST_TAB.LIKED,
+      LIST_TAB.SEEN,
+      LIST_TAB.NOT_INTERESTED,
     ];
-    if (
-      validTabs.includes(tabFromQuery as 'liked' | 'seen' | 'not-interested')
-    ) {
+    if (validTabs.includes(tabFromQuery as ListTab)) {
       activeTab.value = tabFromQuery as typeof activeTab.value;
     }
   }
 
-  // Fetch region first (for API calls)
-  await fetchContentPreferencesRegion();
-  // Then fetch all lists (which will use the app language)
-  await fetchAllLists();
+  // Only fetch if we haven't loaded data yet (prevents re-fetching on re-mount)
+  if (!hasLoadedData) {
+    // Fetch region first (for API calls)
+    await fetchContentPreferencesRegion();
+    // Then fetch all lists (which will use the app language)
+    await fetchAllLists();
+    hasLoadedData = true;
+  } else {
+    // If we already have data, just ensure loading is false
+    isLoading.value = false;
+  }
 });
+
+// Watch isLoading for debugging
+if (process.env.NODE_ENV === 'development') {
+  watch(
+    () => isLoading.value,
+    (newVal, oldVal) => {
+      console.log('[lists.vue] isLoading changed:', {
+        from: oldVal,
+        to: newVal,
+      });
+    }
+  );
+}
 
 // Watch for app language changes and refresh all lists
 watch(

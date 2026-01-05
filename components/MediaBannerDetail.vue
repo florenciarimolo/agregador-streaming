@@ -730,8 +730,36 @@ const handleAction = async (action: TitleStatusType | 'liked') => {
 
           showToast(
             t('home.titleRemovedFromSeen', { title: mediaTitle }),
-            null,
-            3000
+            {
+              label: t('undo.undo'),
+              variant: 'secondary',
+              action: async () => {
+                // Undo: Re-add as seen
+                try {
+                  await $fetch('/api/users/title-status', {
+                    method: 'POST',
+                    headers: {
+                      Authorization: `Bearer ${session.access_token}`,
+                    },
+                    body: {
+                      tmdb_id: mediaWithProviders.value.id,
+                      type: props.mediaType,
+                      status: TITLE_STATUS.SEEN,
+                      liked: isLiked.value || false,
+                    },
+                  });
+                  isSeen.value = true;
+                  if (isLiked.value) {
+                    isLiked.value = true;
+                  }
+                  await fetchTitleStatus();
+                } catch (error) {
+                  console.error('[MediaBannerDetail] Error undoing:', error);
+                  await fetchTitleStatus();
+                }
+              },
+            },
+            7000
           );
         } else {
           // Mark as seen
@@ -829,7 +857,33 @@ const handleRemoveLike = async () => {
     // No pool regeneration needed - only score is adjusted, pool remains stable
 
     // Show success toast
-    showToast(t('home.likeRemoved', { title: mediaTitle }), null, 3000);
+    showToast(t('home.likeRemoved', { title: mediaTitle }), {
+      label: t('undo.undo'),
+      variant: 'secondary',
+      action: async () => {
+        // Undo: Re-add as liked
+        try {
+          await $fetch('/api/users/title-status', {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${session.access_token}`,
+            },
+            body: {
+              tmdb_id: mediaWithProviders.value.id,
+              type: props.mediaType,
+              status: TITLE_STATUS.SEEN,
+              liked: true,
+            },
+          });
+          isLiked.value = true;
+          isSeen.value = true;
+          await fetchTitleStatus();
+        } catch (error) {
+          console.error('[MediaBannerDetail] Error undoing:', error);
+          await fetchTitleStatus();
+        }
+      },
+    }, 7000);
 
     // Update local state
     isLiked.value = false;
@@ -892,24 +946,60 @@ const handleRemoveFromWatchlist = async () => {
       (mediaWithProviders.value as Movie & { name?: string }).name ||
       t('media.thisTitle');
 
+    const tmdbId = mediaWithProviders.value.id;
+    const mediaType = mediaWithProviders.value.type;
+
     // Remove from watchlist by deleting the status
-    await $fetch('/api/users/title-status', {
+    await $fetch('/api/users/title-status/delete', {
       method: 'DELETE',
       headers: {
         Authorization: `Bearer ${session.access_token}`,
       },
       query: {
-        tmdb_id: mediaWithProviders.value.id,
+        tmdb_id: tmdbId,
       },
     });
 
     // Update local state immediately
     isInWatchlist.value = false;
 
+    // Show toast with undo button
     showToast(
       t('home.titleRemovedFromWatchlist', { title: mediaTitle }),
-      null,
-      3000
+      {
+        label: t('undo.undo'),
+        variant: 'secondary',
+        action: async () => {
+          // Undo: Re-add to watchlist
+          try {
+            const {
+              data: { session: undoSession },
+            } = await getSession();
+            if (!undoSession?.access_token) return;
+
+            await $fetch('/api/users/title-status', {
+              method: 'POST',
+              headers: {
+                Authorization: `Bearer ${undoSession.access_token}`,
+              },
+              body: {
+                tmdb_id: tmdbId,
+                type: mediaType,
+                status: 'watchlist',
+                liked: false,
+              },
+            });
+
+            // Restore local state
+            isInWatchlist.value = true;
+            await fetchTitleStatus();
+          } catch (error) {
+            console.error('[MediaBannerDetail] Error undoing:', error);
+            await fetchTitleStatus();
+          }
+        },
+      },
+      7000
     );
 
     // Also fetch to ensure consistency

@@ -2,7 +2,6 @@ import { ref, type Ref } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useSupabaseUser } from '#imports';
-import { useUserStore } from '@/stores/user';
 import { getSession } from '@/services/auth';
 import { getUserLikedTitle } from '@/services/userTitleStatus';
 import { useUndoToast } from '@/composables/useUndoToast';
@@ -36,23 +35,6 @@ export const useTitleActions = (
   const route = useRoute();
   const { t } = useI18n();
   const user = useSupabaseUser();
-  
-  // Safely get userStore - it may not be available immediately after Pinia initialization
-  // Only get it when needed (client-side only)
-  const getUserStore = () => {
-    if (import.meta.server) {
-      return null;
-    }
-    try {
-      return useUserStore();
-    } catch (error) {
-      if (process.env.NODE_ENV === 'development') {
-        console.warn('[useTitleActions] useUserStore not available:', error);
-      }
-      return null;
-    }
-  };
-  
   const { showToast } = useUndoToast();
 
   const loadingTitles = ref<Set<number>>(new Set());
@@ -106,6 +88,8 @@ export const useTitleActions = (
       }
 
       // Show toast with appropriate message and action based on status
+      // For ADD actions: show "View list" button
+      // For DELETE actions: show "Undo" button
       if (status === TITLE_STATUS.NOT_INTERESTED) {
         const { routeWithLang } = useRouteWithLang();
         showToast(
@@ -268,6 +252,7 @@ export const useTitleActions = (
       const { routeWithLang } = useRouteWithLang();
       showToast(t('home.titleAddedFavorites', { title: title.title }), {
         label: t('home.viewFavorites'),
+        variant: 'secondary',
         action: async () => {
           await router.push(routeWithLang('/lists'));
         },
@@ -367,7 +352,34 @@ export const useTitleActions = (
         },
       });
 
-      showToast(t('home.likeRemoved', { title: title.title }), null, 3000);
+      showToast(t('home.likeRemoved', { title: title.title }), {
+        label: t('undo.undo'),
+        variant: 'secondary',
+        action: async () => {
+          // Undo: Re-add as liked
+          try {
+            const {
+              data: { session: undoSession },
+            } = await getSession();
+            if (!undoSession?.access_token) return;
+
+            await $fetch('/api/users/title-status', {
+              method: 'POST',
+              headers: {
+                Authorization: `Bearer ${undoSession.access_token}`,
+              },
+              body: {
+                tmdb_id: title.tmdb_id,
+                type: title.type,
+                status: TITLE_STATUS.SEEN,
+                liked: true,
+              },
+            });
+          } catch (error) {
+            console.error('[confirmRemoveLike] Error undoing:', error);
+          }
+        },
+      }, 7000);
     } catch (error) {
       if (process.env.NODE_ENV === 'development') {
         console.error('[confirmRemoveLike] Error:', error);

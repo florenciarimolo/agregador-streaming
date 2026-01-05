@@ -251,7 +251,7 @@ async function handleAction(
     // Handle remove actions
     if (action === 'remove-liked') {
       // Remove liked (delete the title status)
-      await $fetch('/api/users/title-status', {
+      await $fetch('/api/users/title-status/delete', {
         method: 'DELETE',
         headers: {
           Authorization: `Bearer ${session.access_token}`,
@@ -261,10 +261,39 @@ async function handleAction(
         },
       });
 
-      showToast(t('home.titleRemovedFavorites', { title: item.title }));
+      showToast(t('home.titleRemovedFavorites', { title: item.title }), {
+        label: t('undo.undo'),
+        variant: 'secondary',
+        action: async () => {
+          // Undo: Re-add as liked
+          try {
+            const {
+              data: { session: undoSession },
+            } = await getSession();
+            if (!undoSession?.access_token) return;
+
+            await $fetch('/api/users/title-status', {
+              method: 'POST',
+              headers: {
+                Authorization: `Bearer ${undoSession.access_token}`,
+              },
+              body: {
+                tmdb_id: item.tmdb_id,
+                type: item.type,
+                status: TITLE_STATUS.SEEN,
+                liked: true,
+              },
+            });
+            await loadTitleStatuses();
+          } catch (error) {
+            console.error('[DiscoverListDetail] Error undoing:', error);
+            await loadTitleStatuses();
+          }
+        },
+      }, 7000);
     } else if (action === 'remove-watchlist') {
       // Remove watchlist
-      await $fetch('/api/users/title-status', {
+      await $fetch('/api/users/title-status/delete', {
         method: 'DELETE',
         headers: {
           Authorization: `Bearer ${session.access_token}`,
@@ -274,7 +303,36 @@ async function handleAction(
         },
       });
 
-      showToast(t('home.titleRemovedFromWatchlist', { title: item.title }));
+      showToast(t('home.titleRemovedFromWatchlist', { title: item.title }), {
+        label: t('undo.undo'),
+        variant: 'secondary',
+        action: async () => {
+          // Undo: Re-add to watchlist
+          try {
+            const {
+              data: { session: undoSession },
+            } = await getSession();
+            if (!undoSession?.access_token) return;
+
+            await $fetch('/api/users/title-status', {
+              method: 'POST',
+              headers: {
+                Authorization: `Bearer ${undoSession.access_token}`,
+              },
+              body: {
+                tmdb_id: item.tmdb_id,
+                type: item.type,
+                status: TITLE_STATUS.WATCHLIST,
+                liked: false,
+              },
+            });
+            await loadTitleStatuses();
+          } catch (error) {
+            console.error('[DiscoverListDetail] Error undoing:', error);
+            await loadTitleStatuses();
+          }
+        },
+      }, 7000);
     } else if (action === 'liked') {
       // Check if title is already liked
       const userId = user.value?.id || (user.value as { sub?: string })?.sub;
@@ -286,7 +344,7 @@ async function handleAction(
 
         if (likedTitle) {
           // Title is already liked, remove it
-          await $fetch('/api/users/title-status', {
+          await $fetch('/api/users/title-status/delete', {
             method: 'DELETE',
             headers: {
               Authorization: `Bearer ${session.access_token}`,
@@ -296,7 +354,36 @@ async function handleAction(
             },
           });
 
-          showToast(t('home.titleRemovedFavorites', { title: item.title }));
+          showToast(t('home.titleRemovedFavorites', { title: item.title }), {
+            label: t('undo.undo'),
+            variant: 'secondary',
+            action: async () => {
+              // Undo: Re-add as liked
+              try {
+                const {
+                  data: { session: undoSession },
+                } = await getSession();
+                if (!undoSession?.access_token) return;
+
+                await $fetch('/api/users/title-status', {
+                  method: 'POST',
+                  headers: {
+                    Authorization: `Bearer ${undoSession.access_token}`,
+                  },
+                  body: {
+                    tmdb_id: item.tmdb_id,
+                    type: item.type,
+                    status: TITLE_STATUS.SEEN,
+                    liked: true,
+                  },
+                });
+                await loadTitleStatuses();
+              } catch (error) {
+                console.error('[DiscoverListDetail] Error undoing:', error);
+                await loadTitleStatuses();
+              }
+            },
+          }, 7000);
         } else {
           // Title is not liked, add it
           await $fetch('/api/users/title-status', {
@@ -325,7 +412,7 @@ async function handleAction(
       // Check if already seen - if so, remove it (toggle behavior)
       if (itemStatus.isSeen) {
         // Remove seen status (DELETE)
-        await $fetch('/api/users/title-status', {
+        await $fetch('/api/users/title-status/delete', {
           method: 'DELETE',
           headers: {
             Authorization: `Bearer ${session.access_token}`,
@@ -335,7 +422,36 @@ async function handleAction(
           },
         });
 
-        showToast(t('home.titleRemovedFromSeen', { title: item.title }));
+        showToast(t('home.titleRemovedFromSeen', { title: item.title }), {
+          label: t('undo.undo'),
+          variant: 'secondary',
+          action: async () => {
+            // Undo: Re-add as seen
+            try {
+              const {
+                data: { session: undoSession },
+              } = await getSession();
+              if (!undoSession?.access_token) return;
+
+              await $fetch('/api/users/title-status', {
+                method: 'POST',
+                headers: {
+                  Authorization: `Bearer ${undoSession.access_token}`,
+                },
+                body: {
+                  tmdb_id: item.tmdb_id,
+                  type: item.type,
+                  status: TITLE_STATUS.SEEN,
+                  liked: itemStatus.isLiked || false,
+                },
+              });
+              await loadTitleStatuses();
+            } catch (error) {
+              console.error('[DiscoverListDetail] Error undoing:', error);
+              await loadTitleStatuses();
+            }
+          },
+        }, 7000);
       } else {
         // Mark as seen
         await $fetch('/api/users/title-status', {
@@ -364,7 +480,7 @@ async function handleAction(
       // Check if already not interested - if so, remove it (toggle behavior)
       if (itemStatus.isNotInterested) {
         // Remove not interested status (DELETE)
-        await $fetch('/api/users/title-status', {
+        await $fetch('/api/users/title-status/delete', {
           method: 'DELETE',
           headers: {
             Authorization: `Bearer ${session.access_token}`,
@@ -374,7 +490,36 @@ async function handleAction(
           },
         });
 
-        showToast(t('home.titleRemovedFromNotInterested', { title: item.title }));
+        showToast(t('home.titleRemovedFromNotInterested', { title: item.title }), {
+          label: t('undo.undo'),
+          variant: 'secondary',
+          action: async () => {
+            // Undo: Re-add as not interested
+            try {
+              const {
+                data: { session: undoSession },
+              } = await getSession();
+              if (!undoSession?.access_token) return;
+
+              await $fetch('/api/users/title-status', {
+                method: 'POST',
+                headers: {
+                  Authorization: `Bearer ${undoSession.access_token}`,
+                },
+                body: {
+                  tmdb_id: item.tmdb_id,
+                  type: item.type,
+                  status: TITLE_STATUS.NOT_INTERESTED,
+                  liked: false,
+                },
+              });
+              await loadTitleStatuses();
+            } catch (error) {
+              console.error('[DiscoverListDetail] Error undoing:', error);
+              await loadTitleStatuses();
+            }
+          },
+        }, 7000);
       } else {
         // Mark as not interested
         await $fetch('/api/users/title-status', {
@@ -407,7 +552,7 @@ async function handleAction(
       // Check if already in watchlist - if so, remove it (toggle behavior)
       if (itemStatus.isInWatchlist) {
         // Remove watchlist status (DELETE)
-        await $fetch('/api/users/title-status', {
+        await $fetch('/api/users/title-status/delete', {
           method: 'DELETE',
           headers: {
             Authorization: `Bearer ${session.access_token}`,
@@ -417,7 +562,36 @@ async function handleAction(
           },
         });
 
-        showToast(t('home.titleRemovedWatchlist', { title: item.title }));
+        showToast(t('home.titleRemovedWatchlist', { title: item.title }), {
+          label: t('undo.undo'),
+          variant: 'secondary',
+          action: async () => {
+            // Undo: Re-add to watchlist
+            try {
+              const {
+                data: { session: undoSession },
+              } = await getSession();
+              if (!undoSession?.access_token) return;
+
+              await $fetch('/api/users/title-status', {
+                method: 'POST',
+                headers: {
+                  Authorization: `Bearer ${undoSession.access_token}`,
+                },
+                body: {
+                  tmdb_id: item.tmdb_id,
+                  type: item.type,
+                  status: TITLE_STATUS.WATCHLIST,
+                  liked: false,
+                },
+              });
+              await loadTitleStatuses();
+            } catch (error) {
+              console.error('[DiscoverListDetail] Error undoing:', error);
+              await loadTitleStatuses();
+            }
+          },
+        }, 7000);
       } else {
         // Add to watchlist
         await $fetch('/api/users/title-status', {
