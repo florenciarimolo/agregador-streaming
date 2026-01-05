@@ -107,25 +107,17 @@ export const useTitleActions = (
 
       // Show toast with appropriate message and action based on status
       if (status === TITLE_STATUS.NOT_INTERESTED) {
+        const { routeWithLang } = useRouteWithLang();
         showToast(
           t('home.titleMarkedNotInterested', { title: title.title }),
           {
-            label: t('undo.undo'),
+            label: t('home.viewList'),
             variant: 'secondary',
             action: async () => {
-              await $fetch('/api/users/title-status', {
-                method: 'DELETE',
-                headers: {
-                  Authorization: `Bearer ${session.access_token}`,
-                },
-                query: {
-                  tmdb_id: title.tmdb_id,
-                },
-              });
-              await fetchRecommendations();
+              await router.push(routeWithLang('/lists?tab=not-interested'));
             },
           },
-          7000
+          5000
         );
       } else if (status === TITLE_STATUS.SEEN) {
         const { routeWithLang } = useRouteWithLang();

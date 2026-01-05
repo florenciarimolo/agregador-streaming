@@ -19,6 +19,7 @@ import FilterPill from '@/components/ui/FilterPill.vue';
 import Alert from '@/components/ui/Alert.vue';
 import IconTv from '@/components/icons/IconTv.vue';
 import { useRegions } from '@/composables/useRegions';
+import { useUserStore } from '@/stores/user';
 
 definePageMeta({
   middleware: 'auth',
@@ -386,7 +387,7 @@ const savePreferences = async () => {
   error.value = null;
 
   try {
-    const currentUser = userStore.user || user.value;
+    const currentUser = userStore.value.user || user.value;
 
     if (!currentUser || !currentUser.id) {
       const {
@@ -453,7 +454,7 @@ const saveSelections = async () => {
 
   try {
     // Get user from store (already initialized by middleware) or from useSupabaseUser
-    const currentUser = userStore.user || user.value;
+    const currentUser = userStore.value.user || user.value;
 
     if (!currentUser || !currentUser.id) {
       // If user is not in store, try to get it from Supabase
@@ -466,11 +467,11 @@ const saveSelections = async () => {
         return;
       }
       // Set user in store
-      userStore.setUser(session.user);
-      await userStore.fetchProfile();
+      userStore.value.setUser(session.user);
+      await userStore.value.fetchProfile();
     }
 
-    const userId = (userStore.user || user.value)!.id;
+    const userId = (userStore.value.user || user.value)!.id;
 
     // Ensure preferences are saved before proceeding
     if (!preferencesSaved.value) {
@@ -536,7 +537,7 @@ const saveSelections = async () => {
 
     // Ensure profile is fully loaded before redirecting
     // This will update likesCount and onboarding_completed
-    await userStore.fetchProfile();
+    await userStore.value.fetchProfile();
 
     // Populate recommendation pool after onboarding completion
     try {

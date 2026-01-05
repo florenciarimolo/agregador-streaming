@@ -109,6 +109,7 @@ import EmptyState from './EmptyState.vue';
 import { getSession } from '@/services/auth';
 import { getUserLikedTitle, getTitleStatus } from '@/services/userTitleStatus';
 import { useUndoToast } from '@/composables/useUndoToast';
+import { useRouteWithLang } from '@/composables/useRouteWithLang';
 
 const { t } = useI18n();
 const router = useRouter();
@@ -350,7 +351,14 @@ async function handleAction(
           },
         });
 
-        showToast(t('home.titleMarkedSeen', { title: item.title }));
+        const { routeWithLang } = useRouteWithLang();
+        showToast(t('home.titleMarkedSeen', { title: item.title }), {
+          label: t('home.viewSeen'),
+          variant: 'secondary',
+          action: async () => {
+            await navigateTo(routeWithLang('/lists?tab=seen'));
+          },
+        }, 5000);
       }
     } else if (action === TITLE_STATUS.NOT_INTERESTED) {
       // Check if already not interested - if so, remove it (toggle behavior)
@@ -382,21 +390,14 @@ async function handleAction(
           },
         });
 
+        const { routeWithLang } = useRouteWithLang();
         showToast(
           t('home.titleMarkedNotInterested', { title: item.title }),
           {
-            label: t('undo.undo'),
+            label: t('home.viewList'),
             variant: 'secondary',
             action: async () => {
-              await $fetch('/api/users/title-status', {
-                method: 'DELETE',
-                headers: {
-                  Authorization: `Bearer ${session.access_token}`,
-                },
-                query: {
-                  tmdb_id: item.tmdb_id,
-                },
-              });
+              await navigateTo(routeWithLang('/lists?tab=not-interested'));
             },
           },
           5000
@@ -432,7 +433,14 @@ async function handleAction(
           },
         });
 
-        showToast(t('home.titleAddedWatchlist', { title: item.title }));
+        const { routeWithLang } = useRouteWithLang();
+        showToast(t('home.titleAddedWatchlist', { title: item.title }), {
+          label: t('home.viewList'),
+          variant: 'secondary',
+          action: async () => {
+            await navigateTo(routeWithLang('/watchlist'));
+          },
+        }, 5000);
       }
     }
   } catch (error) {

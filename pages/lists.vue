@@ -1180,7 +1180,7 @@ const { pending: profilePending } = useAsyncData(
     await userStore.value.ensureProfile();
 
     // Check onboarding status
-    const hasCompletedOnboarding = userStore.hasCompletedOnboarding;
+    const hasCompletedOnboarding = userStore.value.hasCompletedOnboarding;
 
     // If onboarding not completed, redirect to onboarding
     if (!hasCompletedOnboarding) {
@@ -1205,7 +1205,7 @@ onMounted(async () => {
   }
 
   // If redirected, don't continue
-  if (!userStore.hasCompletedOnboarding) {
+  if (!userStore.value.hasCompletedOnboarding) {
     return;
   }
 
