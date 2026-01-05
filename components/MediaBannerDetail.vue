@@ -298,9 +298,14 @@
           <span>
             <template v-if="(mediaWithProviders as any).number_of_seasons">
               {{
-                $t('media.seasonsCount', {
-                  count: (mediaWithProviders as any).number_of_seasons || 0,
-                })
+                $t(
+                  (mediaWithProviders as any).number_of_seasons === 1
+                    ? 'media.seasonsCount_one'
+                    : 'media.seasonsCount_other',
+                  {
+                    count: (mediaWithProviders as any).number_of_seasons || 0,
+                  }
+                )
               }}
             </template>
             <template
@@ -312,9 +317,14 @@
             </template>
             <template v-if="(mediaWithProviders as any).number_of_episodes">
               {{
-                $t('media.episodesCount', {
-                  count: (mediaWithProviders as any).number_of_episodes || 0,
-                })
+                $t(
+                  (mediaWithProviders as any).number_of_episodes === 1
+                    ? 'media.episodesCount_one'
+                    : 'media.episodesCount_other',
+                  {
+                    count: (mediaWithProviders as any).number_of_episodes || 0,
+                  }
+                )
               }}
             </template>
           </span>

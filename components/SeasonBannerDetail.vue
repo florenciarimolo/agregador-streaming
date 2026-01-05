@@ -86,9 +86,14 @@
         <div class="flex items-center gap-2 dark:text-gray-300 text-gray-800">
           <IconEpisodes icon-class="w-5 h-5" />
           <span>{{
-            $t('media.episodesCount', {
-              count: season?.episodes?.length || 0,
-            })
+            $t(
+              (season?.episodes?.length || 0) === 1
+                ? 'media.episodesCount_one'
+                : 'media.episodesCount_other',
+              {
+                count: season?.episodes?.length || 0,
+              }
+            )
           }}</span>
         </div>
 

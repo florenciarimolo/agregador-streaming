@@ -91,9 +91,14 @@
                     >
                       <IconEpisodes icon-class="w-3 h-3 md:w-4 md:h-4" />
                       <span class="truncate">{{
-                        $t('media.episodesCount', {
-                          count: season.episode_count || 0,
-                        })
+                        $t(
+                          (season.episode_count || 0) === 1
+                            ? 'media.episodesCount_one'
+                            : 'media.episodesCount_other',
+                          {
+                            count: season.episode_count || 0,
+                          }
+                        )
                       }}</span>
                     </div>
                   </div>
