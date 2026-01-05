@@ -33,12 +33,21 @@
       class="p-4 rounded-2xl border backdrop-blur-xl dark:bg-gray-900/40 bg-gray-100/80 border-gray-300/50 dark:border-white/10"
     >
       <p class="text-sm text-gray-700 dark:text-gray-300 mb-3">
-        {{ $t('discover.registerCta') }}
+        {{ $t('discover.loginCta') }}
       </p>
-      <Button variant="primary" @click="$router.push('/auth/login')">
-        {{ $t('discover.registerButton') }}
+      <Button variant="primary" @click="showAuthForm = true">
+        {{ $t('auth.login') }}
       </Button>
     </div>
+
+    <!-- Auth Form Modal -->
+    <Modal :is-open="showAuthForm" custom-class="max-w-md p-0" @close="showAuthForm = false">
+      <AuthForm
+        in-modal
+        @success="showAuthForm = false"
+        @signup="showAuthForm = false"
+      />
+    </Modal>
 
     <!-- Titles Grid -->
     <div
@@ -93,6 +102,8 @@ import TitleCard from './TitleCard.vue';
 import SeedListButton from './SeedListButton.vue';
 import DiscoverListItemActions from './DiscoverListItemActions.vue';
 import Button from './ui/Button.vue';
+import Modal from './ui/Modal.vue';
+import AuthForm from './AuthForm.vue';
 import IconArrowLeft from './icons/IconArrowLeft.vue';
 import EmptyState from './EmptyState.vue';
 import { getSession } from '@/services/auth';
@@ -116,6 +127,7 @@ const isLoggedIn = computed(() => !!user.value);
 const { showToast } = useUndoToast();
 const loadingTitles = ref<Set<number>>(new Set());
 const titleStatuses = ref<Map<number, { liked: boolean; status: string | null }>>(new Map());
+const showAuthForm = ref(false);
 
 // Handle back navigation
 const handleBack = () => {

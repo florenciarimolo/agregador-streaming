@@ -734,6 +734,7 @@
     "seedError": "Erro ao engadir a lista ás túas recomendacións",
     "registerCta": "Rexistrate para personalizar as túas recomendacións e usar esta lista como semente",
     "registerButton": "Rexistrarse",
+    "loginCta": "Inicia sesión para personalizar as túas recomendacións e usar esta lista como semente",
     "listNotFound": "Lista non atopada",
     "items": "títulos",
     "andMore": "e {count} máis"

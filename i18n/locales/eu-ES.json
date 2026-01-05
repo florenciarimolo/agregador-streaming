@@ -734,6 +734,7 @@
     "seedError": "Errorea zerrenda zure gomendioetara gehitzean",
     "registerCta": "Erregistratu zure gomendioak pertsonalizatzeko eta zerrenda hau hazitzat erabiltzeko",
     "registerButton": "Erregistratu",
+    "loginCta": "Hasi saioa zure gomendioak pertsonalizatzeko eta zerrenda hau hazitzat erabiltzeko",
     "listNotFound": "Zerrenda ez da aurkitu",
     "items": "titulu",
     "andMore": "eta {count} gehiago"
