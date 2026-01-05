@@ -11,23 +11,29 @@
         <h2
           class="text-3xl md:text-4xl font-bold dark:text-gray-300 text-gray-800 mb-4"
         >
-          {{ errorTitle }}
+          {{
+            error.statusCode === 404
+              ? $t('error.notFoundTitle')
+              : $t('error.title')
+          }}
         </h2>
         <p class="text-lg dark:text-gray-300 text-gray-800 mb-8">
-          {{ errorDescription }}
+          {{
+            error.statusCode === 404
+              ? $t('error.notFoundDescription')
+              : $t('error.genericErrorDescription')
+          }}
         </p>
       </div>
 
       <!-- Illustration or Icon -->
-      <div class="mb-8 flex justify-center" role="img" :aria-label="errorIconLabel">
+      <div class="mb-8 flex justify-center">
         <svg
           class="w-24 h-24 dark:text-gray-300 text-gray-800"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
-          aria-hidden="true"
         >
-          <!-- 404: Sad face icon -->
           <path
             v-if="error.statusCode === 404"
             stroke-linecap="round"
@@ -35,28 +41,6 @@
             stroke-width="1.5"
             d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
           />
-          <!-- 500: Server error icon -->
-          <g v-else-if="error.statusCode === 500">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="1.5"
-              d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2"
-            />
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="1.5"
-              d="M9 8h.01M9 16h.01"
-            />
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M15 7l2 2m0-2l-2 2M15 15l2 2m0-2l-2 2"
-            />
-          </g>
-          <!-- Other errors: Warning triangle icon -->
           <path
             v-else
             stroke-linecap="round"
@@ -164,72 +148,23 @@ const handleError = async () => {
 
 const { t } = useI18n();
 
-// Computed properties for error title and description
-const errorTitle = computed(() => {
-  switch (props.error.statusCode) {
-    case 404:
-      return t('error.notFoundTitle');
-    case 500:
-      return t('error.serverErrorTitle');
-    default:
-      return t('error.title');
-  }
-});
-
-const errorDescription = computed(() => {
-  switch (props.error.statusCode) {
-    case 404:
-      return t('error.notFoundDescription');
-    case 500:
-      return t('error.serverErrorDescription');
-    default:
-      return t('error.genericErrorDescription');
-  }
-});
-
-// Accessibility label for the error icon
-const errorIconLabel = computed(() => {
-  switch (props.error.statusCode) {
-    case 404:
-      return t('error.iconLabel404');
-    case 500:
-      return t('error.iconLabel500');
-    default:
-      return t('error.iconLabelGeneric');
-  }
-});
-
-// Computed properties for page title and description
-const pageTitle = computed(() => {
-  switch (props.error.statusCode) {
-    case 404:
-      return t('error.pageTitle404');
-    case 500:
-      return t('error.pageTitle500');
-    default:
-      return t('error.pageTitleError');
-  }
-});
-
-const pageDescription = computed(() => {
-  switch (props.error.statusCode) {
-    case 404:
-      return t('error.pageDescription404');
-    case 500:
-      return t('error.pageDescription500');
-    default:
-      return t('error.pageDescriptionError');
-  }
-});
-
 // Set page title based on error
 useHead({
-  title: pageTitle,
+  title:
+    props.error.statusCode === 404
+      ? t('error.pageTitle404')
+      : t('error.pageTitleError'),
 });
 
 useSeoMeta({
-  title: pageTitle,
-  description: pageDescription,
+  title:
+    props.error.statusCode === 404
+      ? t('error.pageTitle404')
+      : t('error.pageTitleError'),
+  description:
+    props.error.statusCode === 404
+      ? t('error.pageDescription404')
+      : t('error.pageDescriptionError'),
   robots: 'noindex, nofollow',
 });
 </script>
