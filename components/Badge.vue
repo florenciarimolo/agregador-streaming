@@ -2,7 +2,7 @@
   <span
     v-if="displayLabel"
     :class="[
-      'inline-block w-fit font-medium text-white rounded-full backdrop-blur-sm pointer-events-none select-none bg-black/50 relative z-0',
+      'inline-block w-fit font-medium text-white rounded-full backdrop-blur-sm pointer-events-none select-none bg-black/50 relative z-0 whitespace-nowrap',
       sizeClasses,
     ]"
   >

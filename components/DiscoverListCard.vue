@@ -13,6 +13,7 @@
           v-if="list.itemCount !== undefined && list.itemCount !== null"
           :label="`${list.itemCount} ${$t('discover.items')}`"
           size="sm"
+          class="flex-shrink-0"
         />
       </div>
       <p
