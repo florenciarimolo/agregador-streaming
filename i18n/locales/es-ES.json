@@ -732,8 +732,7 @@
     "seedDescription": "Añade todos los títulos de esta lista a tu pool de recomendaciones para personalizar tus recomendaciones",
     "seedSuccess": "Se agregaron {count} títulos a tus recomendaciones",
     "seedError": "Error al agregar la lista a tus recomendaciones",
-    "registerCta": "Regístrate para personalizar tus recomendaciones y usar esta lista como semilla",
-    "registerButton": "Registrarse",
+    "loginCta": "Inicia sesión para personalizar tus recomendaciones y usar esta lista como semilla",
     "listNotFound": "Lista no encontrada",
     "items": "títulos",
     "andMore": "y {count} más"

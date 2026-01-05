@@ -732,8 +732,7 @@
     "seedDescription": "Afegeix tots els títols d'aquesta llista al teu pool de recomanacions per personalitzar les teves recomanacions",
     "seedSuccess": "S'han afegit {count} títols a les teves recomanacions",
     "seedError": "Error en afegir la llista a les teves recomanacions",
-    "registerCta": "Registra't per personalitzar les teves recomanacions i utilitzar aquesta llista com a llavor",
-    "registerButton": "Registrar-se",
+    "loginCta": "Inicia sessió per personalitzar les teves recomanacions i utilitzar aquesta llista com a llavor",
     "listNotFound": "Llista no trobada",
     "items": "títols",
     "andMore": "i {count} més"

@@ -732,8 +732,7 @@
     "seedDescription": "Add all titles from this list to your recommendation pool to personalise your recommendations",
     "seedSuccess": "Added {count} titles to your recommendations",
     "seedError": "Error adding list to your recommendations",
-    "registerCta": "Sign up to personalise your recommendations and use this list as a seed",
-    "registerButton": "Sign up",
+    "loginCta": "Sign in to personalise your recommendations and use this list as a seed",
     "listNotFound": "List not found",
     "items": "items",
     "andMore": "and {count} more"
