@@ -95,6 +95,13 @@
               {{ $t('footer.privacy') }}
             </nuxt-link>
           </div>
+          <!-- Language Selector (Mobile) -->
+          <div class="flex flex-col gap-2 justify-center items-center mb-4">
+            <span class="text-sm text-gray-600 dark:text-gray-400">
+              {{ $t('settings.language.title') }}:
+            </span>
+            <AppLanguageSelector />
+          </div>
           <p class="mb-2 text-sm text-gray-800 dark:text-gray-300">
             {{ $t('footer.copyright', { year: currentYear }) }}
           </p>

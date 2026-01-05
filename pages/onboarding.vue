@@ -924,7 +924,7 @@ const saveSelections = async () => {
             {{
               savingPreferences
                 ? $t('onboarding.savingPreferences')
-                : $t('onboarding.savingSelection')
+                : $t('home.generatingRecommendations')
             }}
           </h2>
         </div>

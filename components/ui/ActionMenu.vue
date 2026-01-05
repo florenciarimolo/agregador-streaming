@@ -155,6 +155,13 @@ const handleClickOutside = (event: MouseEvent) => {
   if (!props.closeOnClickOutside) return;
 
   const target = event.target as HTMLElement;
+  
+  // Don't close menu if clicking on a link (nuxt-link or regular anchor)
+  // This allows navigation to work properly
+  if (target.closest('a') || target.closest('nuxt-link')) {
+    return;
+  }
+  
   if (menuRef.value && !menuRef.value.contains(target)) {
     closeMenu();
   }
@@ -174,7 +181,9 @@ const handleResize = () => {
 onMounted(() => {
   checkMobile();
   if (props.closeOnClickOutside) {
-    document.addEventListener('click', handleClickOutside);
+    // Use mousedown instead of click to avoid interfering with link navigation
+    // Links handle click events, so we use mousedown which fires earlier
+    document.addEventListener('mousedown', handleClickOutside);
   }
   window.addEventListener('scroll', handleScroll, { passive: true });
   window.addEventListener('resize', handleResize);
@@ -182,7 +191,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   if (props.closeOnClickOutside) {
-    document.removeEventListener('click', handleClickOutside);
+    document.removeEventListener('mousedown', handleClickOutside);
   }
   window.removeEventListener('scroll', handleScroll);
   window.removeEventListener('resize', handleResize);

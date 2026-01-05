@@ -65,3 +65,30 @@ CREATE TRIGGER update_discover_lists_updated_at
   FOR EACH ROW
   EXECUTE FUNCTION public.handle_updated_at();
 
+-- Ensure RLS Policies for recommendation_pool are correctly defined
+-- This is important for the discover list seed functionality
+ALTER TABLE public.recommendation_pool ENABLE ROW LEVEL SECURITY;
+
+-- Drop existing policies if they exist (to avoid conflicts)
+DROP POLICY IF EXISTS "Users can view own recommendation pool" ON public.recommendation_pool;
+DROP POLICY IF EXISTS "Users can insert own recommendation pool" ON public.recommendation_pool;
+DROP POLICY IF EXISTS "Users can update own recommendation pool" ON public.recommendation_pool;
+DROP POLICY IF EXISTS "Users can delete own recommendation pool" ON public.recommendation_pool;
+
+-- Create RLS Policies for recommendation_pool
+CREATE POLICY "Users can view own recommendation pool"
+  ON public.recommendation_pool FOR SELECT
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert own recommendation pool"
+  ON public.recommendation_pool FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own recommendation pool"
+  ON public.recommendation_pool FOR UPDATE
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete own recommendation pool"
+  ON public.recommendation_pool FOR DELETE
+  USING (auth.uid() = user_id);
+

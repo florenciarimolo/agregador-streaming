@@ -122,7 +122,7 @@ const alternativeTitles = computed<AlternativeTitlesResponse>(
 
 const movieWithProviders = computed<Movie>(() => {
   return {
-    ...MOVIE.value,
+    ...movie.value,
     providers: providers.value,
     alternative_titles: alternativeTitles.value,
   };
@@ -203,13 +203,13 @@ const seoExperience = computed(() => t(seoExperienceKey.value));
 
 const pageTitle = computed(() => {
   const title = movie.value?.title || t('media.movie');
-  return `${title} – ${t('seo.MOVIEPrefix')} ${seoExperience.value}`;
+  return `${title} – ${t('seo.moviePrefix')} ${seoExperience.value}`;
 });
 
 const pageDescription = computed(() => {
   const title = movie.value?.title || t('media.movie');
   const experience = seoExperience.value;
-  return t('seo.MOVIEDescription', { title, experience });
+  return t('seo.movieDescription', { title, experience });
 });
 
 const ogImage = computed(() => {

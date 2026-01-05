@@ -402,7 +402,7 @@
 <script setup lang="ts">
 import RatingBadge from './RatingBadge.vue';
 import type { Media } from '@/types/Media';
-import { computed, onMounted, PropType, ref } from 'vue';
+import { computed, nextTick, onMounted, PropType, ref } from 'vue';
 import { onUnmounted } from 'vue';
 import { formatDateToSpanish } from '@/utils/formatDate';
 import type { Genre } from '@/types/Genre';
@@ -832,22 +832,31 @@ const handleRemoveLike = async () => {
 };
 
 // Handle back navigation
-const handleBack = () => {
+const handleBack = async () => {
+  // Close dropdown if open before navigating
+  if (dropdownRef.value) {
+    dropdownRef.value.close();
+  }
+
+  // Wait a tick to ensure dropdown is closed
+  await nextTick();
+
   // Try to get the previous route from sessionStorage
   const previousRoute = sessionStorage.getItem('previousRoute');
 
   if (previousRoute) {
     // Clear the stored route
     sessionStorage.removeItem('previousRoute');
-    // Navigate to the previous route
-    router.push(previousRoute);
+    // Navigate to the previous route using navigateTo
+    await navigateTo(previousRoute);
   } else {
     // Check if we can go back in history (user came from within the app)
     if (window.history.length > 1) {
+      // Use router.back() to properly trigger Vue Router navigation
       router.back();
     } else {
       // User came from outside the app, go to home
-      router.push('/');
+      await navigateTo('/');
     }
   }
 };

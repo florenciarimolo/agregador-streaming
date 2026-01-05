@@ -107,6 +107,223 @@
         </div>
       </div>
 
+      <!-- Lista detallada de cookies -->
+      <div class="mb-6">
+        <h3
+          class="text-xl font-semibold dark:text-gray-300 text-gray-800 mb-3"
+        >
+          {{ $t('privacy.cookiesListTitle') }}
+        </h3>
+        <p class="dark:text-gray-300 text-gray-800 mb-4">
+          {{ $t('privacy.cookiesListDescription') }}
+        </p>
+        
+        <!-- Cookies HTTP -->
+        <div class="mb-4">
+          <h4
+            class="text-lg font-semibold dark:text-gray-300 text-gray-800 mb-3"
+          >
+            {{ $t('privacy.cookiesHttpTitle') }}
+          </h4>
+          <div class="overflow-x-auto">
+            <table class="w-full border-collapse border border-gray-300 dark:border-gray-700">
+              <thead>
+                <tr class="bg-gray-100 dark:bg-gray-800">
+                  <th class="border border-gray-300 dark:border-gray-700 px-4 py-2 text-left text-sm font-semibold dark:text-gray-300 text-gray-800">
+                    {{ $t('privacy.cookiesTableName') }}
+                  </th>
+                  <th class="border border-gray-300 dark:border-gray-700 px-4 py-2 text-left text-sm font-semibold dark:text-gray-300 text-gray-800">
+                    {{ $t('privacy.cookiesTablePurpose') }}
+                  </th>
+                  <th class="border border-gray-300 dark:border-gray-700 px-4 py-2 text-left text-sm font-semibold dark:text-gray-300 text-gray-800">
+                    {{ $t('privacy.cookiesTableDuration') }}
+                  </th>
+                  <th class="border border-gray-300 dark:border-gray-700 px-4 py-2 text-left text-sm font-semibold dark:text-gray-300 text-gray-800">
+                    {{ $t('privacy.cookiesTableType') }}
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="border border-gray-300 dark:border-gray-700 px-4 py-2 text-sm dark:text-gray-300 text-gray-800 font-mono">
+                    i18n_redirected
+                  </td>
+                  <td class="border border-gray-300 dark:border-gray-700 px-4 py-2 text-sm dark:text-gray-300 text-gray-800">
+                    {{ $t('privacy.cookieI18nPurpose') }}
+                  </td>
+                  <td class="border border-gray-300 dark:border-gray-700 px-4 py-2 text-sm dark:text-gray-300 text-gray-800">
+                    {{ $t('privacy.cookieI18nDuration') }}
+                  </td>
+                  <td class="border border-gray-300 dark:border-gray-700 px-4 py-2 text-sm dark:text-gray-300 text-gray-800">
+                    {{ $t('privacy.cookieTypePreference') }}
+                  </td>
+                </tr>
+                <tr>
+                  <td class="border border-gray-300 dark:border-gray-700 px-4 py-2 text-sm dark:text-gray-300 text-gray-800 font-mono">
+                    sb-*-auth-token
+                  </td>
+                  <td class="border border-gray-300 dark:border-gray-700 px-4 py-2 text-sm dark:text-gray-300 text-gray-800">
+                    {{ $t('privacy.cookieSupabasePurpose') }}
+                  </td>
+                  <td class="border border-gray-300 dark:border-gray-700 px-4 py-2 text-sm dark:text-gray-300 text-gray-800">
+                    {{ $t('privacy.cookieSupabaseDuration') }}
+                  </td>
+                  <td class="border border-gray-300 dark:border-gray-700 px-4 py-2 text-sm dark:text-gray-300 text-gray-800">
+                    {{ $t('privacy.cookieTypeTechnical') }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- localStorage -->
+        <div class="mb-4">
+          <h4
+            class="text-lg font-semibold dark:text-gray-300 text-gray-800 mb-3"
+          >
+            {{ $t('privacy.cookiesLocalStorageTitle') }}
+          </h4>
+          <div class="overflow-x-auto">
+            <table class="w-full border-collapse border border-gray-300 dark:border-gray-700">
+              <thead>
+                <tr class="bg-gray-100 dark:bg-gray-800">
+                  <th class="border border-gray-300 dark:border-gray-700 px-4 py-2 text-left text-sm font-semibold dark:text-gray-300 text-gray-800">
+                    {{ $t('privacy.cookiesTableName') }}
+                  </th>
+                  <th class="border border-gray-300 dark:border-gray-700 px-4 py-2 text-left text-sm font-semibold dark:text-gray-300 text-gray-800">
+                    {{ $t('privacy.cookiesTablePurpose') }}
+                  </th>
+                  <th class="border border-gray-300 dark:border-gray-700 px-4 py-2 text-left text-sm font-semibold dark:text-gray-300 text-gray-800">
+                    {{ $t('privacy.cookiesTableDuration') }}
+                  </th>
+                  <th class="border border-gray-300 dark:border-gray-700 px-4 py-2 text-left text-sm font-semibold dark:text-gray-300 text-gray-800">
+                    {{ $t('privacy.cookiesTableType') }}
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="border border-gray-300 dark:border-gray-700 px-4 py-2 text-sm dark:text-gray-300 text-gray-800 font-mono">
+                    cookie_consent
+                  </td>
+                  <td class="border border-gray-300 dark:border-gray-700 px-4 py-2 text-sm dark:text-gray-300 text-gray-800">
+                    {{ $t('privacy.cookieConsentPurpose') }}
+                  </td>
+                  <td class="border border-gray-300 dark:border-gray-700 px-4 py-2 text-sm dark:text-gray-300 text-gray-800">
+                    {{ $t('privacy.cookieConsentDuration') }}
+                  </td>
+                  <td class="border border-gray-300 dark:border-gray-700 px-4 py-2 text-sm dark:text-gray-300 text-gray-800">
+                    {{ $t('privacy.cookieTypeTechnical') }}
+                  </td>
+                </tr>
+                <tr>
+                  <td class="border border-gray-300 dark:border-gray-700 px-4 py-2 text-sm dark:text-gray-300 text-gray-800 font-mono">
+                    theme
+                  </td>
+                  <td class="border border-gray-300 dark:border-gray-700 px-4 py-2 text-sm dark:text-gray-300 text-gray-800">
+                    {{ $t('privacy.cookieThemePurpose') }}
+                  </td>
+                  <td class="border border-gray-300 dark:border-gray-700 px-4 py-2 text-sm dark:text-gray-300 text-gray-800">
+                    {{ $t('privacy.cookieThemeDuration') }}
+                  </td>
+                  <td class="border border-gray-300 dark:border-gray-700 px-4 py-2 text-sm dark:text-gray-300 text-gray-800">
+                    {{ $t('privacy.cookieTypePreference') }}
+                  </td>
+                </tr>
+                <tr>
+                  <td class="border border-gray-300 dark:border-gray-700 px-4 py-2 text-sm dark:text-gray-300 text-gray-800 font-mono">
+                    theme-manual
+                  </td>
+                  <td class="border border-gray-300 dark:border-gray-700 px-4 py-2 text-sm dark:text-gray-300 text-gray-800">
+                    {{ $t('privacy.cookieThemeManualPurpose') }}
+                  </td>
+                  <td class="border border-gray-300 dark:border-gray-700 px-4 py-2 text-sm dark:text-gray-300 text-gray-800">
+                    {{ $t('privacy.cookieThemeManualDuration') }}
+                  </td>
+                  <td class="border border-gray-300 dark:border-gray-700 px-4 py-2 text-sm dark:text-gray-300 text-gray-800">
+                    {{ $t('privacy.cookieTypePreference') }}
+                  </td>
+                </tr>
+                <tr>
+                  <td class="border border-gray-300 dark:border-gray-700 px-4 py-2 text-sm dark:text-gray-300 text-gray-800 font-mono">
+                    auth:recovery
+                  </td>
+                  <td class="border border-gray-300 dark:border-gray-700 px-4 py-2 text-sm dark:text-gray-300 text-gray-800">
+                    {{ $t('privacy.cookieAuthRecoveryPurpose') }}
+                  </td>
+                  <td class="border border-gray-300 dark:border-gray-700 px-4 py-2 text-sm dark:text-gray-300 text-gray-800">
+                    {{ $t('privacy.cookieAuthRecoveryDuration') }}
+                  </td>
+                  <td class="border border-gray-300 dark:border-gray-700 px-4 py-2 text-sm dark:text-gray-300 text-gray-800">
+                    {{ $t('privacy.cookieTypeTechnical') }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- sessionStorage -->
+        <div class="mb-4">
+          <h4
+            class="text-lg font-semibold dark:text-gray-300 text-gray-800 mb-3"
+          >
+            {{ $t('privacy.cookiesSessionStorageTitle') }}
+          </h4>
+          <div class="overflow-x-auto">
+            <table class="w-full border-collapse border border-gray-300 dark:border-gray-700">
+              <thead>
+                <tr class="bg-gray-100 dark:bg-gray-800">
+                  <th class="border border-gray-300 dark:border-gray-700 px-4 py-2 text-left text-sm font-semibold dark:text-gray-300 text-gray-800">
+                    {{ $t('privacy.cookiesTableName') }}
+                  </th>
+                  <th class="border border-gray-300 dark:border-gray-700 px-4 py-2 text-left text-sm font-semibold dark:text-gray-300 text-gray-800">
+                    {{ $t('privacy.cookiesTablePurpose') }}
+                  </th>
+                  <th class="border border-gray-300 dark:border-gray-700 px-4 py-2 text-left text-sm font-semibold dark:text-gray-300 text-gray-800">
+                    {{ $t('privacy.cookiesTableDuration') }}
+                  </th>
+                  <th class="border border-gray-300 dark:border-gray-700 px-4 py-2 text-left text-sm font-semibold dark:text-gray-300 text-gray-800">
+                    {{ $t('privacy.cookiesTableType') }}
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="border border-gray-300 dark:border-gray-700 px-4 py-2 text-sm dark:text-gray-300 text-gray-800 font-mono">
+                    previousRoute
+                  </td>
+                  <td class="border border-gray-300 dark:border-gray-700 px-4 py-2 text-sm dark:text-gray-300 text-gray-800">
+                    {{ $t('privacy.cookiePreviousRoutePurpose') }}
+                  </td>
+                  <td class="border border-gray-300 dark:border-gray-700 px-4 py-2 text-sm dark:text-gray-300 text-gray-800">
+                    {{ $t('privacy.cookiePreviousRouteDuration') }}
+                  </td>
+                  <td class="border border-gray-300 dark:border-gray-700 px-4 py-2 text-sm dark:text-gray-300 text-gray-800">
+                    {{ $t('privacy.cookieTypeTechnical') }}
+                  </td>
+                </tr>
+                <tr>
+                  <td class="border border-gray-300 dark:border-gray-700 px-4 py-2 text-sm dark:text-gray-300 text-gray-800 font-mono">
+                    generatingRecommendations
+                  </td>
+                  <td class="border border-gray-300 dark:border-gray-700 px-4 py-2 text-sm dark:text-gray-300 text-gray-800">
+                    {{ $t('privacy.cookieGeneratingRecommendationsPurpose') }}
+                  </td>
+                  <td class="border border-gray-300 dark:border-gray-700 px-4 py-2 text-sm dark:text-gray-300 text-gray-800">
+                    {{ $t('privacy.cookieGeneratingRecommendationsDuration') }}
+                  </td>
+                  <td class="border border-gray-300 dark:border-gray-700 px-4 py-2 text-sm dark:text-gray-300 text-gray-800">
+                    {{ $t('privacy.cookieTypeTechnical') }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
       <!-- Gestión de cookies -->
       <div>
         <h3

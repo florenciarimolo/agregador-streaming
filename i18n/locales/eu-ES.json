@@ -143,8 +143,7 @@
     "description": "UpNext-ek zure unea, energia eta denbora kontuan hartuta filmak eta telesailak gomendatzen dizkizu.",
     "tagline": "Gutxiago erabakitzea, gehiago ikustea.",
     "discoverButton": "Zer ikusi aurkitu",
-    "recommendationsButton": "Gomendioak ikusi",
-    "howItWorksButton": "UpNext esploratu"
+    "howItWorksButton": "Gehiago jakin"
   },
   "home": {
     "generatingRecommendations": "Generando recomendaciones",
@@ -724,11 +723,14 @@
     "emptyList": "Zerrenda honek ez du titulurik",
     "viewList": "Ikusi zerrenda {title}",
     "useAsSeed": "Erabili zerrenda hau hazitzat",
+    "seedDescription": "Gehitu zerrenda honetako titulu guztiak zure gomendio poolera zure gomendioak pertsonalizatzeko",
     "seedSuccess": "{count} titulu gehitu dira zure gomendioetara",
     "seedError": "Errorea zerrenda zure gomendioetara gehitzean",
     "registerCta": "Erregistratu zure gomendioak pertsonalizatzeko eta zerrenda hau hazitzat erabiltzeko",
     "registerButton": "Erregistratu",
-    "listNotFound": "Zerrenda ez da aurkitu"
+    "listNotFound": "Zerrenda ez da aurkitu",
+    "items": "titulu",
+    "andMore": "eta {count} gehiago"
   },
   "cookies": {
     "message": "Utilizamos cookies para mejorar tu experiencia. Al continuar navegando, aceptas nuestro uso de cookies. ",
@@ -757,10 +759,37 @@
     "cookiesPreferencesDescription": "Estas cookies permiten que el sitio web recuerde información que cambia la forma en que se comporta o se ve el sitio, como tu idioma preferido o la región en la que te encuentras.",
     "cookiesPreferencesItem1": "Preferencias de idioma y región",
     "cookiesPreferencesItem2": "Configuración de tema (modo claro/oscuro)",
-    "cookiesManagementTitle": "Gestión de cookies",
-    "cookiesManagementDescription": "Puedes gestionar tus preferencias de cookies en cualquier momento a través del banner de cookies que aparece cuando visitas nuestro sitio por primera vez. Puedes aceptar o rechazar las cookies de preferencias, pero ten en cuenta que las cookies técnicas siempre estarán activas.",
-    "cookiesManagementNote": "Si rechazas las cookies de preferencias, algunas funcionalidades del sitio pueden no estar disponibles o no funcionar correctamente.",
-    "contactTitle": "Contacto",
-    "contactDescription": "Si tienes preguntas sobre esta política de privacidad, puedes contactarnos en:"
+    "cookiesListTitle": "Lista detallada de cookies",
+    "cookiesListDescription": "A continuación se detalla una lista completa de todas las cookies, datos de localStorage y sessionStorage que utilizamos en nuestro sitio web:",
+    "cookiesHttpTitle": "Cookies HTTP",
+    "cookiesLocalStorageTitle": "Datos de localStorage",
+    "cookiesSessionStorageTitle": "Datos de sessionStorage",
+    "cookiesTableName": "Izena",
+    "cookiesTablePurpose": "Helburua",
+    "cookiesTableDuration": "Iraupena",
+    "cookiesTableType": "Mota",
+    "cookieTypeTechnical": "Teknikoa (beharrezkoa)",
+    "cookieTypePreference": "Lehentasuna",
+    "cookieI18nPurpose": "Zure hizkuntza lehentasuna gordetzen du etorkizuneko bisitetan hautatutako hizkuntza gogoratzeko.",
+    "cookieI18nDuration": "1 urte",
+    "cookieSupabasePurpose": "Erabiltzailearen autentikazio saioa kudeatzen du eta gunearen eremu babestuetarako sarbide segurua ahalbidetzen du.",
+    "cookieSupabaseDuration": "Saioa",
+    "cookieConsentPurpose": "Zure cookie baimen lehentasuna gordetzen du (onartua edo ezeztatua).",
+    "cookieConsentDuration": "Iraunkorra",
+    "cookieThemePurpose": "Zure gai bisual lehentasuna gordetzen du (modu argia edo iluna).",
+    "cookieThemeDuration": "Iraunkorra",
+    "cookieThemeManualPurpose": "Eskuz ezarri duzun gai lehentasuna adierazten du, sistema detekzio automatikoa erabili beharrean.",
+    "cookieThemeManualDuration": "Iraunkorra",
+    "cookieAuthRecoveryPurpose": "Pasahitz berreskuratze prozesuan erabiltzen den marka aldi baterakoa, autentikazio egoera okerrak saihesteko.",
+    "cookieAuthRecoveryDuration": "Aldi baterakoa (prozesuaren ondoren ezabatzen da)",
+    "cookiePreviousRoutePurpose": "Aurreko ibilbidea gordetzen du xehetasun orrietatik atzera nabigatzeko aukera emateko.",
+    "cookiePreviousRouteDuration": "Saioa",
+    "cookieGeneratingRecommendationsPurpose": "Gomendioak sortzen ari direnean adierazten du eskaera bikoiztuak saihesteko.",
+    "cookieGeneratingRecommendationsDuration": "Saioa",
+    "cookiesManagementTitle": "Cookie kudeaketa",
+    "cookiesManagementDescription": "Zure cookie lehentasunak edozein unetan kudeatu ditzakezu gure gunea lehen aldiz bisitatzen duzunean agertzen den cookie banner baten bidez. Lehentasun cookieak onartu edo ezeztatu ditzakezu, baina kontuan hartu cookie teknikoak beti aktibo egongo direla.",
+    "cookiesManagementNote": "Lehentasun cookieak ezeztatzen badituzu, gunearen zenbait funtzionalitate ez dago erabilgarri edo ez du behar bezala funtzionatuko.",
+    "contactTitle": "Kontaktua",
+    "contactDescription": "Pribatutasun politika honi buruzko galderak badituzu, honako helbidean jar zaitezke gurekin harremanetan:"
   }
 }

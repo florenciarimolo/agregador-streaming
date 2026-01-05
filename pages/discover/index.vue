@@ -10,7 +10,7 @@
 
         <div
           v-else-if="lists && lists.length > 0"
-          class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3"
+          class="grid grid-cols-1 gap-4 md:grid-cols-2"
         >
           <DiscoverListCard
             v-for="list in lists"
@@ -30,8 +30,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useRoute } from 'vue-router';
 import AppShell from '@/components/layout/AppShell.vue';
 import PageContainer from '@/components/layout/PageContainer.vue';
 import Section from '@/components/layout/Section.vue';
@@ -41,7 +42,13 @@ import Spinner from '@/components/Spinner.vue';
 import EmptyState from '@/components/EmptyState.vue';
 import type { DiscoverList } from '@/composables/database/discoverLists';
 
+interface ExtendedDiscoverList extends DiscoverList {
+  itemCount?: number;
+  previewPosters?: (string | null)[];
+}
+
 const { t, locale } = useI18n();
+const route = useRoute();
 
 // SEO: Discover index page - public, indexable
 const config = useRuntimeConfig();
@@ -78,24 +85,55 @@ useSeoMeta({
   robots: 'index, follow',
 });
 
-const lists = ref<DiscoverList[] | null>(null);
+const lists = ref<ExtendedDiscoverList[] | null>(null);
 const isLoading = ref(true);
 
-onMounted(async () => {
+// Function to load lists
+const loadLists = async () => {
+  isLoading.value = true;
   try {
+    // Pass current locale as query parameter to ensure correct language
     const response = await $fetch<{
       success: boolean;
-      lists: DiscoverList[];
-    }>('/api/discover/lists');
+      lists: ExtendedDiscoverList[];
+    }>(`/api/discover/lists?language=${encodeURIComponent(locale.value)}`);
 
     if (response.success) {
       lists.value = response.lists;
+      // Debug: log first list to verify data structure
+      if (response.lists && response.lists.length > 0) {
+        console.log('[Discover] First list data:', {
+          title: response.lists[0].title,
+          itemCount: response.lists[0].itemCount,
+          previewPosters: response.lists[0].previewPosters,
+        });
+      }
     }
   } catch (error) {
     console.error('[Discover] Error fetching lists:', error);
   } finally {
     isLoading.value = false;
   }
+};
+
+// Load lists on mount
+onMounted(() => {
+  loadLists();
 });
+
+// Reload lists when language changes
+watch(locale, () => {
+  loadLists();
+});
+
+// Reload lists when route changes (e.g., when navigating back from a list)
+watch(
+  () => route.path,
+  (newPath) => {
+    if (newPath === '/discover') {
+      loadLists();
+    }
+  }
+);
 </script>
 

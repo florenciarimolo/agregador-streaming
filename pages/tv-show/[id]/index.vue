@@ -112,7 +112,7 @@ import { useRoute } from 'vue-router';
 import { useFetch, useSeoMeta, useHead } from 'nuxt/app';
 import { computed, onMounted, watch, ref } from 'vue';
 
-import { TVShow } from '@/types/TVShow';
+import type { TVShow } from '@/types/TVShow';
 import { formatDateToSpanish } from '@/utils/formatDate';
 import { WatchProviderTypes } from '@/types/WatchProvider';
 import MediaBannerDetail from '@/components/MediaBannerDetail.vue';
@@ -233,13 +233,13 @@ const seoExperience = computed(() => t(seoExperienceKey.value));
 // Meta tags dinámicos
 const pageTitle = computed(() => {
   const name = tvShow.value?.name || t('media.series');
-  return `${name} – ${t('seo.TVShowPrefix')} ${seoExperience.value}`;
+  return `${name} – ${t('seo.tvShowPrefix')} ${seoExperience.value}`;
 });
 
 const pageDescription = computed(() => {
   const title = tvShow.value?.name || t('media.series');
   const experience = seoExperience.value;
-  return t('seo.TVShowDescription', { title, experience });
+  return t('seo.tvShowDescription', { title, experience });
 });
 
 const ogImage = computed(() => {

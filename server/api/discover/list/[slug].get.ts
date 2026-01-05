@@ -5,7 +5,7 @@
  * Only uses discover_lists, discover_list_items, and titles (join)
  */
 
-import { getRouterParams } from 'h3';
+import { getRouterParams, getQuery } from 'h3';
 import { parseCookies } from 'h3';
 import {
   getDiscoverListBySlug,
@@ -30,17 +30,25 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    // Get language from cookies (i18n_redirected cookie from Nuxt i18n)
+    // Get language from query parameter first, then fall back to cookies
+    const query = getQuery(event);
     let language = DEFAULT_LANGUAGE;
-    try {
-      const cookies = parseCookies(event);
-      const i18nCookie = cookies['i18n_redirected'];
-      if (i18nCookie) {
-        language = toTMDBLanguageCode(i18nCookie);
+    
+    // Try query parameter first (more reliable for immediate updates)
+    if (query.language && typeof query.language === 'string') {
+      language = toTMDBLanguageCode(query.language);
+    } else {
+      // Fall back to cookies (i18n_redirected cookie from Nuxt i18n)
+      try {
+        const cookies = parseCookies(event);
+        const i18nCookie = cookies['i18n_redirected'];
+        if (i18nCookie) {
+          language = toTMDBLanguageCode(i18nCookie);
+        }
+      } catch {
+        // If error reading cookies, use default
+        language = DEFAULT_LANGUAGE;
       }
-    } catch {
-      // If error reading cookies, use default
-      language = DEFAULT_LANGUAGE;
     }
 
     // Get list by slug

@@ -295,13 +295,14 @@ const handleSearch = () => {
         }
       );
 
-      // Filter out person results and limit to 8 results
+      // Filter out person results, sort by popularity (descending), and limit to 8 results
       searchResults.value = response.data.results
         .filter(
           (result: TMDBSearchResult) =>
             result.media_type === MEDIA_TYPE.MOVIE ||
             result.media_type === MEDIA_TYPE.TV
         )
+        .sort((a, b) => (b.popularity || 0) - (a.popularity || 0))
         .slice(0, 8);
     } catch (error) {
       console.error('Search error:', error);

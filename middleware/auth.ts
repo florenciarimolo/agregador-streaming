@@ -1,9 +1,8 @@
 /**
  * Auth middleware
- * Deterministic: only reads already-resolved state (useSupabaseUser + store)
- * No Supabase calls, no waits, no retries, no safety checks
+ * Handles authentication and onboarding checks for protected routes
  */
-export default defineNuxtRouteMiddleware((to) => {
+export default defineNuxtRouteMiddleware(async (to) => {
   const user = useSupabaseUser();
   const userStore = useUserStore();
 
@@ -33,36 +32,38 @@ export default defineNuxtRouteMiddleware((to) => {
     return navigateTo('/');
   }
 
-  // Onboarding redirects (only if profile is already loaded)
-  // If profile is not loaded yet, don't redirect (let the page load first)
+  // If user exists but profile is not loaded, wait for it to load
+  if (!userStore.profile) {
+    console.log('[AUTH TRACE] middleware waiting for profile to load...', to.path);
+    await userStore.ensureProfile();
+    console.log('[AUTH TRACE] middleware profile loaded', {
+      hasProfile: userStore.profile !== null,
+      onboardingCompleted: userStore.profile?.onboarding_completed,
+    });
+  }
+
+  // Now we can safely check onboarding status
   const profile = userStore.profile;
   const hasCompletedOnboarding = profile
     ? (profile.onboarding_completed ?? false)
-    : undefined;
+    : false;
 
-  // Only redirect if we have profile data
-  if (profile !== null && hasCompletedOnboarding !== undefined) {
-    if (
-      !hasCompletedOnboarding &&
-      to.path !== '/onboarding' &&
-      to.path !== '/auth/callback'
-    ) {
-      console.log(
-        '[AUTH TRACE] middleware redirecting to /onboarding (onboarding not completed)',
-        to.path
-      );
-      return navigateTo('/onboarding', { replace: true });
-    }
-
-    if (hasCompletedOnboarding && to.path === '/onboarding') {
-      console.log(
-        '[AUTH TRACE] middleware redirecting to / (onboarding completed but on /onboarding)',
-        to.path
-      );
-      return navigateTo('/', { replace: true });
-    }
+  // Handle onboarding redirects
+  if (!hasCompletedOnboarding && to.path !== '/onboarding' && to.path !== '/auth/callback') {
+    console.log(
+      '[AUTH TRACE] middleware redirecting to /onboarding (onboarding not completed)',
+      to.path
+    );
+    return navigateTo('/onboarding', { replace: true });
   }
-  // If profile is not loaded yet, allow navigation to proceed
-  // The plugin will load the profile in the background
+
+  if (hasCompletedOnboarding && to.path === '/onboarding') {
+    console.log(
+      '[AUTH TRACE] middleware redirecting to / (onboarding completed but on /onboarding)',
+      to.path
+    );
+    return navigateTo('/', { replace: true });
+  }
+
   console.log('[AUTH TRACE] middleware allowing navigation', to.path);
 });

@@ -1,5 +1,14 @@
 <template>
   <div class="space-y-6">
+    <!-- Back Link -->
+    <button
+      class="inline-flex gap-2 items-center mb-4 text-sm font-medium text-gray-700 transition-colors dark:text-gray-300 hover:dark:text-white hover:text-gray-900"
+      @click="handleBack"
+    >
+      <IconArrowLeft icon-class="w-4 h-4" />
+      {{ $t('media.back') }}
+    </button>
+
     <!-- Header -->
     <div>
       <h1 class="text-3xl font-bold text-gray-800 dark:text-gray-300 mb-2">
@@ -130,6 +139,7 @@
 import { computed, ref } from 'vue';
 import { useSupabaseUser } from '#imports';
 import { useI18n } from 'vue-i18n';
+import { useRouter } from 'vue-router';
 import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 import { TITLE_STATUS } from '@/constants/domain/titleStatus';
 import type { DiscoverList, DiscoverListItem } from '@/composables/database/discoverLists';
@@ -143,12 +153,14 @@ import IconCheck from './icons/IconCheck.vue';
 import IconHeart from './icons/IconHeart.vue';
 import IconClock from './icons/IconClock.vue';
 import IconX from './icons/IconX.vue';
+import IconArrowLeft from './icons/IconArrowLeft.vue';
 import EmptyState from './EmptyState.vue';
 import { getSession } from '@/services/auth';
 import { getUserLikedTitle } from '@/services/userTitleStatus';
 import { useUndoToast } from '@/composables/useUndoToast';
 
 const { t } = useI18n();
+const router = useRouter();
 
 interface Props {
   list: DiscoverList;
@@ -162,6 +174,11 @@ const user = useSupabaseUser();
 const isLoggedIn = computed(() => !!user.value);
 const { showToast } = useUndoToast();
 const loadingTitles = ref<Set<number>>(new Set());
+
+// Handle back navigation
+const handleBack = () => {
+  router.push('/discover');
+};
 
 async function handleAction(
   item: DiscoverListItem,
@@ -269,7 +286,7 @@ async function handleAction(
     }
   } catch (error) {
     console.error('[DiscoverListDetail] Error handling action:', error);
-    showToast(t('common.error'), { type: 'error' });
+    showToast(t('common.error'), null, 5000);
   } finally {
     loadingTitles.value.delete(item.tmdb_id);
   }

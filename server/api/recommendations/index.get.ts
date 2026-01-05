@@ -24,6 +24,7 @@ import { SCORE_WEIGHTS } from '@/constants/domain/scoring';
 import type { MultiLanguageText } from '@/services/titles';
 import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 import { TmdbGenreId } from '@/types/enums/TmdbGenreId';
+import { QUERY_PARAMS } from '@/constants/api/queryParams';
 import {
   BOOST_WEIGHTS,
   PROTECTION_FACTOR,
@@ -216,12 +217,12 @@ function calculateBoostFactors(
       moodFactor += MOOD_BOOSTS.EMOCIONAL.DRAMA_ROMANCE;
     }
     // Human stories boost
-    if (genreIds.includes(GENRE_IDS.DRAMA)) {
+    if (genreIds.includes(TmdbGenreId.DRAMA)) {
       moodFactor += MOOD_BOOSTS.EMOCIONAL.HUMAN_STORIES;
     }
     // Empty action penalty (attenuated)
     if (
-      genreIds.includes(GENRE_IDS.ACTION) &&
+      genreIds.includes(TmdbGenreId.ACTION) &&
       (!voteAverage || voteAverage < RATING_THRESHOLDS.EMPTY_ACTION)
     ) {
       moodFactor +=
@@ -230,8 +231,8 @@ function calculateBoostFactors(
   } else if (mood === MOOD.REFLEXIVO) {
     // Sci-Fi, mystery boost
     if (
-      genreIds.includes(GENRE_IDS.SCI_FI) ||
-      genreIds.includes(GENRE_IDS.MYSTERY)
+      genreIds.includes(TmdbGenreId.SCI_FI) ||
+      genreIds.includes(TmdbGenreId.MYSTERY)
     ) {
       moodFactor += MOOD_BOOSTS.REFLEXIVO.SCI_FI_MYSTERY;
     }
@@ -241,7 +242,7 @@ function calculateBoostFactors(
     }
     // Simple comedy penalty (attenuated)
     if (
-      genreIds.includes(GENRE_IDS.COMEDY) &&
+      genreIds.includes(TmdbGenreId.COMEDY) &&
       (!voteAverage || voteAverage < RATING_THRESHOLDS.SIMPLE_COMEDY)
     ) {
       moodFactor +=

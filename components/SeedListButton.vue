@@ -1,15 +1,20 @@
 <template>
-  <Button
-    :variant="'primary'"
-    :loading="isLoading"
-    :disabled="isLoading"
-    @click="handleSeed"
-  >
-    <template #icon>
-      <IconSeed v-if="!isLoading" icon-class="w-4 h-4" />
-    </template>
-    {{ $t('discover.useAsSeed') }}
-  </Button>
+  <div class="flex items-center gap-4">
+    <p class="text-sm text-gray-600 dark:text-gray-400 flex-1">
+      {{ $t('discover.seedDescription') }}
+    </p>
+    <Button
+      :variant="'primary'"
+      :loading="isLoading"
+      :disabled="isLoading"
+      @click="handleSeed"
+    >
+      <template #icon>
+        <IconSeed v-if="!isLoading" icon-class="w-4 h-4" />
+      </template>
+      {{ $t('discover.useAsSeed') }}
+    </Button>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -41,22 +46,26 @@ async function handleSeed() {
       message: string;
     }>(`/api/discover/list/${props.listSlug}/seed`, {
       method: 'POST',
+      // Silently handle errors - we'll show a generic message in the catch block
+      onResponseError: () => {
+        // Error will be caught by catch block below
+      },
     });
 
     if (response.success) {
-      showToast({
-        message: t('discover.seedSuccess', { count: response.inserted }),
-        type: 'success',
-      });
+      showToast(
+        t('discover.seedSuccess', { count: response.inserted }),
+        null,
+        5000
+      );
     } else {
       throw new Error('Failed to seed list');
     }
   } catch (error) {
-    console.error('[SeedListButton] Error:', error);
-    showToast({
-      message: t('discover.seedError'),
-      type: 'error',
-    });
+    // Always show generic error message to user, regardless of error type
+    // Log full error details to console for debugging
+    console.error('[SeedListButton] Error seeding list:', error);
+    showToast(t('discover.seedError'), null, 5000);
   } finally {
     isLoading.value = false;
   }

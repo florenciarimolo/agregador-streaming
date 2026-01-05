@@ -200,19 +200,6 @@ const handleSignupSuccess = () => {
   // Signup success is handled in AuthForm component
 };
 
-const handleGetStarted = async () => {
-  if (user.value) {
-    await userStore.ensureProfile();
-    if (userStore.hasCompletedOnboarding) {
-      await navigateTo('/');
-    } else {
-      await navigateTo('/onboarding');
-    }
-  } else {
-    showAuthForm.value = true;
-  }
-};
-
 const showAuthForm = ref(false);
 
 // Check if auth query param is present to show auth form
@@ -251,7 +238,6 @@ onMounted(() => {
           :button-text="$t('hero.discoverButton')"
           :show-auth-form="showAuthForm"
           :is-authenticated="false"
-          @get-started="handleGetStarted"
           @auth-success="handleAuthSuccess"
           @signup-success="handleSignupSuccess"
         />
@@ -276,7 +262,7 @@ onMounted(() => {
             </div>
 
             <!-- Filters Section -->
-            <Section v-else-if="!preferencesPending">
+            <Section v-if="!preferencesPending">
               <div class="flex flex-col gap-4">
                 <MoodSelector />
 
@@ -324,15 +310,29 @@ onMounted(() => {
 
             <!-- Skeleton loading -->
             <Section v-if="showSkeleton && loading && !hasAttemptedLoad">
-              <div
-                class="grid grid-cols-2 gap-4 md:grid-cols-5 lg:grid-cols-6 overflow-visible"
-              >
-                <SkeletonMediaCard
-                  v-for="i in 8"
-                  :key="`skeleton-${i}`"
-                  :show-rating="i % 3 !== 0"
-                  :show-watchlist="i % 4 === 0"
-                />
+              <div class="space-y-4 md:space-y-8">
+                <!-- First row: full row -->
+                <div
+                  class="grid grid-cols-2 gap-4 md:grid-cols-5 lg:grid-cols-6 overflow-visible"
+                >
+                  <SkeletonMediaCard
+                    v-for="i in 6"
+                    :key="`skeleton-${i}`"
+                    :show-rating="i % 3 !== 0"
+                    :show-watchlist="i % 4 === 0"
+                  />
+                </div>
+                <!-- Second row: only 2 cards -->
+                <div
+                  class="grid grid-cols-2 gap-4 md:grid-cols-5 lg:grid-cols-6 overflow-visible"
+                >
+                  <SkeletonMediaCard
+                    v-for="i in 2"
+                    :key="`skeleton-${i + 6}`"
+                    :show-rating="(i + 6) % 3 !== 0"
+                    :show-watchlist="(i + 6) % 4 === 0"
+                  />
+                </div>
               </div>
             </Section>
 

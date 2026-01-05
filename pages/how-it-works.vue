@@ -252,25 +252,52 @@
 
           <!-- CTA -->
           <div class="mt-6 text-center">
-            <nuxt-link
-              to="/"
+            <button
+              type="button"
               class="inline-block px-6 py-3 font-medium text-white rounded-lg transition-all duration-300 bg-primary-800 dark:bg-primary hover:bg-primary-900 dark:hover:bg-primary-600"
+              @click="showAuthForm = true"
             >
               {{ $t('howItWorks.ctaButton') }}
-            </nuxt-link>
+            </button>
           </div>
         </div>
       </div>
     </PageContainer>
   </AppShell>
+
+  <!-- Auth Form Modal -->
+  <Modal :is-open="showAuthForm" @close="showAuthForm = false" custom-class="max-w-md p-0">
+    <AuthForm
+      in-modal
+      @success="handleAuthSuccess"
+      @signup="handleSignupSuccess"
+    />
+  </Modal>
 </template>
 
 <script setup lang="ts">
-import { watchEffect } from 'vue';
+import { watchEffect, ref } from 'vue';
 import AppShell from '@/components/layout/AppShell.vue';
 import PageContainer from '@/components/layout/PageContainer.vue';
+import Modal from '@/components/ui/Modal.vue';
+import AuthForm from '@/components/AuthForm.vue';
 
 const { t } = useI18n();
+const router = useRouter();
+
+// Auth form modal state
+const showAuthForm = ref(false);
+
+// Handle auth success
+const handleAuthSuccess = () => {
+  showAuthForm.value = false;
+  router.push('/');
+};
+
+// Handle signup success
+const handleSignupSuccess = () => {
+  showAuthForm.value = false;
+};
 
 // Use watchEffect to ensure i18n messages are loaded before setting SEO meta
 watchEffect(() => {

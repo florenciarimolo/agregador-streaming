@@ -23,6 +23,7 @@
           'block overflow-hidden relative w-full h-full focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 group',
           showContent ? 'rounded-t-3xl' : 'rounded-3xl',
         ]"
+        @click="handleLinkClick"
       >
         <!-- Image or Placeholder -->
         <div
@@ -90,8 +91,10 @@
       </div>
 
       <!-- Top-right actions slot - Outside the link to prevent navigation -->
-      <div class="overflow-visible absolute top-2 right-2 z-30">
-        <slot name="top-right-actions">
+      <!-- Use pointer-events-none on container, pointer-events-auto on menu itself -->
+      <div class="overflow-visible absolute top-2 right-2 z-30 pointer-events-none">
+        <div class="pointer-events-auto">
+          <slot name="top-right-actions">
           <!-- Default recommendation action menu if recommendation prop is provided -->
           <template v-if="recommendation && showRecommendationActions">
             <div class="overflow-visible">
@@ -193,6 +196,7 @@
             </div>
           </template>
         </slot>
+        </div>
       </div>
     </div>
 
@@ -384,6 +388,36 @@ const handleAction = (action: TitleStatusType | 'liked' | 'remove-liked') => {
     emit('mark-watchlist', props.recommendation);
   }
 };
+
+// Handle link click explicitly to ensure navigation works
+// This ensures navigation works even if other elements are blocking the default nuxt-link behavior
+function handleLinkClick(event: MouseEvent) {
+  // Don't navigate if clicking on the action menu or its trigger
+  const target = event.target as HTMLElement;
+  const actionMenuElement = target.closest('[data-action-menu]') || target.closest('.menu-button');
+  if (actionMenuElement) {
+    event.preventDefault();
+    event.stopPropagation();
+    return;
+  }
+  
+  // If linkTo is '#', prevent navigation
+  if (computedLinkTo.value === '#') {
+    event.preventDefault();
+    return;
+  }
+  
+  // If the event was already prevented (by ActionMenu or other handler),
+  // manually navigate using navigateTo
+  if (event.defaultPrevented) {
+    event.stopPropagation();
+    const linkPath = computedLinkTo.value;
+    if (linkPath && linkPath !== '#') {
+      navigateTo(linkPath);
+    }
+  }
+  // Otherwise, let nuxt-link handle it normally
+}
 </script>
 
 <style scoped>

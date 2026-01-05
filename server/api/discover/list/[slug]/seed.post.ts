@@ -5,16 +5,14 @@
  */
 
 import { getRouterParams } from 'h3';
-import { serverSupabaseUser } from '#supabase/server';
+import { serverSupabaseUser, serverSupabaseClient } from '#supabase/server';
 import {
   getDiscoverListBySlug,
   insertDiscoverListIntoPool,
 } from '@/composables/database/discoverLists';
-import { createServerSupabaseClient } from '@/server/utils/supabase';
 
 export default defineEventHandler(async (event) => {
   try {
-    const config = useRuntimeConfig();
     const user = await serverSupabaseUser(event);
 
     if (!user) {
@@ -41,13 +39,16 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    // Create Supabase client for server-side operations
-    const supabase = createServerSupabaseClient(config);
+    // Create Supabase client that respects user authentication from cookies
+    // This works in local development without service role key
+    // In production, service role key can still be used via env var
+    const supabase = await serverSupabaseClient(event);
 
     // Validate that list exists and is public
     const { data: list, error: listError } = await getDiscoverListBySlug(
       slug,
-      'es-ES' // Language doesn't matter for validation
+      'es-ES', // Language doesn't matter for validation
+      supabase // Pass supabase client for server-side use
     );
 
     if (listError) {
@@ -83,10 +84,28 @@ export default defineEventHandler(async (event) => {
     );
 
     if (insertError) {
+      console.error(
+        '[Discover List Seed] Error inserting into pool:',
+        insertError
+      );
+      // Include error details in the response for debugging
+      const errorMessage =
+        insertError instanceof Error
+          ? insertError.message
+          : String(insertError);
+      const errorCode =
+        insertError && typeof insertError === 'object' && 'code' in insertError
+          ? (insertError as { code?: string }).code
+          : undefined;
+
       throw createError({
         statusCode: 500,
         statusMessage: 'Error inserting list into recommendation pool',
-        data: insertError,
+        message: errorMessage,
+        data: {
+          error: insertError,
+          code: errorCode,
+        },
       });
     }
 
@@ -99,10 +118,18 @@ export default defineEventHandler(async (event) => {
     if (error && typeof error === 'object' && 'statusCode' in error) {
       throw error;
     }
+    console.error('[Discover List Seed] Unexpected error:', error);
+    const errorMessage =
+      error instanceof Error ? error.message : String(error);
+    const errorStack = error instanceof Error ? error.stack : undefined;
     throw createError({
       statusCode: 500,
       statusMessage: 'Error seeding discover list',
-      data: error,
+      message: errorMessage,
+      data: {
+        error,
+        stack: errorStack,
+      },
     });
   }
 });

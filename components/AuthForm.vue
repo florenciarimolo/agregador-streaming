@@ -27,6 +27,15 @@ function getUserId(
   return user?.id || user?.sub;
 }
 
+const props = withDefaults(
+  defineProps<{
+    inModal?: boolean;
+  }>(),
+  {
+    inModal: false,
+  }
+);
+
 const emit = defineEmits<{
   success: [];
   signup: [];
@@ -170,6 +179,9 @@ const handlePasswordAuth = async () => {
         // Wait a bit to ensure all state updates are processed
         await new Promise((resolve) => setTimeout(resolve, 100));
 
+        // Emit success event to close modal
+        emit('success');
+
         // Navigate based on onboarding status
         // This ensures the middleware sees the correct state
         const hasCompletedOnboarding = userStore.hasCompletedOnboarding;
@@ -301,10 +313,19 @@ const backToLogin = () => {
 </script>
 
 <template>
-  <section id="auth-form" class="py-16 md:pb-0 md:px-4">
-    <div class="container mx-auto max-w-md">
+  <section
+    id="auth-form"
+    :class="[
+      inModal ? '' : 'py-16 md:pb-0 md:px-4',
+    ]"
+  >
+    <div :class="[inModal ? 'w-full' : 'container mx-auto max-w-md']">
       <div
-        class="p-6 rounded-3xl border shadow-lg backdrop-blur-xl bg-white/60 dark:bg-gray-900/40 md:p-8 border-gray-300/50 dark:border-white/10"
+        :class="[
+          inModal
+            ? 'p-6'
+            : 'p-6 rounded-3xl border shadow-lg backdrop-blur-xl bg-white/60 dark:bg-gray-900/40 md:p-8 border-gray-300/50 dark:border-white/10',
+        ]"
       >
         <div class="mb-6 text-center">
           <h2

@@ -8,6 +8,7 @@ export interface TMDBSearchResult {
   release_date?: string; // películas
   first_air_date?: string; // series
   vote_average: number;
+  popularity?: number;
   media_type?: 'movie' | 'tv';
 }
 
@@ -17,4 +18,3 @@ export interface TMDBSearchResponse {
   total_pages: number;
   total_results: number;
 }
-

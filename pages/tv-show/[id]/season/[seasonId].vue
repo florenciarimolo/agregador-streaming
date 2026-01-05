@@ -119,7 +119,7 @@ import { useRoute } from 'vue-router';
 import { useFetch } from 'nuxt/app';
 import { computed, watch, onMounted, ref } from 'vue';
 
-import { Season, TVShow } from '@/types/TVShow';
+import type { Season, TVShow } from '@/types/TVShow';
 import { WatchProviderTypes } from '@/types/WatchProvider';
 import SeasonBannerDetail from '@/components/SeasonBannerDetail.vue';
 import AppShell from '@/components/layout/AppShell.vue';

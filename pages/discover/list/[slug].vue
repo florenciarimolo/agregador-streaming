@@ -22,7 +22,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
 import AppShell from '@/components/layout/AppShell.vue';
@@ -92,7 +92,8 @@ useSeoMeta({
   robots: 'index, follow',
 });
 
-onMounted(async () => {
+// Function to load list and items
+const loadList = async () => {
   const slug = route.params.slug as string;
 
   if (!slug) {
@@ -100,12 +101,14 @@ onMounted(async () => {
     return;
   }
 
+  isLoading.value = true;
   try {
+    // Pass current locale as query parameter to ensure correct language
     const response = await $fetch<{
       success: boolean;
       list: DiscoverList;
       items: DiscoverListItem[];
-    }>(`/api/discover/list/${slug}`);
+    }>(`/api/discover/list/${slug}?language=${encodeURIComponent(locale.value)}`);
 
     if (response.success) {
       list.value = response.list;
@@ -116,6 +119,16 @@ onMounted(async () => {
   } finally {
     isLoading.value = false;
   }
+};
+
+// Load list on mount
+onMounted(() => {
+  loadList();
+});
+
+// Reload list when language changes
+watch(locale, () => {
+  loadList();
 });
 </script>
 
