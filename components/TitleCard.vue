@@ -90,41 +90,6 @@
         <Badge v-if="showType" :type="computedType" />
       </div>
 
-      <!-- Informative icons overlay (only show if user has session and status is provided) -->
-      <div
-        v-if="hasSession && (isLiked || (isSeen && !isLiked) || isNotInterested || isInWatchlist)"
-        class="flex absolute top-2 right-2 gap-2 z-20"
-      >
-        <Tooltip v-if="isLiked" :text="$t('media.liked')">
-          <div
-            class="flex justify-center items-center w-8 h-8 rounded-full backdrop-blur-sm bg-primary-600/90"
-          >
-            <IconHeartFilled icon-class="w-5 h-5 text-white" />
-          </div>
-        </Tooltip>
-        <Tooltip v-else-if="isSeen" :text="$t('media.seen')">
-          <div
-            class="flex justify-center items-center w-8 h-8 rounded-full backdrop-blur-sm bg-primary-600/90"
-          >
-            <IconCheck icon-class="w-5 h-5 text-white" />
-          </div>
-        </Tooltip>
-        <Tooltip v-if="isNotInterested" :text="$t('media.notInterested')">
-          <div
-            class="flex justify-center items-center w-8 h-8 rounded-full backdrop-blur-sm bg-primary-600/90"
-          >
-            <IconX icon-class="w-5 h-5 text-white" />
-          </div>
-        </Tooltip>
-        <Tooltip v-if="isInWatchlist" :text="$t('media.watchLater')">
-          <div
-            class="flex justify-center items-center w-8 h-8 rounded-full backdrop-blur-sm bg-primary-600/90"
-          >
-            <IconClock icon-class="w-5 h-5 text-white" />
-          </div>
-        </Tooltip>
-      </div>
-
       <!-- Top-right actions slot - Outside the link to prevent navigation -->
       <!-- Use pointer-events-none on container, pointer-events-auto on menu itself -->
       <div class="overflow-visible absolute top-2 right-2 z-30 pointer-events-none">
@@ -232,6 +197,42 @@
           </template>
         </slot>
         </div>
+      </div>
+
+      <!-- Informative icons overlay (only show if user has session and status is provided) -->
+      <!-- Positioned to the left of actions menu to avoid overlap -->
+      <div
+        v-if="hasSession && (isLiked || (isSeen && !isLiked) || isNotInterested || isInWatchlist)"
+        class="flex absolute top-2 right-12 gap-2 z-20"
+      >
+        <Tooltip v-if="isLiked" :text="$t('media.liked')">
+          <div
+            class="flex justify-center items-center w-8 h-8 rounded-full backdrop-blur-sm bg-primary-600/90"
+          >
+            <IconHeartFilled icon-class="w-5 h-5 text-white" />
+          </div>
+        </Tooltip>
+        <Tooltip v-else-if="isSeen && !isLiked" :text="$t('media.seen')">
+          <div
+            class="flex justify-center items-center w-8 h-8 rounded-full backdrop-blur-sm bg-primary-600/90"
+          >
+            <IconCheck icon-class="w-5 h-5 text-white" />
+          </div>
+        </Tooltip>
+        <Tooltip v-if="isNotInterested" :text="$t('media.notInterested')">
+          <div
+            class="flex justify-center items-center w-8 h-8 rounded-full backdrop-blur-sm bg-primary-600/90"
+          >
+            <IconX icon-class="w-5 h-5 text-white" />
+          </div>
+        </Tooltip>
+        <Tooltip v-if="isInWatchlist && !isLiked && !isSeen && !isNotInterested" :text="$t('media.watchLater')">
+          <div
+            class="flex justify-center items-center w-8 h-8 rounded-full backdrop-blur-sm bg-primary-600/90"
+          >
+            <IconClock icon-class="w-5 h-5 text-white" />
+          </div>
+        </Tooltip>
       </div>
     </div>
 

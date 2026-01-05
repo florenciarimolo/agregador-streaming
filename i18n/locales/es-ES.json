@@ -191,6 +191,7 @@
     "titleRemovedFromSeen": "\"{title}\" eliminado de vistos",
     "titleSavedWatchlist": "\"{title}\" guardado en la Watchlist",
     "titleRemovedFromWatchlist": "\"{title}\" eliminado de watchlist",
+    "titleRemovedFromNotInterested": "\"{title}\" eliminado de 'No me interesa'",
     "titleAddedFavorites": "\"{title}\" agregado a tus favoritos",
     "viewFavorites": "Ver favoritos",
     "viewSeen": "Ver vistos",

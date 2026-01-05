@@ -63,69 +63,11 @@
       >
         <!-- Actions for logged users only -->
         <template v-if="isLoggedIn" #top-right-actions>
-          <div class="overflow-visible">
-            <ActionMenu width="w-48" position="right">
-              <template #trigger>
-                <IconButton
-                  :icon="IconMoreVertical"
-                  :aria-label="$t('media.actionsMenuFor', { title: item.title })"
-                  size="small"
-                  variant="default"
-                  custom-class="menu-button p-2 rounded-full bg-black/50 hover:bg-gray-700/80 backdrop-blur-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-black/50 [&>svg]:text-white"
-                />
-              </template>
-              <div class="p-4">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="small"
-                  custom-class="justify-start mb-2 w-full text-left"
-                  @click.stop.prevent="handleAction(item, TITLE_STATUS.SEEN)"
-                >
-                  <template #icon>
-                    <IconCheck icon-class="w-4 h-4" />
-                  </template>
-                  {{ $t('media.seen') }}
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="small"
-                  custom-class="justify-start mb-2 w-full text-left"
-                  @click.stop.prevent="handleAction(item, 'liked')"
-                >
-                  <template #icon>
-                    <IconHeart icon-class="w-4 h-4" />
-                  </template>
-                  {{ $t('media.like') }}
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="small"
-                  custom-class="justify-start mb-2 w-full text-left"
-                  @click.stop.prevent="handleAction(item, TITLE_STATUS.WATCHLIST)"
-                >
-                  <template #icon>
-                    <IconClock icon-class="w-4 h-4" />
-                  </template>
-                  {{ $t('media.addToWatchlist') }}
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="small"
-                  custom-class="justify-start w-full text-left"
-                  @click.stop.prevent="handleAction(item, TITLE_STATUS.NOT_INTERESTED)"
-                >
-                  <template #icon>
-                    <IconX icon-class="w-4 h-4" />
-                  </template>
-                  {{ $t('media.notInterested') }}
-                </Button>
-              </div>
-            </ActionMenu>
-          </div>
+          <DiscoverListItemActions
+            :item="item"
+            :title-status="getItemStatus(item.tmdb_id)"
+            @action="handleAction"
+          />
         </template>
       </TitleCard>
     </div>
@@ -149,20 +91,14 @@ import { TITLE_STATUS } from '@/constants/domain/titleStatus';
 import type { DiscoverList, DiscoverListItem } from '@/composables/database/discoverLists';
 import TitleCard from './TitleCard.vue';
 import SeedListButton from './SeedListButton.vue';
+import DiscoverListItemActions from './DiscoverListItemActions.vue';
 import Button from './ui/Button.vue';
-import IconButton from './ui/IconButton.vue';
-import ActionMenu from './ui/ActionMenu.vue';
-import IconMoreVertical from './icons/IconMoreVertical.vue';
-import IconCheck from './icons/IconCheck.vue';
-import IconHeart from './icons/IconHeart.vue';
-import IconClock from './icons/IconClock.vue';
-import IconX from './icons/IconX.vue';
 import IconArrowLeft from './icons/IconArrowLeft.vue';
 import EmptyState from './EmptyState.vue';
 import { getSession } from '@/services/auth';
 import { getUserLikedTitle, getTitleStatus } from '@/services/userTitleStatus';
 import { useUndoToast } from '@/composables/useUndoToast';
-import { TITLE_STATUS } from '@/constants/domain/titleStatus';
+import { useTitleMenuActions } from '@/composables/useTitleMenuActions';
 
 const { t } = useI18n();
 const router = useRouter();
@@ -259,6 +195,26 @@ watch(isLoggedIn, async (newValue) => {
   }
 });
 
+// Get item status for menu actions
+function getItemStatus(tmdbId: number) {
+  const status = titleStatuses.value.get(tmdbId);
+  if (!status) {
+    return {
+      isLiked: false,
+      isSeen: false,
+      isNotInterested: false,
+      isInWatchlist: false,
+    };
+  }
+
+  return {
+    isLiked: status.liked || false,
+    isSeen: status.status === TITLE_STATUS.SEEN || false,
+    isNotInterested: status.status === TITLE_STATUS.NOT_INTERESTED || false,
+    isInWatchlist: status.status === TITLE_STATUS.WATCHLIST || false,
+  };
+}
+
 async function handleAction(
   item: DiscoverListItem,
   action: string
@@ -277,7 +233,36 @@ async function handleAction(
       return;
     }
 
-    if (action === 'liked') {
+    const itemStatus = getItemStatus(item.tmdb_id);
+
+    // Handle remove actions
+    if (action === 'remove-liked') {
+      // Remove liked (delete the title status)
+      await $fetch('/api/users/title-status', {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        query: {
+          tmdb_id: item.tmdb_id,
+        },
+      });
+
+      showToast(t('home.titleRemovedFavorites', { title: item.title }));
+    } else if (action === 'remove-watchlist') {
+      // Remove watchlist
+      await $fetch('/api/users/title-status', {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        query: {
+          tmdb_id: item.tmdb_id,
+        },
+      });
+
+      showToast(t('home.titleRemovedFromWatchlist', { title: item.title }));
+    } else if (action === 'liked') {
       // Check if title is already liked
       const userId = user.value?.id || (user.value as { sub?: string })?.sub;
       if (userId) {
@@ -322,22 +307,68 @@ async function handleAction(
           }, 5000);
         }
       }
-    } else {
-      // Handle other statuses (seen, watchlist, not_interested)
-      await $fetch('/api/users/title-status', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: {
-          tmdb_id: item.tmdb_id,
-          type: item.type,
-          status: action as any,
-          liked: false,
-        },
-      });
+    } else if (action === TITLE_STATUS.SEEN) {
+      // Check if already seen - if so, remove it (toggle behavior)
+      if (itemStatus.isSeen) {
+        // Remove seen status (DELETE)
+        await $fetch('/api/users/title-status', {
+          method: 'DELETE',
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          query: {
+            tmdb_id: item.tmdb_id,
+          },
+        });
 
-      if (action === TITLE_STATUS.NOT_INTERESTED) {
+        showToast(t('home.titleRemovedFromSeen', { title: item.title }));
+      } else {
+        // Mark as seen
+        await $fetch('/api/users/title-status', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: {
+            tmdb_id: item.tmdb_id,
+            type: item.type,
+            status: TITLE_STATUS.SEEN,
+            liked: false,
+          },
+        });
+
+        showToast(t('home.titleMarkedSeen', { title: item.title }));
+      }
+    } else if (action === TITLE_STATUS.NOT_INTERESTED) {
+      // Check if already not interested - if so, remove it (toggle behavior)
+      if (itemStatus.isNotInterested) {
+        // Remove not interested status (DELETE)
+        await $fetch('/api/users/title-status', {
+          method: 'DELETE',
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          query: {
+            tmdb_id: item.tmdb_id,
+          },
+        });
+
+        showToast(t('home.titleRemovedFromNotInterested', { title: item.title }));
+      } else {
+        // Mark as not interested
+        await $fetch('/api/users/title-status', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: {
+            tmdb_id: item.tmdb_id,
+            type: item.type,
+            status: TITLE_STATUS.NOT_INTERESTED,
+            liked: false,
+          },
+        });
+
         showToast(
           t('home.titleMarkedNotInterested', { title: item.title }),
           {
@@ -357,9 +388,37 @@ async function handleAction(
           },
           5000
         );
-      } else if (action === TITLE_STATUS.SEEN) {
-        showToast(t('home.titleMarkedSeen', { title: item.title }));
-      } else if (action === TITLE_STATUS.WATCHLIST) {
+      }
+    } else if (action === TITLE_STATUS.WATCHLIST) {
+      // Check if already in watchlist - if so, remove it (toggle behavior)
+      if (itemStatus.isInWatchlist) {
+        // Remove watchlist status (DELETE)
+        await $fetch('/api/users/title-status', {
+          method: 'DELETE',
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          query: {
+            tmdb_id: item.tmdb_id,
+          },
+        });
+
+        showToast(t('home.titleRemovedWatchlist', { title: item.title }));
+      } else {
+        // Add to watchlist
+        await $fetch('/api/users/title-status', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: {
+            tmdb_id: item.tmdb_id,
+            type: item.type,
+            status: TITLE_STATUS.WATCHLIST,
+            liked: false,
+          },
+        });
+
         showToast(t('home.titleAddedWatchlist', { title: item.title }));
       }
     }
@@ -367,9 +426,9 @@ async function handleAction(
     console.error('[DiscoverListDetail] Error handling action:', error);
     showToast(t('common.error'), null, 5000);
   } finally {
-      loadingTitles.value.delete(item.tmdb_id);
-      // Reload statuses after action
-      await loadTitleStatuses();
+    loadingTitles.value.delete(item.tmdb_id);
+    // Reload statuses after action
+    await loadTitleStatuses();
   }
 }
 </script>
