@@ -525,7 +525,10 @@
     "pageTitleError": "Erro",
     "pageDescription404": "A páxina que buscas non existe.",
     "pageDescription500": "Erro interno do servidor. Por favor, tenta de novo máis tarde.",
-    "pageDescriptionError": "Produciuse un erro."
+    "pageDescriptionError": "Produciuse un erro.",
+    "iconLabel404": "Icona de páxina non atopada",
+    "iconLabel500": "Icona de erro do servidor",
+    "iconLabelGeneric": "Icona de erro"
   },
   "undo": {
     "undo": "Deshacer",

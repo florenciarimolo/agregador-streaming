@@ -525,7 +525,10 @@
     "pageTitleError": "Errorea",
     "pageDescription404": "Bilatzen ari zaren orrialdea ez da existitzen.",
     "pageDescription500": "Zerbitzariaren barneko errorea. Mesedez, saiatu berriro geroago.",
-    "pageDescriptionError": "Errore bat gertatu da."
+    "pageDescriptionError": "Errore bat gertatu da.",
+    "iconLabel404": "Orrialdea ez da aurkitu ikonoa",
+    "iconLabel500": "Zerbitzariaren errore ikonoa",
+    "iconLabelGeneric": "Errore ikonoa"
   },
   "undo": {
     "undo": "Deshacer",

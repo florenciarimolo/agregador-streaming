@@ -19,12 +19,13 @@
       </div>
 
       <!-- Illustration or Icon -->
-      <div class="mb-8 flex justify-center">
+      <div class="mb-8 flex justify-center" role="img" :aria-label="errorIconLabel">
         <svg
           class="w-24 h-24 dark:text-gray-300 text-gray-800"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
+          aria-hidden="true"
         >
           <!-- 404: Sad face icon -->
           <path
@@ -183,6 +184,18 @@ const errorDescription = computed(() => {
       return t('error.serverErrorDescription');
     default:
       return t('error.genericErrorDescription');
+  }
+});
+
+// Accessibility label for the error icon
+const errorIconLabel = computed(() => {
+  switch (props.error.statusCode) {
+    case 404:
+      return t('error.iconLabel404');
+    case 500:
+      return t('error.iconLabel500');
+    default:
+      return t('error.iconLabelGeneric');
   }
 });
 
