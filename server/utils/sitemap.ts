@@ -1,10 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
-import { PROFILES_COLUMNS, USER_PREFERENCES_COLUMNS, TITLES_COLUMNS, DISCOVER_LISTS_COLUMNS } from '@/constants/db/columns';
+import { TITLES_COLUMNS, DISCOVER_LISTS_COLUMNS } from '@/constants/db/columns';
 import { TABLES } from '@/constants/db/tables';
-import { SCORE_WEIGHTS } from '@/constants/domain/scoring';
-import { getTMDBConfig } from './config';
-import type { Season } from '@/types/TVShow';
-import { DEFAULT_LANGUAGE } from '@/constants/languages';
 
 /**
  * Get all movie and TV show IDs from Supabase for sitemap generation
@@ -74,56 +70,71 @@ export async function getTitleIdsForSitemap(): Promise<
 }
 
 /**
- * Get seasons for a TV show from TMDB
- * Returns an array of season numbers
+ * Get all discover lists for sitemap generation
+ * Returns an array of objects with slug and updated_at
+ * Only includes lists with is_public=true AND is_indexable=true
  */
-export async function getTVShowSeasons(
-  tmdbId: number
-): Promise<Array<{ season_number: number }>> {
+export async function getDiscoverListsForSitemap(): Promise<
+  Array<{ slug: string; updated_at: string | null }>
+> {
   try {
-    const apiKey = process.env.NUXT_TMDB_API_KEY;
-    const baseUrl =
-      process.env.NUXT_TMDB_BASE_URL || 'https://api.themoviedb.org/3';
+    // Try to use runtime config, fallback to env vars for sitemap generation context
+    let supabaseUrl: string;
+    let supabaseKey: string;
 
-    if (!apiKey) {
-      if (import.meta.dev) {
-        console.warn(
-          `[Sitemap] TMDB API key not found, skipping seasons for TV show ${tmdbId}`
-        );
-      }
-      return [];
+    try {
+      const config = useRuntimeConfig();
+      supabaseUrl = config.public.supabaseUrl;
+      supabaseKey =
+        process.env.SUPABASE_SERVICE_ROLE_KEY || config.public.supabaseAnonKey;
+    } catch {
+      // Fallback to environment variables if runtime config is not available
+      supabaseUrl = process.env.NUXT_PUBLIC_SUPABASE_URL || '';
+      supabaseKey =
+        process.env.SUPABASE_SERVICE_ROLE_KEY ||
+        process.env.NUXT_PUBLIC_SUPABASE_ANON_KEY ||
+        '';
     }
 
-    // Fetch TV show details which includes seasons list
-    const response = await $fetch<{ seasons: Season[] }>(
-      `${baseUrl}/tv/${tmdbId}`,
-      {
-        query: {
-          api_key: apiKey,
-          language: DEFAULT_LANGUAGE,
-        },
-      }
-    );
-
-    if (!response?.seasons) {
-      return [];
-    }
-
-    // Filter out special seasons (season_number 0) and return only regular seasons
-    return response.seasons
-      .filter((season) => season.season_number > 0)
-      .map((season) => ({
-        season_number: season.season_number,
-      }));
-  } catch (error) {
-    // Silently fail for individual TV shows to not break the entire sitemap
-    if (import.meta.dev) {
-      console.warn(
-        `[Sitemap] Error fetching seasons for TV show ${tmdbId}:`,
-        error
+    if (!supabaseUrl || !supabaseKey) {
+      console.error(
+        '[Sitemap] Missing Supabase configuration. Cannot generate sitemap for discover lists.'
       );
+      return [];
     }
+
+    const supabase = createClient(supabaseUrl, supabaseKey, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+      },
+    });
+
+    // CRITICAL: Filter by is_public=true AND is_indexable=true
+    const { data, error } = await supabase
+      .from(TABLES.DISCOVER_LISTS)
+      .select(
+        `${DISCOVER_LISTS_COLUMNS.SLUG}, ${DISCOVER_LISTS_COLUMNS.UPDATED_AT}`
+      )
+      .eq(DISCOVER_LISTS_COLUMNS.IS_PUBLIC, true)
+      .eq(DISCOVER_LISTS_COLUMNS.IS_INDEXABLE, true);
+
+    if (error) {
+      console.error('[Sitemap] Error fetching discover lists:', error);
+      return [];
+    }
+
+    if (!data) {
+      return [];
+    }
+
+    return data.map((list) => ({
+      slug: list.slug,
+      updated_at: list.updated_at,
+    }));
+  } catch (error) {
+    console.error('[Sitemap] Unexpected error fetching discover lists:', error);
     return [];
   }
 }
-

@@ -227,7 +227,9 @@ const ogImage = computed(() => {
   return '';
 });
 
-const canonicalUrl = computed(() => `${siteUrl}/movie/${movieId}`);
+// SEO: hreflang and canonical
+const { hreflangLinks } = useHreflang();
+const { canonicalUrl: canonicalUrlFromComposable } = useCanonical();
 
 // Schema.org JSON-LD
 const movieSchema = computed(() => {
@@ -249,9 +251,10 @@ useHead({
     },
   ],
   link: [
+    ...hreflangLinks.value,
     {
       rel: 'canonical',
-      href: canonicalUrl,
+      href: canonicalUrlFromComposable.value,
     },
   ],
   script: movieSchema.value
@@ -271,7 +274,7 @@ useSeoMeta({
   ogDescription: pageDescription,
   ogImage: ogImage,
   ogType: 'video.MOVIE',
-  ogUrl: canonicalUrl,
+  ogUrl: canonicalUrlFromComposable.value,
   twitterCard: 'summary_large_image',
   twitterTitle: pageTitle,
   twitterDescription: pageDescription,

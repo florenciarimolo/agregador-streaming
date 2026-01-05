@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import Button from '@/components/ui/Button.vue';
 
 interface Props {
@@ -16,6 +17,14 @@ const emit = defineEmits<{
   authSuccess: [];
   signupSuccess: [];
 }>();
+
+const { routeWithLang } = useRouteWithLang();
+
+// Computed routes with language prefix
+// CRITICAL: routeWithLang() accesses route.params.lang directly, ensuring reactivity
+// These computed will automatically re-evaluate when route.params.lang changes
+const discoverRoute = computed(() => routeWithLang('/discover'));
+const howItWorksRoute = computed(() => routeWithLang('/how-it-works'));
 </script>
 
 <template>
@@ -47,12 +56,12 @@ const emit = defineEmits<{
         <span class="font-medium">{{ $t('hero.tagline') }}</span>
       </p>
       <div class="flex flex-col gap-4 justify-center items-center sm:flex-row">
-        <nuxt-link to="/discover">
+        <nuxt-link :to="discoverRoute">
           <Button size="medium" variant="primary">
             {{ props.buttonText }}
           </Button>
         </nuxt-link>
-        <nuxt-link to="/how-it-works">
+        <nuxt-link :to="howItWorksRoute">
           <Button size="medium" variant="secondary">
             {{ $t('hero.howItWorksButton') }}
           </Button>

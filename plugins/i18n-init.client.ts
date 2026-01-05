@@ -1,7 +1,9 @@
 /**
  * i18n initialization plugin
- * Detects browser language when user hasn't selected a language preference
- * Runs before the app mounts to set the correct locale
+ * With strategy: 'prefix', Nuxt i18n automatically derives language from URL
+ * This plugin only handles legacy routes without language prefix (will be redirected)
+ * 
+ * CRITICAL: With prefix strategy, language comes from URL, not cookies
  */
 import {
   AVAILABLE_LANGUAGES,
@@ -9,6 +11,7 @@ import {
   LEGACY_LANGUAGE_TO_TMDB,
 } from '@/constants/languages';
 import { LanguageCode } from '@/types/enums/LanguageCode';
+import { getI18nCodeFromUrlCode } from '@/composables/useLangFromUrl';
 
 /**
  * Map browser language code to i18n locale code
@@ -62,65 +65,55 @@ function getDefaultI18nCode(): string {
   );
 }
 
+/**
+ * i18n initialization plugin (initial setup only)
+ * 
+ * NOTE: This plugin only runs once on initial load.
+ * For ongoing synchronization, see middleware/sync-lang.ts which runs on every route change.
+ * 
+ * CRITICAL: With prefix strategy, language comes from URL, not cookies.
+ * The sync-lang middleware ensures i18n.locale stays synchronized with route.params.lang.
+ */
 export default defineNuxtPlugin({
   name: 'i18n-init',
   enforce: 'pre', // Run before other plugins
   async setup() {
     if (import.meta.client && typeof document !== 'undefined') {
-      // Check if user has already selected a language (cookie exists)
-      // Use document.cookie directly to avoid issues with useCookie in plugin context
-      const cookieValue = document.cookie
-        .split('; ')
-        .find((row) => row.startsWith('i18n_redirected='))
-        ?.split('=')[1];
+      try {
+        const route = useRoute();
+        const { locale, setLocale } = useI18n();
 
-      // If no cookie exists, detect browser language
-      if (!cookieValue) {
-        try {
-          // Get browser language
-          const browserLang =
-            navigator.language ||
-            (navigator as Navigator & { userLanguage?: string }).userLanguage;
+        // With strategy: 'prefix', get language from URL
+        const langFromUrl = route.params?.lang as string | undefined;
 
-          let detectedLocale: string | null = null;
-
-          if (browserLang) {
-            // Map browser language to i18n code using enums and constants
-            detectedLocale = mapBrowserLanguageToI18nCode(browserLang);
-          }
-
-          // Fall back to default if no match found
-          if (!detectedLocale) {
-            detectedLocale = getDefaultI18nCode();
-          }
-
-          // Set the locale using the i18n instance and save to cookie
-          if (detectedLocale) {
-            const nuxtApp = useNuxtApp();
-            const i18n = nuxtApp.$i18n as
-              | { setLocale: (locale: string) => Promise<void> }
-              | undefined;
-            if (i18n?.setLocale) {
-              await i18n.setLocale(detectedLocale);
+        if (langFromUrl) {
+          // Map URL code to i18n code
+          const i18nCode = getI18nCodeFromUrlCode(langFromUrl);
+          
+          if (i18nCode) {
+            // Set locale from URL - initial sync only
+            // The sync-lang middleware will handle ongoing synchronization
+            if (locale.value !== i18nCode) {
+              await setLocale(i18nCode);
             }
-            
-            // Ensure cookie is saved with the same format as when selecting from selector
-            // Use useCookie to match the same format and options as Nuxt i18n
-            // This ensures the cookie is saved even if setLocale doesn't save it immediately
-            const cookie = useCookie('i18n_redirected', {
-              path: '/',
-              sameSite: 'lax',
-              secure: false, // Will be true in production with HTTPS
-              httpOnly: false, // Must be false for client-side access
-              maxAge: 60 * 60 * 24 * 365, // 1 year (same as Nuxt i18n default)
-            });
-            cookie.value = detectedLocale;
+            // NOTE: No cookies are set - language is determined solely from URL
           }
-        } catch (error) {
-          // If detection fails, fall back to default
-          if (process.env.NODE_ENV === 'development') {
-            console.warn('Error detecting browser language:', error);
+        } else {
+          // No language prefix - this is a legacy route
+          // detectBrowserLanguage in nuxt.config.ts will handle redirect
+          // The sync-lang middleware will handle locale sync after redirect
+          const defaultI18nCode = getDefaultI18nCode();
+          
+          // Set default locale (no cookie - language comes from URL only)
+          if (locale.value !== defaultI18nCode) {
+            await setLocale(defaultI18nCode);
           }
+        }
+      } catch (error) {
+        // If setting locale fails, fall back silently
+        // The sync-lang middleware will handle synchronization on route changes
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('Error in i18n-init plugin:', error);
         }
       }
     }

@@ -146,20 +146,6 @@
               <tbody>
                 <tr>
                   <td class="border border-gray-300 dark:border-gray-700 px-4 py-2 text-sm dark:text-gray-300 text-gray-800 font-mono">
-                    i18n_redirected
-                  </td>
-                  <td class="border border-gray-300 dark:border-gray-700 px-4 py-2 text-sm dark:text-gray-300 text-gray-800">
-                    {{ $t('privacy.cookieI18nPurpose') }}
-                  </td>
-                  <td class="border border-gray-300 dark:border-gray-700 px-4 py-2 text-sm dark:text-gray-300 text-gray-800">
-                    {{ $t('privacy.cookieI18nDuration') }}
-                  </td>
-                  <td class="border border-gray-300 dark:border-gray-700 px-4 py-2 text-sm dark:text-gray-300 text-gray-800">
-                    {{ $t('privacy.cookieTypePreference') }}
-                  </td>
-                </tr>
-                <tr>
-                  <td class="border border-gray-300 dark:border-gray-700 px-4 py-2 text-sm dark:text-gray-300 text-gray-800 font-mono">
                     sb-*-auth-token
                   </td>
                   <td class="border border-gray-300 dark:border-gray-700 px-4 py-2 text-sm dark:text-gray-300 text-gray-800">
@@ -373,10 +359,21 @@ import PageContainer from '@/components/layout/PageContainer.vue';
 
 const { t } = useI18n();
 
+// SEO: hreflang and canonical
+const { hreflangLinks } = useHreflang();
+const { canonicalUrl } = useCanonical();
+
 // Use watchEffect to ensure i18n messages are loaded before setting SEO meta
 watchEffect(() => {
   useHead({
     title: t('privacy.pageTitle'),
+    link: [
+      ...hreflangLinks.value,
+      {
+        rel: 'canonical',
+        href: canonicalUrl.value,
+      },
+    ],
   });
 
   useSeoMeta({

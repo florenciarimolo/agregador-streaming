@@ -78,10 +78,10 @@ export async function getUserTMDBParamsByUserId(userId: string): Promise<{
   };
 
   try {
-    // Get settings (for region only - language is NOT stored in DB, only in cookies)
+    // Get settings (for region only - language is NOT stored in DB, comes from URL)
     const settingsResult = await getSettingsServer(userId);
 
-    // Language is always from cookies, not from database
+    // Language is always from URL, not from database or cookies
     // This function should not be used for language, but we return default for compatibility
     let language = defaults.language;
 
@@ -104,7 +104,7 @@ export async function getUserTMDBParamsByUserId(userId: string): Promise<{
 
 /**
  * Get user's language and region preferences for TMDB API calls from event
- * Language is read from cookies (i18n_redirected), NOT from database
+ * Language is read from URL (route.params.lang), NOT from cookies or database
  * Region is read from database (profiles.settings.region)
  * Returns default values if user is not authenticated or preferences not set
  */
@@ -122,16 +122,23 @@ export async function getUserTMDBParams(event?: H3Event): Promise<{
   }
 
   try {
-    // Get language from cookies (i18n_redirected cookie from Nuxt i18n)
+    // Get language from URL (route.params.lang) - deterministic source of truth
     let language = defaults.language;
     try {
-      const cookies = parseCookies(event);
-      const i18nCookie = cookies['i18n_redirected'];
-      if (i18nCookie) {
-        language = toTMDBLanguageCode(i18nCookie);
+      // Try to get lang from route params (URL-based language)
+      const params = event.context.params || {};
+      const langFromUrl = params.lang as string | undefined;
+      
+      if (langFromUrl) {
+        // Map URL code to i18n code, then to TMDB language code
+        const { getI18nCodeFromUrlCode } = await import('@/composables/useLangFromUrl');
+        const i18nCode = getI18nCodeFromUrlCode(langFromUrl.toLowerCase());
+        if (i18nCode) {
+          language = toTMDBLanguageCode(i18nCode);
+        }
       }
     } catch {
-      // If error reading cookies, use default
+      // If error reading from URL, use default
       language = defaults.language;
     }
 

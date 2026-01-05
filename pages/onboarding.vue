@@ -66,7 +66,7 @@ const user = useSupabaseUser();
 // Use a computed to lazy-load the store, but only on client side
 const userStore = computed(() => {
   // Only try to get store on client side
-  if (process.server) {
+  if (import.meta.server) {
     return {
       profile: null,
       authInitialized: false,
@@ -104,7 +104,8 @@ onMounted(() => {
   // If onboarding is already completed, redirect to home
   // (This is a safety check; middleware should already prevent this)
   if (userStore.value?.profile?.onboarding_completed) {
-    router.replace('/');
+    const { routeWithLang } = useRouteWithLang();
+    router.replace(routeWithLang('/'));
   }
 });
 
@@ -557,7 +558,8 @@ const saveSelections = async () => {
     }
 
     // Redirect to home
-    await router.push('/');
+    const { routeWithLang } = useRouteWithLang();
+    await router.push(routeWithLang('/'));
   } catch (err: unknown) {
     console.error('Error saving selections:', err);
     const errorMessage =

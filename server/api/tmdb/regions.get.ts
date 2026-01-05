@@ -1,7 +1,6 @@
 import { getTMDBConfig } from '@/server/utils/config';
 import { readdir } from 'fs/promises';
 import { join } from 'path';
-import { parseCookies } from 'h3';
 
 /**
  * Cache for regions data by language
@@ -64,20 +63,25 @@ export default defineEventHandler(async (event) => {
     const query = getQuery(event);
     const { DEFAULT_LANGUAGE } = await import('@/constants/languages');
 
-    // Get app language (i18n locale) from cookies
-    // Nuxt i18n stores it in 'i18n_redirected' cookie (see nuxt.config.ts)
-    let language: string = (query.language as string) || DEFAULT_LANGUAGE;
+    // Get app language (i18n locale) from URL (route.params.lang) or query parameter
+    // NOTE: No cookies - language comes from URL only
+    const params = event.context.params || {};
+    let language: string = DEFAULT_LANGUAGE;
 
-    try {
-      const cookies = parseCookies(event);
-      const i18nCookie = cookies['i18n_redirected'];
-      if (i18nCookie) {
-        language = i18nCookie;
+    // Priority 1: URL parameter (route.params.lang) - deterministic source of truth
+    const langFromUrl = params.lang as string | undefined;
+    if (langFromUrl) {
+      const { getI18nCodeFromUrlCode } = await import('@/composables/useLangFromUrl');
+      const i18nCode = getI18nCodeFromUrlCode(langFromUrl.toLowerCase());
+      if (i18nCode) {
+        language = i18nCode;
       }
-    } catch {
-      // If error reading cookies, use query or default
-      language = (query.language as string) || DEFAULT_LANGUAGE;
+    } 
+    // Priority 2: Query parameter (fallback for API calls)
+    else if (query.language && typeof query.language === 'string') {
+      language = query.language;
     }
+    // Priority 3: Default (no cookies - language comes from URL only)
 
     // Check cache for this specific language
     const now = Date.now();

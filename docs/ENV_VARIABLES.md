@@ -29,11 +29,16 @@ NUXT_TMDB_BASE_URL=https://api.themoviedb.org/3
 ### Base URL (Optional but recommended)
 
 ```env
-# Your application URL - used for SEO, sitemap and robots.txt
+# Your application URL - used for SEO, sitemap, robots.txt, canonical URLs, and hreflang tags
 # If not defined, it's automatically detected based on environment:
 # - Local: http://localhost:3000
 # - Preview (Vercel): https://up-next-dev.vercel.app
 # - Production (Vercel): https://getupnext.io
+# 
+# IMPORTANT: This URL is used for:
+# - Generating canonical URLs with language prefixes (e.g., https://getupnext.io/es/movie/123)
+# - Generating hreflang tags for multi-language SEO
+# - Sitemap generation (multi-language URLs)
 NUXT_PUBLIC_BASE_URL=https://getupnext.io
 ```
 

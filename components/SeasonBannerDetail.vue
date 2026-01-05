@@ -174,9 +174,12 @@ const handleResize = () => {
   checkMobile();
 };
 
+// Get routeWithLang for building language-prefixed links
+const { routeWithLang } = useRouteWithLang();
+
 // Handle back navigation - always go back to the series detail page
 const handleBack = () => {
-  router.push(`/tv-show/${props.seriesId}`);
+  router.push(routeWithLang(`/tv-show/${props.seriesId}`));
 };
 
 const hasAvailableProviders = computed(() => {

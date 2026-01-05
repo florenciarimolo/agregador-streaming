@@ -1,14 +1,14 @@
 /**
  * Onboarding middleware
- * Handles authentication and onboarding checks for the home page (/)
+ * Handles authentication and onboarding checks for the home page (/:lang/)
  *
  * Rules:
- * - If NO session → allow access to /
+ * - If NO session → allow access to /:lang/
  * - If HAS session:
  *   - Wait for auth to be initialized
  *   - Load profile
- *   - If onboarding_completed === false → redirect to /onboarding
- *   - If onboarding_completed === true → allow access to /
+ *   - If onboarding_completed === false → redirect to /:lang/onboarding
+ *   - If onboarding_completed === true → allow access to /:lang/
  *
  * Architecture: This middleware runs on client-side only and accesses Pinia stores.
  * Stores are initialized in app.vue via useAuthInit(), so they should be available
@@ -16,14 +16,34 @@
  */
 import { useUserStore } from '@/stores/user';
 
+import { DEFAULT_LANGUAGE_URL_CODE } from '@/constants/urlLanguageCodes';
+
+/**
+ * Get language from route params
+ * @param route - Route object
+ * @returns Language URL code (e.g., 'es', 'en') or DEFAULT_LANGUAGE_URL_CODE as default
+ */
+const getLangFromRoute = (route: any): string => {
+  const langParam = route.params?.lang as string | undefined;
+  if (langParam) {
+    return langParam.toLowerCase();
+  }
+  // Default to DEFAULT_LANGUAGE_URL_CODE if no lang param
+  return DEFAULT_LANGUAGE_URL_CODE;
+};
+
 export default defineNuxtRouteMiddleware(async (to) => {
-  // Only apply to home page
-  if (to.path !== '/') {
+  // Get language from URL
+  const lang = getLangFromRoute(to);
+  
+  // Only apply to home page (with language prefix)
+  const homePath = `/${lang}/`;
+  if (to.path !== homePath && to.path !== `/${lang}`) {
     return;
   }
 
   // Only run on client side (Pinia is client-only)
-  if (process.server) {
+  if (import.meta.server) {
     return;
   }
 
@@ -52,9 +72,9 @@ export default defineNuxtRouteMiddleware(async (to) => {
   const profile = userStore.profile;
   const hasCompletedOnboarding = profile?.onboarding_completed ?? false;
 
-  // If onboarding not completed, redirect to onboarding
+  // If onboarding not completed, redirect to onboarding (with language)
   if (!hasCompletedOnboarding) {
-    return navigateTo('/onboarding', { replace: true });
+    return navigateTo(`/${lang}/onboarding`, { replace: true });
   }
 
   // Onboarding completed, allow access

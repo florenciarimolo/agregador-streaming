@@ -63,7 +63,7 @@
                   :key="title.id"
                   :title="title.title"
                   :poster-path="title.poster_path"
-                  :link-to="`/${title.type === MEDIA_TYPE.MOVIE ? 'movie' : 'tv-show'}/${title.tmdb_id}`"
+                  :link-to="getTitleLink(title.type, title.tmdb_id)"
                   :link-aria-label="
                     $t('media.viewDetailsOf', { title: title.title })
                   "
@@ -114,7 +114,7 @@
                   :key="title.id"
                   :title="title.title"
                   :poster-path="title.poster_path"
-                  :link-to="`/${title.type === MEDIA_TYPE.MOVIE ? 'movie' : 'tv-show'}/${title.tmdb_id}`"
+                  :link-to="getTitleLink(title.type, title.tmdb_id)"
                   :link-aria-label="
                     $t('media.viewDetailsOf', { title: title.title })
                   "
@@ -189,7 +189,7 @@
                   :key="title.id"
                   :title="title.title"
                   :poster-path="title.poster_path"
-                  :link-to="`/${title.type === MEDIA_TYPE.MOVIE ? 'movie' : 'tv-show'}/${title.tmdb_id}`"
+                  :link-to="getTitleLink(title.type, title.tmdb_id)"
                   :link-aria-label="
                     $t('media.viewDetailsOf', { title: title.title })
                   "
@@ -317,7 +317,7 @@ const currentUser = useSupabaseUser();
 // Use a computed to lazy-load the store, but only on client side
 const userStore = computed(() => {
   // Only try to get store on client side
-  if (process.server) {
+  if (import.meta.server) {
     return {
       profile: null,
       authInitialized: false,
@@ -403,6 +403,15 @@ const userId = computed(() => {
   return currentUser.value?.id || (currentUser.value as { sub?: string })?.sub;
 });
 
+// Get routeWithLang for building language-prefixed links
+const { routeWithLang } = useRouteWithLang();
+
+// Helper function to generate link with language prefix
+const getTitleLink = (type: typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV, tmdbId: number): string => {
+  const mediaType = type === MEDIA_TYPE.MOVIE ? 'movie' : 'tv-show';
+  return routeWithLang(`/${mediaType}/${tmdbId}`);
+};
+
 // Content preferences region (read-only, fetched from saved preferences)
 const contentPreferences = ref<{
   region?: string;
@@ -462,7 +471,8 @@ const handleTabChange = (tabId: 'liked' | 'seen' | 'not-interested') => {
 
 // Navigate to recommendations (home page)
 const goToRecommendations = () => {
-  navigateTo('/', { replace: false });
+  const { routeWithLang } = useRouteWithLang();
+  navigateTo(routeWithLang('/'), { replace: false });
 };
 
 // Fetch content preferences region only (for API calls)
@@ -1174,7 +1184,8 @@ const { pending: profilePending } = useAsyncData(
 
     // If onboarding not completed, redirect to onboarding
     if (!hasCompletedOnboarding) {
-      await navigateTo('/onboarding', { replace: true });
+      const { routeWithLang } = useRouteWithLang();
+      await navigateTo(routeWithLang('/onboarding'), { replace: true });
       return false; // Prevent content from loading
     }
 

@@ -88,6 +88,7 @@ import {
 } from '@headlessui/vue';
 import { AVAILABLE_LANGUAGES, type Language } from '@/constants/languages';
 import IconChevronDown from '@/components/icons/IconChevronDown.vue';
+import { getFlagFileName } from '@/utils/flags';
 
 interface Props {
   modelValue: string | null | undefined;
@@ -203,21 +204,6 @@ onUnmounted(() => {
   window.removeEventListener('scroll', updateDropdownPosition);
   window.removeEventListener('resize', updateDropdownPosition);
 });
-
-
-
-// Map flag codes to file names
-const getFlagFileName = (flagCode: string): string => {
-  const flagMap: Record<string, string> = {
-    ES: 'es',
-    CAT: 'cat',
-    GAL: 'gal',
-    EUS: 'eus',
-    US: 'us',
-    GB: 'gb',
-  };
-  return flagMap[flagCode] || flagCode.toLowerCase();
-};
 
 // NOTE: This selector is for CONTENT language preference, NOT app language
 // Do NOT change i18n locale here - that's handled by AppLanguageSelector

@@ -38,8 +38,14 @@ const stopLoading = () => {
 };
 
 onMounted(() => {
-  router.beforeEach(() => {
-    startLoading();
+  // Register navigation hooks to show loading indicator
+  // These hooks will be called for all navigation, including navigateTo() from Nuxt
+  router.beforeEach((to, from, next) => {
+    // Only show loading if navigating to a different route
+    if (to.path !== from.path) {
+      startLoading();
+    }
+    next();
   });
 
   router.afterEach(() => {

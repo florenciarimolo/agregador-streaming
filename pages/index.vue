@@ -7,6 +7,8 @@ import { useTitleActions } from '@/composables/useTitleActions';
 import { getSession } from '@/services/auth';
 import { TITLE_STATUS } from '@/constants/domain/titleStatus';
 import { QUERY_PARAMS } from '@/constants/api/queryParams';
+import { useHreflang } from '@/composables/useHreflang';
+import { useCanonical } from '@/composables/useCanonical';
 import AppShell from '@/components/layout/AppShell.vue';
 import PageContainer from '@/components/layout/PageContainer.vue';
 import Section from '@/components/layout/Section.vue';
@@ -23,11 +25,21 @@ const route = useRoute();
 const router = useRouter();
 const user = useSupabaseUser();
 
+// Get language from URL (this page is /:lang/ with strategy: 'prefix')
+// Use useRouteWithLang for reactive route building
+const { routeWithLang } = useRouteWithLang();
+
+// Computed routes with language prefix
+// CRITICAL: routeWithLang() accesses route.params.lang directly, ensuring reactivity
+// These computed will automatically re-evaluate when route.params.lang changes
+const preferencesRoute = computed(() => routeWithLang('/preferences'));
+const listsRoute = computed(() => routeWithLang('/lists?tab=liked'));
+
 // Safely get userStore - it may not be available immediately after Pinia initialization
 // Use a computed to lazy-load the store, but only on client side
 const userStore = computed(() => {
   // Only try to get store on client side
-  if (process.server) {
+  if (import.meta.server) {
     return {
       profile: null,
       authInitialized: false,
@@ -54,12 +66,25 @@ const userStore = computed(() => {
   }
 });
 
-// SEO
-const config = useRuntimeConfig();
-const siteUrl = config.public.baseUrl || config.public.siteUrl;
+// SEO: hreflang and canonical (only for public pages)
+const { hreflangLinks } = useHreflang();
+const { canonicalUrl } = useCanonical();
 
 watchEffect(() => {
   const isAuthenticated = !!user.value;
+
+  // Only add hreflang and canonical for public (non-authenticated) pages
+  // hreflangLinks is a computed, so we need to use .value
+  const seoLinks = isAuthenticated
+    ? []
+    : [
+        ...(hreflangLinks.value || []),
+        {
+          rel: 'canonical',
+          href: canonicalUrl,
+        },
+      ];
+
   useHead({
     title: isAuthenticated ? t('seo.defaultTitle') : t('seo.homeTitlePublic'),
     titleTemplate: isAuthenticated ? '%s' : undefined,
@@ -69,12 +94,7 @@ watchEffect(() => {
         content: isAuthenticated ? 'noindex, nofollow' : 'index, follow',
       },
     ],
-    link: [
-      {
-        rel: 'canonical',
-        href: `${siteUrl}/`,
-      },
-    ],
+    link: seoLinks,
   });
 
   useSeoMeta({
@@ -87,7 +107,7 @@ watchEffect(() => {
       ? t('seo.homeDescription')
       : t('seo.homeDescriptionPublic'),
     ogType: 'website',
-    ogUrl: `${siteUrl}/`,
+    ogUrl: canonicalUrl,
     twitterCard: 'summary_large_image',
     robots: isAuthenticated ? 'noindex, nofollow' : 'index, follow',
   });
@@ -247,9 +267,9 @@ const removeFilters = async () => {
   await navigateTo({ query }, { replace: true });
 };
 
-// Handle auth success (redirect handled by middleware)
+// Handle auth success - redirect to home with language
 const handleAuthSuccess = async () => {
-  await navigateTo('/', { replace: true });
+  await navigateTo(routeWithLang('/'), { replace: true });
 };
 
 const handleSignupSuccess = () => {
@@ -260,7 +280,7 @@ const showAuthForm = ref(false);
 
 // Check if auth query param is present to show auth form
 onMounted(() => {
-  // Redirect auth-related query params to /auth/callback
+  // Redirect auth-related query params to auth/callback with language
   if (typeof window !== 'undefined') {
     const hasCode = !!route.query.code;
     const hasError = !!(
@@ -272,7 +292,7 @@ onMounted(() => {
 
     if (hasCode || hasError) {
       router.replace({
-        path: '/auth/callback',
+        path: routeWithLang('/auth/callback'),
         query: route.query,
       });
       return;
@@ -440,7 +460,7 @@ onMounted(() => {
                       {{ $t('home.noRegionDescription') }}
                     </p>
                     <nuxt-link
-                      to="/preferences"
+                      :to="preferencesRoute"
                       class="inline-block px-6 py-3 text-base font-medium text-white rounded-lg border shadow-lg backdrop-blur-sm transition-all duration-300 bg-primary-800 dark:bg-primary hover:bg-primary-900 dark:hover:bg-primary-600 border-primary-600/50"
                     >
                       {{ $t('home.configurePreferences') }}
@@ -475,7 +495,7 @@ onMounted(() => {
                       {{ $t('home.noRecommendationsDescription') }}
                     </p>
                     <nuxt-link
-                      to="/lists?tab=liked"
+                      :to="listsRoute"
                       class="inline-block px-6 py-3 text-base font-medium text-white rounded-lg border shadow-lg backdrop-blur-sm transition-all duration-300 bg-primary-800 dark:bg-primary hover:bg-primary-900 dark:hover:bg-primary-600 border-primary-600/50"
                     >
                       {{ $t('home.addFavorites') }}

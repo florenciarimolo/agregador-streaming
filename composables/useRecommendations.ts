@@ -20,7 +20,7 @@ export const useRecommendations = () => {
   // Use a computed to lazy-load the store, but only on client side
   const userStore = computed(() => {
     // Only try to get store on client side
-    if (process.server) {
+    if (import.meta.server) {
       return {
         profile: null,
         hasCompletedOnboarding: false,

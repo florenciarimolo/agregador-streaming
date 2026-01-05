@@ -182,11 +182,10 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
-import { useRouter } from 'vue-router';
 import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 import type { TMDBSearchResult } from '@/types/tmdb/Search';
 
-const router = useRouter();
+const { routeWithLang } = useRouteWithLang();
 const searchContainerRef = ref<HTMLElement | null>(null);
 
 // Props
@@ -240,7 +239,7 @@ const closeSearch = () => {
 };
 
 // Navigate to detail page or emit event
-const navigateToDetail = (result: TMDBSearchResult) => {
+const navigateToDetail = async (result: TMDBSearchResult) => {
   // Close dropdown and clear query
   closeSearch();
   // Emit closed event to notify parent (useful for mobile search)
@@ -249,10 +248,11 @@ const navigateToDetail = (result: TMDBSearchResult) => {
   if (props.emitOnSelect) {
     emit('title-selected', result);
   } else {
+    // Use navigateTo from Nuxt to ensure PageNavigationLoader is triggered
     if (result.media_type === MEDIA_TYPE.MOVIE) {
-      router.push(`/movie/${result.id}`);
+      await navigateTo(routeWithLang(`/movie/${result.id}`));
     } else if (result.media_type === MEDIA_TYPE.TV) {
-      router.push(`/tv-show/${result.id}`);
+      await navigateTo(routeWithLang(`/tv-show/${result.id}`));
     }
   }
 };

@@ -14,9 +14,9 @@
         "
       >
         <img
-          v-if="currentLanguageObj"
-          :src="`/icons/flags/${getFlagFileName(currentLanguageObj.flagCode)}.svg`"
-          :alt="currentLanguageObj.flagCode"
+          v-if="selectedLanguage"
+          :src="`/icons/flags/${getFlagFileName(selectedLanguage.flagCode)}.svg`"
+          :alt="selectedLanguage.flagCode"
           class="object-contain flex-shrink-0 w-5 h-4"
           loading="lazy"
           @error="
@@ -24,7 +24,7 @@
           "
         />
         <span class="text-sm">{{
-          currentLanguageObj?.nativeName || 'Español'
+          selectedLanguage?.nativeName || 'Español'
         }}</span>
         <IconChevronDown
           :icon-class="`flex-shrink-0 w-4 h-4 text-gray-400 transition-transform ${
@@ -110,8 +110,32 @@ import {
 import { LanguageCode } from '@/types/enums/LanguageCode';
 import IconChevronDown from '@/components/icons/IconChevronDown.vue';
 import { useRegions } from '@/composables/useRegions';
+import {
+  getUrlCodeFromI18nCode,
+  getI18nCodeFromUrlCode,
+} from '@/composables/useLangFromUrl';
+import {
+  VALID_URL_CODES,
+  type UrlLanguageCode,
+} from '@/constants/urlLanguageCodes';
+import { getFlagFileName } from '@/utils/flags';
+import { useCurrentLanguage } from '@/composables/useCurrentLanguage';
+
+interface Props {
+  /**
+   * If true, the dropdown will open upward when there's not enough space below.
+   * This is useful for selectors in the footer.
+   */
+  openUpward?: boolean;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  openUpward: false,
+});
 
 const { locale, setLocale } = useI18n();
+const router = useRouter();
+const route = useRoute(); // Must be called at top level of setup
 
 const availableLanguages = AVAILABLE_LANGUAGES;
 
@@ -150,9 +174,47 @@ const updateDropdownPosition = () => {
   const minWidth = Math.max(rect.width, 192); // Minimum width
   const maxRight = window.innerWidth - 16; // 16px padding from screen edge
 
+  // Calculate dropdown height (approximate: header + items)
+  // Each item is ~48px (py-3 = 12px top + 12px bottom + ~24px content)
+  // Header padding: py-2 = 8px top + 8px bottom
+  // Max height is 256px (max-h-64), but we'll use a more conservative estimate
+  const estimatedDropdownHeight = Math.min(
+    availableLanguages.length * 48 + 16, // items + padding
+    256 // max-h-64
+  );
+
+  // Calculate available space
+  const spaceBelow = window.innerHeight - rect.bottom;
+  const spaceAbove = rect.top;
+
+  // Check if we should open upward
+  // Priority: 1) openUpward prop forces upward, 2) auto-detect if not enough space below
+  let shouldOpenUpward: boolean;
+  if (props.openUpward) {
+    // If openUpward is true, prefer upward unless there's not enough space above
+    shouldOpenUpward =
+      spaceAbove >= estimatedDropdownHeight || spaceAbove > spaceBelow;
+  } else {
+    // Auto-detect: open upward if not enough space below and more space above
+    shouldOpenUpward =
+      spaceBelow < estimatedDropdownHeight && spaceAbove > spaceBelow;
+  }
+
+  // Calculate top position
+  let topPosition: string;
+  if (shouldOpenUpward) {
+    // Position above the button
+    const calculatedTop = rect.top - estimatedDropdownHeight - 4; // 4px gap
+    // Ensure it doesn't go above viewport (16px padding from top)
+    topPosition = `${Math.max(calculatedTop, 16)}px`;
+  } else {
+    // Position below the button (default)
+    topPosition = `${rect.bottom + 4}px`; // mt-1 = 4px
+  }
+
   dropdownStyle.value = {
     position: 'fixed',
-    top: `${rect.bottom + 4}px`, // mt-1 = 4px
+    top: topPosition,
     right: `${Math.min(rightPosition, maxRight)}px`,
     minWidth: `${minWidth}px`,
     width: 'max-content',
@@ -202,31 +264,54 @@ const getDefaultI18nCode = (): ValidI18nCode => {
   return DEFAULT_LANGUAGE;
 };
 
-// Map flag codes to file names
-const getFlagFileName = (flagCode: string): string => {
-  const flagMap: Record<string, string> = {
-    ES: 'es',
-    CAT: 'cat',
-    GAL: 'gal',
-    EUS: 'eus',
-    US: 'us',
-    GB: 'gb',
-  };
-  return flagMap[flagCode] || flagCode.toLowerCase();
-};
+// Get current language object based on route
+// Uses centralized composable that handles route.params.lang and path extraction
+const { currentLanguage } = useCurrentLanguage();
+const currentLanguageObj = computed(() => currentLanguage.value);
 
-// Get current language object based on i18n locale
-const currentLanguageObj = computed<Language | undefined>(() => {
-  const found = availableLanguages.find((l) => l.i18nCode === locale.value);
-  // Fallback to Spanish if not found
-  return (
-    found || availableLanguages.find((l) => l.i18nCode === DEFAULT_LANGUAGE)
-  );
-});
+/**
+ * Get path without language prefix
+ * @param fullPath - Full route path (e.g., '/es/movie/123')
+ * @returns Path without language prefix (e.g., '/movie/123')
+ */
+const getPathWithoutLang = (fullPath: string): string => {
+  // Remove leading slash and split
+  const parts = fullPath.split('/').filter(Boolean);
+
+  // Use VALID_URL_CODES from constants (deterministic)
+  if (!VALID_URL_CODES || !Array.isArray(VALID_URL_CODES)) {
+    return fullPath;
+  }
+
+  // If first part is a language code, remove it
+  const firstPart = parts[0]?.toLowerCase();
+  const isLangCode = VALID_URL_CODES.includes(firstPart || '');
+
+  if (isLangCode && parts.length > 1) {
+    // Remove language code and reconstruct path
+    return '/' + parts.slice(1).join('/');
+  } else if (isLangCode && parts.length === 1) {
+    // Only language code, return root
+    return '/';
+  }
+
+  // If no language prefix, return original
+  return fullPath;
+};
 
 // Selected language for Listbox (must be the Language object, not just the code)
 const selectedLanguage = computed({
-  get: () => currentLanguageObj.value || availableLanguages[0],
+  get: () => {
+    const current = currentLanguageObj.value;
+    if (current) {
+      return current;
+    }
+    // Fallback to default language (Spanish) if currentLanguageObj is undefined
+    const defaultLang = availableLanguages.find(
+      (l) => l.i18nCode === DEFAULT_LANGUAGE
+    );
+    return defaultLang || availableLanguages[0];
+  },
   set: async (lang: Language) => {
     const i18nCode = lang.i18nCode;
     try {
@@ -237,25 +322,58 @@ const selectedLanguage = computed({
             `Invalid i18n code: ${i18nCode}. Falling back to default`
           );
         }
-        // Use default language if invalid
-        await setLocale(getDefaultI18nCode());
+        // Use default language if invalid - convert i18n code to URL code for setLocale
+        const defaultUrlCode = getUrlCodeFromI18nCode(getDefaultI18nCode());
+        if (
+          defaultUrlCode &&
+          VALID_URL_CODES.includes(defaultUrlCode as UrlLanguageCode)
+        ) {
+          await setLocale(defaultUrlCode as UrlLanguageCode);
+        }
         return;
       }
 
-      // Get old language before changing
-      const oldLanguage = locale.value;
+      // Get old language before changing (convert URL code to i18n code for comparison)
+      const oldLanguageUrlCode = locale.value;
+      const oldLanguageI18nCode = getI18nCodeFromUrlCode(oldLanguageUrlCode);
+
+      // Get URL code for new language
+      const newLangUrlCode = getUrlCodeFromI18nCode(i18nCode);
+      if (!newLangUrlCode) {
+        console.warn(`Could not get URL code for i18n code: ${i18nCode}`);
+        return;
+      }
+
+      // Get current path without language prefix
+      const pathWithoutLang = getPathWithoutLang(route.path);
+
+      // Build new path with new language prefix
+      const newPath = `/${newLangUrlCode}${pathWithoutLang === '/' ? '' : pathWithoutLang}`;
+
+      // Preserve query string if present
+      const queryString = route.fullPath.includes('?')
+        ? route.fullPath.substring(route.fullPath.indexOf('?'))
+        : '';
+
+      const newFullPath = `${newPath}${queryString}`;
 
       // Use setLocale to properly change the language
       // This will save to cookies automatically via nuxt.config.ts
-      // After type guard, TypeScript knows i18nCode is ValidI18nCode (LanguageCode)
-      await setLocale(i18nCode);
+      // setLocale expects URL code (e.g., 'es', 'en'), not i18n code (e.g., 'es-ES', 'en-US')
+      if (VALID_URL_CODES.includes(newLangUrlCode as UrlLanguageCode)) {
+        await setLocale(newLangUrlCode as UrlLanguageCode);
+      }
+
+      // Navigate to new path with language prefix
+      await router.push(newFullPath);
 
       // Notify regions composable about app language change
-      if (oldLanguage !== i18nCode) {
+      // Use i18n code for regions (they expect i18n format)
+      if (oldLanguageI18nCode && oldLanguageI18nCode !== i18nCode) {
         const { invalidateCache, notifyAppLanguageChange } = useRegions();
-        // Invalidate cache for old language
-        invalidateCache(oldLanguage);
-        // Notify about the change
+        // Invalidate cache for old language (expects i18n code)
+        invalidateCache(oldLanguageI18nCode);
+        // Notify about the change (expects i18n code)
         notifyAppLanguageChange(i18nCode);
       }
     } catch (error) {
@@ -263,11 +381,17 @@ const selectedLanguage = computed({
       if (process.env.NODE_ENV === 'development') {
         console.warn('Error setting locale:', error);
       }
-      // Use validated code or default
-      const fallbackCode: ValidI18nCode = isValidI18nCode(i18nCode)
+      // Use validated code or default - convert to URL code for locale.value
+      const fallbackI18nCode = isValidI18nCode(i18nCode)
         ? i18nCode
         : getDefaultI18nCode();
-      locale.value = fallbackCode;
+      const fallbackUrlCode = getUrlCodeFromI18nCode(fallbackI18nCode);
+      if (
+        fallbackUrlCode &&
+        VALID_URL_CODES.includes(fallbackUrlCode as UrlLanguageCode)
+      ) {
+        locale.value = fallbackUrlCode as UrlLanguageCode;
+      }
     }
   },
 });

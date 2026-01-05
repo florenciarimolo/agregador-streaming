@@ -3,7 +3,7 @@
     <div class="w-full max-w-md">
       <div class="mb-8 text-center">
         <!-- Light mode -->
-        <nuxt-link to="/" class="inline-block">
+        <nuxt-link :to="homeRoute" class="inline-block">
           <img
             src="/logo-light.png"
             :alt="$t('common.appName')"
@@ -11,7 +11,7 @@
           />
         </nuxt-link>
         <!-- Dark mode -->
-        <nuxt-link to="/" class="inline-block">
+        <nuxt-link :to="homeRoute" class="inline-block">
           <img
             src="/logo-dark.png"
             :alt="$t('common.appName')"
@@ -273,7 +273,7 @@
           v-if="codeValidated || error || errorMessage"
           class="flex justify-center items-center mt-4"
         >
-          <Button variant="outline" size="medium" @click="router.push('/')">
+          <Button variant="outline" size="medium" @click="handleBackToHome">
             {{ $t('media.backToHome') }}
           </Button>
         </div>
@@ -302,14 +302,30 @@ definePageMeta({
 });
 
 const { t } = useI18n();
+const { routeWithLang } = useRouteWithLang();
+
+// Computed route for home
+const homeRoute = computed(() => routeWithLang('/'));
+
+// Handle back to home
+const handleBackToHome = () => {
+  router.push(homeRoute.value);
+};
 
 useHead({
   title: t('auth.newPasswordTitle'),
+  meta: [
+    {
+      name: 'robots',
+      content: 'noindex, nofollow',
+    },
+  ],
 });
 
 useSeoMeta({
   title: t('auth.newPasswordTitle'),
   description: t('auth.newPasswordDescription'),
+  robots: 'noindex, nofollow',
 });
 
 const supabase = useSupabaseClient();
@@ -391,7 +407,7 @@ onMounted(async () => {
             '[Reset Password] No recovery flag found, redirecting to login'
           );
         }
-        router.replace('/?auth=login');
+        router.replace(routeWithLang('/?auth=login'));
         return;
       }
     }
@@ -426,7 +442,7 @@ onMounted(async () => {
           '[Reset Password] Session is not a recovery session, redirecting to home'
         );
       }
-      router.replace('/');
+      router.replace(routeWithLang('/'));
       return;
     }
 
@@ -525,7 +541,7 @@ const handleResetPassword = async () => {
     // User needs to log in again with the new password
     // Using ?auth=login to show the login form on homepage
     // Use replace to avoid adding to history
-    router.replace('/?auth=login');
+    router.replace(routeWithLang('/?auth=login'));
   } catch (err: unknown) {
     console.error('[Client] Reset password error:', err);
     error.value = t('auth.requestError');

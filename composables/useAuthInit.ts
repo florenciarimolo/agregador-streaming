@@ -33,7 +33,7 @@ export const useAuthInit = () => {
   // Initialize auth state from current session
   const initAuth = async () => {
     // Lazy-load store only when needed (client-side only)
-    if (process.server) {
+    if (import.meta.server) {
       return;
     }
 
@@ -94,7 +94,7 @@ export const useAuthInit = () => {
   // Listen to auth state changes
   const setupAuthListener = () => {
     // Lazy-load store only when needed (client-side only)
-    if (process.server) {
+    if (import.meta.server) {
       return;
     }
 

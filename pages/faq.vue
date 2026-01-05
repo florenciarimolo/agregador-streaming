@@ -312,10 +312,21 @@ import PageContainer from '@/components/layout/PageContainer.vue';
 
 const { t } = useI18n();
 
+// SEO: hreflang and canonical
+const { hreflangLinks } = useHreflang();
+const { canonicalUrl } = useCanonical();
+
 // Use watchEffect to ensure i18n messages are loaded before setting SEO meta
 watchEffect(() => {
   useHead({
     title: t('seo.faqTitle'),
+    link: [
+      ...hreflangLinks.value,
+      {
+        rel: 'canonical',
+        href: canonicalUrl.value,
+      },
+    ],
   });
 
   useSeoMeta({

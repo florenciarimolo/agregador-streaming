@@ -60,7 +60,7 @@
           :key="`watchlist-${title.tmdb_id}`"
           :title="title.title"
           :poster-path="title.poster_path"
-          :link-to="`/${title.type === MEDIA_TYPE.MOVIE ? 'movie' : 'tv-show'}/${title.tmdb_id}`"
+          :link-to="getTitleLink(title.type, title.tmdb_id)"
           :link-aria-label="$t('media.viewDetailsOf', { title: title.title })"
           :image-alt="title.title"
           :no-image-aria-label="$t('media.noPosterAvailableFor', { title: title.title })"
@@ -198,9 +198,18 @@ const showSuccess = (message: string) => {
   }, 5000);
 };
 
+// Get routeWithLang for building language-prefixed links
+const { routeWithLang } = useRouteWithLang();
+
+// Helper function to generate link with language prefix
+const getTitleLink = (type: typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV, tmdbId: number): string => {
+  const mediaType = type === MEDIA_TYPE.MOVIE ? 'movie' : 'tv-show';
+  return routeWithLang(`/${mediaType}/${tmdbId}`);
+};
+
 // Navigate to recommendations (home page)
 const goToRecommendations = () => {
-  navigateTo('/', { replace: false });
+  navigateTo(routeWithLang('/'), { replace: false });
 };
 
 const handleRemoveTitle = async (title: WatchlistTitle) => {

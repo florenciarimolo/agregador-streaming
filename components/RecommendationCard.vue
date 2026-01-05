@@ -2,7 +2,7 @@
   <TitleCard
     :title="props.title.title"
     :poster-path="props.title.poster_path"
-    :link-to="`/${mediaType}/${props.title.tmdb_id}`"
+    :link-to="linkTo"
     :link-aria-label="$t('media.viewDetailsOf', { title: props.title.title })"
     :image-alt="$t('media.posterOf', { title: props.title.title })"
     :no-image-aria-label="
@@ -203,6 +203,7 @@ const emit = defineEmits<{
 }>();
 
 const dropdownRef = ref<InstanceType<typeof ActionMenu> | null>(null);
+const { routeWithLang } = useRouteWithLang();
 
 const handleAction = (action: TitleStatusType | 'liked' | 'remove-liked') => {
   // Close dropdown when action is triggered
@@ -224,6 +225,11 @@ const handleAction = (action: TitleStatusType | 'liked' | 'remove-liked') => {
 const mediaType = computed(() =>
   props.title.type === MEDIA_TYPE.MOVIE ? 'movie' : 'tv-show'
 );
+
+// Computed link with language prefix
+const linkTo = computed(() => {
+  return routeWithLang(`/${mediaType.value}/${props.title.tmdb_id}`);
+});
 
 // Map explanation_code to user-friendly text
 const explanationText = computed(() => {

@@ -10,19 +10,19 @@
               <!-- Navigation Links -->
               <nav class="flex flex-wrap gap-6 items-center">
                 <nuxt-link
-                  to="/how-it-works"
+                  :to="howItWorksRoute"
                   class="text-sm text-gray-800 no-underline transition-colors dark:text-gray-300 hover:text-primary dark:hover:text-primary-400"
                 >
                   {{ $t('footer.howItWorks') }}
                 </nuxt-link>
                 <nuxt-link
-                  to="/faq"
+                  :to="faqRoute"
                   class="text-sm text-gray-800 no-underline transition-colors dark:text-gray-300 hover:text-primary dark:hover:text-primary-400"
                 >
                   {{ $t('footer.faq') }}
                 </nuxt-link>
                 <nuxt-link
-                  to="/privacy"
+                  :to="privacyRoute"
                   class="text-sm text-gray-800 no-underline transition-colors dark:text-gray-300 hover:text-primary dark:hover:text-primary-400"
                 >
                   {{ $t('footer.privacy') }}
@@ -33,7 +33,7 @@
                 <span class="text-sm text-gray-600 dark:text-gray-400">
                   {{ $t('settings.language.title') }}:
                 </span>
-                <AppLanguageSelector />
+                <AppLanguageSelector :open-upward="true" />
               </div>
             </div>
             <!-- Bottom Section: Copyright and Contact -->
@@ -75,21 +75,21 @@
         <div class="md:hidden text-center">
           <div class="flex flex-wrap gap-4 justify-center items-center mb-4">
             <nuxt-link
-              to="/how-it-works"
+              :to="howItWorksRoute"
               class="text-sm text-gray-800 no-underline transition-colors dark:text-gray-300 hover:text-primary dark:hover:text-primary-400"
             >
               {{ $t('footer.howItWorks') }}
             </nuxt-link>
             <span class="text-gray-400">•</span>
             <nuxt-link
-              to="/faq"
+              :to="faqRoute"
               class="text-sm text-gray-800 no-underline transition-colors dark:text-gray-300 hover:text-primary dark:hover:text-primary-400"
             >
               {{ $t('footer.faq') }}
             </nuxt-link>
             <span class="text-gray-400">•</span>
             <nuxt-link
-              to="/privacy"
+              :to="privacyRoute"
               class="text-sm text-gray-800 no-underline transition-colors dark:text-gray-300 hover:text-primary dark:hover:text-primary-400"
             >
               {{ $t('footer.privacy') }}
@@ -100,7 +100,7 @@
             <span class="text-sm text-gray-600 dark:text-gray-400">
               {{ $t('settings.language.title') }}:
             </span>
-            <AppLanguageSelector />
+            <AppLanguageSelector :open-upward="true" />
           </div>
           <p class="mb-2 text-sm text-gray-800 dark:text-gray-300">
             {{ $t('footer.copyright', { year: currentYear }) }}
@@ -135,6 +135,15 @@
 import { computed } from 'vue';
 import AppShell from '@/components/layout/AppShell.vue';
 import AppLanguageSelector from '@/components/AppLanguageSelector.vue';
+
+const { routeWithLang } = useRouteWithLang();
+
+// Computed routes with language prefix
+// CRITICAL: routeWithLang() accesses route.params.lang directly, ensuring reactivity
+// These computed will automatically re-evaluate when route.params.lang changes
+const howItWorksRoute = computed(() => routeWithLang('/how-it-works'));
+const faqRoute = computed(() => routeWithLang('/faq'));
+const privacyRoute = computed(() => routeWithLang('/privacy'));
 
 // Calculate current year dynamically
 const currentYear = computed(() => new Date().getFullYear());

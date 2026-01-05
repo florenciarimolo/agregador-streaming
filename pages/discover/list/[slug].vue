@@ -39,9 +39,9 @@ import type {
 const { t, locale } = useI18n();
 const route = useRoute();
 
-// SEO: Discover list page - public, indexable
-const config = useRuntimeConfig();
-const siteUrl = config.public.baseUrl || config.public.siteUrl;
+// SEO: hreflang and canonical
+const { hreflangLinks } = useHreflang();
+const { canonicalUrl } = useCanonical();
 
 const list = ref<DiscoverList | null>(null);
 const items = ref<DiscoverListItem[] | null>(null);
@@ -74,9 +74,10 @@ useHead({
     },
   ],
   link: [
+    ...hreflangLinks.value,
     {
       rel: 'canonical',
-      href: `${siteUrl}/discover/list/${route.params.slug}`,
+      href: canonicalUrl.value,
     },
   ],
 });
@@ -87,7 +88,7 @@ useSeoMeta({
   ogTitle: pageTitle,
   ogDescription: pageDescription,
   ogType: 'website',
-  ogUrl: `${siteUrl}/discover/list/${route.params.slug}`,
+  ogUrl: canonicalUrl.value,
   twitterCard: 'summary_large_image',
   robots: 'index, follow',
 });

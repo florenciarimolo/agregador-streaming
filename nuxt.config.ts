@@ -31,25 +31,36 @@ if (needsPolyfill) {
 /**
  * Get site URL based on environment
  * Priority: NUXT_PUBLIC_BASE_URL > VERCEL_URL > VERCEL_ENV > localhost
+ *
+ * CRITICAL: Always returns URL without trailing slash to prevent double slashes (//)
+ * when concatenating with paths that start with /
  */
 function getSiteUrl(): string {
+  let url: string;
+
   // Use existing NUXT_PUBLIC_BASE_URL if defined
   if (process.env.NUXT_PUBLIC_BASE_URL) {
-    return process.env.NUXT_PUBLIC_BASE_URL;
+    url = process.env.NUXT_PUBLIC_BASE_URL;
   }
   // Fallback to VERCEL_URL if available
-  if (process.env.VERCEL_URL) {
-    return `https://${process.env.VERCEL_URL}`;
+  else if (process.env.VERCEL_URL) {
+    url = `https://${process.env.VERCEL_URL}`;
   }
   // Fallback to VERCEL_ENV
-  if (process.env.VERCEL_ENV === 'production') {
-    return 'https://getupnext.io';
-  }
-  if (process.env.VERCEL_ENV === 'preview') {
-    return 'https://up-next-dev.vercel.app';
+  else if (process.env.VERCEL_ENV === 'production') {
+    url = 'https://getupnext.io';
+  } else if (process.env.VERCEL_ENV === 'preview') {
+    url = 'https://up-next-dev.vercel.app';
   }
   // Default to localhost
-  return 'http://localhost:3000';
+  else {
+    url = 'http://localhost:3000';
+  }
+
+  // CRITICAL: Remove trailing slash to prevent // when concatenating with paths
+  // Example: baseUrl = "http://127.0.0.1:3000/" + "/es" = "http://127.0.0.1:3000//es" ❌
+  // Correct: baseUrl = "http://127.0.0.1:3000" + "/es" = "http://127.0.0.1:3000/es" ✅
+  return url.replace(/\/$/, '');
 }
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
@@ -75,8 +86,8 @@ export default defineNuxtConfig({
   supabase: {
     redirect: false, // Disable automatic redirects - we handle them manually in callback.vue, authform.vue, and middleware
     redirectOptions: {
-      login: '/', // Redirect to home instead of /login
-      callback: '/auth/callback',
+      login: '/', // Redirect to home instead of /login (will be handled with language prefix by legacy-redirect middleware)
+      callback: '/auth/callback', // Will be handled dynamically with language prefix in useAuth.ts
       exclude: ['/'], // Homepage is public
     },
     clientOptions: {
@@ -127,55 +138,46 @@ export default defineNuxtConfig({
     langDir: 'locales',
     locales: [
       {
-        code: 'es-ES',
+        code: 'es',
         iso: 'es-ES',
         name: 'Español',
         file: 'es-ES.json',
       },
       {
-        code: 'ca-ES',
+        code: 'ca',
         iso: 'ca-ES',
         name: 'Català',
         file: 'ca-ES.json',
       },
       {
-        code: 'eu-ES',
+        code: 'eu',
         iso: 'eu-ES',
         name: 'Euskera',
         file: 'eu-ES.json',
       },
       {
-        code: 'gl-ES',
+        code: 'gl',
         iso: 'gl-ES',
         name: 'Galego',
         file: 'gl-ES.json',
       },
       {
-        code: 'en-US',
+        code: 'en',
         iso: 'en-US',
         name: 'English (US)',
         file: 'en-US.json',
       },
       {
-        code: 'en-GB',
+        code: 'en-gb',
         iso: 'en-GB',
         name: 'English (GB)',
         file: 'en-GB.json',
       },
     ],
-    defaultLocale: 'es-ES',
-    strategy: 'no_prefix',
+    defaultLocale: 'es',
+    strategy: 'prefix',
     vueI18n: 'i18n/i18n.config.ts',
-    detectBrowserLanguage: {
-      useCookie: true,
-      cookieKey: 'i18n_redirected',
-      redirectOn: 'root',
-      alwaysRedirect: true, // Enable automatic browser language detection on first visit
-      fallbackLocale: 'es-ES',
-      // Map generic language codes to specific locales
-      // When browser detects "en", try "en-US" first, then "en-GB"
-      // This prevents warnings about missing "en" locale
-    },
+    detectBrowserLanguage: false, // Disabled - we handle / redirect manually in legacy-redirect middleware
   },
 
   app: {
@@ -214,110 +216,101 @@ export default defineNuxtConfig({
   sitemap: {
     // Sitemap configuration
     // The module will use runtimeConfig.public.baseUrl automatically
+    // CRITICAL: baseUrl is normalized in getSiteUrl() to never have trailing slash
+    // Routes in sitemap start with /, so concatenation is: baseUrl (no /) + route (starts with /) = clean URL
+    // Exclude private routes (with language prefix pattern)
     exclude: [
-      '/auth/**',
-      '/auth/callback',
-      '/onboarding',
-      '/my-account',
-      '/preferences',
-      '/watchlist',
+      '/:lang/auth/**',
+      '/:lang/auth/callback',
+      '/:lang/onboarding',
+      '/:lang/my-account',
+      '/:lang/preferences',
+      '/:lang/watchlist',
+      '/:lang/lists',
       '/api/**',
     ],
     // @ts-expect-error - @nuxtjs/sitemap types may not match actual API
     routes: async () => {
-      const { getTitleIdsForSitemap } = await import('./server/utils/sitemap');
+      const { getTitleIdsForSitemap, getDiscoverListsForSitemap } =
+        await import('./server/utils/sitemap');
+
+      // Supported languages with URL codes
+      const supportedLanguages = [
+        { urlCode: 'es', i18nCode: 'es-ES' },
+        { urlCode: 'ca', i18nCode: 'ca-ES' },
+        { urlCode: 'eu', i18nCode: 'eu-ES' },
+        { urlCode: 'gl', i18nCode: 'gl-ES' },
+        { urlCode: 'en', i18nCode: 'en-US' },
+        { urlCode: 'en-gb', i18nCode: 'en-GB' },
+      ];
+
+      // Define static routes (without language prefix - will be added per language)
+      const staticRoutes = [
+        { path: '/', changefreq: 'daily', priority: 1.0 },
+        { path: '/how-it-works', changefreq: 'monthly', priority: 0.8 },
+        { path: '/faq', changefreq: 'monthly', priority: 0.8 },
+        { path: '/privacy', changefreq: 'monthly', priority: 0.8 },
+        { path: '/discover', changefreq: 'monthly', priority: 0.8 },
+      ];
+
+      // Fetch data
       const titles = await getTitleIdsForSitemap();
+      const discoverLists = await getDiscoverListsForSitemap();
 
       const routes: Array<{
         url: string;
         lastmod?: string;
         changefreq?: string;
         priority?: number;
-      }> = [
-        // Static routes
-        {
-          url: '/',
-          changefreq: 'daily',
-          priority: 1.0,
-        },
-        {
-          url: '/how-it-works',
-          changefreq: 'monthly',
-          priority: 0.8,
-        },
-        {
-          url: '/faq',
-          changefreq: 'monthly',
-          priority: 0.8,
-        },
-        {
-          url: '/discover',
-          changefreq: 'monthly',
-          priority: 0.8,
-        },
-      ];
+      }> = [];
 
-      // Dynamic routes for Discover lists
-      const { getDiscoverListsForSitemap } = await import('./server/utils/sitemap');
-      const discoverLists = await getDiscoverListsForSitemap();
-      for (const list of discoverLists) {
-        routes.push({
-          url: `/discover/list/${list.slug}`,
-          changefreq: 'monthly',
-          priority: 0.7,
-        });
-      }
-
-      // Dynamic routes for movies
-      const movies = titles.filter((t) => t.type === 'movie');
-      for (const movie of movies) {
-        routes.push({
-          url: `/movie/${movie.tmdb_id}`,
-          lastmod: movie.updated_at
-            ? new Date(movie.updated_at).toISOString()
-            : undefined,
-          changefreq: 'weekly',
-          priority: 0.7,
-        });
-      }
-
-      // Dynamic routes for TV shows
-      const tvShows = titles.filter((t) => t.type === 'tv');
-      const { getTVShowSeasons } = await import('./server/utils/sitemap');
-
-      // Process TV shows in batches to avoid overwhelming TMDB API
-      const batchSize = 10;
-      for (let i = 0; i < tvShows.length; i += batchSize) {
-        const batch = tvShows.slice(i, i + batchSize);
-        const seasonPromises = batch.map(async (tvShow) => {
-          const seasons = await getTVShowSeasons(tvShow.tmdb_id);
-          return { tvShow, seasons };
-        });
-
-        const results = await Promise.all(seasonPromises);
-
-        for (const { tvShow, seasons } of results) {
-          // Add TV show route
+      // Generate routes for each language
+      for (const lang of supportedLanguages) {
+        // Static routes per language
+        for (const staticRoute of staticRoutes) {
           routes.push({
-            url: `/tv-show/${tvShow.tmdb_id}`,
+            url: `/${lang.urlCode}${staticRoute.path}`,
+            changefreq: staticRoute.changefreq,
+            priority: staticRoute.priority,
+          });
+        }
+
+        // Dynamic routes for Discover lists per language
+        for (const list of discoverLists) {
+          routes.push({
+            url: `/${lang.urlCode}/discover/list/${list.slug}`,
+            lastmod: list.updated_at
+              ? new Date(list.updated_at).toISOString()
+              : undefined,
+            changefreq: 'monthly',
+            priority: 0.7,
+          });
+        }
+
+        // Dynamic routes for movies per language
+        const movies = titles.filter((t) => t.type === 'movie');
+        for (const movie of movies) {
+          routes.push({
+            url: `/${lang.urlCode}/movie/${movie.tmdb_id}`,
+            lastmod: movie.updated_at
+              ? new Date(movie.updated_at).toISOString()
+              : undefined,
+            changefreq: 'weekly',
+            priority: 0.7,
+          });
+        }
+
+        // Dynamic routes for TV shows per language (NO seasons)
+        const tvShows = titles.filter((t) => t.type === 'tv');
+        for (const tvShow of tvShows) {
+          routes.push({
+            url: `/${lang.urlCode}/tv-show/${tvShow.tmdb_id}`,
             lastmod: tvShow.updated_at
               ? new Date(tvShow.updated_at).toISOString()
               : undefined,
             changefreq: 'weekly',
             priority: 0.7,
           });
-
-          // Add season routes
-          for (const season of seasons) {
-            routes.push({
-              url: `/tv-show/${tvShow.tmdb_id}/season/${season.season_number}`,
-              lastmod: tvShow.updated_at
-                ? new Date(tvShow.updated_at).toISOString()
-                : undefined,
-              changefreq: 'weekly',
-              priority: 0.6,
-            });
-          }
         }
       }
 

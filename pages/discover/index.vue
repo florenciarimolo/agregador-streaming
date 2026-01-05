@@ -60,6 +60,8 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
+import { useHreflang } from '@/composables/useHreflang';
+import { useCanonical } from '@/composables/useCanonical';
 import AppShell from '@/components/layout/AppShell.vue';
 import PageContainer from '@/components/layout/PageContainer.vue';
 import Section from '@/components/layout/Section.vue';
@@ -85,9 +87,9 @@ const user = useSupabaseUser();
 const isLoggedIn = computed(() => !!user.value);
 const showAuthForm = ref(false);
 
-// SEO: Discover index page - public, indexable
-const config = useRuntimeConfig();
-const siteUrl = config.public.baseUrl || config.public.siteUrl;
+// SEO: hreflang and canonical
+const { hreflangLinks } = useHreflang();
+const { canonicalUrl } = useCanonical();
 
 useHead({
   title: t('discover.title'),
@@ -102,9 +104,10 @@ useHead({
     },
   ],
   link: [
+    ...(hreflangLinks.value || []),
     {
       rel: 'canonical',
-      href: `${siteUrl}/discover`,
+      href: canonicalUrl,
     },
   ],
 });
@@ -115,7 +118,7 @@ useSeoMeta({
   ogTitle: t('discover.title'),
   ogDescription: t('discover.description'),
   ogType: 'website',
-  ogUrl: `${siteUrl}/discover`,
+  ogUrl: canonicalUrl,
   twitterCard: 'summary_large_image',
   robots: 'index, follow',
 });

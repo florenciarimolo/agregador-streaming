@@ -6,7 +6,6 @@
  */
 
 import { getRouterParams, getQuery } from 'h3';
-import { parseCookies } from 'h3';
 import {
   getDiscoverListBySlug,
   getDiscoverListItems,
@@ -30,26 +29,25 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    // Get language from query parameter first, then fall back to cookies
+    // Get language from URL (route.params.lang) or query parameter, then default
     const query = getQuery(event);
+    const params = getRouterParams(event);
     let language = DEFAULT_LANGUAGE;
     
-    // Try query parameter first (more reliable for immediate updates)
-    if (query.language && typeof query.language === 'string') {
-      language = toTMDBLanguageCode(query.language);
-    } else {
-      // Fall back to cookies (i18n_redirected cookie from Nuxt i18n)
-      try {
-        const cookies = parseCookies(event);
-        const i18nCookie = cookies['i18n_redirected'];
-        if (i18nCookie) {
-          language = toTMDBLanguageCode(i18nCookie);
-        }
-      } catch {
-        // If error reading cookies, use default
-        language = DEFAULT_LANGUAGE;
+    // Priority 1: URL parameter (route.params.lang) - deterministic source of truth
+    const langFromUrl = params.lang as string | undefined;
+    if (langFromUrl) {
+      const { getI18nCodeFromUrlCode } = await import('@/composables/useLangFromUrl');
+      const i18nCode = getI18nCodeFromUrlCode(langFromUrl.toLowerCase());
+      if (i18nCode) {
+        language = toTMDBLanguageCode(i18nCode);
       }
+    } 
+    // Priority 2: Query parameter (fallback for API calls)
+    else if (query.language && typeof query.language === 'string') {
+      language = toTMDBLanguageCode(query.language);
     }
+    // Priority 3: Default (no cookies - language comes from URL only)
 
     // Get list by slug
     const { data: list, error: listError } = await getDiscoverListBySlug(

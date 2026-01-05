@@ -59,7 +59,7 @@
         :key="item.id"
         :title="item.title || ''"
         :poster-path="item.poster_path"
-        :link-to="`/${item.type === MEDIA_TYPE.MOVIE ? 'movie' : 'tv-show'}/${item.tmdb_id}`"
+        :link-to="routeWithLang(`/${item.type === MEDIA_TYPE.MOVIE ? 'movie' : 'tv-show'}/${item.tmdb_id}`)"
         :link-aria-label="$t('media.viewDetailsOf', { title: item.title })"
         :image-alt="$t('media.posterOf', { title: item.title })"
         :no-image-aria-label="$t('media.noPosterAvailableFor', { title: item.title })"
@@ -130,7 +130,8 @@ const showAuthForm = ref(false);
 
 // Handle back navigation
 const handleBack = () => {
-  router.push('/discover');
+  const { routeWithLang } = useRouteWithLang();
+  router.push(routeWithLang('/discover'));
 };
 
 // Load title statuses for all items
@@ -310,10 +311,11 @@ async function handleAction(
             },
           });
 
+          const { routeWithLang } = useRouteWithLang();
           showToast(t('home.titleAddedFavorites', { title: item.title }), {
             label: t('home.viewFavorites'),
             action: async () => {
-              await navigateTo('/lists');
+              await navigateTo(routeWithLang('/lists'));
             },
           }, 5000);
         }

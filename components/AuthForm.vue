@@ -12,6 +12,7 @@ import IconEye from '@/components/icons/IconEye.vue';
 import IconEyeSlash from '@/components/icons/IconEyeSlash.vue';
 import IconCheck from '@/components/icons/IconCheck.vue';
 import IconX from '@/components/icons/IconX.vue';
+import { useUserStore } from '@/stores/user';
 
 // Type for Supabase user that may have either 'id' or 'sub' as identifier
 type SupabaseUserWithSub = {
@@ -27,7 +28,7 @@ function getUserId(
   return user?.id || user?.sub;
 }
 
-const props = withDefaults(
+withDefaults(
   defineProps<{
     inModal?: boolean;
   }>(),
@@ -50,7 +51,7 @@ const { signIn, signUp, signInWithMagicLink, resetPassword } = useAuth();
 // Use a computed to lazy-load the store, but only on client side
 const userStore = computed(() => {
   // Only try to get store on client side
-  if (process.server) {
+  if (import.meta.server) {
     return {
       setUser: () => {},
       fetchProfile: async () => {},
@@ -58,7 +59,7 @@ const userStore = computed(() => {
       hasCompletedOnboarding: false,
     };
   }
-  
+
   try {
     return useUserStore();
   } catch (error) {
@@ -194,7 +195,7 @@ const handlePasswordAuth = async () => {
             } catch {
               hasRecoveryFlag = recoveryFlag === '1';
             }
-            
+
             if (hasRecoveryFlag) {
               console.log(
                 '[AuthForm] Removing auth:recovery flag after successful login'
@@ -212,23 +213,27 @@ const handlePasswordAuth = async () => {
 
         // Navigate based on onboarding status
         // This ensures the middleware sees the correct state
+        const { routeWithLang } = useRouteWithLang();
         const hasCompletedOnboarding = userStore.value.hasCompletedOnboarding;
         if (hasCompletedOnboarding) {
-          console.log('[AuthForm] User completed onboarding, navigating to /');
-          await navigateTo('/', { replace: true });
+          console.log(
+            '[AuthForm] User completed onboarding, navigating to home'
+          );
+          await navigateTo(routeWithLang('/'), { replace: true });
         } else {
           console.log(
             '[AuthForm] User not completed onboarding, navigating to /onboarding'
           );
-          await navigateTo('/onboarding', { replace: true });
+          await navigateTo(routeWithLang('/onboarding'), { replace: true });
         }
       } else {
         // Fallback: navigate to home using Nuxt navigation
         // This prevents full page reload and ensures Pinia is initialized before middleware runs
+        const { routeWithLang } = useRouteWithLang();
         console.log(
           '[AuthForm] User not available after waiting, navigating to home'
         );
-        await navigateTo('/', { replace: true });
+        await navigateTo(routeWithLang('/'), { replace: true });
       }
     }
   } catch (err: unknown) {
@@ -342,12 +347,7 @@ const backToLogin = () => {
 </script>
 
 <template>
-  <section
-    id="auth-form"
-    :class="[
-      inModal ? '' : 'py-16 md:pb-0 md:px-4',
-    ]"
-  >
+  <section id="auth-form" :class="[inModal ? '' : 'py-16 md:pb-0 md:px-4']">
     <div :class="[inModal ? 'w-full' : 'container mx-auto max-w-md']">
       <div
         :class="[

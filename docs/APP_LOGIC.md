@@ -897,7 +897,7 @@ Stores user preferences.
 
 - `idx_user_preferences_user_id` on `user_id`
 
-**Note:** Language is managed through cookies (`i18n_redirected` cookie from Nuxt i18n), NOT stored in the database. The app always uses the user's app language from cookies for TMDB API calls. Region is stored in `user_preferences.region` in the database.
+**Note:** Language is managed through URL prefixes (`/:lang/`) for SEO and routing. The app derives language deterministically from the URL (`route.params.lang`) for SEO, title, and meta tags. No cookies are used for language - it is always determined from the URL. For TMDB API calls, the app uses the user's app language from the URL (mapped to i18n code). Region is stored in `user_preferences.region` in the database.
 
 ### Table: `user_activity`
 
@@ -943,11 +943,22 @@ Stores user activity tracking for analytics and debugging.
 - If it doesn't exist, it is automatically fetched from TMDB and created in the database
 - This ensures titles are available when querying lists (watchlist, seen, etc.)
 
-### 4. Multi-language
+### 4. Multi-language and SEO
 
 - Titles are stored in multiple languages (es, ca, eu, gl, en)
 - They are fetched from TMDB according to user preferences
 - The system automatically detects the alphabet (Latin, Cyrillic, etc.) to display correctly
+
+**SEO Multi-language Strategy:**
+
+- All URLs include a language prefix: `/:lang/` (e.g., `/es/`, `/en/`, `/ca/`)
+- Language codes in URLs: `es`, `ca`, `eu`, `gl`, `en`, `en-gb`
+- Language is derived from URL for SEO (title, meta, canonical, hreflang)
+- Cookies are used only for UX preferences, not for SEO decisions
+- Each language has its own URL, including the default language (`es`)
+- Sitemap generates URLs for all languages
+- hreflang tags link equivalent pages across languages
+- Canonical URLs point to the current page with its language
 
 ### 5. Pool Regeneration
 
@@ -1213,14 +1224,17 @@ Discover editorial lists are public, SEO-oriented lists with manually curated co
 
 - Slugs are stable and never change
 - Slugs are not translated
-- URLs are language-agnostic and SEO-first
+- URLs include language prefix for SEO: `/:lang/discover/list/{slug}`
 - Format: kebab-case, descriptive, editorial
 - Example:
-  - URL: `/discover/list/best-short-series`
+  - URL (ES): `/es/discover/list/best-short-series`
+  - URL (EN): `/en/discover/list/best-short-series`
   - Title (ES): "Mejores series cortas para ver en pocos días"
   - Title (EN): "Best short series to binge"
+- Slugs are always in English and stable across languages
 - ❌ Never use non-English slugs (Spanish, Catalan, etc.)
 - ❌ Never generate slugs by language
+- ✅ Each language has its own URL with the same slug
 
 ### When User Uses "Use This List as a Seed"
 
@@ -1343,7 +1357,7 @@ Middlewares may need information from stores, but must do so safely:
 ```typescript
 export default defineNuxtRouteMiddleware(async (to) => {
   // Only execute on client
-  if (process.server) {
+  if (import.meta.server) {
     return;
   }
 
@@ -1426,7 +1440,7 @@ onMounted(() => {
 
    ```typescript
    export default defineNuxtPlugin(() => {
-     if (process.server) {
+     if (import.meta.server) {
        return;
      }
      // ... plugin logic
@@ -1442,11 +1456,11 @@ onMounted(() => {
 
 #### Rules for Middlewares
 
-1. **Always verify `process.server`**
+1. **Always verify `import.meta.server`**
 
    ```typescript
    export default defineNuxtRouteMiddleware(async (to) => {
-     if (process.server) {
+     if (import.meta.server) {
        return;
      }
      // ... middleware logic
@@ -1454,7 +1468,7 @@ onMounted(() => {
    ```
 
 2. **Access stores only on client**
-   - Verify `process.server` before accessing stores
+   - Verify `import.meta.server` before accessing stores
    - Do not use `setTimeout` or retries to "wait" for Pinia
    - If Pinia is not available, the middleware must fail in a controlled manner
 
@@ -1488,7 +1502,7 @@ onMounted(() => {
    ```typescript
    export const useMyComposable = () => {
      const userStore = computed(() => {
-       if (process.server) {
+       if (import.meta.server) {
          return null; // or a fallback object
        }
        return useUserStore();
@@ -1499,13 +1513,13 @@ onMounted(() => {
 
 ### Rules Summary
 
-| Context        | Can use Pinia? | How?                                      |
-| -------------- | -------------- | ----------------------------------------- |
-| Components     | ✅ Yes         | Directly in `setup()` or `onMounted()`    |
-| Composables    | ⚠️ With care   | Lazy-load with `computed` or functions    |
-| Plugins        | ❌ No          | Delegate to components or composables     |
-| Middlewares    | ⚠️ With care   | Only on client, verify `process.server`   |
-| `.ts` files    | ❌ No          | Move logic to composables or components  |
+| Context     | Can use Pinia? | How?                                        |
+| ----------- | -------------- | ------------------------------------------- |
+| Components  | ✅ Yes         | Directly in `setup()` or `onMounted()`      |
+| Composables | ⚠️ With care   | Lazy-load with `computed` or functions      |
+| Plugins     | ❌ No          | Delegate to components or composables       |
+| Middlewares | ⚠️ With care   | Only on client, verify `import.meta.server` |
+| `.ts` files | ❌ No          | Move logic to composables or components     |
 
 ### Benefits of This Architecture
 

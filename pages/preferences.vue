@@ -288,7 +288,7 @@ const currentUser = useSupabaseUser();
 // Use a computed to lazy-load the store, but only on client side
 const userStore = computed(() => {
   // Only try to get store on client side
-  if (process.server) {
+  if (import.meta.server) {
     return {
       profile: null,
       authInitialized: false,
@@ -1041,7 +1041,8 @@ const { pending: profilePending } = useAsyncData(
 
     // If onboarding not completed, redirect to onboarding
     if (!hasCompletedOnboarding) {
-      await navigateTo('/onboarding', { replace: true });
+      const { routeWithLang } = useRouteWithLang();
+      await navigateTo(routeWithLang('/onboarding'), { replace: true });
       return false; // Prevent content from loading
     }
 

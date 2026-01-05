@@ -19,7 +19,7 @@
             <p class="text-sm text-gray-800 dark:text-gray-300">
               {{ $t('cookies.message') }}
               <nuxt-link
-                to="/privacy"
+                :to="privacyRoute"
                 class="text-gray-800 dark:text-gray-300 hover:text-primary dark:hover:text-primary-400 transition-colors font-medium"
               >
                 {{ $t('cookies.privacyLink') }}
@@ -52,9 +52,14 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
 import { useCookieConsent } from '@/composables/useCookieConsent';
 import Button from '@/components/ui/Button.vue';
 
 const { isUnset, acceptCookies, rejectCookies } = useCookieConsent();
+const { routeWithLang } = useRouteWithLang();
+
+// Computed route with language prefix
+const privacyRoute = computed(() => routeWithLang('/privacy'));
 </script>
 

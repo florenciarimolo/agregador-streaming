@@ -291,7 +291,8 @@ const showAuthForm = ref(false);
 // Handle auth success
 const handleAuthSuccess = () => {
   showAuthForm.value = false;
-  router.push('/');
+  const { routeWithLang } = useRouteWithLang();
+  router.push(routeWithLang('/'));
 };
 
 // Handle signup success
@@ -299,10 +300,21 @@ const handleSignupSuccess = () => {
   showAuthForm.value = false;
 };
 
+// SEO: hreflang and canonical
+const { hreflangLinks } = useHreflang();
+const { canonicalUrl } = useCanonical();
+
 // Use watchEffect to ensure i18n messages are loaded before setting SEO meta
 watchEffect(() => {
   useHead({
     title: t('seo.howItWorksTitle'),
+    link: [
+      ...hreflangLinks.value,
+      {
+        rel: 'canonical',
+        href: canonicalUrl.value,
+      },
+    ],
   });
 
   useSeoMeta({

@@ -5,11 +5,11 @@
       <nav
         class="rounded-3xl border shadow-md backdrop-blur-xl dark:bg-gray-900/40 bg-gray-100/80 border-gray-300/50 dark:border-white/10"
       >
-        <div class="flex justify-between items-center py-4 px-4 md:px-6">
+        <div class="flex justify-between items-center py-4 px-4 md:px-6 gap-4">
           <!-- Logo -->
           <nuxt-link
-            to="/"
-            class="flex items-center transition-opacity hover:opacity-80"
+            :to="homeRoute"
+            class="flex items-center transition-opacity hover:opacity-80 flex-shrink-0"
           >
             <img
               src="/logo-light.png"
@@ -23,19 +23,24 @@
             />
           </nuxt-link>
 
+          <!-- Search Bar (Desktop) - Center -->
+          <div class="hidden md:block flex-1 max-w-md mx-4">
+            <SearchBar />
+          </div>
+
           <!-- Desktop Menu -->
           <div class="flex items-center gap-6 flex-shrink-0">
             <!-- Navigation Links (Always visible) -->
             <nav class="flex gap-6 items-center">
               <nuxt-link
-                to="/"
+                :to="homeRoute"
                 class="text-sm font-medium text-gray-800 transition-colors dark:text-gray-300 hover:text-primary dark:hover:text-primary-400"
                 active-class="text-primary dark:text-primary-400"
               >
                 {{ $t('navbar.home') }}
               </nuxt-link>
               <nuxt-link
-                to="/discover"
+                :to="discoverRoute"
                 class="text-sm font-medium text-gray-800 transition-colors dark:text-gray-300 hover:text-primary dark:hover:text-primary-400"
                 active-class="text-primary dark:text-primary-400"
               >
@@ -46,7 +51,7 @@
             <!-- When logged in: Mi Watchlist and User Avatar -->
             <template v-if="currentUser">
               <nuxt-link
-                to="/watchlist"
+                :to="watchlistRoute"
                 class="text-sm font-medium text-gray-800 transition-colors dark:text-gray-300 hover:text-primary dark:hover:text-primary-400"
                 active-class="text-primary dark:text-primary-400"
               >
@@ -94,29 +99,33 @@
                       {{ currentUser.email }}
                     </p>
                     <nuxt-link
-                      to="/lists"
+                      :to="listsRoute"
                       class="block px-4 py-2 mb-2 w-full text-sm text-left text-gray-800 rounded-lg transition-colors dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                       @click="userMenuDropdownRef?.close()"
                     >
                       {{ $t('navbar.lists') }}
                     </nuxt-link>
                     <nuxt-link
-                      to="/preferences"
+                      :to="preferencesRoute"
                       class="block px-4 py-2 mb-2 w-full text-sm text-left text-gray-800 rounded-lg transition-colors dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                       @click="userMenuDropdownRef?.close()"
                     >
                       {{ $t('navbar.preferences') }}
                     </nuxt-link>
                     <nuxt-link
-                      to="/my-account"
+                      :to="myAccountRoute"
                       class="block px-4 py-2 mb-2 w-full text-sm text-left text-gray-800 rounded-lg transition-colors dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                       @click="userMenuDropdownRef?.close()"
                     >
                       {{ $t('navbar.myAccount') }}
                     </nuxt-link>
                     <!-- Theme Switcher (when logged in) -->
-                    <div class="flex justify-between items-center px-4 py-2 mb-2">
-                      <span class="text-sm font-medium text-gray-800 dark:text-gray-300">
+                    <div
+                      class="flex justify-between items-center px-4 py-2 mb-2"
+                    >
+                      <span
+                        class="text-sm font-medium text-gray-800 dark:text-gray-300"
+                      >
                         {{ $t('navbar.theme') }}
                       </span>
                       <ThemeSwitcher />
@@ -168,7 +177,7 @@
       >
         <div class="flex justify-between items-center py-3 px-4">
           <!-- Logo -->
-          <nuxt-link to="/" class="flex items-center">
+          <nuxt-link :to="homeRoute" class="flex items-center">
             <img
               src="/logo-light.png"
               :alt="$t('common.appName')"
@@ -317,18 +326,18 @@
         <!-- Menu Items -->
         <nav class="space-y-2">
           <nuxt-link
-            to="/"
+            :to="homeRoute"
             class="flex items-center px-4 py-3 text-sm font-medium text-gray-800 rounded-lg transition-colors dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
             active-class="bg-gray-100 dark:bg-gray-700 text-primary dark:text-primary-400"
             @click="showMobileMenu = false"
           >
             {{ $t('navbar.home') }}
           </nuxt-link>
-          
+
           <!-- Menu items when logged in -->
           <template v-if="currentUser">
             <nuxt-link
-              to="/discover"
+              :to="discoverRoute"
               class="flex items-center px-4 py-3 text-sm font-medium text-gray-800 rounded-lg transition-colors dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
               active-class="bg-gray-100 dark:bg-gray-700 text-primary dark:text-primary-400"
               @click="showMobileMenu = false"
@@ -336,7 +345,7 @@
               {{ $t('discover.title') }}
             </nuxt-link>
             <nuxt-link
-              to="/watchlist"
+              :to="watchlistRoute"
               class="flex items-center px-4 py-3 text-sm font-medium text-gray-800 rounded-lg transition-colors dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
               active-class="bg-gray-100 dark:bg-gray-700 text-primary dark:text-primary-400"
               @click="showMobileMenu = false"
@@ -344,7 +353,7 @@
               {{ $t('navbar.watchlist') }}
             </nuxt-link>
             <nuxt-link
-              to="/lists"
+              :to="listsRoute"
               class="flex items-center px-4 py-3 text-sm font-medium text-gray-800 rounded-lg transition-colors dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
               active-class="bg-gray-100 dark:bg-gray-700 text-primary dark:text-primary-400"
               @click="showMobileMenu = false"
@@ -352,7 +361,7 @@
               {{ $t('navbar.lists') }}
             </nuxt-link>
             <nuxt-link
-              to="/preferences"
+              :to="preferencesRoute"
               class="flex items-center px-4 py-3 text-sm font-medium text-gray-800 rounded-lg transition-colors dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
               active-class="bg-gray-100 dark:bg-gray-700 text-primary dark:text-primary-400"
               @click="showMobileMenu = false"
@@ -360,7 +369,7 @@
               {{ $t('navbar.preferences') }}
             </nuxt-link>
             <nuxt-link
-              to="/my-account"
+              :to="myAccountRoute"
               class="flex items-center px-4 py-3 text-sm font-medium text-gray-800 rounded-lg transition-colors dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
               active-class="bg-gray-100 dark:bg-gray-700 text-primary dark:text-primary-400"
               @click="showMobileMenu = false"
@@ -381,16 +390,6 @@
             >
               {{ $t('auth.login') }}
             </button>
-          </template>
-
-          <!-- App Language Selector (only when logged in) -->
-          <template v-if="currentUser">
-            <div class="flex justify-between items-center px-4 py-3">
-              <span class="text-sm font-medium text-gray-800 dark:text-gray-300">
-                {{ $t('settings.language.title') }}
-              </span>
-              <AppLanguageSelector />
-            </div>
           </template>
 
           <!-- Theme Switcher (always visible) -->
@@ -458,7 +457,11 @@
   </Modal>
 
   <!-- Auth Form Modal -->
-  <Modal :is-open="showAuthForm" @close="showAuthForm = false" custom-class="max-w-md p-0">
+  <Modal
+    :is-open="showAuthForm"
+    custom-class="max-w-md p-0"
+    @close="showAuthForm = false"
+  >
     <AuthForm
       in-modal
       @success="handleAuthSuccess"
@@ -468,7 +471,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed } from 'vue';
+import { ref, onMounted, onUnmounted, computed, toRef } from 'vue';
 import Avatar from './Avatar.vue';
 import ActionMenu from '@/components/ui/ActionMenu.vue';
 import Modal from '@/components/ui/Modal.vue';
@@ -481,7 +484,6 @@ import IconMenu from '@/components/icons/IconMenu.vue';
 import IconClose from '@/components/icons/IconClose.vue';
 import IconSearch from '@/components/icons/IconSearch.vue';
 import IconArrowUp from '@/components/icons/IconArrowUp.vue';
-import AppLanguageSelector from '@/components/AppLanguageSelector.vue';
 import AuthForm from '@/components/AuthForm.vue';
 import ThemeSwitcher from '@/components/ThemeSwitcher.vue';
 
@@ -501,6 +503,19 @@ try {
 }
 const { signOut } = useAuth();
 const router = useRouter();
+const route = useRoute();
+const { routeWithLang } = useRouteWithLang();
+
+// Computed routes with language prefix
+// CRITICAL: routeWithLang() accesses route.params.lang directly, ensuring reactivity
+// These computed will automatically re-evaluate when route.params.lang changes
+const homeRoute = computed(() => routeWithLang('/'));
+const discoverRoute = computed(() => routeWithLang('/discover'));
+const watchlistRoute = computed(() => routeWithLang('/watchlist'));
+const listsRoute = computed(() => routeWithLang('/lists'));
+const preferencesRoute = computed(() => routeWithLang('/preferences'));
+const myAccountRoute = computed(() => routeWithLang('/my-account'));
+
 const showMobileMenu = ref(false);
 const showMobileSearch = ref(false);
 const userMenuDropdownRef = ref<InstanceType<typeof ActionMenu> | null>(null);
@@ -583,7 +598,7 @@ const confirmLogout = async () => {
   try {
     showLogoutConfirm.value = false;
     await signOut();
-    await router.push('/');
+    await router.push(homeRoute.value);
   } catch (error) {
     if (process.env.NODE_ENV === 'development') {
       console.error('Error signing out:', error);

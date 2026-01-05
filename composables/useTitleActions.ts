@@ -40,7 +40,7 @@ export const useTitleActions = (
   // Safely get userStore - it may not be available immediately after Pinia initialization
   // Only get it when needed (client-side only)
   const getUserStore = () => {
-    if (process.server) {
+    if (import.meta.server) {
       return null;
     }
     try {
@@ -128,19 +128,21 @@ export const useTitleActions = (
           7000
         );
       } else if (status === TITLE_STATUS.SEEN) {
+        const { routeWithLang } = useRouteWithLang();
         showToast(t('home.titleMarkedSeen', { title: title.title }), {
           label: t('home.viewSeen'),
           variant: 'secondary',
           action: async () => {
-            await router.push('/lists?tab=seen');
+            await router.push(routeWithLang('/lists?tab=seen'));
           },
         }, 5000);
       } else if (status === TITLE_STATUS.WATCHLIST) {
+        const { routeWithLang } = useRouteWithLang();
         showToast(t('home.titleSavedWatchlist', { title: title.title }), {
           label: t('home.viewList'),
           variant: 'secondary',
           action: async () => {
-            await router.push('/watchlist');
+            await router.push(routeWithLang('/watchlist'));
           },
         }, 5000);
       }
@@ -271,10 +273,11 @@ export const useTitleActions = (
         console.log('[handleMarkLiked] Success');
       }
 
+      const { routeWithLang } = useRouteWithLang();
       showToast(t('home.titleAddedFavorites', { title: title.title }), {
         label: t('home.viewFavorites'),
         action: async () => {
-          await router.push('/lists');
+          await router.push(routeWithLang('/lists'));
         },
       }, 5000);
 

@@ -23,7 +23,7 @@
           variant="primary"
           size="medium"
           custom-class="inline-block"
-          @click="router.push('/')"
+          @click="router.push(`/${getLangFromRoute()}/`)"
         >
           {{ $t('auth.callbackBackToHome') }}
         </Button>
@@ -47,22 +47,44 @@ const { t } = useI18n();
 
 useHead({
   title: t('auth.callbackTitle'),
+  meta: [
+    {
+      name: 'robots',
+      content: 'noindex, nofollow',
+    },
+  ],
 });
 
 useSeoMeta({
   title: t('auth.callbackTitle'),
   description: t('auth.callbackDescription'),
+  robots: 'noindex, nofollow',
 });
+
+import { DEFAULT_LANGUAGE_URL_CODE } from '@/constants/urlLanguageCodes';
 
 const supabase = useSupabaseClient();
 const router = useRouter();
 const route = useRoute();
 
+/**
+ * Get language from route params
+ * @returns Language URL code (e.g., 'es', 'en') or DEFAULT_LANGUAGE_URL_CODE as default
+ */
+const getLangFromRoute = (): string => {
+  const langParam = route.params?.lang as string | undefined;
+  if (langParam) {
+    return langParam.toLowerCase();
+  }
+  // Default to DEFAULT_LANGUAGE_URL_CODE if no lang param
+  return DEFAULT_LANGUAGE_URL_CODE;
+};
+
 // Safely get userStore - it may not be available immediately after Pinia initialization
 // Use a computed to lazy-load the store, but only on client side
 const userStore = computed(() => {
   // Only try to get store on client side
-  if (process.server) {
+  if (import.meta.server) {
     return {
       profile: null,
       authInitialized: false,
@@ -121,15 +143,16 @@ const parseHashParams = (): Record<string, string> => {
 
 // Helper function to redirect based on onboarding status or next parameter
 const redirectAfterAuth = async (next?: string) => {
-  console.log('[AUTH TRACE] callback.vue redirectAfterAuth called', { next });
+  const lang = getLangFromRoute();
+  console.log('[AUTH TRACE] callback.vue redirectAfterAuth called', { next, lang });
 
   // Check if we have a next parameter for recovery flow
-  if (next === '/auth/reset-password') {
-    // Recovery flow: redirect immediately to reset-password
+  if (next === '/auth/reset-password' || next?.endsWith('/auth/reset-password')) {
+    // Recovery flow: redirect immediately to reset-password (with language)
     console.log(
       '[AUTH TRACE] callback.vue redirecting to /auth/reset-password (next param)'
     );
-    router.replace('/auth/reset-password');
+    router.replace(`/${lang}/auth/reset-password`);
     return;
   }
 
@@ -173,18 +196,20 @@ const redirectAfterAuth = async (next?: string) => {
       }
     );
 
-    // Redirect to onboarding if not completed, otherwise to home
+    // Redirect to onboarding if not completed, otherwise to home (with language)
+    const lang = getLangFromRoute();
     if (!hasCompletedOnboarding) {
       console.log('[AUTH TRACE] callback.vue redirecting to /onboarding');
-      router.replace('/onboarding');
+      router.replace(`/${lang}/onboarding`);
     } else {
       console.log('[AUTH TRACE] callback.vue redirecting to /');
-      router.replace('/');
+      router.replace(`/${lang}/`);
     }
   } else {
-    // No user, redirect to home
+    // No user, redirect to home (with language)
+    const lang = getLangFromRoute();
     console.log('[AUTH TRACE] callback.vue redirecting to / (no user)');
-    router.replace('/');
+    router.replace(`/${lang}/`);
   }
 };
 
@@ -231,12 +256,13 @@ onMounted(async () => {
     );
 
     if (isRecoveryFlow) {
+      const lang = getLangFromRoute();
       console.log(
         '[AUTH TRACE] callback.vue recovery flow detected via localStorage flag, redirecting to /auth/reset-password'
       );
       // NO eliminar el flag aquí - se eliminará en reset-password.vue después de cambiar la contraseña
       loading.value = false;
-      router.replace('/auth/reset-password');
+      router.replace(`/${lang}/auth/reset-password`);
       return;
     }
   }
@@ -265,11 +291,12 @@ onMounted(async () => {
     });
 
     if (event === 'PASSWORD_RECOVERY') {
+      const lang = getLangFromRoute();
       console.log('[AUTH TRACE] PASSWORD_RECOVERY fired');
       console.log(
         '[AUTH TRACE] callback.vue PASSWORD_RECOVERY detected, redirecting to /auth/reset-password'
       );
-      router.replace('/auth/reset-password');
+      router.replace(`/${lang}/auth/reset-password`);
     }
   });
 
@@ -324,8 +351,9 @@ onMounted(async () => {
 
       error.value = errorText;
       loading.value = false;
+      const lang = getLangFromRoute();
       setTimeout(() => {
-        router.replace('/');
+        router.replace(`/${lang}/`);
       }, 5000);
       return;
     }
@@ -347,11 +375,12 @@ onMounted(async () => {
         console.error('[AUTH TRACE] callback.vue session error', sessionError);
         error.value = t('auth.callbackSessionError');
         loading.value = false;
+        const lang = getLangFromRoute();
         setTimeout(() => {
           console.log(
             '[AUTH TRACE] callback.vue redirecting to / (session error)'
           );
-          router.replace('/');
+          router.replace(`/${lang}/`);
         }, 3000);
         return;
       }
@@ -408,8 +437,9 @@ onMounted(async () => {
             }
             error.value = t('auth.callbackLinkExpiredOrInvalid');
             loading.value = false;
+            const lang = getLangFromRoute();
             setTimeout(() => {
-              router.replace('/');
+              router.replace(`/${lang}/`);
             }, 3000);
             return;
           }
@@ -433,8 +463,9 @@ onMounted(async () => {
           }
           error.value = t('auth.callbackLinkExpiredOrInvalid');
           loading.value = false;
+          const lang = getLangFromRoute();
           setTimeout(() => {
-            router.replace('/');
+            router.replace(`/${lang}/`);
           }, 3000);
           return;
         }
@@ -461,11 +492,12 @@ onMounted(async () => {
         );
         error.value = t('auth.callbackGetSessionError');
         loading.value = false;
+        const lang = getLangFromRoute();
         setTimeout(() => {
           console.log(
             '[AUTH TRACE] callback.vue redirecting to / (get session error)'
           );
-          router.replace('/');
+          router.replace(`/${lang}/`);
         }, 3000);
         return;
       }
@@ -481,15 +513,17 @@ onMounted(async () => {
     // No code, no tokens, no session
     error.value = t('auth.callbackSessionNotEstablished');
     loading.value = false;
+    const lang = getLangFromRoute();
     setTimeout(() => {
-      router.replace('/');
+      router.replace(`/${lang}/`);
     }, 2000);
   } catch (err: unknown) {
     console.error('[Callback] Unexpected error:', err);
     error.value = t('auth.callbackUnexpectedError');
     loading.value = false;
+    const lang = getLangFromRoute();
     setTimeout(() => {
-      router.replace('/');
+      router.replace(`/${lang}/`);
     }, 3000);
   }
 });

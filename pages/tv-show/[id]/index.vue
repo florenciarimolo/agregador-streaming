@@ -53,7 +53,7 @@
                 :key="season.id"
                 :title="season.name"
                 :poster-path="season.poster_path"
-                :link-to="`/tv-show/${tvShowId}/season/${season.season_number}`"
+                :link-to="routeWithLang(`/tv-show/${tvShowId}/season/${season.season_number}`)"
                 :link-aria-label="
                   $t('media.viewDetailsOf', { title: season.name })
                 "
@@ -235,6 +235,7 @@ const config = useRuntimeConfig();
 const siteUrl = config.public.baseUrl || config.public.siteUrl;
 
 const { t } = useI18n();
+const { routeWithLang } = useRouteWithLang();
 
 // Get SEO experience based on genre
 const seoExperienceKey = computed(() => getTVShowSeoExperience(tvShow.value));
@@ -263,7 +264,9 @@ const ogImage = computed(() => {
 });
 
 // Canonical URL - ensure unique, avoid duplicates with /tv-show/[id]/index
-const canonicalUrl = computed(() => `${siteUrl}/tv-show/${tvShowId}`);
+// SEO: hreflang and canonical
+const { hreflangLinks } = useHreflang();
+const { canonicalUrl: canonicalUrlFromComposable } = useCanonical();
 
 // Schema.org JSON-LD
 const tvShowSchema = computed(() => {
@@ -284,9 +287,10 @@ useHead({
     },
   ],
   link: [
+    ...hreflangLinks.value,
     {
       rel: 'canonical',
-      href: canonicalUrl,
+      href: canonicalUrlFromComposable.value,
     },
   ],
   script: tvShowSchema.value
@@ -306,7 +310,7 @@ useSeoMeta({
   ogDescription: pageDescription,
   ogImage: ogImage,
   ogType: 'video.TV_show',
-  ogUrl: canonicalUrl,
+  ogUrl: canonicalUrlFromComposable.value,
   twitterCard: 'summary_large_image',
   twitterTitle: pageTitle,
   twitterDescription: pageDescription,

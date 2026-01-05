@@ -225,7 +225,7 @@ const currentUser = useSupabaseUser();
 // Use a computed to lazy-load the store, but only on client side
 const userStore = computed(() => {
   // Only try to get store on client side
-  if (process.server) {
+  if (import.meta.server) {
     return {
       profile: null,
       authInitialized: false,
@@ -452,7 +452,8 @@ const handleDeleteAccount = async () => {
     // Sign out and redirect to home
     const { signOut } = useAuth();
     await signOut();
-    await router.push('/');
+    const { routeWithLang } = useRouteWithLang();
+    await router.push(routeWithLang('/'));
   } catch (error) {
     console.error('Error deleting account:', error);
     showToast(t('myAccount.deleteAccount.error'), null);

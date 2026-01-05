@@ -358,6 +358,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const user = useSupabaseUser();
 const hasSession = computed(() => !!user.value);
+const { routeWithLang } = useRouteWithLang();
 
 const emit = defineEmits<{
   'mark-seen': [title: Recommendation];
@@ -377,8 +378,10 @@ const computedLinkTo = computed(() => {
   if (props.recommendation) {
     const mediaType =
       props.recommendation.type === MEDIA_TYPE.MOVIE ? 'movie' : 'tv-show';
-    return `/${mediaType}/${props.recommendation.tmdb_id}`;
+    return routeWithLang(`/${mediaType}/${props.recommendation.tmdb_id}`);
   }
+  // If linkTo is provided, use it as-is (it should already have language prefix)
+  // Otherwise return default
   return props.linkTo || '#';
 });
 const computedPosterPath = computed(

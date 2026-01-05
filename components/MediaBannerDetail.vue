@@ -649,12 +649,13 @@ const handleAction = async (action: TitleStatusType | 'liked') => {
         },
       });
 
+      const { routeWithLang } = useRouteWithLang();
       showToast(
         t('home.titleAddedFavorites', { title: mediaTitle }),
         {
           label: t('home.viewFavorites'),
           action: async () => {
-            await navigateTo('/lists');
+            await navigateTo(routeWithLang('/lists'));
           },
         },
         5000
@@ -740,12 +741,13 @@ const handleAction = async (action: TitleStatusType | 'liked') => {
           isNotInterested.value = false;
           // Note: liked is not automatically set when marking as seen
 
+          const { routeWithLang } = useRouteWithLang();
           showToast(
             t('home.titleMarkedSeen', { title: mediaTitle }),
             {
               label: t('home.viewSeen'),
               action: async () => {
-                await navigateTo('/lists?tab=seen');
+                await navigateTo(routeWithLang('/lists?tab=seen'));
               },
             },
             5000
@@ -758,12 +760,13 @@ const handleAction = async (action: TitleStatusType | 'liked') => {
         isNotInterested.value = false;
         isLiked.value = false;
 
+        const { routeWithLang } = useRouteWithLang();
         showToast(
           t('home.titleSavedWatchlist', { title: mediaTitle }),
           {
             label: t('home.viewList'),
             action: async () => {
-              await navigateTo('/watchlist');
+              await navigateTo(routeWithLang('/watchlist'));
             },
           },
           5000
@@ -866,7 +869,8 @@ const handleBack = async () => {
       router.back();
     } else {
       // User came from outside the app, go to home
-      await navigateTo('/');
+      const { routeWithLang } = useRouteWithLang();
+      await navigateTo(routeWithLang('/'));
     }
   }
 };

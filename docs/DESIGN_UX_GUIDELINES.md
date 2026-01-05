@@ -665,5 +665,7 @@ If a refactor:
 - `composables/useUndoToast.ts`: Toast composable
 - `public/icons/flags/`: Flag SVG files
 - `components/AppLanguageSelector.vue`: App language selector with flags
+  - When language changes, navigates to the same route with new language prefix (e.g., `/es/movie/123` → `/en/movie/123`)
+  - Language is derived from URL for SEO, not from cookies
 - `components/LanguageSelector.vue`: Content language selector with flags
 - `components/RegionSelector.vue`: Region selector with flags

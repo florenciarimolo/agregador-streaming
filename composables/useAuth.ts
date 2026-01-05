@@ -1,5 +1,6 @@
 import { validatePassword } from '@/utils/passwordValidation';
 import { STORAGE_KEYS } from '@/constants/storage/keys';
+import { DEFAULT_LANGUAGE_URL_CODE } from '@/constants/urlLanguageCodes';
 
 /**
  * Authentication composable for UpNext
@@ -9,7 +10,34 @@ export const useAuth = () => {
   const supabase = useSupabaseClient();
   const user = useSupabaseUser();
   const router = useRouter();
+  const route = useRoute();
   const config = useRuntimeConfig();
+
+  /**
+   * Get language from current route
+   * @returns Language URL code (e.g., 'es', 'en') or DEFAULT_LANGUAGE_URL_CODE as default
+   */
+  const getCurrentLang = (): string => {
+    const langParam = route.params?.lang as string | undefined;
+    if (langParam) {
+      return langParam.toLowerCase();
+    }
+    // Default to DEFAULT_LANGUAGE_URL_CODE if no lang param
+    return DEFAULT_LANGUAGE_URL_CODE;
+  };
+
+  /**
+   * Get auth redirect URL with language
+   * @param lang - Language URL code (e.g., 'es', 'en')
+   * @returns Full redirect URL with language prefix
+   */
+  const getAuthRedirectUrl = (lang: string): string => {
+    // CRITICAL: Remove trailing slash from baseUrl to prevent // when concatenating
+    // Result: baseUrl (no trailing /) + "/" + lang + "/auth/callback" = clean URL
+    // Example: "https://example.com" + "/es/auth/callback" = "https://example.com/es/auth/callback" ✅
+    const baseUrl = config.public.baseUrl.replace(/\/$/, '');
+    return `${baseUrl}/${lang}/auth/callback`;
+  };
 
   /**
    * Sign up with email and password
@@ -29,10 +57,9 @@ export const useAuth = () => {
         throw error;
       }
 
-      // Ensure baseUrl doesn't have trailing slash
-      // Uses NUXT_PUBLIC_BASE_URL environment variable
-      const baseUrl = config.public.baseUrl.replace(/\/$/, '');
-      const redirectUrl = `${baseUrl}/auth/callback`;
+      // Get current language from URL
+      const lang = getCurrentLang();
+      const redirectUrl = getAuthRedirectUrl(lang);
 
       if (process.env.NODE_ENV === 'development') {
         console.log('[useAuth] SignUp redirectTo:', redirectUrl);
@@ -59,8 +86,7 @@ export const useAuth = () => {
         // Update profile with display_name
         const userId = data.user.id || (data.user as { sub?: string }).sub;
         if (userId) {
-          const { updateProfile } =
-            await import('@/services/profiles');
+          const { updateProfile } = await import('@/services/profiles');
           await updateProfile(userId, {
             display_name: displayName,
           });
@@ -104,10 +130,9 @@ export const useAuth = () => {
    */
   const signInWithMagicLink = async (email: string) => {
     try {
-      // Ensure baseUrl doesn't have trailing slash
-      // Uses NUXT_PUBLIC_BASE_URL environment variable
-      const baseUrl = config.public.baseUrl.replace(/\/$/, '');
-      const redirectUrl = `${baseUrl}/auth/callback`;
+      // Get current language from URL
+      const lang = getCurrentLang();
+      const redirectUrl = getAuthRedirectUrl(lang);
 
       if (process.env.NODE_ENV === 'development') {
         console.log('[useAuth] MagicLink redirectTo:', redirectUrl);
@@ -136,11 +161,13 @@ export const useAuth = () => {
    * Reset password (forgot password)
    */
   const resetPassword = async (email: string) => {
-    // Ensure baseUrl doesn't have trailing slash
-    // Uses NUXT_PUBLIC_BASE_URL environment variable
-    const baseUrl = config.public.baseUrl.replace(/\/$/, '');
+    // Get current language from URL
+    const lang = getCurrentLang();
     // Redirect to callback with next parameter so callback can handle recovery flow
-    const redirectUrl = `${baseUrl}/auth/callback?next=/auth/reset-password`;
+    // CRITICAL: Remove trailing slash from baseUrl to prevent // when concatenating
+    // Result: baseUrl (no trailing /) + "/" + lang + "/auth/callback?next=..." = clean URL
+    const baseUrl = config.public.baseUrl.replace(/\/$/, '');
+    const redirectUrl = `${baseUrl}/${lang}/auth/callback?next=/${lang}/auth/reset-password`;
 
     if (process.env.NODE_ENV === 'development') {
       console.log('[useAuth] ResetPassword redirectTo:', redirectUrl);
@@ -225,8 +252,9 @@ export const useAuth = () => {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
 
-      // Redirect to homepage after sign out
-      await router.push('/');
+      // Get current language from URL and redirect to homepage with language
+      const lang = getCurrentLang();
+      await router.push(`/${lang}/`);
       return { error: null };
     } catch (error: unknown) {
       console.error('Sign out error:', error);

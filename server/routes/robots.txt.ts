@@ -5,8 +5,13 @@
  */
 export default defineEventHandler((event) => {
   // Get site URL from runtime config (uses baseUrl which respects NUXT_PUBLIC_BASE_URL)
+  // CRITICAL: baseUrl is normalized in getSiteUrl() to never have trailing slash
   const config = useRuntimeConfig();
-  const siteUrl = config.public.baseUrl || config.public.siteUrl;
+  const siteUrl = (
+    config.public.baseUrl ||
+    config.public.siteUrl ||
+    ''
+  ).replace(/\/$/, '');
 
   const robotsContent = `User-agent: *
 Disallow: /auth/
@@ -26,4 +31,3 @@ Sitemap: ${siteUrl}/sitemap.xml
   event.node.res.setHeader('Content-Type', 'text/plain; charset=utf-8');
   return robotsContent;
 });
-
