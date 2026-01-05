@@ -46,15 +46,16 @@ export default defineNuxtPlugin(async () => {
 
         if (session?.user) {
           userStore.setUser(session.user);
-          // Mark auth as initialized when we get a session
-          if (!authInitialized) {
-            userStore.setAuthInitialized(true);
-            authInitialized = true;
-          }
           // Fetch profile - await to ensure it completes before navigation
           // The store uses a mutex pattern to avoid race conditions
           try {
             await userStore.fetchProfile();
+            // Only mark as initialized if profile was successfully loaded
+            // This ensures middleware can safely check onboarding status
+            if (!authInitialized && userStore.profile !== null) {
+              userStore.setAuthInitialized(true);
+              authInitialized = true;
+            }
           } catch (error) {
             // Only log non-refresh-token errors
             if (!isRefreshTokenError(error)) {
@@ -65,9 +66,20 @@ export default defineNuxtPlugin(async () => {
                 );
               }
             }
+            // Even if profile fetch fails, mark as initialized to avoid blocking
+            // The middleware will handle the case where profile is null
+            if (!authInitialized) {
+              userStore.setAuthInitialized(true);
+              authInitialized = true;
+            }
           }
         } else {
           userStore.reset();
+          // No user: mark as initialized immediately
+          if (!authInitialized) {
+            userStore.setAuthInitialized(true);
+            authInitialized = true;
+          }
         }
       } catch (error) {
         // Silently handle refresh token errors - they're expected when tokens are invalid
@@ -102,6 +114,12 @@ export default defineNuxtPlugin(async () => {
     if (session?.user && !isResetPasswordPage) {
       try {
         await userStore.fetchProfile();
+        // Only mark as initialized if profile was successfully loaded
+        // This ensures middleware can safely check onboarding status
+        if (!authInitialized && userStore.profile !== null) {
+          userStore.setAuthInitialized(true);
+          authInitialized = true;
+        }
       } catch (error) {
         // Only log non-refresh-token errors
         if (!isRefreshTokenError(error)) {
@@ -112,13 +130,19 @@ export default defineNuxtPlugin(async () => {
             );
           }
         }
+        // Even if profile fetch fails, mark as initialized to avoid blocking
+        // The middleware will handle the case where profile is null
+        if (!authInitialized) {
+          userStore.setAuthInitialized(true);
+          authInitialized = true;
+        }
       }
-    }
-
-    // Mark auth as initialized after profile is loaded (or after session check if no user)
-    if (!authInitialized) {
-      userStore.setAuthInitialized(true);
-      authInitialized = true;
+    } else {
+      // No user or reset-password page: mark as initialized immediately
+      if (!authInitialized) {
+        userStore.setAuthInitialized(true);
+        authInitialized = true;
+      }
     }
   } catch (error) {
     // Silently handle refresh token errors - they're expected when tokens are invalid/expired

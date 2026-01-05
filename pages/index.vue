@@ -130,22 +130,48 @@ const { data: userPreferences, pending: preferencesPending } = useAsyncData(
   }
 );
 
+// Computed: Check if auth is fully initialized
+const isAuthReady = computed(() => {
+  return userStore.authInitialized;
+});
+
+// Computed: Check if user profile is ready (if user exists, profile must be loaded)
+const isProfileReady = computed(() => {
+  // If no user, profile is ready (no profile needed)
+  if (!user.value) return true;
+  // If user exists, profile must be loaded (not null)
+  return userStore.profile !== null;
+});
+
+// Computed: Check if preferences are ready (if user exists, preferences must be loaded)
+const isPreferencesReady = computed(() => {
+  // If no user, preferences are ready (no preferences needed)
+  if (!user.value) return true;
+  // If user exists, preferences must be loaded (not pending)
+  return !preferencesPending.value;
+});
+
+// Computed: Check if all state is ready
+const isStateReady = computed(() => {
+  return isAuthReady.value && isProfileReady.value && isPreferencesReady.value;
+});
+
 // Computed: Check if user has region
 const hasRegion = computed(() => {
   return !!userPreferences.value?.region;
 });
 
 // Computed: Show hero section (no user)
-// Middleware guarantees: if user exists, onboarding is completed
-const showHero = computed(() => !user.value);
+// Only show when state is ready and there's no user
+const showHero = computed(() => isStateReady.value && !user.value);
 
 // Computed: Show recommendations section (user exists)
-// Middleware guarantees onboarding is completed if user exists
-const showRecommendations = computed(() => !!user.value);
+// Only show when state is ready and user exists
+const showRecommendations = computed(() => isStateReady.value && !!user.value);
 
-// Computed: Can show content (user exists and preferences loaded)
+// Computed: Can show content (user exists, profile loaded, and preferences loaded)
 const canShowContent = computed(
-  () => showRecommendations.value && !preferencesPending.value
+  () => isStateReady.value && showRecommendations.value
 );
 
 // Computed: Empty states
@@ -230,39 +256,58 @@ onMounted(() => {
 
 <template>
   <div class="w-full">
-    <!-- Hero Section -->
+    <!-- Global Loading State - Show while state is initializing -->
     <ClientOnly>
       <template #default>
-        <HeroSection
-          v-if="showHero"
-          :button-text="$t('hero.discoverButton')"
-          :show-auth-form="showAuthForm"
-          :is-authenticated="false"
-          @auth-success="handleAuthSuccess"
-          @signup-success="handleSignupSuccess"
-        />
+        <div v-if="!isStateReady" class="w-full min-h-screen flex items-center justify-center">
+          <div class="flex flex-col items-center gap-4">
+            <div
+              class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"
+            ></div>
+            <p class="text-gray-600 dark:text-gray-400 text-sm">
+              {{ $t('common.loading') || 'Cargando...' }}
+            </p>
+          </div>
+        </div>
       </template>
       <template #fallback>
         <!-- Placeholder during SSR -->
+        <div class="w-full min-h-screen flex items-center justify-center">
+          <div class="flex flex-col items-center gap-4">
+            <div
+              class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"
+            ></div>
+          </div>
+        </div>
       </template>
     </ClientOnly>
 
-    <!-- Recommendations Section -->
-    <ClientOnly v-if="showRecommendations">
+    <!-- Content - Only show when state is ready -->
+    <template v-if="isStateReady">
+      <!-- Hero Section -->
+      <ClientOnly>
+        <template #default>
+          <HeroSection
+            v-if="showHero"
+            :button-text="$t('hero.discoverButton')"
+            :show-auth-form="showAuthForm"
+            :is-authenticated="false"
+            @auth-success="handleAuthSuccess"
+            @signup-success="handleSignupSuccess"
+          />
+        </template>
+        <template #fallback>
+          <!-- Placeholder during SSR -->
+        </template>
+      </ClientOnly>
+
+      <!-- Recommendations Section -->
+      <ClientOnly v-if="showRecommendations">
       <section>
         <AppShell>
           <PageContainer>
-            <!-- Loading State - Show spinner while checking preferences -->
-            <div v-if="preferencesPending" class="w-full pt-6 pb-6">
-              <div class="flex items-center justify-center py-12">
-                <div
-                  class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"
-                ></div>
-              </div>
-            </div>
-
             <!-- Filters Section -->
-            <Section v-if="!preferencesPending">
+            <Section v-if="canShowContent">
               <div class="flex flex-col gap-4">
                 <MoodSelector />
 
@@ -537,7 +582,7 @@ onMounted(() => {
     </section>
 
     <!-- Value Proposition Section -->
-    <section v-if="!user" class="pb-16 md:pt-16">
+    <section v-if="showHero" class="pb-16 md:pt-16">
       <AppShell>
         <PageContainer>
           <div class="w-full text-center">
@@ -574,5 +619,6 @@ onMounted(() => {
         </PageContainer>
       </AppShell>
     </section>
+    </template>
   </div>
 </template>
