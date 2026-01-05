@@ -36,7 +36,23 @@ export const useTitleActions = (
   const route = useRoute();
   const { t } = useI18n();
   const user = useSupabaseUser();
-  const userStore = useUserStore();
+  
+  // Safely get userStore - it may not be available immediately after Pinia initialization
+  // Only get it when needed (client-side only)
+  const getUserStore = () => {
+    if (process.server) {
+      return null;
+    }
+    try {
+      return useUserStore();
+    } catch (error) {
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('[useTitleActions] useUserStore not available:', error);
+      }
+      return null;
+    }
+  };
+  
   const { showToast } = useUndoToast();
 
   const loadingTitles = ref<Set<number>>(new Set());

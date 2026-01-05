@@ -501,8 +501,16 @@ const handleResetPassword = async () => {
 
     // Step 3: Reset user store to ensure clean state
     // This ensures the store is properly cleared before redirect
-    const userStore = useUserStore();
-    userStore.reset();
+    // Safely get userStore - it may not be available immediately after Pinia initialization
+    try {
+      const userStore = useUserStore();
+      userStore.reset();
+    } catch (error) {
+      // If store is not available, continue anyway
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('[reset-password] useUserStore not available:', error);
+      }
+    }
 
     passwordReset.value = true;
 

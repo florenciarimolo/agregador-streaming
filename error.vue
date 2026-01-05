@@ -53,9 +53,10 @@
 
       <!-- Actions -->
       <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
-        <nuxt-link
-          to="/"
-          class="inline-flex items-center gap-2 px-6 py-3 bg-primary-800 dark:bg-primary hover:bg-primary-900 dark:hover:bg-primary-600 text-white rounded-lg font-medium transition-all duration-300 shadow-lg"
+        <a
+          href="/"
+          class="inline-flex items-center gap-2 px-6 py-3 bg-primary-800 dark:bg-primary hover:bg-primary-900 dark:hover:bg-primary-600 text-white rounded-lg font-medium transition-all duration-300 shadow-lg cursor-pointer"
+          @click.prevent="goHome"
         >
           <svg
             class="w-5 h-5"
@@ -71,7 +72,7 @@
             />
           </svg>
           {{ $t('error.goHome') }}
-        </nuxt-link>
+        </a>
         <button
           v-if="error.statusCode !== 404"
           class="inline-flex items-center gap-2 px-6 py-3 bg-white/60 dark:bg-gray-900/40 backdrop-blur-xl border border-gray-300/50 dark:border-white/10 hover:border-primary/50 dark:hover:border-purple-500/30 text-gray-800 dark:text-gray-300 rounded-lg font-medium transition-all duration-300"
@@ -137,10 +138,12 @@ interface ErrorProps {
 
 const props = defineProps<ErrorProps>();
 
-// Use default layout to show navbar
-definePageMeta({
-  layout: 'default',
-});
+const goHome = async () => {
+  // Clear error and navigate to home using Nuxt navigation
+  // This prevents full page reload and ensures Pinia is initialized before middleware runs
+  await clearError({ redirect: '/' });
+  await navigateTo('/', { replace: true });
+};
 
 const handleError = async () => {
   await clearError({ redirect: '/' });

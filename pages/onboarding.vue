@@ -59,9 +59,42 @@ interface TitleResult {
 }
 
 const supabase = useSupabaseClient();
-const userStore = useUserStore();
 const router = useRouter();
 const user = useSupabaseUser();
+
+// Safely get userStore - it may not be available immediately after Pinia initialization
+// Use a computed to lazy-load the store, but only on client side
+const userStore = computed(() => {
+  // Only try to get store on client side
+  if (process.server) {
+    return {
+      profile: null,
+      authInitialized: false,
+      hasCompletedOnboarding: false,
+      user: null,
+      setUser: () => {},
+      setProfile: () => {},
+      fetchProfile: async () => {},
+    };
+  }
+  
+  try {
+    return useUserStore();
+  } catch (error) {
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('[pages/onboarding.vue] useUserStore not available:', error);
+    }
+    return {
+      profile: null,
+      authInitialized: false,
+      hasCompletedOnboarding: false,
+      user: null,
+      setUser: () => {},
+      setProfile: () => {},
+      fetchProfile: async () => {},
+    };
+  }
+});
 
 // IMPORTANT: Content preferences (region, providers, genres) can only be modified:
 // - Here during initial onboarding (before onboarding_completed = true)
@@ -70,7 +103,7 @@ const user = useSupabaseUser();
 onMounted(() => {
   // If onboarding is already completed, redirect to home
   // (This is a safety check; middleware should already prevent this)
-  if (userStore.profile?.onboarding_completed) {
+  if (userStore.value?.profile?.onboarding_completed) {
     router.replace('/');
   }
 });
@@ -363,8 +396,8 @@ const savePreferences = async () => {
         savingPreferences.value = false;
         return;
       }
-      userStore.setUser(session.user);
-      await userStore.fetchProfile();
+      userStore.value.setUser(session.user);
+      await userStore.value.fetchProfile();
     }
 
     const {

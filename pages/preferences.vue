@@ -8,7 +8,7 @@
         ></div>
       </div>
       <div
-        v-else-if="!userStore.hasCompletedOnboarding"
+        v-else-if="!userStore.value?.hasCompletedOnboarding"
         class="pt-6 pb-6 w-full"
       >
         <!-- Redirecting message (shouldn't be visible for long) -->
@@ -283,7 +283,34 @@ import { useUserStore } from '@/stores/user';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore - Auto-imported
 const currentUser = useSupabaseUser();
-const userStore = useUserStore();
+
+// Safely get userStore - it may not be available immediately after Pinia initialization
+// Use a computed to lazy-load the store, but only on client side
+const userStore = computed(() => {
+  // Only try to get store on client side
+  if (process.server) {
+    return {
+      profile: null,
+      authInitialized: false,
+      hasCompletedOnboarding: false,
+      ensureProfile: async () => {},
+    };
+  }
+  
+  try {
+    return useUserStore();
+  } catch (error) {
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('[pages/preferences.vue] useUserStore not available:', error);
+    }
+    return {
+      profile: null,
+      authInitialized: false,
+      hasCompletedOnboarding: false,
+      ensureProfile: async () => {},
+    };
+  }
+});
 const { t } = useI18n();
 const { showToast } = useUndoToast();
 
@@ -1007,10 +1034,10 @@ const { pending: profilePending } = useAsyncData(
   'preferences-profile-check',
   async () => {
     // Ensure profile is loaded
-    await userStore.ensureProfile();
+    await userStore.value.ensureProfile();
 
     // Check onboarding status
-    const hasCompletedOnboarding = userStore.hasCompletedOnboarding;
+    const hasCompletedOnboarding = userStore.value?.hasCompletedOnboarding;
 
     // If onboarding not completed, redirect to onboarding
     if (!hasCompletedOnboarding) {
@@ -1034,7 +1061,7 @@ onMounted(async () => {
   }
 
   // If redirected, don't continue
-  if (!userStore.hasCompletedOnboarding) {
+  if (!userStore.value?.hasCompletedOnboarding) {
     return;
   }
 

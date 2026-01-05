@@ -15,7 +15,31 @@ export const useRecommendations = () => {
   const route = useRoute();
   const { locale } = useI18n();
   const user = useSupabaseUser();
-  const userStore = useUserStore();
+  
+  // Safely get userStore - it may not be available immediately after Pinia initialization
+  // Use a computed to lazy-load the store, but only on client side
+  const userStore = computed(() => {
+    // Only try to get store on client side
+    if (process.server) {
+      return {
+        profile: null,
+        hasCompletedOnboarding: false,
+      };
+    }
+    
+    try {
+      return useUserStore();
+    } catch (error) {
+      // If store is not available, return a fallback object
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('[useRecommendations] useUserStore not available:', error);
+      }
+      return {
+        profile: null,
+        hasCompletedOnboarding: false,
+      };
+    }
+  });
 
   // State
   const recommendations = ref<Recommendation[]>([]);
@@ -56,7 +80,7 @@ export const useRecommendations = () => {
       return;
     }
 
-    if (!user.value || !userStore.hasCompletedOnboarding) {
+    if (!user.value || !userStore.value?.hasCompletedOnboarding) {
       return;
     }
 
@@ -99,7 +123,7 @@ export const useRecommendations = () => {
 
   // Fetch recommendations function
   const fetchRecommendations = async (): Promise<Recommendation[]> => {
-    if (!user.value || !userStore.hasCompletedOnboarding) {
+    if (!user.value || !userStore.value?.hasCompletedOnboarding) {
       return [];
     }
 
@@ -182,7 +206,7 @@ export const useRecommendations = () => {
       // Only refetch if user is logged in and has completed onboarding
       if (
         user.value &&
-        userStore.hasCompletedOnboarding &&
+        userStore.value?.hasCompletedOnboarding &&
         hasAttemptedLoad.value
       ) {
         const fetched = await fetchRecommendations();
@@ -202,7 +226,7 @@ export const useRecommendations = () => {
         oldLocale &&
         newLocale !== oldLocale &&
         user.value &&
-        userStore.hasCompletedOnboarding &&
+        userStore.value?.hasCompletedOnboarding &&
         hasAttemptedLoad.value
       ) {
         if (import.meta.dev) {
@@ -251,7 +275,7 @@ export const useRecommendations = () => {
 
   // Initial fetch when user is available
   watch(
-    () => [user.value, userStore.hasCompletedOnboarding],
+    () => [user.value, userStore.value?.hasCompletedOnboarding],
     async ([newUser, hasCompleted]) => {
       if (newUser && hasCompleted && !hasAttemptedLoad.value) {
         const fetched = await fetchRecommendations();

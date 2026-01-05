@@ -219,8 +219,35 @@ useSeoMeta({
   robots: 'noindex, nofollow',
 });
 const router = useRouter();
-const userStore = useUserStore();
 const currentUser = useSupabaseUser();
+
+// Safely get userStore - it may not be available immediately after Pinia initialization
+// Use a computed to lazy-load the store, but only on client side
+const userStore = computed(() => {
+  // Only try to get store on client side
+  if (process.server) {
+    return {
+      profile: null,
+      authInitialized: false,
+      hasCompletedOnboarding: false,
+      fetchProfile: async () => {},
+    };
+  }
+  
+  try {
+    return useUserStore();
+  } catch (error) {
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('[pages/my-account.vue] useUserStore not available:', error);
+    }
+    return {
+      profile: null,
+      authInitialized: false,
+      hasCompletedOnboarding: false,
+      fetchProfile: async () => {},
+    };
+  }
+});
 const { showToast } = useUndoToast();
 
 const userId = computed(() => {
@@ -228,7 +255,7 @@ const userId = computed(() => {
   return user?.id || (user as { sub?: string })?.sub || null;
 });
 
-const userProfile = computed(() => userStore.profile);
+const userProfile = computed(() => userStore.value?.profile);
 
 // Display Name
 const displayName = ref('');
@@ -283,7 +310,7 @@ const handleAvatarUploaded = async (avatarUrl: string) => {
       },
     });
 
-    await userStore.fetchProfile();
+    await userStore.value.fetchProfile();
     showToast(t('profile.avatarUpdated'), null);
   } catch (error) {
     console.error('Error updating avatar:', error);
@@ -326,7 +353,7 @@ const handleUpdateDisplayName = async () => {
     });
 
     if (response.success) {
-      await userStore.fetchProfile();
+      await userStore.value.fetchProfile();
       showToast(t('myAccount.displayName.updated'), null);
     } else {
       throw new Error('Failed to update display name');

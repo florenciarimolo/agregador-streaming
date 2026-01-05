@@ -1,8 +1,19 @@
 /**
  * Auth middleware
  * Handles authentication and onboarding checks for protected routes
+ *
+ * Architecture: This middleware runs on client-side only and accesses Pinia stores.
+ * Stores are initialized in app.vue via useAuthInit(), so they should be available
+ * when this middleware runs.
  */
+import { useUserStore } from '@/stores/user';
+
 export default defineNuxtRouteMiddleware(async (to) => {
+  // Only run on client side (Pinia is client-only)
+  if (process.server) {
+    return;
+  }
+
   const user = useSupabaseUser();
   const userStore = useUserStore();
 
@@ -34,7 +45,10 @@ export default defineNuxtRouteMiddleware(async (to) => {
 
   // If user exists but profile is not loaded, wait for it to load
   if (!userStore.profile) {
-    console.log('[AUTH TRACE] middleware waiting for profile to load...', to.path);
+    console.log(
+      '[AUTH TRACE] middleware waiting for profile to load...',
+      to.path
+    );
     await userStore.ensureProfile();
     console.log('[AUTH TRACE] middleware profile loaded', {
       hasProfile: userStore.profile !== null,
@@ -49,7 +63,11 @@ export default defineNuxtRouteMiddleware(async (to) => {
     : false;
 
   // Handle onboarding redirects
-  if (!hasCompletedOnboarding && to.path !== '/onboarding' && to.path !== '/auth/callback') {
+  if (
+    !hasCompletedOnboarding &&
+    to.path !== '/onboarding' &&
+    to.path !== '/auth/callback'
+  ) {
     console.log(
       '[AUTH TRACE] middleware redirecting to /onboarding (onboarding not completed)',
       to.path

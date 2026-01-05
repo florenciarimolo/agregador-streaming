@@ -45,7 +45,35 @@ const { t } = useI18n();
 
 // Auth composables
 const { signIn, signUp, signInWithMagicLink, resetPassword } = useAuth();
-const userStore = useUserStore();
+
+// Safely get userStore - it may not be available immediately after Pinia initialization
+// Use a computed to lazy-load the store, but only on client side
+const userStore = computed(() => {
+  // Only try to get store on client side
+  if (process.server) {
+    return {
+      setUser: () => {},
+      fetchProfile: async () => {},
+      profile: null,
+      hasCompletedOnboarding: false,
+    };
+  }
+  
+  try {
+    return useUserStore();
+  } catch (error) {
+    // If store is not available, return a fallback object
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('[AuthForm] useUserStore not available:', error);
+    }
+    return {
+      setUser: () => {},
+      fetchProfile: async () => {},
+      profile: null,
+      hasCompletedOnboarding: false,
+    };
+  }
+});
 
 // Form state
 const email = ref('');
@@ -143,14 +171,14 @@ const handlePasswordAuth = async () => {
         console.log(
           '[AuthForm] User available, setting in store and fetching profile...'
         );
-        userStore.setUser(currentUser.value);
+        userStore.value.setUser(currentUser.value);
 
         // CRITICAL: Fetch profile to ensure it's loaded before navigation
-        await userStore.fetchProfile();
+        await userStore.value.fetchProfile();
 
         console.log('[AuthForm] Profile fetched:', {
-          hasProfile: !!userStore.profile,
-          onboarding_completed: userStore.profile?.onboarding_completed,
+          hasProfile: !!userStore.value.profile,
+          onboarding_completed: userStore.value.profile?.onboarding_completed,
         });
 
         // Step: Eliminar el flag auth:recovery si existe (después de recuperar contraseña)
@@ -184,7 +212,7 @@ const handlePasswordAuth = async () => {
 
         // Navigate based on onboarding status
         // This ensures the middleware sees the correct state
-        const hasCompletedOnboarding = userStore.hasCompletedOnboarding;
+        const hasCompletedOnboarding = userStore.value.hasCompletedOnboarding;
         if (hasCompletedOnboarding) {
           console.log('[AuthForm] User completed onboarding, navigating to /');
           await navigateTo('/', { replace: true });
@@ -195,11 +223,12 @@ const handlePasswordAuth = async () => {
           await navigateTo('/onboarding', { replace: true });
         }
       } else {
-        // Fallback: reload to trigger auth state update
+        // Fallback: navigate to home using Nuxt navigation
+        // This prevents full page reload and ensures Pinia is initialized before middleware runs
         console.log(
-          '[AuthForm] User not available after waiting, reloading page'
+          '[AuthForm] User not available after waiting, navigating to home'
         );
-        window.location.href = '/';
+        await navigateTo('/', { replace: true });
       }
     }
   } catch (err: unknown) {

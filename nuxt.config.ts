@@ -64,7 +64,8 @@ export default defineNuxtConfig({
   },
 
   modules: [
-    '@pinia/nuxt',
+    // @pinia/nuxt removed - Pinia is now registered client-side only via plugins/pinia.client.ts
+    // This prevents SSR serialization errors on error pages (404/500)
     '@nuxtjs/supabase',
     '@nuxtjs/tailwindcss',
     '@nuxtjs/i18n',

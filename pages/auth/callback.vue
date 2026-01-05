@@ -57,7 +57,37 @@ useSeoMeta({
 const supabase = useSupabaseClient();
 const router = useRouter();
 const route = useRoute();
-const userStore = useUserStore();
+
+// Safely get userStore - it may not be available immediately after Pinia initialization
+// Use a computed to lazy-load the store, but only on client side
+const userStore = computed(() => {
+  // Only try to get store on client side
+  if (process.server) {
+    return {
+      profile: null,
+      authInitialized: false,
+      hasCompletedOnboarding: false,
+      setUser: () => {},
+      fetchProfile: async () => {},
+    };
+  }
+  
+  try {
+    return useUserStore();
+  } catch (error) {
+    // If store is not available, return a fallback object
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('[pages/auth/callback.vue] useUserStore not available:', error);
+    }
+    return {
+      profile: null,
+      authInitialized: false,
+      hasCompletedOnboarding: false,
+      setUser: () => {},
+      fetchProfile: async () => {},
+    };
+  }
+});
 
 const error = ref<string | null>(null);
 const loading = ref(true);
@@ -121,21 +151,21 @@ const redirectAfterAuth = async (next?: string) => {
     // Set user in store
     const userId = user.id || (user as { sub?: string })?.sub;
     const currentUserId =
-      userStore.user?.id || (userStore.user as { sub?: string })?.sub;
+      userStore.value.user?.id || (userStore.value.user as { sub?: string })?.sub;
 
-    if (!userStore.user || currentUserId !== userId) {
-      userStore.setUser(user);
+    if (!userStore.value.user || currentUserId !== userId) {
+      userStore.value.setUser(user);
       // CRITICAL: Fetch profile to ensure it's loaded before navigation
-      await userStore.fetchProfile();
+      await userStore.value.fetchProfile();
 
       console.log('[Callback] Profile fetched:', {
-        hasProfile: !!userStore.profile,
-        onboarding_completed: userStore.profile?.onboarding_completed,
+        hasProfile: !!userStore.value.profile,
+        onboarding_completed: userStore.value.profile?.onboarding_completed,
       });
     }
 
     // Check if user has completed onboarding
-    const hasCompletedOnboarding = userStore.hasCompletedOnboarding;
+    const hasCompletedOnboarding = userStore.value.hasCompletedOnboarding;
     console.log(
       '[AUTH TRACE] callback.vue redirectAfterAuth onboarding check',
       {

@@ -13,6 +13,7 @@ This document describes the business logic, data rules, and architecture of the 
 7. [Recommendation Explanations](#recommendation-explanations)
 8. [Data Model](#data-model)
 9. [Business Rules](#business-rules)
+10. [Technical Architecture](#technical-architecture)
 
 ---
 
@@ -1289,6 +1290,230 @@ When a user clicks "Usar esta lista como semilla" (Use this list as a seed):
 - `tmdb_id`: Title ID
 - `type`: Source of truth for content type ('movie' or 'tv')
 - `position`: Editorial order, stable (changing order does NOT change URLs, does NOT affect SEO, does NOT invalidate list)
+
+---
+
+## Technical Architecture
+
+This section describes the technical architecture patterns and rules for the Nuxt/Vue application, including state management, navigation, and initialization flows.
+
+### Pinia (State Management)
+
+#### Fundamental Rule: Pinia is Client-Only
+
+Pinia is configured to run **only on the client**. This means:
+
+- ✅ **YES**: Use stores in components (within `setup()`, `onMounted()`, etc.)
+- ✅ **YES**: Use stores in composables that are called from components
+- ❌ **NO**: Use stores in plugins
+- ❌ **NO**: Use stores in middlewares (directly)
+- ❌ **NO**: Use stores at the top-level of composables
+- ❌ **NO**: Use stores in `.ts` files imported directly
+
+#### Store Initialization
+
+Pinia stores must be initialized from components, not from global plugins.
+
+**✅ Correct:**
+
+```vue
+<script setup lang="ts">
+import { onMounted } from 'vue';
+
+onMounted(() => {
+  const userStore = useUserStore();
+  // Initialize store here
+});
+</script>
+```
+
+**❌ Incorrect:**
+
+```typescript
+// plugins/auth.ts
+export default defineNuxtPlugin(() => {
+  const userStore = useUserStore(); // ❌ DO NOT do this
+});
+```
+
+#### Accessing Stores in Middlewares
+
+Middlewares may need information from stores, but must do so safely:
+
+```typescript
+export default defineNuxtRouteMiddleware(async (to) => {
+  // Only execute on client
+  if (process.server) {
+    return;
+  }
+
+  // Access store only after verifying we're on client
+  const userStore = useUserStore();
+  // ... middleware logic
+});
+```
+
+### Navigation
+
+#### Rule: Use `navigateTo` instead of `window.location`
+
+**✅ Correct:**
+
+```typescript
+await navigateTo('/', { replace: true });
+```
+
+**❌ Incorrect:**
+
+```typescript
+window.location.href = '/';
+window.location.assign('/');
+window.location.replace('/');
+```
+
+#### Reason
+
+- `navigateTo` is Nuxt's API for navigation
+- Works correctly with SSR and client-side routing
+- Does not cause full page reloads
+- Maintains application state
+
+### Auth Initialization
+
+#### Current Architecture
+
+Authentication initialization follows this flow:
+
+1. **Supabase Plugin** (`plugins/supabase.client.ts`):
+   - Only configures the Supabase client
+   - Does NOT initialize stores
+   - Does NOT access Pinia
+
+2. **Composable `useAuthInit()`** (`composables/useAuthInit.ts`):
+   - Initializes the user store from Supabase
+   - Subscribes to auth changes
+   - Used in components (typically `app.vue`)
+
+3. **Root Component** (`app.vue`):
+   - Calls `useAuthInit()` within `onMounted()`
+   - This ensures Pinia is available before accessing stores
+
+#### Usage Example
+
+```vue
+<!-- app.vue -->
+<script setup lang="ts">
+import { onMounted } from 'vue';
+
+const { initAuth, setupAuthListener } = useAuthInit();
+
+onMounted(() => {
+  initAuth();
+  setupAuthListener();
+});
+</script>
+```
+
+### Plugins
+
+#### Rules for Plugins
+
+1. **Do not depend on Pinia stores directly**
+   - If they need state, use composables or events
+   - Or delegate initialization to components
+
+2. **Only execute on client when necessary**
+
+   ```typescript
+   export default defineNuxtPlugin(() => {
+     if (process.server) {
+       return;
+     }
+     // ... plugin logic
+   });
+   ```
+
+3. **Keep plugins simple**
+   - Configuration of external libraries
+   - Setup of services
+   - NO complex business logic
+
+### Middlewares
+
+#### Rules for Middlewares
+
+1. **Always verify `process.server`**
+
+   ```typescript
+   export default defineNuxtRouteMiddleware(async (to) => {
+     if (process.server) {
+       return;
+     }
+     // ... middleware logic
+   });
+   ```
+
+2. **Access stores only on client**
+   - Verify `process.server` before accessing stores
+   - Do not use `setTimeout` or retries to "wait" for Pinia
+   - If Pinia is not available, the middleware must fail in a controlled manner
+
+3. **Use `navigateTo` for redirects**
+   ```typescript
+   return navigateTo('/login', { replace: true });
+   ```
+
+### Composables
+
+#### Rules for Composables
+
+1. **Do not access stores at the top-level**
+
+   ```typescript
+   // ❌ Incorrect
+   export const useMyComposable = () => {
+     const userStore = useUserStore(); // ❌ NOT at top-level
+     // ...
+   };
+
+   // ✅ Correct
+   export const useMyComposable = () => {
+     return {
+       getUserStore: () => useUserStore(), // ✅ Lazy access
+     };
+   };
+   ```
+
+2. **Use `computed` for lazy-loading stores**
+   ```typescript
+   export const useMyComposable = () => {
+     const userStore = computed(() => {
+       if (process.server) {
+         return null; // or a fallback object
+       }
+       return useUserStore();
+     });
+     // ...
+   };
+   ```
+
+### Rules Summary
+
+| Context        | Can use Pinia? | How?                                      |
+| -------------- | -------------- | ----------------------------------------- |
+| Components     | ✅ Yes         | Directly in `setup()` or `onMounted()`    |
+| Composables    | ⚠️ With care   | Lazy-load with `computed` or functions    |
+| Plugins        | ❌ No          | Delegate to components or composables     |
+| Middlewares    | ⚠️ With care   | Only on client, verify `process.server`   |
+| `.ts` files    | ❌ No          | Move logic to composables or components  |
+
+### Benefits of This Architecture
+
+1. **Clarity**: Each piece has a clear responsibility
+2. **Maintainability**: Easy to understand and modify
+3. **No workarounds**: We don't need `setTimeout`, retries, or `@ts-ignore`
+4. **SSR-safe**: No serialization issues in SSR
+5. **Testable**: Each piece can be tested in isolation
 
 ---
 

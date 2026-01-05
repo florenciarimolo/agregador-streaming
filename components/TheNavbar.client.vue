@@ -487,7 +487,18 @@ import ThemeSwitcher from '@/components/ThemeSwitcher.vue';
 
 // User state
 const user = useSupabaseUser();
-const userStore = useUserStore();
+// Safely get userStore - it may not be available immediately after Pinia initialization
+// Initialize synchronously with fallback for when Pinia isn't ready yet
+let userStore: ReturnType<typeof useUserStore> | null = null;
+try {
+  userStore = useUserStore();
+} catch (error) {
+  // If store is not available, it will be null and computed properties will handle it
+  // This can happen if Pinia hasn't been initialized yet
+  if (process.env.NODE_ENV === 'development') {
+    console.warn('[TheNavbar] useUserStore not available, will retry:', error);
+  }
+}
 const { signOut } = useAuth();
 const router = useRouter();
 const showMobileMenu = ref(false);
@@ -500,12 +511,29 @@ const mobileSearchBarRef = ref<InstanceType<typeof SearchBar> | null>(null);
 const currentUser = computed(() => {
   // During hydration, useSupabaseUser() might not be ready yet
   // So we check both the composable and the store
-  return user.value || userStore.user;
+  // If userStore is not available yet, try to get it again
+  if (!userStore) {
+    try {
+      userStore = useUserStore();
+    } catch {
+      // Store still not available, just use user from composable
+    }
+  }
+  return user.value || userStore?.user;
 });
 
 // Get user profile for display name and avatar
 const userProfile = computed(() => {
-  return userStore.profile;
+  // If userStore is not available yet, try to get it again
+  if (!userStore) {
+    try {
+      userStore = useUserStore();
+    } catch {
+      // Store still not available, return null
+      return null;
+    }
+  }
+  return userStore?.profile;
 });
 
 // Toggle mobile menu
