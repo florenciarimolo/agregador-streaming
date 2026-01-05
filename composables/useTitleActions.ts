@@ -4,10 +4,10 @@ import { useI18n } from 'vue-i18n';
 import { useSupabaseUser } from '#imports';
 import { getSession } from '@/services/auth';
 import { getUserLikedTitle } from '@/services/userTitleStatus';
-import { useUndoToast } from '@/composables/useUndoToast';
+import { useTitleStatusAction } from '@/composables/useTitleStatusAction';
 import { QUERY_PARAMS } from '@/constants/api/queryParams';
 import type { Recommendation } from '@/types/Recommendation';
-import { TITLE_STATUS } from '@/constants/domain/titleStatus';
+import { TITLE_STATUS, type TitleStatusType } from '@/constants/domain/titleStatus';
 
 // Helper function to safely get user ID from Supabase user object
 type SupabaseUserWithSub = {
@@ -35,22 +35,13 @@ export const useTitleActions = (
   const route = useRoute();
   const { t } = useI18n();
   const user = useSupabaseUser();
-  const { showToast } = useUndoToast();
+  const { executeAction, executeLikedAction } = useTitleStatusAction();
 
   const loadingTitles = ref<Set<number>>(new Set());
   const fetchingReplacement = ref(false);
 
-  // Handle marking a title with different statuses
-  const handleTitleStatus = async (
-    title: Recommendation,
-    status: TitleStatus,
-    liked: boolean = false
-  ) => {
-    loadingTitles.value.add(title.tmdb_id);
-
-    let originalTitleIndex = -1;
-    let originalInWatchlist: boolean | undefined = undefined;
-
+  // Helper function to fetch replacement title
+  const fetchReplacementTitle = async (title: Recommendation) => {
     try {
       const {
         data: { session },
@@ -60,6 +51,50 @@ export const useTitleActions = (
         return;
       }
 
+      fetchingReplacement.value = true;
+      const queryParams: Record<string, string> = {
+        excluded_tmdb_id: title.tmdb_id.toString(),
+        excluded_type: title.type,
+      };
+      if (route.query[QUERY_PARAMS.MOOD]) queryParams[QUERY_PARAMS.MOOD] = route.query[QUERY_PARAMS.MOOD] as string;
+      if (route.query[QUERY_PARAMS.ATTENTION])
+        queryParams[QUERY_PARAMS.ATTENTION] = route.query[QUERY_PARAMS.ATTENTION] as string;
+
+      const replacement = await $fetch<Recommendation | null>(
+        '/api/recommendations/replacement',
+        {
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          credentials: 'include',
+          query: queryParams,
+        }
+      );
+
+      if (replacement) {
+        allRecommendations.value.push(replacement);
+      }
+      filterRecommendationsByType();
+    } catch (error) {
+      console.error('[fetchReplacementTitle] Error:', error);
+      filterRecommendationsByType();
+    } finally {
+      fetchingReplacement.value = false;
+    }
+  };
+
+  // Handle marking a title with different statuses
+  const handleTitleStatus = async (
+    title: Recommendation,
+    status: TitleStatusType,
+    liked: boolean = false
+  ) => {
+    loadingTitles.value.add(title.tmdb_id);
+
+    let originalTitleIndex = -1;
+    let originalInWatchlist: boolean | undefined = undefined;
+
+    try {
       // Store original state for rollback
       originalTitleIndex = recommendations.value.findIndex(
         (r: Recommendation) => r.tmdb_id === title.tmdb_id
@@ -69,103 +104,41 @@ export const useTitleActions = (
           recommendations.value[originalTitleIndex].in_watchlist;
       }
 
-      // Update status in backend
-      const response = await $fetch('/api/users/title-status', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: {
+      // Get current status (if any)
+      const currentStatus = title.in_watchlist
+        ? TITLE_STATUS.WATCHLIST
+        : null; // For recommendations, we don't track seen/not_interested in the object
+
+      // Use unified composable for API call and toast
+      const result = await executeAction(
+        {
           tmdb_id: title.tmdb_id,
           type: title.type,
-          status,
-          liked,
+          title: title.title,
+          currentStatus,
+          isLiked: liked,
         },
-      });
-
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[handleTitleStatus] Success:', { status, response });
-      }
-
-      // Show toast with appropriate message and action based on status
-      // For ADD actions: show "View list" button
-      // For DELETE actions: show "Undo" button
-      if (status === TITLE_STATUS.NOT_INTERESTED) {
-        const { routeWithLang } = useRouteWithLang();
-        showToast(
-          t('home.titleMarkedNotInterested', { title: title.title }),
-          {
-            label: t('home.viewList'),
-            variant: 'secondary',
-            action: async () => {
-              await router.push(routeWithLang('/lists?tab=not-interested'));
-            },
-          },
-          5000
-        );
-      } else if (status === TITLE_STATUS.SEEN) {
-        const { routeWithLang } = useRouteWithLang();
-        showToast(t('home.titleMarkedSeen', { title: title.title }), {
-          label: t('home.viewSeen'),
-          variant: 'secondary',
-          action: async () => {
-            await router.push(routeWithLang('/lists?tab=seen'));
-          },
-        }, 5000);
-      } else if (status === TITLE_STATUS.WATCHLIST) {
-        const { routeWithLang } = useRouteWithLang();
-        showToast(t('home.titleSavedWatchlist', { title: title.title }), {
-          label: t('home.viewList'),
-          variant: 'secondary',
-          action: async () => {
-            await router.push(routeWithLang('/watchlist'));
-          },
-        }, 5000);
-      }
-
-      // Remove from UI and get replacement
-      const removedIndex = allRecommendations.value.findIndex(
-        (r: Recommendation) => r.tmdb_id === title.tmdb_id
+        status
       );
 
-      if (removedIndex !== -1) {
-        allRecommendations.value = allRecommendations.value.filter(
-          (r: Recommendation) => r.tmdb_id !== title.tmdb_id
+      if (result.success) {
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[handleTitleStatus] Success:', { status, result });
+        }
+
+        // Remove from UI and get replacement (UI-specific logic)
+        const removedIndex = allRecommendations.value.findIndex(
+          (r: Recommendation) => r.tmdb_id === title.tmdb_id
         );
 
-        fetchingReplacement.value = true;
-        try {
-          const queryParams: Record<string, string> = {
-            excluded_tmdb_id: title.tmdb_id.toString(),
-            excluded_type: title.type,
-          };
-          if (route.query[QUERY_PARAMS.MOOD]) queryParams[QUERY_PARAMS.MOOD] = route.query[QUERY_PARAMS.MOOD] as string;
-          if (route.query[QUERY_PARAMS.ATTENTION])
-            queryParams[QUERY_PARAMS.ATTENTION] = route.query[QUERY_PARAMS.ATTENTION] as string;
-
-          const replacement = await $fetch<Recommendation | null>(
-            '/api/recommendations/replacement',
-            {
-              headers: {
-                Authorization: `Bearer ${session.access_token}`,
-              },
-              credentials: 'include',
-              query: queryParams,
-            }
+        if (removedIndex !== -1) {
+          allRecommendations.value = allRecommendations.value.filter(
+            (r: Recommendation) => r.tmdb_id !== title.tmdb_id
           );
-
-          if (replacement) {
-            allRecommendations.value.push(replacement);
-          }
+          await fetchReplacementTitle(title);
+        } else {
           filterRecommendationsByType();
-        } catch (error) {
-          console.error('[handleTitleStatus] Error fetching replacement:', error);
-          filterRecommendationsByType();
-        } finally {
-          fetchingReplacement.value = false;
         }
-      } else {
-        filterRecommendationsByType();
       }
     } catch (error) {
       // Rollback optimistic update if error occurred
@@ -189,13 +162,6 @@ export const useTitleActions = (
       if (process.env.NODE_ENV === 'development') {
         console.error('[handleTitleStatus] Error:', error);
       }
-      const errorMessage =
-        status === TITLE_STATUS.WATCHLIST
-          ? t('home.errorSavingWatchlist', { title: title.title })
-          : status === TITLE_STATUS.SEEN
-            ? t('home.errorMarkingSeen', { title: title.title })
-            : t('home.errorUpdatingStatus', { title: title.title });
-      showToast(errorMessage, null, 3000);
     } finally {
       loadingTitles.value.delete(title.tmdb_id);
     }
@@ -206,14 +172,6 @@ export const useTitleActions = (
     loadingTitles.value.add(title.tmdb_id);
 
     try {
-      const {
-        data: { session },
-      } = await getSession();
-
-      if (!session?.access_token) {
-        return;
-      }
-
       const userId = getUserId(user.value);
       if (!userId) {
         return;
@@ -231,86 +189,46 @@ export const useTitleActions = (
         return;
       }
 
-      // Title is not liked, add it
-      await $fetch('/api/users/title-status', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: {
+      // Get current status (if any)
+      const currentStatus = title.in_watchlist
+        ? TITLE_STATUS.WATCHLIST
+        : null;
+
+      // Use unified composable for API call and toast
+      const result = await executeLikedAction(
+        {
           tmdb_id: title.tmdb_id,
           type: title.type,
-          status: TITLE_STATUS.SEEN,
-          liked: true,
+          title: title.title,
+          currentStatus,
+          isLiked: false,
         },
-      });
-
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[handleMarkLiked] Success');
-      }
-
-      const { routeWithLang } = useRouteWithLang();
-      showToast(t('home.titleAddedFavorites', { title: title.title }), {
-        label: t('home.viewFavorites'),
-        variant: 'secondary',
-        action: async () => {
-          await router.push(routeWithLang('/lists'));
-        },
-      }, 5000);
-
-      // Remove from UI and get replacement
-      const removedIndex = allRecommendations.value.findIndex(
-        (r) => r.tmdb_id === title.tmdb_id
+        false
       );
 
-      if (removedIndex !== -1) {
-        allRecommendations.value = allRecommendations.value.filter(
-          (r) => r.tmdb_id !== title.tmdb_id
+      if (result.success) {
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[handleMarkLiked] Success');
+        }
+
+        // Remove from UI and get replacement (UI-specific logic)
+        const removedIndex = allRecommendations.value.findIndex(
+          (r) => r.tmdb_id === title.tmdb_id
         );
 
-        fetchingReplacement.value = true;
-        try {
-          const queryParams: Record<string, string> = {
-            excluded_tmdb_id: title.tmdb_id.toString(),
-            excluded_type: title.type,
-          };
-          if (route.query[QUERY_PARAMS.MOOD]) queryParams[QUERY_PARAMS.MOOD] = route.query[QUERY_PARAMS.MOOD] as string;
-          if (route.query[QUERY_PARAMS.ATTENTION])
-            queryParams[QUERY_PARAMS.ATTENTION] = route.query[QUERY_PARAMS.ATTENTION] as string;
-
-          const replacement = await $fetch<Recommendation | null>(
-            '/api/recommendations/replacement',
-            {
-              headers: {
-                Authorization: `Bearer ${session.access_token}`,
-              },
-              credentials: 'include',
-              query: queryParams,
-            }
+        if (removedIndex !== -1) {
+          allRecommendations.value = allRecommendations.value.filter(
+            (r) => r.tmdb_id !== title.tmdb_id
           );
-
-          if (replacement) {
-            allRecommendations.value.push(replacement);
-          }
+          await fetchReplacementTitle(title);
+        } else {
           filterRecommendationsByType();
-        } catch (error) {
-          console.error('[handleMarkLiked] Error fetching replacement:', error);
-          filterRecommendationsByType();
-        } finally {
-          fetchingReplacement.value = false;
         }
-      } else {
-        filterRecommendationsByType();
       }
     } catch (error) {
       if (process.env.NODE_ENV === 'development') {
         console.error('[handleMarkLiked] Error:', error);
       }
-      showToast(
-        t('home.errorAddingFavorites', { title: title.title }),
-        null,
-        3000
-      );
     } finally {
       loadingTitles.value.delete(title.tmdb_id);
     }
@@ -326,69 +244,30 @@ export const useTitleActions = (
     loadingTitles.value.add(title.tmdb_id);
 
     try {
-      const {
-        data: { session },
-      } = await getSession();
+      // Get current status (if any)
+      const currentStatus = title.in_watchlist
+        ? TITLE_STATUS.WATCHLIST
+        : TITLE_STATUS.SEEN; // If it's liked, it must have SEEN status
 
-      if (!session?.access_token) {
-        return;
-      }
-
-      const userId = getUserId(user.value);
-      if (!userId) {
-        return;
-      }
-
-      await $fetch('/api/users/title-status', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: {
+      // Use unified composable for API call and toast
+      const result = await executeLikedAction(
+        {
           tmdb_id: title.tmdb_id,
           type: title.type,
-          status: TITLE_STATUS.SEEN,
-          liked: false,
+          title: title.title,
+          currentStatus,
+          isLiked: true,
         },
-      });
+        true
+      );
 
-      showToast(t('home.likeRemoved', { title: title.title }), {
-        label: t('undo.undo'),
-        variant: 'secondary',
-        action: async () => {
-          // Undo: Re-add as liked
-          try {
-            const {
-              data: { session: undoSession },
-            } = await getSession();
-            if (!undoSession?.access_token) return;
-
-            await $fetch('/api/users/title-status', {
-              method: 'POST',
-              headers: {
-                Authorization: `Bearer ${undoSession.access_token}`,
-              },
-              body: {
-                tmdb_id: title.tmdb_id,
-                type: title.type,
-                status: TITLE_STATUS.SEEN,
-                liked: true,
-              },
-            });
-          } catch (error) {
-            console.error('[confirmRemoveLike] Error undoing:', error);
-          }
-        },
-      }, 7000);
+      if (result.success && process.env.NODE_ENV === 'development') {
+        console.log('[confirmRemoveLike] Success');
+      }
     } catch (error) {
       if (process.env.NODE_ENV === 'development') {
         console.error('[confirmRemoveLike] Error:', error);
       }
-      showToast(
-        t('home.errorRemovingFavorites', { title: title.title }),
-        null,
-        3000
-      );
     } finally {
       loadingTitles.value.delete(title.tmdb_id);
     }

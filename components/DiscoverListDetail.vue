@@ -108,7 +108,7 @@ import IconArrowLeft from './icons/IconArrowLeft.vue';
 import EmptyState from './EmptyState.vue';
 import { getSession } from '@/services/auth';
 import { getUserLikedTitle, getTitleStatus } from '@/services/userTitleStatus';
-import { useUndoToast } from '@/composables/useUndoToast';
+import { useTitleStatusAction } from '@/composables/useTitleStatusAction';
 import { useRouteWithLang } from '@/composables/useRouteWithLang';
 
 const { t } = useI18n();
@@ -124,7 +124,7 @@ const props = defineProps<Props>();
 
 const user = useSupabaseUser();
 const isLoggedIn = computed(() => !!user.value);
-const { showToast } = useUndoToast();
+const { executeAction, executeLikedAction } = useTitleStatusAction();
 const loadingTitles = ref<Set<number>>(new Set());
 const titleStatuses = ref<Map<number, { liked: boolean; status: string | null }>>(new Map());
 const showAuthForm = ref(false);
@@ -238,101 +238,57 @@ async function handleAction(
   loadingTitles.value.add(item.tmdb_id);
 
   try {
-    const {
-      data: { session },
-    } = await getSession();
-
-    if (!session?.access_token) {
-      return;
-    }
-
     const itemStatus = getItemStatus(item.tmdb_id);
+    const currentStatus = itemStatus.isSeen
+      ? TITLE_STATUS.SEEN
+      : itemStatus.isNotInterested
+        ? TITLE_STATUS.NOT_INTERESTED
+        : itemStatus.isInWatchlist
+          ? TITLE_STATUS.WATCHLIST
+          : null;
 
-    // Handle remove actions
+    // Handle remove actions (these are explicit remove actions from menu)
     if (action === 'remove-liked') {
-      // Remove liked (delete the title status)
-      await $fetch('/api/users/title-status/delete', {
-        method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        query: {
+      // Remove liked but keep seen status (as per APP_LOGIC.md: Scenario 4)
+      // Title remains as 'seen' (not eligible for recommendations)
+      const result = await executeLikedAction(
+        {
           tmdb_id: item.tmdb_id,
-        },
-      });
-
-      showToast(t('home.titleRemovedFavorites', { title: item.title }), {
-        label: t('undo.undo'),
-        variant: 'secondary',
-        action: async () => {
-          // Undo: Re-add as liked
-          try {
-            const {
-              data: { session: undoSession },
-            } = await getSession();
-            if (!undoSession?.access_token) return;
-
-            await $fetch('/api/users/title-status', {
-              method: 'POST',
-              headers: {
-                Authorization: `Bearer ${undoSession.access_token}`,
-              },
-              body: {
-                tmdb_id: item.tmdb_id,
-                type: item.type,
-                status: TITLE_STATUS.SEEN,
-                liked: true,
-              },
-            });
+          type: item.type,
+          title: item.title,
+          currentStatus,
+          isLiked: itemStatus.isLiked,
+          onUndoComplete: async () => {
+            // Refresh statuses after undo
             await loadTitleStatuses();
-          } catch (error) {
-            console.error('[DiscoverListDetail] Error undoing:', error);
-            await loadTitleStatuses();
-          }
+          },
         },
-      }, 7000);
+        itemStatus.isLiked
+      );
+
+      if (result.success) {
+        await loadTitleStatuses();
+      }
     } else if (action === 'remove-watchlist') {
-      // Remove watchlist
-      await $fetch('/api/users/title-status/delete', {
-        method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        query: {
+      // Remove watchlist - use executeAction with current status
+      const result = await executeAction(
+        {
           tmdb_id: item.tmdb_id,
-        },
-      });
-
-      showToast(t('home.titleRemovedFromWatchlist', { title: item.title }), {
-        label: t('undo.undo'),
-        variant: 'secondary',
-        action: async () => {
-          // Undo: Re-add to watchlist
-          try {
-            const {
-              data: { session: undoSession },
-            } = await getSession();
-            if (!undoSession?.access_token) return;
-
-            await $fetch('/api/users/title-status', {
-              method: 'POST',
-              headers: {
-                Authorization: `Bearer ${undoSession.access_token}`,
-              },
-              body: {
-                tmdb_id: item.tmdb_id,
-                type: item.type,
-                status: TITLE_STATUS.WATCHLIST,
-                liked: false,
-              },
-            });
+          type: item.type,
+          title: item.title,
+          currentStatus: TITLE_STATUS.WATCHLIST,
+          isLiked: itemStatus.isLiked,
+          onUndoComplete: async () => {
+            // Refresh statuses after undo
             await loadTitleStatuses();
-          } catch (error) {
-            console.error('[DiscoverListDetail] Error undoing:', error);
-            await loadTitleStatuses();
-          }
+          },
         },
-      }, 7000);
+        TITLE_STATUS.WATCHLIST
+      );
+
+      if (result.success) {
+        await loadTitleStatuses();
+      }
     } else if (action === 'liked') {
       // Check if title is already liked
       const userId = user.value?.id || (user.value as { sub?: string })?.sub;
@@ -342,284 +298,53 @@ async function handleAction(
           item.tmdb_id
         );
 
-        if (likedTitle) {
-          // Title is already liked, remove it
-          await $fetch('/api/users/title-status/delete', {
-            method: 'DELETE',
-            headers: {
-              Authorization: `Bearer ${session.access_token}`,
+        // Execute liked action using unified composable
+        const result = await executeLikedAction(
+          {
+            tmdb_id: item.tmdb_id,
+            type: item.type,
+            title: item.title,
+            currentStatus,
+            isLiked: !!likedTitle,
+            onUndoComplete: async () => {
+              // Refresh statuses after undo
+              await loadTitleStatuses();
             },
-            query: {
-              tmdb_id: item.tmdb_id,
-            },
-          });
+          },
+          !!likedTitle
+        );
 
-          showToast(t('home.titleRemovedFavorites', { title: item.title }), {
-            label: t('undo.undo'),
-            variant: 'secondary',
-            action: async () => {
-              // Undo: Re-add as liked
-              try {
-                const {
-                  data: { session: undoSession },
-                } = await getSession();
-                if (!undoSession?.access_token) return;
-
-                await $fetch('/api/users/title-status', {
-                  method: 'POST',
-                  headers: {
-                    Authorization: `Bearer ${undoSession.access_token}`,
-                  },
-                  body: {
-                    tmdb_id: item.tmdb_id,
-                    type: item.type,
-                    status: TITLE_STATUS.SEEN,
-                    liked: true,
-                  },
-                });
-                await loadTitleStatuses();
-              } catch (error) {
-                console.error('[DiscoverListDetail] Error undoing:', error);
-                await loadTitleStatuses();
-              }
-            },
-          }, 7000);
-        } else {
-          // Title is not liked, add it
-          await $fetch('/api/users/title-status', {
-            method: 'POST',
-            headers: {
-              Authorization: `Bearer ${session.access_token}`,
-            },
-            body: {
-              tmdb_id: item.tmdb_id,
-              type: item.type,
-              status: TITLE_STATUS.SEEN,
-              liked: true,
-            },
-          });
-
-          const { routeWithLang } = useRouteWithLang();
-          showToast(t('home.titleAddedFavorites', { title: item.title }), {
-            label: t('home.viewFavorites'),
-            action: async () => {
-              await navigateTo(routeWithLang('/lists'));
-            },
-          }, 5000);
+        if (result.success) {
+          await loadTitleStatuses();
         }
       }
-    } else if (action === TITLE_STATUS.SEEN) {
-      // Check if already seen - if so, remove it (toggle behavior)
-      if (itemStatus.isSeen) {
-        // Remove seen status (DELETE)
-        await $fetch('/api/users/title-status/delete', {
-          method: 'DELETE',
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
+    } else if (
+      action === TITLE_STATUS.SEEN ||
+      action === TITLE_STATUS.NOT_INTERESTED ||
+      action === TITLE_STATUS.WATCHLIST
+    ) {
+      // Execute status action using unified composable
+      const result = await executeAction(
+        {
+          tmdb_id: item.tmdb_id,
+          type: item.type,
+          title: item.title,
+          currentStatus,
+          isLiked: itemStatus.isLiked,
+          onUndoComplete: async () => {
+            // Refresh statuses after undo
+            await loadTitleStatuses();
           },
-          query: {
-            tmdb_id: item.tmdb_id,
-          },
-        });
+        },
+        action
+      );
 
-        showToast(t('home.titleRemovedFromSeen', { title: item.title }), {
-          label: t('undo.undo'),
-          variant: 'secondary',
-          action: async () => {
-            // Undo: Re-add as seen
-            try {
-              const {
-                data: { session: undoSession },
-              } = await getSession();
-              if (!undoSession?.access_token) return;
-
-              await $fetch('/api/users/title-status', {
-                method: 'POST',
-                headers: {
-                  Authorization: `Bearer ${undoSession.access_token}`,
-                },
-                body: {
-                  tmdb_id: item.tmdb_id,
-                  type: item.type,
-                  status: TITLE_STATUS.SEEN,
-                  liked: itemStatus.isLiked || false,
-                },
-              });
-              await loadTitleStatuses();
-            } catch (error) {
-              console.error('[DiscoverListDetail] Error undoing:', error);
-              await loadTitleStatuses();
-            }
-          },
-        }, 7000);
-      } else {
-        // Mark as seen
-        await $fetch('/api/users/title-status', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          body: {
-            tmdb_id: item.tmdb_id,
-            type: item.type,
-            status: TITLE_STATUS.SEEN,
-            liked: false,
-          },
-        });
-
-        const { routeWithLang } = useRouteWithLang();
-        showToast(t('home.titleMarkedSeen', { title: item.title }), {
-          label: t('home.viewSeen'),
-          variant: 'secondary',
-          action: async () => {
-            await navigateTo(routeWithLang('/lists?tab=seen'));
-          },
-        }, 5000);
-      }
-    } else if (action === TITLE_STATUS.NOT_INTERESTED) {
-      // Check if already not interested - if so, remove it (toggle behavior)
-      if (itemStatus.isNotInterested) {
-        // Remove not interested status (DELETE)
-        await $fetch('/api/users/title-status/delete', {
-          method: 'DELETE',
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          query: {
-            tmdb_id: item.tmdb_id,
-          },
-        });
-
-        showToast(t('home.titleRemovedFromNotInterested', { title: item.title }), {
-          label: t('undo.undo'),
-          variant: 'secondary',
-          action: async () => {
-            // Undo: Re-add as not interested
-            try {
-              const {
-                data: { session: undoSession },
-              } = await getSession();
-              if (!undoSession?.access_token) return;
-
-              await $fetch('/api/users/title-status', {
-                method: 'POST',
-                headers: {
-                  Authorization: `Bearer ${undoSession.access_token}`,
-                },
-                body: {
-                  tmdb_id: item.tmdb_id,
-                  type: item.type,
-                  status: TITLE_STATUS.NOT_INTERESTED,
-                  liked: false,
-                },
-              });
-              await loadTitleStatuses();
-            } catch (error) {
-              console.error('[DiscoverListDetail] Error undoing:', error);
-              await loadTitleStatuses();
-            }
-          },
-        }, 7000);
-      } else {
-        // Mark as not interested
-        await $fetch('/api/users/title-status', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          body: {
-            tmdb_id: item.tmdb_id,
-            type: item.type,
-            status: TITLE_STATUS.NOT_INTERESTED,
-            liked: false,
-          },
-        });
-
-        const { routeWithLang } = useRouteWithLang();
-        showToast(
-          t('home.titleMarkedNotInterested', { title: item.title }),
-          {
-            label: t('home.viewList'),
-            variant: 'secondary',
-            action: async () => {
-              await navigateTo(routeWithLang('/lists?tab=not-interested'));
-            },
-          },
-          5000
-        );
-      }
-    } else if (action === TITLE_STATUS.WATCHLIST) {
-      // Check if already in watchlist - if so, remove it (toggle behavior)
-      if (itemStatus.isInWatchlist) {
-        // Remove watchlist status (DELETE)
-        await $fetch('/api/users/title-status/delete', {
-          method: 'DELETE',
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          query: {
-            tmdb_id: item.tmdb_id,
-          },
-        });
-
-        showToast(t('home.titleRemovedWatchlist', { title: item.title }), {
-          label: t('undo.undo'),
-          variant: 'secondary',
-          action: async () => {
-            // Undo: Re-add to watchlist
-            try {
-              const {
-                data: { session: undoSession },
-              } = await getSession();
-              if (!undoSession?.access_token) return;
-
-              await $fetch('/api/users/title-status', {
-                method: 'POST',
-                headers: {
-                  Authorization: `Bearer ${undoSession.access_token}`,
-                },
-                body: {
-                  tmdb_id: item.tmdb_id,
-                  type: item.type,
-                  status: TITLE_STATUS.WATCHLIST,
-                  liked: false,
-                },
-              });
-              await loadTitleStatuses();
-            } catch (error) {
-              console.error('[DiscoverListDetail] Error undoing:', error);
-              await loadTitleStatuses();
-            }
-          },
-        }, 7000);
-      } else {
-        // Add to watchlist
-        await $fetch('/api/users/title-status', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          body: {
-            tmdb_id: item.tmdb_id,
-            type: item.type,
-            status: TITLE_STATUS.WATCHLIST,
-            liked: false,
-          },
-        });
-
-        const { routeWithLang } = useRouteWithLang();
-        showToast(t('home.titleAddedWatchlist', { title: item.title }), {
-          label: t('home.viewList'),
-          variant: 'secondary',
-          action: async () => {
-            await navigateTo(routeWithLang('/watchlist'));
-          },
-        }, 5000);
+      if (result.success) {
+        await loadTitleStatuses();
       }
     }
   } catch (error) {
     console.error('[DiscoverListDetail] Error handling action:', error);
-    showToast(t('common.error'), null, 5000);
   } finally {
     loadingTitles.value.delete(item.tmdb_id);
     // Reload statuses after action

@@ -272,14 +272,12 @@ import {
   getUserSeenTitles,
   getUserNotInterestedTitles,
   getUserWatchlistTitles,
-  removeNotInterested,
 } from '@/services/userTitleStatus';
 import {
   getTitleByTmdbId,
   getTitlesByTmdbIds,
   getTitleByTmdbIdWithLanguage,
 } from '@/services/titles';
-import { isUniqueViolationError } from '@/constants/db/errorCodes';
 import { getSession } from '@/services/auth';
 import TitleCard from '@/components/TitleCard.vue';
 import IconButton from '@/components/ui/IconButton.vue';
@@ -292,6 +290,7 @@ import Spinner from '@/components/Spinner.vue';
 import Toast from '@/components/ui/Toast.vue';
 import { useUndoToast } from '@/composables/useUndoToast';
 import { useRouteWithLang } from '@/composables/useRouteWithLang';
+import { useTitleStatusAction } from '@/composables/useTitleStatusAction';
 import { DEFAULT_LANGUAGE, toTMDBLanguageCode } from '@/constants/languages';
 import { QUERY_PARAMS } from '@/constants/api/queryParams';
 import { LIST_TAB, type ListTab } from '@/constants/domain/listTab';
@@ -304,6 +303,7 @@ const currentUser = useSupabaseUser();
 const userStore = useUserStore();
 const { t, locale } = useI18n();
 const { showToast } = useUndoToast();
+const { executeAction, executeLikedAction } = useTitleStatusAction();
 
 // Get app language for TMDB API calls
 const getAppLanguage = () => {
@@ -839,35 +839,39 @@ const handleRemoveSeen = async (title: {
   type: typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV;
   liked?: boolean;
 }) => {
+  // Store original title for undo
   const titleToRestore = seenTitles.value.find((t) => t.id === title.id);
 
   try {
-    const { error } = await deleteUserTitleStatus(title.id);
-    if (error) throw error;
-
-    seenTitles.value = seenTitles.value.filter((t) => t.id !== title.id);
-
-    showToast(
-      t('seen.titleRemoved'),
+    // Use unified composable for API call and toast
+    const result = await executeAction(
       {
-        label: t('undo.undo'),
-        action: async () => {
-          // Re-add the seen status
+        tmdb_id: title.tmdb_id,
+        type: title.type,
+        title: title.title,
+        currentStatus: TITLE_STATUS.SEEN,
+        isLiked: title.liked || false,
+        onUndoComplete: async () => {
+          // Restore title in UI immediately
           if (titleToRestore) {
-            await upsertUserTitleStatus({
-              user_id: userId.value!,
-              tmdb_id: titleToRestore.tmdb_id,
-              type: titleToRestore.type,
-              status: TITLE_STATUS.SEEN,
-              liked: titleToRestore.liked || false,
-            });
-            await fetchSeenTitles();
+            seenTitles.value.push(titleToRestore);
           }
+          // Also refresh to ensure consistency
+          await fetchSeenTitles();
         },
       },
-      7000
+      TITLE_STATUS.SEEN
     );
-  } catch {
+
+    if (result.success && result.action === 'removed') {
+      // Update local state - remove from list
+      seenTitles.value = seenTitles.value.filter((t) => t.id !== title.id);
+    } else if (!result.success) {
+      showError(t('seen.errorRemoving'));
+      await fetchSeenTitles();
+    }
+  } catch (error) {
+    console.error('[handleRemoveSeen] Error:', error);
     showError(t('seen.errorRemoving'));
     await fetchSeenTitles();
   }
@@ -901,91 +905,77 @@ const handleAddToLiked = async (title: {
       return;
     }
 
-    // Update the title status to liked=true
-    // Note: 10-title limit only applies during onboarding, not after completion
-    const { error: likeError } = await upsertUserTitleStatus({
-      user_id: id,
-      tmdb_id: title.tmdb_id,
-      type: title.type,
-      status: TITLE_STATUS.SEEN,
-      liked: true,
-    });
-
-    if (likeError) {
-      if (isUniqueViolationError(likeError)) {
-        showError(t('preferences.alreadyInPreferences'));
-        await fetchLikedTitles();
-        return;
-      }
-      throw likeError;
-    }
-
-    // Get title in user's preferred language
-    const preferredLang = getAppLanguage();
-    const { data: titleData } = await getTitleByTmdbIdWithLanguage(
-      title.tmdb_id,
-      title.type,
-      preferredLang,
-      contentPreferences.value.region
-    );
-
-    if (titleData) {
-      // Add to liked titles list
-      likedTitles.value.unshift({
-        id: title.id, // Use the existing status id
-        title: titleData.title,
-        type: titleData.type,
-        poster_path: titleData.poster_path,
-        tmdb_id: titleData.tmdb_id,
-      });
-
-      // Update the title in seen titles to mark it as liked (don't remove it)
-      // A title can be both "seen" and "liked" at the same time
-      const seenTitleIndex = seenTitles.value.findIndex(
-        (t) => t.id === title.id
-      );
-      if (seenTitleIndex !== -1) {
-        seenTitles.value[seenTitleIndex] = {
-          ...seenTitles.value[seenTitleIndex],
-          liked: true,
-        };
-      }
-    }
-
-    await userStore.fetchProfile();
-    // Refresh seen titles to ensure all titles have the correct liked status
-    await fetchSeenTitles();
-
-    // Show toast with "View favorites" button (ADD action)
-    const { routeWithLang } = useRouteWithLang();
-    showToast(
-      t('preferences.titleAdded'),
+    // Use unified composable for API call and toast
+    // hideViewListButton: true because we're already on the lists page
+    const result = await executeLikedAction(
       {
-        label: t('home.viewFavorites'),
-        variant: 'secondary',
-        action: async () => {
-          await navigateTo(routeWithLang('/lists?tab=liked'));
-        },
+        tmdb_id: title.tmdb_id,
+        type: title.type,
+        title: title.title,
+        currentStatus: title.liked ? TITLE_STATUS.SEEN : null,
+        isLiked: false,
+        hideViewListButton: true, // Already on lists page, don't show "View favorites" button
       },
-      5000
+      false
     );
 
-    // Regenerate recommendation pool in background
-    try {
-      const {
-        data: { session },
-      } = await getSession();
-      if (session?.access_token) {
-        await $fetch('/api/recommendations/populate-pool', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-          },
+    if (result.success && result.action === 'added') {
+      // Get title in user's preferred language
+      const preferredLang = getAppLanguage();
+      const { data: titleData } = await getTitleByTmdbIdWithLanguage(
+        title.tmdb_id,
+        title.type,
+        preferredLang,
+        contentPreferences.value.region
+      );
+
+      if (titleData) {
+        // Add to liked titles list
+        likedTitles.value.unshift({
+          id: title.id, // Use the existing status id
+          title: titleData.title,
+          type: titleData.type,
+          poster_path: titleData.poster_path,
+          tmdb_id: titleData.tmdb_id,
         });
+
+        // Update the title in seen titles to mark it as liked (don't remove it)
+        // A title can be both "seen" and "liked" at the same time
+        const seenTitleIndex = seenTitles.value.findIndex(
+          (t) => t.id === title.id
+        );
+        if (seenTitleIndex !== -1) {
+          seenTitles.value[seenTitleIndex] = {
+            ...seenTitles.value[seenTitleIndex],
+            liked: true,
+          };
+        }
       }
-    } catch (poolError) {
-      console.error('Error regenerating pool:', poolError);
-      // Don't show error to user, pool regeneration is background task
+
+      await userStore.fetchProfile();
+      // Refresh seen titles to ensure all titles have the correct liked status
+      await fetchSeenTitles();
+
+      // Regenerate recommendation pool in background
+      try {
+        const {
+          data: { session },
+        } = await getSession();
+        if (session?.access_token) {
+          await $fetch('/api/recommendations/populate-pool', {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${session.access_token}`,
+            },
+          });
+        }
+      } catch (poolError) {
+        console.error('Error regenerating pool:', poolError);
+        // Don't show error to user, pool regeneration is background task
+      }
+    } else if (!result.success) {
+      showError(t('preferences.errorAdding'));
+      await fetchSeenTitles();
     }
   } catch (error) {
     console.error('Error adding to liked:', error);
@@ -1123,39 +1113,46 @@ const handleRemoveNotInterested = async (title: {
   id: string;
   title: string;
   tmdb_id: number;
+  type: typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV;
 }) => {
+  // Store original title for undo
+  const titleToRestore = notInterestedTitles.value.find(
+    (t) => t.id === title.id
+  );
+
   try {
-    const id = userId.value;
-    if (!id) return;
-
-    const { error } = await removeNotInterested(id, title.tmdb_id);
-    if (error) throw error;
-
-    notInterestedTitles.value = notInterestedTitles.value.filter(
-      (t) => t.id !== title.id
-    );
-
-    showToast(
-      t('notInterested.titleRemoved', { title: title.title }),
+    // Use unified composable for API call and toast
+    const result = await executeAction(
       {
-        label: t('undo.undo'),
-        action: async () => {
-          // Re-add to not interested
-          await upsertUserTitleStatus({
-            user_id: id,
-            tmdb_id: title.tmdb_id,
-            type:
-              notInterestedTitles.value.find((t) => t.tmdb_id === title.tmdb_id)
-                ?.type || MEDIA_TYPE.MOVIE,
-            status: TITLE_STATUS.NOT_INTERESTED,
-          });
+        tmdb_id: title.tmdb_id,
+        type: title.type,
+        title: title.title,
+        currentStatus: TITLE_STATUS.NOT_INTERESTED,
+        isLiked: false,
+        onUndoComplete: async () => {
+          // Restore title in UI immediately
+          if (titleToRestore) {
+            notInterestedTitles.value.push(titleToRestore);
+          }
+          // Also refresh to ensure consistency
           await fetchNotInterestedTitles();
         },
       },
-      7000
+      TITLE_STATUS.NOT_INTERESTED
     );
-  } catch {
-    showError(t('notInterested.errorUndo'));
+
+    if (result.success && result.action === 'removed') {
+      // Update local state - remove from list
+      notInterestedTitles.value = notInterestedTitles.value.filter(
+        (t) => t.id !== title.id
+      );
+    } else if (!result.success) {
+      showError(t('notInterested.errorRemoving'));
+      await fetchNotInterestedTitles();
+    }
+  } catch (error) {
+    console.error('[handleRemoveNotInterested] Error:', error);
+    showError(t('notInterested.errorRemoving'));
     await fetchNotInterestedTitles();
   }
 };

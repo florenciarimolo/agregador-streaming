@@ -87,9 +87,10 @@
 import { ref, onMounted, watch } from 'vue';
 import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 import { getSession } from '@/services/auth';
-import { useUndoToast } from '@/composables/useUndoToast';
 import { useUserStore } from '@/stores/user';
 import { useRouteWithLang } from '@/composables/useRouteWithLang';
+import { useTitleStatusAction } from '@/composables/useTitleStatusAction';
+import { TITLE_STATUS } from '@/constants/domain/titleStatus';
 import Toast from '@/components/ui/Toast.vue';
 import IconButton from '@/components/ui/IconButton.vue';
 import AppShell from '@/components/layout/AppShell.vue';
@@ -140,7 +141,7 @@ type WatchlistResponseItem = {
 const isLoading = ref(true);
 const watchlistTitles = ref<WatchlistTitle[]>([]);
 const isRemoving = ref(false);
-const { showToast } = useUndoToast();
+const { executeAction } = useTitleStatusAction();
 // Profile ready flag - controls main render, separate from isLoading
 const isProfileReady = ref(false);
 
@@ -204,71 +205,35 @@ const handleRemoveTitle = async (title: WatchlistTitle) => {
   const titleToRestore = { ...title };
   
   try {
-    const {
-      data: { session },
-    } = await getSession();
-
-    if (!session?.access_token) {
-      showToast(t('watchlist.notAuthenticated'), null, 5000);
-      isRemoving.value = false;
-      return;
-    }
-
-    // Delete title status using the delete endpoint
-    await $fetch('/api/users/title-status/delete', {
-      method: 'DELETE',
-      headers: {
-        Authorization: `Bearer ${session.access_token}`,
-      },
-      query: {
+    // Use unified composable for API call and toast
+    const result = await executeAction(
+      {
         tmdb_id: title.tmdb_id,
+        type: title.type,
+        title: title.title,
+        currentStatus: TITLE_STATUS.WATCHLIST,
+        isLiked: false,
+        onUndoComplete: async () => {
+          // Restore title in UI after undo
+          watchlistTitles.value.push(titleToRestore);
+        },
       },
-    });
-
-    // Optimistic UI update
-    watchlistTitles.value = watchlistTitles.value.filter(
-      (t) => t.tmdb_id !== title.tmdb_id
+      TITLE_STATUS.WATCHLIST
     );
 
-    // Show toast with undo button
-    showToast(t('watchlist.titleRemoved'), {
-      label: t('undo.undo'),
-      variant: 'secondary',
-      action: async () => {
-        // Undo: Re-add to watchlist
-        try {
-          const {
-            data: { session: undoSession },
-          } = await getSession();
-          if (!undoSession?.access_token) return;
-
-          await $fetch('/api/users/title-status', {
-            method: 'POST',
-            headers: {
-              Authorization: `Bearer ${undoSession.access_token}`,
-            },
-            body: {
-              tmdb_id: titleToRestore.tmdb_id,
-              type: titleToRestore.type,
-              status: 'watchlist',
-              liked: false,
-            },
-          });
-
-          // Restore title in UI
-          watchlistTitles.value.push(titleToRestore);
-        } catch (error) {
-          console.error('[watchlist.vue] Error undoing:', error);
-          // Refresh on error
-          await fetchWatchlist();
-        }
-      },
-    }, 7000);
+    if (result.success && result.action === 'removed') {
+      // Optimistic UI update - remove from list
+      watchlistTitles.value = watchlistTitles.value.filter(
+        (t) => t.tmdb_id !== title.tmdb_id
+      );
+    } else if (!result.success) {
+      // Error already handled by composable, just refresh
+      await fetchWatchlist();
+    }
   } catch (error) {
     if (process.env.NODE_ENV === 'development') {
       console.error('Error removing title:', error);
     }
-    showToast(t('watchlist.errorRemoving'), null, 5000);
     await fetchWatchlist();
   } finally {
     isRemoving.value = false;

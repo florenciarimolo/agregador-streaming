@@ -436,6 +436,7 @@ import {
 } from '@/constants/domain/titleStatus';
 import { getSession } from '@/services/auth';
 import { useUndoToast } from '@/composables/useUndoToast';
+import { useTitleStatusAction } from '@/composables/useTitleStatusAction';
 import ActionMenu from '@/components/ui/ActionMenu.vue';
 import IconButton from '@/components/ui/IconButton.vue';
 import Button from '@/components/ui/Button.vue';
@@ -451,7 +452,7 @@ const props = defineProps({
     required: true,
   },
   mediaType: {
-    type: String as PropType<MEDIA_TYPE>,
+    type: String as PropType<typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV>,
     required: true,
   },
   inProduction: {
@@ -585,280 +586,142 @@ const sectionStyle = computed(() => ({
   backgroundPosition: isMobile.value ? 'center' : 'center',
 }));
 
+// Get unified title status action handler
+const { executeAction, executeLikedAction } = useTitleStatusAction();
+
 const handleAction = async (action: TitleStatusType | 'liked') => {
-  try {
+  const mediaTitle =
+    mediaWithProviders.value.title ||
+    (mediaWithProviders.value as Movie & { name?: string }).name ||
+    t('media.thisTitle');
+
+  // Get current status
+  const currentStatus = isSeen.value
+    ? TITLE_STATUS.SEEN
+    : isNotInterested.value
+      ? TITLE_STATUS.NOT_INTERESTED
+      : isInWatchlist.value
+        ? TITLE_STATUS.WATCHLIST
+        : null;
+
+  if (action === 'liked') {
+    // Check if title is already liked
     const {
       data: { session },
     } = await getSession();
+    const userId =
+      session?.user?.id || (session?.user as { sub?: string })?.sub;
 
-    if (!session?.access_token) {
-      showToast(t('media.authRequired'), null, 3000);
-      return;
-    }
-
-    const mediaTitle =
-      mediaWithProviders.value.title ||
-      (mediaWithProviders.value as Movie & { name?: string }).name ||
-      t('media.thisTitle');
-
-    if (action === 'liked') {
-      console.log('[UNLIKE DEBUG] handleAction liked called', {
-        title: mediaTitle,
-        tmdb_id: mediaWithProviders.value.id,
-        type: props.mediaType,
-      });
-
-      // Check if title is already liked
-      const userId =
-        session.user?.id || (session.user as { sub?: string })?.sub;
-      console.log('[UNLIKE DEBUG] userId', { userId });
-
-      if (userId) {
-        const { data: likedTitle, error: likedError } = await getUserLikedTitle(
-          userId,
-          mediaWithProviders.value.id
-        );
-
-        console.log('[UNLIKE DEBUG] getUserLikedTitle result', {
-          likedTitle,
-          error: likedError,
-          hasLikedTitle: !!likedTitle,
-        });
-
-        if (likedTitle) {
-          console.log('[UNLIKE DEBUG] Title is already liked, removing it');
-          // Title is already liked, remove it directly (no modal needed)
-          await handleRemoveLike();
-          return;
-        }
-      }
-
-      console.log('[UNLIKE DEBUG] Title is not liked, adding it');
-
-      // Title is not liked, add it
-      await $fetch('/api/users/title-status', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: {
-          tmdb_id: mediaWithProviders.value.id,
-          type: props.mediaType,
-          status: TITLE_STATUS.SEEN,
-          liked: true,
-        },
-      });
-
-      const { routeWithLang } = useRouteWithLang();
-      showToast(
-        t('home.titleAddedFavorites', { title: mediaTitle }),
-        {
-          label: t('home.viewFavorites'),
-          action: async () => {
-            await navigateTo(routeWithLang('/lists'));
-          },
-        },
-        5000
+    if (userId) {
+      const { data: likedTitle } = await getUserLikedTitle(
+        userId,
+        mediaWithProviders.value.id
       );
 
-      // Update local state immediately (liked implies seen, removes watchlist)
-      isLiked.value = true;
-      isSeen.value = true;
-      isInWatchlist.value = false;
-      isNotInterested.value = false;
+      if (likedTitle) {
+        // Title is already liked, remove it directly
+        await handleRemoveLike();
+        return;
+      }
+    }
 
-      // Also fetch to ensure consistency
+    // Store original state for undo
+    const originalIsLiked = isLiked.value;
+    const originalIsSeen = isSeen.value;
+
+    // Execute liked action using unified composable
+    const result = await executeLikedAction(
+      {
+        tmdb_id: mediaWithProviders.value.id,
+        type: props.mediaType,
+        title: mediaTitle,
+        currentStatus,
+        isLiked: isLiked.value,
+        onUndoComplete: async () => {
+          // Revert local state on undo
+          isLiked.value = originalIsLiked;
+          isSeen.value = originalIsSeen;
+          await fetchTitleStatus();
+        },
+      },
+      isLiked.value
+    );
+
+    // Update local state based on result
+    if (result.success) {
+      if (result.action === 'added') {
+        isLiked.value = true;
+        isSeen.value = true;
+        isInWatchlist.value = false;
+        isNotInterested.value = false;
+      } else {
+        isLiked.value = false;
+        // seen status remains
+      }
       await fetchTitleStatus();
-    } else {
-      // Update status
-      await $fetch('/api/users/title-status', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
+    }
+  } else {
+    // Store original state for undo
+    const originalIsSeen = isSeen.value;
+    const originalIsLiked = isLiked.value;
+    const originalIsInWatchlist = isInWatchlist.value;
+    const originalIsNotInterested = isNotInterested.value;
+
+    // Execute status action using unified composable
+    const result = await executeAction(
+      {
+        tmdb_id: mediaWithProviders.value.id,
+        type: props.mediaType,
+        title: mediaTitle,
+        currentStatus,
+        isLiked: isLiked.value,
+        onUndoComplete: async () => {
+          // Revert local state on undo
+          isSeen.value = originalIsSeen;
+          isLiked.value = originalIsLiked;
+          isInWatchlist.value = originalIsInWatchlist;
+          isNotInterested.value = originalIsNotInterested;
+          await fetchTitleStatus();
         },
-        body: {
-          tmdb_id: mediaWithProviders.value.id,
-          type: props.mediaType,
-          status: action,
-        },
-      });
+      },
+      action
+    );
 
-      if (action === TITLE_STATUS.NOT_INTERESTED) {
-        // Check if already not interested - if so, remove it (toggle behavior)
-        if (isNotInterested.value) {
-          // Remove not interested status (DELETE)
-          await $fetch('/api/users/title-status/delete', {
-            method: 'DELETE',
-            headers: {
-              Authorization: `Bearer ${session.access_token}`,
-            },
-            query: {
-              tmdb_id: mediaWithProviders.value.id,
-            },
-          });
-
-          // Update local state immediately
-          isNotInterested.value = false;
-
-          showToast(
-            t('home.titleRemovedFromNotInterested', { title: mediaTitle }),
-            {
-              label: t('undo.undo'),
-              variant: 'secondary',
-              action: async () => {
-                // Undo: Re-add as not interested
-                try {
-                  const {
-                    data: { session: undoSession },
-                  } = await getSession();
-                  if (!undoSession?.access_token) return;
-
-                  await $fetch('/api/users/title-status', {
-                    method: 'POST',
-                    headers: {
-                      Authorization: `Bearer ${undoSession.access_token}`,
-                    },
-                    body: {
-                      tmdb_id: mediaWithProviders.value.id,
-                      type: props.mediaType,
-                      status: TITLE_STATUS.NOT_INTERESTED,
-                      liked: false,
-                    },
-                  });
-                  isNotInterested.value = true;
-                  await fetchTitleStatus();
-                } catch (error) {
-                  console.error('[MediaBannerDetail] Error undoing:', error);
-                  await fetchTitleStatus();
-                }
-              },
-            },
-            7000
-          );
-        } else {
-          // Mark as not interested
-          // Update local state immediately
-          isNotInterested.value = true;
-          isInWatchlist.value = false;
-          isSeen.value = false;
-          isLiked.value = false;
-
-          showToast(
-            t('home.titleMarkedNotInterested', { title: mediaTitle }),
-            {
-              label: t('home.viewList'),
-              variant: 'secondary',
-              action: async () => {
-                const { routeWithLang } = useRouteWithLang();
-                await navigateTo(routeWithLang('/lists?tab=not-interested'));
-              },
-            },
-            5000
-          );
-        }
-      } else if (action === TITLE_STATUS.SEEN) {
-        // Check if already seen - if so, remove it (toggle behavior)
-        if (isSeen.value) {
-          // Remove seen status (DELETE)
-          await $fetch('/api/users/title-status', {
-            method: 'DELETE',
-            headers: {
-              Authorization: `Bearer ${session.access_token}`,
-            },
-            query: {
-              tmdb_id: mediaWithProviders.value.id,
-            },
-          });
-
-          // Update local state immediately
-          isSeen.value = false;
-          isLiked.value = false; // Removing seen also removes liked
-          isInWatchlist.value = false;
-          isNotInterested.value = false;
-
-          showToast(
-            t('home.titleRemovedFromSeen', { title: mediaTitle }),
-            {
-              label: t('undo.undo'),
-              variant: 'secondary',
-              action: async () => {
-                // Undo: Re-add as seen
-                try {
-                  await $fetch('/api/users/title-status', {
-                    method: 'POST',
-                    headers: {
-                      Authorization: `Bearer ${session.access_token}`,
-                    },
-                    body: {
-                      tmdb_id: mediaWithProviders.value.id,
-                      type: props.mediaType,
-                      status: TITLE_STATUS.SEEN,
-                      liked: isLiked.value || false,
-                    },
-                  });
-                  isSeen.value = true;
-                  if (isLiked.value) {
-                    isLiked.value = true;
-                  }
-                  await fetchTitleStatus();
-                } catch (error) {
-                  console.error('[MediaBannerDetail] Error undoing:', error);
-                  await fetchTitleStatus();
-                }
-              },
-            },
-            7000
-          );
-        } else {
-          // Mark as seen
-          // Update local state immediately
+    // Update local state based on result
+    if (result.success) {
+      if (result.action === 'added') {
+        // Set the new status and clear others
+        if (action === TITLE_STATUS.SEEN) {
           isSeen.value = true;
           isInWatchlist.value = false;
           isNotInterested.value = false;
           // Note: liked is not automatically set when marking as seen
-
-          const { routeWithLang } = useRouteWithLang();
-          showToast(
-            t('home.titleMarkedSeen', { title: mediaTitle }),
-            {
-              label: t('home.viewSeen'),
-              action: async () => {
-                await navigateTo(routeWithLang('/lists?tab=seen'));
-              },
-            },
-            5000
-          );
+        } else if (action === TITLE_STATUS.NOT_INTERESTED) {
+          isNotInterested.value = true;
+          isInWatchlist.value = false;
+          isSeen.value = false;
+          isLiked.value = false;
+        } else if (action === TITLE_STATUS.WATCHLIST) {
+          isInWatchlist.value = true;
+          isSeen.value = false;
+          isNotInterested.value = false;
+          isLiked.value = false;
         }
-      } else if (action === TITLE_STATUS.WATCHLIST) {
-        // Update local state immediately
-        isInWatchlist.value = true;
-        isSeen.value = false;
-        isNotInterested.value = false;
-        isLiked.value = false;
-
-        const { routeWithLang } = useRouteWithLang();
-        showToast(
-          t('home.titleSavedWatchlist', { title: mediaTitle }),
-          {
-            label: t('home.viewList'),
-            action: async () => {
-              await navigateTo(routeWithLang('/watchlist'));
-            },
-          },
-          5000
-        );
+      } else {
+        // Removed - clear the status
+        if (action === TITLE_STATUS.SEEN) {
+          isSeen.value = false;
+          isLiked.value = false; // Removing seen also removes liked
+          isInWatchlist.value = false;
+          isNotInterested.value = false;
+        } else if (action === TITLE_STATUS.NOT_INTERESTED) {
+          isNotInterested.value = false;
+        } else if (action === TITLE_STATUS.WATCHLIST) {
+          isInWatchlist.value = false;
+        }
       }
-
-      // Also fetch to ensure consistency
       await fetchTitleStatus();
     }
-  } catch (error) {
-    console.error('Error handling action:', error);
-    const mediaTitle =
-      mediaWithProviders.value.title ||
-      (mediaWithProviders.value as Movie & { name?: string }).name ||
-      t('media.thisTitle');
-    showToast(t('home.errorUpdatingStatus', { title: mediaTitle }), null, 3000);
   }
 };
 
@@ -905,33 +768,37 @@ const handleRemoveLike = async () => {
     // No pool regeneration needed - only score is adjusted, pool remains stable
 
     // Show success toast
-    showToast(t('home.likeRemoved', { title: mediaTitle }), {
-      label: t('undo.undo'),
-      variant: 'secondary',
-      action: async () => {
-        // Undo: Re-add as liked
-        try {
-          await $fetch('/api/users/title-status', {
-            method: 'POST',
-            headers: {
-              Authorization: `Bearer ${session.access_token}`,
-            },
-            body: {
-              tmdb_id: mediaWithProviders.value.id,
-              type: props.mediaType,
-              status: TITLE_STATUS.SEEN,
-              liked: true,
-            },
-          });
-          isLiked.value = true;
-          isSeen.value = true;
-          await fetchTitleStatus();
-        } catch (error) {
-          console.error('[MediaBannerDetail] Error undoing:', error);
-          await fetchTitleStatus();
-        }
+    showToast(
+      t('home.likeRemoved', { title: mediaTitle }),
+      {
+        label: t('undo.undo'),
+        variant: 'secondary',
+        action: async () => {
+          // Undo: Re-add as liked
+          try {
+            await $fetch('/api/users/title-status', {
+              method: 'POST',
+              headers: {
+                Authorization: `Bearer ${session.access_token}`,
+              },
+              body: {
+                tmdb_id: mediaWithProviders.value.id,
+                type: props.mediaType,
+                status: TITLE_STATUS.SEEN,
+                liked: true,
+              },
+            });
+            isLiked.value = true;
+            isSeen.value = true;
+            await fetchTitleStatus();
+          } catch (error) {
+            console.error('[MediaBannerDetail] Error undoing:', error);
+            await fetchTitleStatus();
+          }
+        },
       },
-    }, 7000);
+      7000
+    );
 
     // Update local state
     isLiked.value = false;
