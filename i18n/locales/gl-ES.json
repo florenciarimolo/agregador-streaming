@@ -191,6 +191,9 @@
     "titleRemovedFromSeen": "\"{title}\" eliminado de vistos",
     "titleSavedWatchlist": "\"{title}\" guardado en la Watchlist",
     "titleRemovedFromWatchlist": "\"{title}\" eliminado de watchlist",
+    "titleRemovedWatchlist": "\"{title}\" eliminado de watchlist",
+    "titleAddedWatchlist": "\"{title}\" agregado a watchlist",
+    "titleRemovedFromNotInterested": "\"{title}\" eliminado de 'No me interesa'",
     "titleAddedFavorites": "\"{title}\" agregado a tus favoritos",
     "viewFavorites": "Ver favoritos",
     "viewSeen": "Ver vistos",
@@ -202,7 +205,9 @@
     "regeneratingRecommendations": "Se están regenerando las recomendaciones",
     "likeRemoved": "\"{title}\" eliminado de 'Me gusta'",
     "titleRemovedFavorites": "\"{title}\" eliminado de favoritos",
-    "errorRemovingFavorites": "Erro al quitar \"{title}\" de favoritos"
+    "errorRemovingFavorites": "Erro al quitar \"{title}\" de favoritos",
+    "confirmRemoveLikeTitle": "Confirmar eliminación",
+    "confirmRemoveLikeMessage": "¿Estás seguro de que queres eliminar \"{title}\" dos teus favoritos?"
   },
   "onboarding": {
     "title": "¿Qué te gusta ver?",

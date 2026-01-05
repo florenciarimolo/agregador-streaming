@@ -191,6 +191,9 @@
     "titleRemovedFromSeen": "\"{title}\" eliminat de vistos",
     "titleSavedWatchlist": "\"{title}\" desat a la Watchlist",
     "titleRemovedFromWatchlist": "\"{title}\" eliminat de watchlist",
+    "titleRemovedWatchlist": "\"{title}\" eliminat de watchlist",
+    "titleAddedWatchlist": "\"{title}\" afegit a watchlist",
+    "titleRemovedFromNotInterested": "\"{title}\" eliminat de 'No m'interessa'",
     "titleAddedFavorites": "\"{title}\" afegit als teus favorits",
     "viewFavorites": "Veure favorits",
     "viewSeen": "Veure vistos",
@@ -202,7 +205,9 @@
     "regeneratingRecommendations": "S'estan regenerant les recomanacions",
     "likeRemoved": "\"{title}\" eliminat de 'M'agrada'",
     "titleRemovedFavorites": "\"{title}\" eliminat de favorits",
-    "errorRemovingFavorites": "Error en treure \"{title}\" de favorits"
+    "errorRemovingFavorites": "Error en treure \"{title}\" de favorits",
+    "confirmRemoveLikeTitle": "Confirmar eliminació",
+    "confirmRemoveLikeMessage": "Estàs segur que vols eliminar \"{title}\" dels teus favorits?"
   },
   "onboarding": {
     "title": "Què t'agrada veure?",

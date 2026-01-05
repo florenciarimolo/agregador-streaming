@@ -191,6 +191,9 @@
     "titleRemovedFromSeen": "\"{title}\" eliminado de vistos",
     "titleSavedWatchlist": "\"{title}\" guardado en la Watchlist",
     "titleRemovedFromWatchlist": "\"{title}\" eliminado de watchlist",
+    "titleRemovedWatchlist": "\"{title}\" eliminado de watchlist",
+    "titleAddedWatchlist": "\"{title}\" agregado a watchlist",
+    "titleRemovedFromNotInterested": "\"{title}\" eliminado de 'No me interesa'",
     "titleAddedFavorites": "\"{title}\" agregado a tus favoritos",
     "viewFavorites": "Ver favoritos",
     "viewSeen": "Ver vistos",
@@ -202,7 +205,9 @@
     "regeneratingRecommendations": "Se están regenerando las recomendaciones",
     "likeRemoved": "\"{title}\" eliminado de 'Me gusta'",
     "titleRemovedFavorites": "\"{title}\" eliminado de favoritos",
-    "errorRemovingFavorites": "Errorea al quitar \"{title}\" de favoritos"
+    "errorRemovingFavorites": "Errorea al quitar \"{title}\" de favoritos",
+    "confirmRemoveLikeTitle": "Eliminazioa berretsi",
+    "confirmRemoveLikeMessage": "Ziur zaude \"{title}\" zure gogokoetatik kendu nahi duzula?"
   },
   "onboarding": {
     "title": "¿Qué te gusta ver?",

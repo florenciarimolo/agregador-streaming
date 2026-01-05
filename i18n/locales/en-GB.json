@@ -191,6 +191,9 @@
     "titleRemovedFromSeen": "\"{title}\" removed from seen",
     "titleSavedWatchlist": "\"{title}\" saved to Watchlist",
     "titleRemovedFromWatchlist": "\"{title}\" removed from watchlist",
+    "titleRemovedWatchlist": "\"{title}\" removed from watchlist",
+    "titleAddedWatchlist": "\"{title}\" added to watchlist",
+    "titleRemovedFromNotInterested": "\"{title}\" removed from 'Not interested'",
     "titleAddedFavorites": "\"{title}\" added to your favourites",
     "viewFavorites": "View favourites",
     "viewSeen": "View seen",
@@ -202,7 +205,9 @@
     "regeneratingRecommendations": "Recommendations are being regenerated",
     "likeRemoved": "\"{title}\" removed from 'Liked'",
     "titleRemovedFavorites": "\"{title}\" removed from favourites",
-    "errorRemovingFavorites": "Error removing \"{title}\" from favourites"
+    "errorRemovingFavorites": "Error removing \"{title}\" from favourites",
+    "confirmRemoveLikeTitle": "Confirm removal",
+    "confirmRemoveLikeMessage": "Are you sure you want to remove \"{title}\" from your favourites?"
   },
   "onboarding": {
     "title": "What do you like to watch?",
