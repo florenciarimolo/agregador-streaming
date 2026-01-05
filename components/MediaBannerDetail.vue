@@ -684,30 +684,78 @@ const handleAction = async (action: TitleStatusType | 'liked') => {
       });
 
       if (action === TITLE_STATUS.NOT_INTERESTED) {
-        // Update local state immediately
-        isNotInterested.value = true;
-        isInWatchlist.value = false;
-        isSeen.value = false;
-        isLiked.value = false;
-
-        showToast(
-          t('home.titleMarkedNotInterested', { title: mediaTitle }),
-          {
-            label: t('undo.undo'),
-            action: async () => {
-              await $fetch('/api/users/title-status', {
-                method: 'DELETE',
-                headers: {
-                  Authorization: `Bearer ${session.access_token}`,
-                },
-                query: {
-                  tmdb_id: mediaWithProviders.value.id,
-                },
-              });
+        // Check if already not interested - if so, remove it (toggle behavior)
+        if (isNotInterested.value) {
+          // Remove not interested status (DELETE)
+          await $fetch('/api/users/title-status/delete', {
+            method: 'DELETE',
+            headers: {
+              Authorization: `Bearer ${session.access_token}`,
             },
-          },
-          7000
-        );
+            query: {
+              tmdb_id: mediaWithProviders.value.id,
+            },
+          });
+
+          // Update local state immediately
+          isNotInterested.value = false;
+
+          showToast(
+            t('home.titleRemovedFromNotInterested', { title: mediaTitle }),
+            {
+              label: t('undo.undo'),
+              variant: 'secondary',
+              action: async () => {
+                // Undo: Re-add as not interested
+                try {
+                  const {
+                    data: { session: undoSession },
+                  } = await getSession();
+                  if (!undoSession?.access_token) return;
+
+                  await $fetch('/api/users/title-status', {
+                    method: 'POST',
+                    headers: {
+                      Authorization: `Bearer ${undoSession.access_token}`,
+                    },
+                    body: {
+                      tmdb_id: mediaWithProviders.value.id,
+                      type: props.mediaType,
+                      status: TITLE_STATUS.NOT_INTERESTED,
+                      liked: false,
+                    },
+                  });
+                  isNotInterested.value = true;
+                  await fetchTitleStatus();
+                } catch (error) {
+                  console.error('[MediaBannerDetail] Error undoing:', error);
+                  await fetchTitleStatus();
+                }
+              },
+            },
+            7000
+          );
+        } else {
+          // Mark as not interested
+          // Update local state immediately
+          isNotInterested.value = true;
+          isInWatchlist.value = false;
+          isSeen.value = false;
+          isLiked.value = false;
+
+          showToast(
+            t('home.titleMarkedNotInterested', { title: mediaTitle }),
+            {
+              label: t('home.viewList'),
+              variant: 'secondary',
+              action: async () => {
+                const { routeWithLang } = useRouteWithLang();
+                await navigateTo(routeWithLang('/lists?tab=not-interested'));
+              },
+            },
+            5000
+          );
+        }
       } else if (action === TITLE_STATUS.SEEN) {
         // Check if already seen - if so, remove it (toggle behavior)
         if (isSeen.value) {
@@ -946,8 +994,9 @@ const handleRemoveFromWatchlist = async () => {
       (mediaWithProviders.value as Movie & { name?: string }).name ||
       t('media.thisTitle');
 
+    // Capture values before deletion for undo
     const tmdbId = mediaWithProviders.value.id;
-    const mediaType = mediaWithProviders.value.type;
+    const mediaType = props.mediaType;
 
     // Remove from watchlist by deleting the status
     await $fetch('/api/users/title-status/delete', {
@@ -985,7 +1034,7 @@ const handleRemoveFromWatchlist = async () => {
               body: {
                 tmdb_id: tmdbId,
                 type: mediaType,
-                status: 'watchlist',
+                status: TITLE_STATUS.WATCHLIST,
                 liked: false,
               },
             });
