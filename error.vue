@@ -6,7 +6,7 @@
         <h1
           class="text-9xl font-bold bg-gradient-to-r from-primary via-accent to-secondary bg-clip-text text-transparent mb-4"
         >
-          {{ error.statusCode || 500 }}
+          {{ error.statusCode || 404 }}
         </h1>
         <h2
           class="text-3xl md:text-4xl font-bold dark:text-gray-300 text-gray-800 mb-4"
