@@ -215,7 +215,7 @@ const tvShowProviders = computed(
 
 const tvShowWithProviders = computed<TVShow>(() => {
   return {
-    ...TVShow.value,
+    ...tvShow.value,
     providers: tvShowProviders.value,
   };
 });
