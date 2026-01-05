@@ -513,15 +513,22 @@
     "tryAgain": "Intentar de nuevo",
     "notFoundTitle": "Página no encontrada",
     "notFoundDescription": "La página que buscas no existe o ha sido movida.",
+    "serverErrorTitle": "Error del servidor",
+    "serverErrorDescription": "Nuestros servidores están experimentando problemas. Estamos trabajando para solucionarlo lo antes posible.",
     "genericErrorDescription": "Parece que algo salió mal. Por favor, intenta de nuevo más tarde.",
     "alsoCan": "También puedes:",
     "viewHowItWorks": "Ver cómo funciona",
     "viewFaq": "Preguntas frecuentes",
     "contactSupport": "Contactar soporte",
     "pageTitle404": "404 - Página no encontrada",
+    "pageTitle500": "500 - Error del servidor",
     "pageTitleError": "Error",
     "pageDescription404": "La página que buscas no existe.",
-    "pageDescriptionError": "Ha ocurrido un error."
+    "pageDescription500": "Error interno del servidor. Por favor, inténtalo de nuevo más tarde.",
+    "pageDescriptionError": "Ha ocurrido un error.",
+    "iconLabel404": "Icono de página no encontrada",
+    "iconLabel500": "Icono de error del servidor",
+    "iconLabelGeneric": "Icono de error"
   },
   "undo": {
     "undo": "Deshacer",
