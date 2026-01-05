@@ -1,5 +1,5 @@
 <template>
-  <div class="flex items-center justify-center px-4 py-8 min-h-[60vh]">
+  <div class="flex items-center justify-center px-4 py-8 min-h-[80dvh]">
     <div class="max-w-2xl mx-auto text-center">
       <!-- Error Code -->
       <div class="mb-8">

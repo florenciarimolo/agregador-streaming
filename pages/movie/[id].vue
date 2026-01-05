@@ -5,7 +5,7 @@
         <!-- Loading state -->
         <div
           v-if="isLoading"
-          class="flex items-center justify-center min-h-screen"
+          class="flex items-center justify-center min-h-[80dvh]"
         >
           <div class="text-xl dark:text-gray-300 text-gray-800">{{
             $t('common.loading')
@@ -15,11 +15,15 @@
         <!-- Error state -->
         <div
           v-else-if="hasError"
-          class="flex items-center justify-center min-h-screen"
+          class="flex items-center justify-center min-h-[80dvh]"
         >
-          <div class="text-xl text-red-500">{{
-            $t('media.errorLoadingMovie')
-          }}</div>
+          <div class="w-full max-w-2xl px-4">
+            <Alert
+              variant="error"
+              :message="$t('media.errorLoadingMovie')"
+              :show-icon="true"
+            />
+          </div>
         </div>
 
         <!-- Content -->
@@ -50,6 +54,7 @@ import { useMovieSchema } from '@/composables/useSchemaOrg';
 import { getMovieSeoExperience } from '@/composables/useSeoExperience';
 import AppShell from '@/components/layout/AppShell.vue';
 import PageContainer from '@/components/layout/PageContainer.vue';
+import Alert from '@/components/ui/Alert.vue';
 
 const route = useRoute();
 const movieId = route.params.id as string;

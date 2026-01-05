@@ -5,7 +5,7 @@
         <!-- Loading state -->
         <div
           v-if="isLoading"
-          class="flex items-center justify-center min-h-screen"
+          class="flex items-center justify-center min-h-[80dvh]"
         >
           <div class="text-xl dark:text-gray-300 text-gray-800">{{
             $t('media.loadingSeason')
@@ -15,11 +15,15 @@
         <!-- Error state -->
         <div
           v-else-if="hasError"
-          class="flex items-center justify-center min-h-screen"
+          class="flex items-center justify-center min-h-[80dvh]"
         >
-          <div class="text-xl text-red-500">{{
-            $t('media.errorLoadingSeason')
-          }}</div>
+          <div class="w-full max-w-2xl px-4">
+            <Alert
+              variant="error"
+              :message="$t('media.errorLoadingSeason')"
+              :show-icon="true"
+            />
+          </div>
         </div>
 
         <!-- Content -->
@@ -127,6 +131,7 @@ import PageContainer from '@/components/layout/PageContainer.vue';
 import Section from '@/components/layout/Section.vue';
 import SectionTitle from '@/components/layout/SectionTitle.vue';
 import RatingBadge from '@/components/RatingBadge.vue';
+import Alert from '@/components/ui/Alert.vue';
 import IconCalendar from '@/components/icons/IconCalendar.vue';
 import IconClock from '@/components/icons/IconClock.vue';
 import { formatDateToSpanish } from '@/utils/formatDate';

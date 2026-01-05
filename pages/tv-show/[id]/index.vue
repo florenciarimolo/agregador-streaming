@@ -10,11 +10,15 @@
         <!-- Error state -->
         <div
           v-else-if="hasError"
-          class="flex items-center justify-center min-h-screen"
+          class="flex items-center justify-center min-h-[80dvh]"
         >
-          <div class="text-xl text-red-500">{{
-            $t('media.errorLoadingTvShow')
-          }}</div>
+          <div class="w-full max-w-2xl px-4">
+            <Alert
+              variant="error"
+              :message="$t('media.errorLoadingTvShow')"
+              :show-icon="true"
+            />
+          </div>
         </div>
 
         <!-- Content -->
@@ -133,6 +137,7 @@ import { getTVShowSeoExperience } from '@/composables/useSeoExperience';
 import AppShell from '@/components/layout/AppShell.vue';
 import PageContainer from '@/components/layout/PageContainer.vue';
 import Section from '@/components/layout/Section.vue';
+import Alert from '@/components/ui/Alert.vue';
 
 const route = useRoute();
 const { locale } = useI18n();
