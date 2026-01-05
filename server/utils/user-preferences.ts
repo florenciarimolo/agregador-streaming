@@ -185,19 +185,31 @@ export async function getUserTMDBParams(event?: H3Event): Promise<{
       
       if (langFromUrl) {
         // Map URL code to i18n code, then to TMDB language code
-        const { getI18nCodeFromUrlCode } = await import('@/composables/useLangFromUrl');
-        const i18nCode = getI18nCodeFromUrlCode(langFromUrl.toLowerCase());
-        if (i18nCode) {
-          language = toTMDBLanguageCode(i18nCode);
-          if (import.meta.dev) {
-            console.log(
-              `[getUserTMDBParams] Language extracted: URL code=${langFromUrl}, i18nCode=${i18nCode}, TMDB code=${language}`
+        // Use dynamic import to avoid loading Vue dependencies in server context
+        try {
+          const { getI18nCodeFromUrlCode } = await import('@/composables/useLangFromUrl');
+          const i18nCode = getI18nCodeFromUrlCode(langFromUrl.toLowerCase());
+          if (i18nCode) {
+            language = toTMDBLanguageCode(i18nCode);
+            if (import.meta.dev) {
+              console.log(
+                `[getUserTMDBParams] Language extracted: URL code=${langFromUrl}, i18nCode=${i18nCode}, TMDB code=${language}`
+              );
+            }
+          } else if (import.meta.dev) {
+            console.warn(
+              `[getUserTMDBParams] Could not map URL code to i18n code: ${langFromUrl}`
             );
           }
-        } else if (import.meta.dev) {
-          console.warn(
-            `[getUserTMDBParams] Could not map URL code to i18n code: ${langFromUrl}`
-          );
+        } catch (importError) {
+          // If dynamic import fails, log and use default
+          if (import.meta.dev) {
+            console.warn(
+              `[getUserTMDBParams] Error importing getI18nCodeFromUrlCode:`,
+              importError
+            );
+          }
+          // Continue with default language
         }
       } else if (import.meta.dev) {
         console.warn(

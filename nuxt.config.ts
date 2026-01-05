@@ -214,11 +214,8 @@ export default defineNuxtConfig({
   },
 
   sitemap: {
-    // Sitemap configuration
-    // The module will use runtimeConfig.public.baseUrl automatically
-    // CRITICAL: baseUrl is normalized in getSiteUrl() to never have trailing slash
-    // Routes in sitemap start with /, so concatenation is: baseUrl (no /) + route (starts with /) = clean URL
-    // Exclude private routes (with language prefix pattern)
+    // @nuxtjs/sitemap v7 uses urls() - this is the correct API
+    // The sitemap will be served at /sitemap.xml
     exclude: [
       '/:lang/auth/**',
       '/:lang/auth/callback',
@@ -229,8 +226,8 @@ export default defineNuxtConfig({
       '/:lang/lists',
       '/api/**',
     ],
-    // @ts-expect-error - @nuxtjs/sitemap types may not match actual API
-    routes: async () => {
+    urls: async () => {
+      console.log('[Sitemap] urls() CALLED');
       const { getTitleIdsForSitemap, getDiscoverListsForSitemap } =
         await import('./server/utils/sitemap');
 
@@ -246,75 +243,91 @@ export default defineNuxtConfig({
 
       // Define static routes (without language prefix - will be added per language)
       const staticRoutes = [
-        { path: '/', changefreq: 'daily', priority: 1.0 },
-        { path: '/how-it-works', changefreq: 'monthly', priority: 0.8 },
-        { path: '/faq', changefreq: 'monthly', priority: 0.8 },
-        { path: '/privacy', changefreq: 'monthly', priority: 0.8 },
-        { path: '/discover', changefreq: 'monthly', priority: 0.8 },
+        '/',
+        '/how-it-works',
+        '/faq',
+        '/privacy',
+        '/discover',
       ];
 
       // Fetch data
       const titles = await getTitleIdsForSitemap();
       const discoverLists = await getDiscoverListsForSitemap();
 
-      const routes: Array<{
-        url: string;
-        lastmod?: string;
-        changefreq?: string;
-        priority?: number;
-      }> = [];
+      console.log(
+        `[Sitemap] Generating sitemap: ${titles.length} titles, ${discoverLists.length} discover lists`
+      );
+
+      const urls: Array<{ loc: string; lastmod: string }> = [];
 
       // Generate routes for each language
       for (const lang of supportedLanguages) {
         // Static routes per language
         for (const staticRoute of staticRoutes) {
-          routes.push({
-            url: `/${lang.urlCode}${staticRoute.path}`,
-            changefreq: staticRoute.changefreq,
-            priority: staticRoute.priority,
+          urls.push({
+            loc: `/${lang.urlCode}${staticRoute}`,
+            lastmod: new Date().toISOString(),
           });
         }
 
         // Dynamic routes for Discover lists per language
         for (const list of discoverLists) {
-          routes.push({
-            url: `/${lang.urlCode}/discover/list/${list.slug}`,
-            lastmod: list.updated_at
-              ? new Date(list.updated_at).toISOString()
-              : undefined,
-            changefreq: 'monthly',
-            priority: 0.7,
-          });
+          if (list.updated_at) {
+            urls.push({
+              loc: `/${lang.urlCode}/discover/list/${list.slug}`,
+              lastmod: new Date(list.updated_at).toISOString(),
+            });
+          }
         }
 
         // Dynamic routes for movies per language
-        const movies = titles.filter((t) => t.type === 'movie');
+        // Filter movies and sort by tmdb_id for stable order (DX improvement, not SEO)
+        const movies = titles
+          .filter((t) => t.type === 'movie')
+          .sort((a, b) => a.tmdb_id - b.tmdb_id);
         for (const movie of movies) {
-          routes.push({
-            url: `/${lang.urlCode}/movie/${movie.tmdb_id}`,
-            lastmod: movie.updated_at
-              ? new Date(movie.updated_at).toISOString()
-              : undefined,
-            changefreq: 'weekly',
-            priority: 0.7,
+          urls.push({
+            loc: `/${lang.urlCode}/movie/${movie.tmdb_id}`,
+            // updated_at is NOT NULL in schema, so it's always present
+            lastmod: new Date(movie.updated_at).toISOString(),
           });
         }
 
         // Dynamic routes for TV shows per language (NO seasons)
-        const tvShows = titles.filter((t) => t.type === 'tv');
+        // Filter TV shows and sort by tmdb_id for stable order (DX improvement, not SEO)
+        const tvShows = titles
+          .filter((t) => t.type === 'tv')
+          .sort((a, b) => a.tmdb_id - b.tmdb_id);
         for (const tvShow of tvShows) {
-          routes.push({
-            url: `/${lang.urlCode}/tv-show/${tvShow.tmdb_id}`,
-            lastmod: tvShow.updated_at
-              ? new Date(tvShow.updated_at).toISOString()
-              : undefined,
-            changefreq: 'weekly',
-            priority: 0.7,
+          urls.push({
+            loc: `/${lang.urlCode}/tv-show/${tvShow.tmdb_id}`,
+            // updated_at is NOT NULL in schema, so it's always present
+            lastmod: new Date(tvShow.updated_at).toISOString(),
           });
         }
       }
 
-      return routes;
+      // CRITICAL: Log final count to verify URLs are being generated
+      const expectedCount =
+        supportedLanguages.length *
+        (staticRoutes.length + discoverLists.length + titles.length);
+      console.log(
+        `[Sitemap] Total URLs generated: ${urls.length} (expected: ${expectedCount})`
+      );
+
+      // Verify we have dynamic routes
+      const movieUrls = urls.filter((u) => u.loc.includes('/movie/'));
+      const tvShowUrls = urls.filter((u) => u.loc.includes('/tv-show/'));
+      const discoverUrls = urls.filter((u) => u.loc.includes('/discover/list/'));
+      console.log(
+        `[Sitemap] URL breakdown: ${movieUrls.length} movies, ${tvShowUrls.length} TV shows, ${discoverUrls.length} discover lists`
+      );
+
+      if (urls.length === 0) {
+        console.error('[Sitemap] ERROR: No URLs generated!');
+      }
+
+      return urls;
     },
   },
 });

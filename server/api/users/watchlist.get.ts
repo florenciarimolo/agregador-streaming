@@ -264,6 +264,14 @@ export default defineEventHandler(async (event) => {
       watchlist,
     };
   } catch (error: unknown) {
+    // Log the full error for debugging
+    safeError('[User Watchlist] Unexpected error in watchlist endpoint', error, {
+      userId,
+      errorType: error instanceof Error ? error.constructor.name : typeof error,
+      errorMessage: error instanceof Error ? error.message : String(error),
+      errorStack: error instanceof Error ? error.stack : undefined,
+    });
+    
     const errorMessage =
       error instanceof Error
         ? error.message

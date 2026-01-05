@@ -125,6 +125,30 @@ CREATE POLICY "Users can delete own title statuses"
   ON public.user_title_status FOR DELETE
   USING (auth.uid() = user_id);
 
+-- Function to change password
+CREATE OR REPLACE FUNCTION public.changepassword(current_plain_password TEXT, new_plain_password TEXT, current_id UUID)
+RETURNS CHARACTER VARYING
+LANGUAGE plpgsql SECURITY DEFINER
+AS $$
+DECLARE
+encpass auth.users.encrypted_password%type;
+BEGIN
+  SELECT encrypted_password
+  FROM auth.users
+  INTO encpass
+  WHERE id = current_id and encrypted_password = crypt(current_plain_password, auth.users.encrypted_password);
+
+  -- Check the currect password and update
+  IF NOT FOUND THEN
+    return 'incorrect';
+  else
+    UPDATE auth.users SET encrypted_password = crypt(new_plain_password, gen_salt('bf')) WHERE id = current_id;
+    return 'success';
+  END IF;
+
+END;
+$$;
+
 -- Function to update updated_at timestamp
 CREATE OR REPLACE FUNCTION public.handle_updated_at()
 RETURNS TRIGGER AS $$
@@ -152,7 +176,7 @@ CREATE TABLE IF NOT EXISTS public.recommendation_pool (
   tmdb_id INTEGER NOT NULL,
   type TEXT NOT NULL CHECK (type IN ('movie', 'tv')),
   source TEXT NOT NULL CHECK (source IN ('based_on_like', 'trending', 'discover', 'easy', 'mood')),
-  score DOUBLE PRECISION,
+  score DOUBLE PRECISION DEFAULT 0 CHECK (score >= -100 AND score <= 100),
   explanation_code TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL,
   last_shown_at TIMESTAMP WITH TIME ZONE,
@@ -214,7 +238,7 @@ CREATE TABLE IF NOT EXISTS public.user_preferences (
   user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE UNIQUE NOT NULL,
   favorite_genres INTEGER[], -- TMDB genre IDs
   included_providers INTEGER[], -- TMDB provider IDs (if empty, all providers are included)
-  region TEXT, -- ISO 3166-1 alpha-2 country code (e.g., 'ES', 'US', 'MX')
+  region TEXT DEFAULT 'ES', -- ISO 3166-1 alpha-2 country code (e.g., 'ES', 'US', 'MX')
   exploration_mode TEXT CHECK (exploration_mode IN ('similar', 'balanced', 'surprise')) DEFAULT 'balanced',
   prioritize_content TEXT CHECK (prioritize_content IN ('new', 'classics', 'top_rated')) DEFAULT 'new',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL,
