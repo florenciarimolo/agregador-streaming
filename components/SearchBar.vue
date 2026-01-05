@@ -117,7 +117,7 @@
                   <p class="mt-1 text-xs text-gray-600 dark:text-gray-400">
                     {{
                       result.media_type === MEDIA_TYPE.MOVIE
-                        ? $t('media.MOVIE')
+                        ? $t('media.movie')
                         : $t('media.series')
                     }}
                     <span v-if="getYear(result)" class="ml-1">

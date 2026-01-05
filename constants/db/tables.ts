@@ -9,5 +9,7 @@ export const TABLES = {
   USER_TITLE_STATUS: 'user_title_status',
   USER_PREFERENCES: 'user_preferences',
   RECOMMENDATION_POOL: 'recommendation_pool',
+  DISCOVER_LISTS: 'discover_lists',
+  DISCOVER_LIST_ITEMS: 'discover_list_items',
 } as const;
 

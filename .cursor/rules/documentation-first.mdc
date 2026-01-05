@@ -1,0 +1,53 @@
+---
+alwaysApply: true
+---
+This project has strict architectural and product rules documented in /docs.
+
+Before implementing, refactoring, or suggesting any solution, you MUST:
+
+1. Read the relevant documentation files:
+   - docs/APP_LOGIC.md
+   - docs/DESIGN_UX_GUIDELINES.md
+   - docs/ENV_VARIABLES.md (if backend-related)
+   - Any feature-specific documentation mentioned in the task
+
+2. Treat documentation as the source of truth.
+   - Do NOT invent new logic, patterns, or systems.
+   - Do NOT “improve” behavior unless explicitly requested.
+   - If something is unclear or missing in the docs, ASK before implementing.
+
+3. Follow the documented principles strictly:
+   - Separation between editorial content and recommendation logic
+   - No personalization in SEO/public pages
+   - No use of recommendation_pool where explicitly forbidden
+   - Respect existing concepts such as source vs explanation_code
+   - Respect stability rules (SEO, slugs, ordering, URLs)
+
+4. If a requested change conflicts with documentation:
+   - STOP
+   - Explain the conflict
+   - Propose options instead of choosing one silently
+
+5. Code clarity is more important than abstraction.
+   - Do not introduce new layers, services, or helpers unless documented
+   - Prefer explicit, readable flows over “clean architecture” patterns
+
+Rule of thumb:
+If the implementation does not clearly match something written in /docs,
+it is probably wrong.
+
+Do not make silent assumptions about:
+- Business logic
+- Product behavior
+- SEO strategy
+- Recommendation logic
+
+If a decision is not explicitly documented, ask for confirmation.
+
+Never guess.
+Never infer product decisions from code alone.
+
+Special note:
+Discover, SEO pages, and editorial content are intentionally simple and stable.
+If a change makes them more dynamic, personalized, or “smarter”,
+assume it is wrong unless explicitly documented.

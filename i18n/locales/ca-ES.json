@@ -715,6 +715,21 @@
       "error": "Error en eliminar el compte"
     }
   },
+  "discover": {
+    "title": "Descobrir",
+    "description": "Explora llistes editorials curades de pel·lícules i sèries",
+    "loading": "Carregant llistes...",
+    "loadingList": "Carregant llista...",
+    "empty": "No hi ha llistes disponibles",
+    "emptyList": "Aquesta llista no té títols",
+    "viewList": "Veure llista {title}",
+    "useAsSeed": "Utilitzar aquesta llista com a llavor",
+    "seedSuccess": "S'han afegit {count} títols a les teves recomanacions",
+    "seedError": "Error en afegir la llista a les teves recomanacions",
+    "registerCta": "Registra't per personalitzar les teves recomanacions i utilitzar aquesta llista com a llavor",
+    "registerButton": "Registrar-se",
+    "listNotFound": "Llista no trobada"
+  },
   "cookies": {
     "message": "Utilitzem cookies per millorar la teva experiència. En continuar navegant, acceptes el nostre ús de cookies. ",
     "privacyLink": "Política de privacitat",

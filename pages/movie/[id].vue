@@ -202,12 +202,12 @@ const seoExperienceKey = computed(() => getMovieSeoExperience(movie.value));
 const seoExperience = computed(() => t(seoExperienceKey.value));
 
 const pageTitle = computed(() => {
-  const title = movie.value?.title || t('media.MOVIE');
+  const title = movie.value?.title || t('media.movie');
   return `${title} – ${t('seo.MOVIEPrefix')} ${seoExperience.value}`;
 });
 
 const pageDescription = computed(() => {
-  const title = movie.value?.title || t('media.MOVIE');
+  const title = movie.value?.title || t('media.movie');
   const experience = seoExperience.value;
   return t('seo.MOVIEDescription', { title, experience });
 });

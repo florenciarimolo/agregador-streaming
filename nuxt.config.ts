@@ -249,7 +249,23 @@ export default defineNuxtConfig({
           changefreq: 'monthly',
           priority: 0.8,
         },
+        {
+          url: '/discover',
+          changefreq: 'monthly',
+          priority: 0.8,
+        },
       ];
+
+      // Dynamic routes for Discover lists
+      const { getDiscoverListsForSitemap } = await import('./server/utils/sitemap');
+      const discoverLists = await getDiscoverListsForSitemap();
+      for (const list of discoverLists) {
+        routes.push({
+          url: `/discover/list/${list.slug}`,
+          changefreq: 'monthly',
+          priority: 0.7,
+        });
+      }
 
       // Dynamic routes for movies
       const movies = titles.filter((t) => t.type === 'movie');

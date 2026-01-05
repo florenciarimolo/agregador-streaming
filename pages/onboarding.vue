@@ -17,6 +17,7 @@ import GenreSelector from '@/components/GenreSelector.vue';
 import ProviderSelector from '@/components/ProviderSelector.vue';
 import FilterPill from '@/components/ui/FilterPill.vue';
 import Alert from '@/components/ui/Alert.vue';
+import IconTv from '@/components/icons/IconTv.vue';
 import { useRegions } from '@/composables/useRegions';
 
 definePageMeta({
@@ -155,8 +156,7 @@ const handleSearch = () => {
       searchResults.value = response.data.results
         .filter(
           (r) =>
-            r.media_type === MEDIA_TYPE.MOVIE ||
-            r.media_type === MEDIA_TYPE.TV
+            r.media_type === MEDIA_TYPE.MOVIE || r.media_type === MEDIA_TYPE.TV
         )
         .sort((a, b) => (b.popularity || 0) - (a.popularity || 0))
         .slice(0, 20);
@@ -232,14 +232,16 @@ const availableGenres = computed(() => {
   }> = [];
 
   // Add movie genres
-  genresData.value.MOVIE.genres.forEach((g: { id: number; name: string }) => {
+  const movieGenres = genresData.value.movie?.genres || [];
+  movieGenres.forEach((g: { id: number; name: string }) => {
     if (g.name) {
       allGenres.push({ id: g.id, name: g.name, type: MEDIA_TYPE.MOVIE });
     }
   });
 
   // Add TV genres
-  genresData.value.TV.genres.forEach((g: { id: number; name: string }) => {
+  const tvGenres = genresData.value.tv?.genres || [];
+  tvGenres.forEach((g: { id: number; name: string }) => {
     if (g.name) {
       allGenres.push({ id: g.id, name: g.name, type: MEDIA_TYPE.TV });
     }
@@ -786,7 +788,7 @@ const saveSelections = async () => {
                   v-else
                   class="w-full h-full bg-gray-700 flex items-center justify-center text-gray-400"
                 >
-                  {{ $t('onboarding.noImage') }}
+                  <IconTv icon-class="w-12 h-12" />
                 </div>
                 <CloseButton
                   size="large"
@@ -843,7 +845,7 @@ const saveSelections = async () => {
                     v-else
                     class="w-full h-full bg-gray-700 flex items-center justify-center text-gray-400"
                   >
-                    {{ $t('onboarding.noImage') }}
+                    <IconTv icon-class="w-12 h-12" />
                   </div>
                   <!-- Media Type Badge - Top Left -->
                   <div class="absolute top-2 left-2 z-10">

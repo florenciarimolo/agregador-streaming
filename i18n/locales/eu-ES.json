@@ -715,6 +715,21 @@
       "error": "Errorea al eliminar la cuenta"
     }
   },
+  "discover": {
+    "title": "Aurkitu",
+    "description": "Esploratu film eta telesailen zerrenda editorial kudeatuak",
+    "loading": "Zerrendak kargatzen...",
+    "loadingList": "Zerrenda kargatzen...",
+    "empty": "Ez dago zerrendarik eskuragarri",
+    "emptyList": "Zerrenda honek ez du titulurik",
+    "viewList": "Ikusi zerrenda {title}",
+    "useAsSeed": "Erabili zerrenda hau hazitzat",
+    "seedSuccess": "{count} titulu gehitu dira zure gomendioetara",
+    "seedError": "Errorea zerrenda zure gomendioetara gehitzean",
+    "registerCta": "Erregistratu zure gomendioak pertsonalizatzeko eta zerrenda hau hazitzat erabiltzeko",
+    "registerButton": "Erregistratu",
+    "listNotFound": "Zerrenda ez da aurkitu"
+  },
   "cookies": {
     "message": "Utilizamos cookies para mejorar tu experiencia. Al continuar navegando, aceptas nuestro uso de cookies. ",
     "privacyLink": "Política de privacidad",

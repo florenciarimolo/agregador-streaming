@@ -50,7 +50,7 @@
           role="img"
           :aria-label="computedNoImageAriaLabel"
         >
-          <IconImage icon-class="w-12 h-12" />
+          <IconTv icon-class="w-12 h-12" />
         </div>
 
         <!-- Hover Overlay -->
@@ -244,8 +244,11 @@ import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 import type { Recommendation } from '@/types/Recommendation';
-import { TITLE_STATUS } from '@/constants/domain/titleStatus';
-import IconImage from './icons/IconImage.vue';
+import {
+  TITLE_STATUS,
+  type TitleStatusType,
+} from '@/constants/domain/titleStatus';
+import IconTv from './icons/IconTv.vue';
 import Badge from './Badge.vue';
 import RatingBadge from './RatingBadge.vue';
 import IconMoreVertical from './icons/IconMoreVertical.vue';
@@ -363,7 +366,7 @@ const providersWithLogos = computed(() => {
     .slice(0, 6);
 });
 
-const handleAction = (action: TitleStatus | 'liked' | 'remove-liked') => {
+const handleAction = (action: TitleStatusType | 'liked' | 'remove-liked') => {
   if (!props.recommendation) return;
 
   // Close dropdown when action is triggered

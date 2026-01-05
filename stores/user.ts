@@ -2,7 +2,7 @@ import { defineStore } from 'pinia';
 import type { User } from '@supabase/supabase-js';
 import { getProfile, insertProfile } from '@/services/profiles';
 import { countUserLikedTitles } from '@/services/userTitleStatus';
-import { isNotFoundError } from '@/services/errorCodes';
+import { isNotFoundError } from '@/constants/db/errorCodes';
 // useSupabaseClient is auto-imported by Nuxt - no manual import needed
 
 interface Profile {

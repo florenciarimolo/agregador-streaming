@@ -715,6 +715,21 @@
       "error": "Error deleting account"
     }
   },
+  "discover": {
+    "title": "Discover",
+    "description": "Explore curated editorial lists of movies and TV shows",
+    "loading": "Loading lists...",
+    "loadingList": "Loading list...",
+    "empty": "No lists available",
+    "emptyList": "This list has no titles",
+    "viewList": "View list {title}",
+    "useAsSeed": "Use this list as a seed",
+    "seedSuccess": "Added {count} titles to your recommendations",
+    "seedError": "Error adding list to your recommendations",
+    "registerCta": "Sign up to personalize your recommendations and use this list as a seed",
+    "registerButton": "Sign up",
+    "listNotFound": "List not found"
+  },
   "cookies": {
     "message": "We use cookies to improve your experience. By continuing to browse, you accept our use of cookies. ",
     "privacyLink": "Privacy policy",

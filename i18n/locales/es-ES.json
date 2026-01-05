@@ -715,6 +715,21 @@
       "error": "Error al eliminar la cuenta"
     }
   },
+  "discover": {
+    "title": "Descubrir",
+    "description": "Explora listas editoriales curadas de películas y series",
+    "loading": "Cargando listas...",
+    "loadingList": "Cargando lista...",
+    "empty": "No hay listas disponibles",
+    "emptyList": "Esta lista no tiene títulos",
+    "viewList": "Ver lista {title}",
+    "useAsSeed": "Usar esta lista como semilla",
+    "seedSuccess": "Se agregaron {count} títulos a tus recomendaciones",
+    "seedError": "Error al agregar la lista a tus recomendaciones",
+    "registerCta": "Regístrate para personalizar tus recomendaciones y usar esta lista como semilla",
+    "registerButton": "Registrarse",
+    "listNotFound": "Lista no encontrada"
+  },
   "cookies": {
     "message": "Utilizamos cookies para mejorar tu experiencia. Al continuar navegando, aceptas nuestro uso de cookies. ",
     "privacyLink": "Política de privacidad",

@@ -43,8 +43,6 @@ const { t } = useI18n();
 const displayLabel = computed(() => {
   if (props.label) return props.label;
   if (!props.type) return '';
-  return props.type === MEDIA_TYPE.MOVIE
-    ? t('media.MOVIE')
-    : t('media.series');
+  return props.type === MEDIA_TYPE.MOVIE ? t('media.movie') : t('media.series');
 });
 </script>

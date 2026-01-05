@@ -7,7 +7,10 @@
           class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"
         ></div>
       </div>
-      <div v-else-if="!userStore.hasCompletedOnboarding" class="pt-6 pb-6 w-full">
+      <div
+        v-else-if="!userStore.hasCompletedOnboarding"
+        class="pt-6 pb-6 w-full"
+      >
         <!-- Redirecting message (shouldn't be visible for long) -->
         <div class="flex items-center justify-center py-12">
           <div
@@ -61,11 +64,17 @@
                   :title="title.title"
                   :poster-path="title.poster_path"
                   :link-to="`/${title.type === MEDIA_TYPE.MOVIE ? 'movie' : 'tv-show'}/${title.tmdb_id}`"
-                  :link-aria-label="$t('media.viewDetailsOf', { title: title.title })"
+                  :link-aria-label="
+                    $t('media.viewDetailsOf', { title: title.title })
+                  "
                   :image-alt="$t('media.posterOf', { title: title.title })"
-                  :no-image-aria-label="$t('media.noPosterAvailableFor', { title: title.title })"
+                  :no-image-aria-label="
+                    $t('media.noPosterAvailableFor', { title: title.title })
+                  "
                   :type="title.type"
-                  :aria-label="$t('media.titleCardLabel', { title: title.title })"
+                  :aria-label="
+                    $t('media.titleCardLabel', { title: title.title })
+                  "
                 >
                   <template #top-right-actions>
                     <Tooltip :text="$t('common.delete')">
@@ -106,11 +115,17 @@
                   :title="title.title"
                   :poster-path="title.poster_path"
                   :link-to="`/${title.type === MEDIA_TYPE.MOVIE ? 'movie' : 'tv-show'}/${title.tmdb_id}`"
-                  :link-aria-label="$t('media.viewDetailsOf', { title: title.title })"
+                  :link-aria-label="
+                    $t('media.viewDetailsOf', { title: title.title })
+                  "
                   :image-alt="$t('media.posterOf', { title: title.title })"
-                  :no-image-aria-label="$t('media.noPosterAvailableFor', { title: title.title })"
+                  :no-image-aria-label="
+                    $t('media.noPosterAvailableFor', { title: title.title })
+                  "
                   :type="title.type"
-                  :aria-label="$t('media.titleCardLabel', { title: title.title })"
+                  :aria-label="
+                    $t('media.titleCardLabel', { title: title.title })
+                  "
                 >
                   <template #top-left-badges>
                     <Tooltip :text="$t('media.liked')">
@@ -175,11 +190,17 @@
                   :title="title.title"
                   :poster-path="title.poster_path"
                   :link-to="`/${title.type === MEDIA_TYPE.MOVIE ? 'movie' : 'tv-show'}/${title.tmdb_id}`"
-                  :link-aria-label="$t('media.viewDetailsOf', { title: title.title })"
+                  :link-aria-label="
+                    $t('media.viewDetailsOf', { title: title.title })
+                  "
                   :image-alt="$t('media.posterOf', { title: title.title })"
-                  :no-image-aria-label="$t('media.noPosterAvailableFor', { title: title.title })"
+                  :no-image-aria-label="
+                    $t('media.noPosterAvailableFor', { title: title.title })
+                  "
                   :type="title.type"
-                  :aria-label="$t('media.titleCardLabel', { title: title.title })"
+                  :aria-label="
+                    $t('media.titleCardLabel', { title: title.title })
+                  "
                 >
                   <template #top-right-actions>
                     <Tooltip :text="$t('common.delete')">
@@ -270,14 +291,10 @@ import {
 } from '@/services/userTitleStatus';
 import {
   getTitleByTmdbId,
-  insertTitle,
   getTitlesByTmdbIds,
   getTitleByTmdbIdWithLanguage,
 } from '@/services/titles';
-import {
-  isNotFoundError,
-  isUniqueViolationError,
-} from '@/services/errorCodes';
+import { isUniqueViolationError } from '@/constants/db/errorCodes';
 import { getSession } from '@/services/auth';
 import TitleCard from '@/components/TitleCard.vue';
 import IconButton from '@/components/ui/IconButton.vue';
@@ -290,6 +307,7 @@ import Spinner from '@/components/Spinner.vue';
 import Toast from '@/components/ui/Toast.vue';
 import { useUndoToast } from '@/composables/useUndoToast';
 import { DEFAULT_LANGUAGE, toTMDBLanguageCode } from '@/constants/languages';
+import { QUERY_PARAMS } from '@/constants/api/queryParams';
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore - Auto-imported
@@ -1121,16 +1139,16 @@ const { pending: profilePending } = useAsyncData(
   async () => {
     // Ensure profile is loaded
     await userStore.ensureProfile();
-    
+
     // Check onboarding status
     const hasCompletedOnboarding = userStore.hasCompletedOnboarding;
-    
+
     // If onboarding not completed, redirect to onboarding
     if (!hasCompletedOnboarding) {
       await navigateTo('/onboarding', { replace: true });
       return false; // Prevent content from loading
     }
-    
+
     return true; // Allow content to load
   },
   {
@@ -1145,7 +1163,7 @@ onMounted(async () => {
   while (profilePending.value) {
     await new Promise((resolve) => setTimeout(resolve, 50));
   }
-  
+
   // If redirected, don't continue
   if (!userStore.hasCompletedOnboarding) {
     return;
@@ -1153,7 +1171,6 @@ onMounted(async () => {
 
   // Check if we should open a specific tab from query params
   const route = useRoute();
-import { QUERY_PARAMS } from '@/constants/api/queryParams';
 
   const tabFromQuery = route.query[QUERY_PARAMS.TAB] as string;
   if (tabFromQuery) {

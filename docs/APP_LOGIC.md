@@ -1150,6 +1150,148 @@ Flag removed → normal navigation
 
 ---
 
+## Recommendation Source vs Explanation
+
+### Overview
+
+The recommendation system uses two distinct fields to track how titles enter and are displayed:
+
+- **`source`**: Defines how a title entered `recommendation_pool`. It is persisted and never changes after insertion.
+- **`explanation_code`**: Explains why a title is being shown in the current context. It can be a dynamic override (e.g., `MOOD_MATCH`). Some explanations are NOT persisted intentionally.
+
+### Source Values (Existing)
+
+The following `source` values are defined in the system:
+
+- `'based_on_like'` - Based on titles the user has marked as liked
+- `'trending'` - Trending titles from TMDB
+- `'discover'` - Discover (algorithmic or editorial)
+- `'easy'` - Easy to watch content
+- `'mood'` - Mood-based recommendations
+
+**Important**: Do NOT create new `source` values. Use existing ones.
+
+### Explanation Code Values
+
+The following `explanation_code` values are used:
+
+- `'BASED_ON_LIKE'` - Persisted (shown in recommendations)
+- `'TRENDING'` - Persisted (shown in recommendations)
+- `'DISCOVER'` - Discover algorithmic (persisted, shown in recommendations)
+- `'DISCOVER_LIST'` - Discover editorial from list (persisted, shown in recommendations)
+- `'EASY_TO_WATCH'` - Persisted (shown in recommendations)
+- `'MOOD_MATCH'` - NOT persisted (dynamic override only)
+
+### Key Rules
+
+1. **`source` is immutable**: Once a title enters the pool with a `source`, it never changes.
+2. **`explanation_code` can be dynamic**: Some codes like `MOOD_MATCH` are calculated on-the-fly and never persisted.
+3. **Discover differentiation**:
+   - Algorithmic discover: `source='discover'`, `explanation_code='DISCOVER'`
+   - Editorial discover: `source='discover'`, `explanation_code='DISCOVER_LIST'`
+4. **Public Discover pages**: `DISCOVER_LIST` explanation code is NEVER rendered on public Discover pages (`/discover`, `/discover/list/[slug]`). It may be shown in personalized recommendations, but not on the public editorial pages.
+
+---
+
+## Discover Editorial Lists (SEO)
+
+### Overview
+
+Discover editorial lists are public, SEO-oriented lists with manually curated content. They are designed to generate organic traffic, showcase value without requiring registration, and convert visitors into registered users.
+
+### Fundamental Principles
+
+- **Discover is NOT a recommendation system**: It is stable editorial content, identical for all users.
+- **Discover public pages do NOT use `recommendation_pool`**: They only use `discover_lists`, `discover_list_items`, and `titles` (via join).
+- **No personalization**: Content is identical for all users, regardless of region, providers, session, or preferences.
+- **Stable and indexable**: Lists are stable, SEO-friendly, and designed for search engine indexing.
+
+### Discover List Slugs
+
+**CRITICAL RULE**: All Discover list slugs are **always in English**.
+
+- Slugs are stable and never change
+- Slugs are not translated
+- URLs are language-agnostic and SEO-first
+- Format: kebab-case, descriptive, editorial
+- Example:
+  - URL: `/discover/list/best-short-series`
+  - Title (ES): "Mejores series cortas para ver en pocos días"
+  - Title (EN): "Best short series to binge"
+- ❌ Never use non-English slugs (Spanish, Catalan, etc.)
+- ❌ Never generate slugs by language
+
+### When User Uses "Use This List as a Seed"
+
+When a user clicks "Usar esta lista como semilla" (Use this list as a seed):
+
+1. List items are inserted into `recommendation_pool` using:
+   - `source = 'discover'` (use existing value, do NOT create new)
+   - `explanation_code = 'DISCOVER_LIST'` (differentiates from algorithmic 'DISCOVER')
+2. Insertion is idempotent: `ON CONFLICT (user_id, tmdb_id) DO NOTHING`
+3. Respects exclusions (titles already seen/marked as not_interested)
+4. **CRITICAL**: Using "Usar esta lista como semilla" **never modifies Discover lists or their content**, it only affects the user's `recommendation_pool`
+
+### Differentiation
+
+- **Discover algorithmic**: `source='discover'`, `explanation_code='DISCOVER'`
+- **Discover editorial**: `source='discover'`, `explanation_code='DISCOVER_LIST'`
+
+### Public Discover Pages Rules
+
+**CRITICAL**: Public Discover pages (`/discover`, `/discover/list/[slug]`) **MUST NOT** use:
+
+- ❌ `recommendation_pool`
+- ❌ `source`
+- ❌ `explanation_code` (including `DISCOVER_LIST`)
+- ❌ Tracking
+- ❌ Personalization
+- ❌ Region / providers / preferences
+
+**Public Discover pages ONLY use:**
+
+- ✅ `discover_lists`
+- ✅ `discover_list_items`
+- ✅ `titles` (direct join)
+- ✅ Editorial order by `position`
+
+### User Experience
+
+**Non-logged users:**
+
+- Free navigation
+- See complete lists
+- Access public title pages
+- Soft CTA for registration
+- No personalization, no visible states
+
+**Logged users:**
+
+- Can mark titles (seen, liked, not interested, watchlist)
+- Can "Use this list as a seed" to insert titles into `recommendation_pool`
+- Content itself never changes (same order, same titles, same render for all)
+- Actions available depend on user, but content is always identical
+
+### Data Structure
+
+**`discover_lists` table:**
+
+- `slug`: Always in English, stable, never changes
+- `title`: JSONB multi-language (translatable)
+- `description`: JSONB multi-language (translatable)
+- `type`: Hint editorial/UI only, NOT used for logic
+- `is_public`: Boolean
+- `is_indexable`: Boolean
+
+**`discover_list_items` table:**
+
+- `discover_list_id`: Reference to list
+- `tmdb_id`: Title ID
+- `type`: Source of truth for content type ('movie' or 'tv')
+- `position`: Editorial order, stable (changing order does NOT change URLs, does NOT affect SEO, does NOT invalidate list)
+
+---
+
 ## References
 
 - `/constants/domain/titleStatus.ts`: Title status constants

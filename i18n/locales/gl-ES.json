@@ -715,6 +715,21 @@
       "error": "Erro al eliminar la cuenta"
     }
   },
+  "discover": {
+    "title": "Descubrir",
+    "description": "Explora listas editoriais curadas de películas e series",
+    "loading": "Cargando listas...",
+    "loadingList": "Cargando lista...",
+    "empty": "Non hai listas dispoñibles",
+    "emptyList": "Esta lista non ten títulos",
+    "viewList": "Ver lista {title}",
+    "useAsSeed": "Usar esta lista como semente",
+    "seedSuccess": "Engadíronse {count} títulos ás túas recomendacións",
+    "seedError": "Erro ao engadir a lista ás túas recomendacións",
+    "registerCta": "Rexistrate para personalizar as túas recomendacións e usar esta lista como semente",
+    "registerButton": "Rexistrarse",
+    "listNotFound": "Lista non atopada"
+  },
   "cookies": {
     "message": "Utilizamos cookies para mejorar tu experiencia. Al continuar navegando, aceptas nuestro uso de cookies. ",
     "privacyLink": "Política de privacidad",
