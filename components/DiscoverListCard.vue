@@ -33,7 +33,7 @@
             class="relative w-12 h-16 rounded overflow-hidden"
             :style="{
               zIndex: 10 - index,
-              boxShadow: getShadowStyle(index),
+              boxShadow: getShadowStyle(index, list.previewPosters.slice(0, 4).length),
             }"
           >
             <img
@@ -92,7 +92,8 @@ interface Props {
 const props = defineProps<Props>();
 const config = useRuntimeConfig();
 const TMDB_IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w500';
-const { isDark } = useTheme();
+const { theme } = useTheme();
+const isDark = computed(() => theme.value === 'dark');
 
 function getPosterUrl(posterPath: string | null): string {
   if (!posterPath) return '';
@@ -100,19 +101,9 @@ function getPosterUrl(posterPath: string | null): string {
   return `${TMDB_IMAGE_BASE_URL}${posterPath}`;
 }
 
-function getShadowStyle(index: number): string {
-  const offsetY = index * 2;
-  const blur = index * 3 + 4;
-  
-  if (isDark.value) {
-    // Light shadows for dark mode
-    const opacity = 0.1 + index * 0.03;
-    return `0 ${offsetY}px ${blur}px rgba(255, 255, 255, ${opacity})`;
-  } else {
-    // Dark shadows for light mode
-    const opacity = 0.15 + index * 0.05;
-    return `0 ${offsetY}px ${blur}px rgba(0, 0, 0, ${opacity})`;
-  }
+function getShadowStyle(index: number, totalImages: number): string {
+  // Add right shadow to all images using a light tone of primary color (#c7d2fe = primary-200)
+  return `1px 0 2px rgba(199, 210, 254, 0.4)`;
 }
 </script>
 

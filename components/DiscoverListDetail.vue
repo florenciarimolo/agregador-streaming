@@ -56,6 +56,10 @@
         :no-image-aria-label="$t('media.noPosterAvailableFor', { title: item.title })"
         :type="item.type"
         :aria-label="$t('media.titleCardLabel', { title: item.title })"
+        :is-liked="titleStatuses.get(item.tmdb_id)?.liked || false"
+        :is-seen="titleStatuses.get(item.tmdb_id)?.status === TITLE_STATUS.SEEN || false"
+        :is-not-interested="titleStatuses.get(item.tmdb_id)?.status === TITLE_STATUS.NOT_INTERESTED || false"
+        :is-in-watchlist="titleStatuses.get(item.tmdb_id)?.status === TITLE_STATUS.WATCHLIST || false"
       >
         <!-- Actions for logged users only -->
         <template v-if="isLoggedIn" #top-right-actions>
@@ -136,7 +140,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useSupabaseUser } from '#imports';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
@@ -156,8 +160,9 @@ import IconX from './icons/IconX.vue';
 import IconArrowLeft from './icons/IconArrowLeft.vue';
 import EmptyState from './EmptyState.vue';
 import { getSession } from '@/services/auth';
-import { getUserLikedTitle } from '@/services/userTitleStatus';
+import { getUserLikedTitle, getTitleStatus } from '@/services/userTitleStatus';
 import { useUndoToast } from '@/composables/useUndoToast';
+import { TITLE_STATUS } from '@/constants/domain/titleStatus';
 
 const { t } = useI18n();
 const router = useRouter();
@@ -174,11 +179,85 @@ const user = useSupabaseUser();
 const isLoggedIn = computed(() => !!user.value);
 const { showToast } = useUndoToast();
 const loadingTitles = ref<Set<number>>(new Set());
+const titleStatuses = ref<Map<number, { liked: boolean; status: string | null }>>(new Map());
 
 // Handle back navigation
 const handleBack = () => {
   router.push('/discover');
 };
+
+// Load title statuses for all items
+const loadTitleStatuses = async () => {
+  if (!isLoggedIn.value || !props.items || props.items.length === 0) {
+    return;
+  }
+
+  try {
+    const {
+      data: { session },
+    } = await getSession();
+
+    if (!session?.access_token) {
+      return;
+    }
+
+    const userId = user.value?.id || (user.value as { sub?: string })?.sub;
+    if (!userId) {
+      return;
+    }
+
+    // Load statuses for all items in parallel
+    const statusPromises = props.items.map(async (item) => {
+      if (!item.tmdb_id) return null;
+
+      try {
+        const { data: titleStatus } = await getTitleStatus(userId, item.tmdb_id);
+        const { data: likedTitle } = await getUserLikedTitle(userId, item.tmdb_id);
+
+        return {
+          tmdbId: item.tmdb_id,
+          status: titleStatus?.status || null,
+          liked: !!likedTitle,
+        };
+      } catch (error) {
+        console.error(`[DiscoverListDetail] Error loading status for ${item.tmdb_id}:`, error);
+        return null;
+      }
+    });
+
+    const results = await Promise.all(statusPromises);
+    results.forEach((result) => {
+      if (result) {
+        titleStatuses.value.set(result.tmdbId, {
+          status: result.status,
+          liked: result.liked,
+        });
+      }
+    });
+  } catch (error) {
+    console.error('[DiscoverListDetail] Error loading title statuses:', error);
+  }
+};
+
+// Watch for items changes and load statuses
+watch(
+  () => props.items,
+  async () => {
+    if (props.items && props.items.length > 0) {
+      await loadTitleStatuses();
+    }
+  },
+  { immediate: true }
+);
+
+// Watch for user login status
+watch(isLoggedIn, async (newValue) => {
+  if (newValue && props.items && props.items.length > 0) {
+    await loadTitleStatuses();
+  } else {
+    titleStatuses.value.clear();
+  }
+});
 
 async function handleAction(
   item: DiscoverListItem,
@@ -288,7 +367,9 @@ async function handleAction(
     console.error('[DiscoverListDetail] Error handling action:', error);
     showToast(t('common.error'), null, 5000);
   } finally {
-    loadingTitles.value.delete(item.tmdb_id);
+      loadingTitles.value.delete(item.tmdb_id);
+      // Reload statuses after action
+      await loadTitleStatuses();
   }
 }
 </script>

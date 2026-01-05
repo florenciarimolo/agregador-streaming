@@ -90,6 +90,41 @@
         <Badge v-if="showType" :type="computedType" />
       </div>
 
+      <!-- Informative icons overlay (only show if user has session and status is provided) -->
+      <div
+        v-if="hasSession && (isLiked || (isSeen && !isLiked) || isNotInterested || isInWatchlist)"
+        class="flex absolute top-2 right-2 gap-2 z-20"
+      >
+        <Tooltip v-if="isLiked" :text="$t('media.liked')">
+          <div
+            class="flex justify-center items-center w-8 h-8 rounded-full backdrop-blur-sm bg-primary-600/90"
+          >
+            <IconHeartFilled icon-class="w-5 h-5 text-white" />
+          </div>
+        </Tooltip>
+        <Tooltip v-else-if="isSeen" :text="$t('media.seen')">
+          <div
+            class="flex justify-center items-center w-8 h-8 rounded-full backdrop-blur-sm bg-primary-600/90"
+          >
+            <IconCheck icon-class="w-5 h-5 text-white" />
+          </div>
+        </Tooltip>
+        <Tooltip v-if="isNotInterested" :text="$t('media.notInterested')">
+          <div
+            class="flex justify-center items-center w-8 h-8 rounded-full backdrop-blur-sm bg-primary-600/90"
+          >
+            <IconX icon-class="w-5 h-5 text-white" />
+          </div>
+        </Tooltip>
+        <Tooltip v-if="isInWatchlist" :text="$t('media.watchLater')">
+          <div
+            class="flex justify-center items-center w-8 h-8 rounded-full backdrop-blur-sm bg-primary-600/90"
+          >
+            <IconClock icon-class="w-5 h-5 text-white" />
+          </div>
+        </Tooltip>
+      </div>
+
       <!-- Top-right actions slot - Outside the link to prevent navigation -->
       <!-- Use pointer-events-none on container, pointer-events-auto on menu itself -->
       <div class="overflow-visible absolute top-2 right-2 z-30 pointer-events-none">
@@ -259,10 +294,13 @@ import IconMoreVertical from './icons/IconMoreVertical.vue';
 import IconClock from './icons/IconClock.vue';
 import IconCheck from './icons/IconCheck.vue';
 import IconHeart from './icons/IconHeart.vue';
+import IconHeartFilled from './icons/IconHeartFilled.vue';
 import IconX from './icons/IconX.vue';
 import IconButton from './ui/IconButton.vue';
 import Button from './ui/Button.vue';
 import ActionMenu from './ui/ActionMenu.vue';
+import Tooltip from './ui/Tooltip.vue';
+import { useSupabaseUser } from '#imports';
 
 const { t } = useI18n();
 
@@ -287,6 +325,12 @@ interface Props {
   imageAlt?: string;
   noImageAriaLabel?: string;
   hoverText?: string;
+
+  // Title status (for informative icons)
+  isLiked?: boolean;
+  isSeen?: boolean;
+  isNotInterested?: boolean;
+  isInWatchlist?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -305,7 +349,14 @@ const props = withDefaults(defineProps<Props>(), {
   imageAlt: undefined,
   noImageAriaLabel: undefined,
   hoverText: undefined,
+  isLiked: false,
+  isSeen: false,
+  isNotInterested: false,
+  isInWatchlist: false,
 });
+
+const user = useSupabaseUser();
+const hasSession = computed(() => !!user.value);
 
 const emit = defineEmits<{
   'mark-seen': [title: Recommendation];
