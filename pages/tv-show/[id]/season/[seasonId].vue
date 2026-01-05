@@ -122,6 +122,7 @@
 import { useRoute } from 'vue-router';
 import { useFetch } from 'nuxt/app';
 import { computed, watch, onMounted, ref } from 'vue';
+import { useRouteWithLang } from '@/composables/useRouteWithLang';
 
 import type { Season, TVShow } from '@/types/TVShow';
 import { WatchProviderTypes } from '@/types/WatchProvider';
@@ -141,6 +142,10 @@ const route = useRoute();
 const { locale } = useI18n();
 const { getUserRegion } = useUserRegion();
 const userRegion = ref<string | null>(null);
+const { lang } = useRouteWithLang();
+
+// Get current language URL code for API calls
+const currentLangUrlCode = computed(() => lang.value);
 
 // Necesitamos obtener el seriesId desde la URL padre y el seasonId de los parámetros actuales
 const seriesId = route.params.id;
@@ -152,14 +157,18 @@ const {
   pending: tvShowPending,
   error: tvShowError,
   refresh: refreshTVShowDetails,
-} = await useFetch<TVShow>(`/api/tmdb/tvshows/${seriesId}`);
+} = await useFetch<TVShow>(`/api/tmdb/tvshows/${seriesId}`, {
+  query: { lang: currentLangUrlCode },
+});
 
 const {
   data: seasonData,
   pending: seasonPending,
   error: seasonError,
   refresh: refreshSeasonData,
-} = await useFetch<Season>(`/api/tmdb/tvshows/${seriesId}/seasons/${seasonId}`);
+} = await useFetch<Season>(`/api/tmdb/tvshows/${seriesId}/seasons/${seasonId}`, {
+  query: { lang: currentLangUrlCode },
+});
 
 const isLoading = computed(
   () =>

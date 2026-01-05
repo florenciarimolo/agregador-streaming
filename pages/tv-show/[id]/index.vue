@@ -120,6 +120,7 @@
 import { useRoute } from 'vue-router';
 import { useFetch, useSeoMeta, useHead } from 'nuxt/app';
 import { computed, onMounted, watch, ref } from 'vue';
+import { useRouteWithLang } from '@/composables/useRouteWithLang';
 
 import type { TVShow } from '@/types/TVShow';
 import { formatDateToSpanish } from '@/utils/formatDate';
@@ -143,6 +144,10 @@ const route = useRoute();
 const { locale } = useI18n();
 const { getUserRegion } = useUserRegion();
 const userRegion = ref<string | null>(null);
+const { lang } = useRouteWithLang();
+
+// Get current language URL code for API calls
+const currentLangUrlCode = computed(() => lang.value);
 
 const tvShowId = route.params.id;
 
@@ -151,14 +156,18 @@ const {
   pending: tvShowPending,
   error: tvShowError,
   refresh: refreshTVShowDetails,
-} = await useFetch<TVShow>(`/api/tmdb/tvshows/${tvShowId}`);
+} = await useFetch<TVShow>(`/api/tmdb/tvshows/${tvShowId}`, {
+  query: { lang: currentLangUrlCode },
+});
 
 const {
   data: tvProviders,
   pending: tvProvidersPending,
   error: tvProvidersError,
   refresh: refreshTVProviders,
-} = await useFetch(`/api/tmdb/tvshows/${tvShowId}/providers`);
+} = await useFetch(`/api/tmdb/tvshows/${tvShowId}/providers`, {
+  query: { lang: currentLangUrlCode },
+});
 
 // Watch for locale changes and refresh all data
 watch(

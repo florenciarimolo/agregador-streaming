@@ -43,6 +43,7 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useFetch, useSeoMeta, useHead } from 'nuxt/app';
+import { useRouteWithLang } from '@/composables/useRouteWithLang';
 import type { Movie } from '@/types/Movie';
 import { WatchProviderTypes } from '@/types/WatchProvider';
 import MediaBannerDetail from '@/components/MediaBannerDetail.vue';
@@ -59,6 +60,10 @@ import Alert from '@/components/ui/Alert.vue';
 const route = useRoute();
 const movieId = route.params.id as string;
 const { locale } = useI18n();
+const { lang } = useRouteWithLang();
+
+// Get current language URL code for API calls
+const currentLangUrlCode = computed(() => lang.value);
 
 // Fetch movie details
 const {
@@ -66,7 +71,9 @@ const {
   pending: moviePending,
   error: movieError,
   refresh: refreshMovieDetails,
-} = await useFetch(`/api/tmdb/movies/${movieId}`);
+} = await useFetch(`/api/tmdb/movies/${movieId}`, {
+  query: { lang: currentLangUrlCode },
+});
 
 // Fetch providers
 const {
@@ -74,7 +81,9 @@ const {
   pending: providersPending,
   error: providersError,
   refresh: refreshProviders,
-} = await useFetch(`/api/tmdb/movies/${movieId}/providers`);
+} = await useFetch(`/api/tmdb/movies/${movieId}/providers`, {
+  query: { lang: currentLangUrlCode },
+});
 
 // Fetch alternative titles
 const {
@@ -82,7 +91,9 @@ const {
   pending: alternativeTitlesPending,
   error: alternativeTitlesError,
   refresh: refreshAlternativeTitles,
-} = await useFetch(`/api/tmdb/movies/${movieId}/alternative-titles`);
+} = await useFetch(`/api/tmdb/movies/${movieId}/alternative-titles`, {
+  query: { lang: currentLangUrlCode },
+});
 
 // Watch for locale changes and refresh all data
 watch(

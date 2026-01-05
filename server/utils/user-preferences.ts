@@ -1,10 +1,12 @@
 import { serverSupabaseUser } from '#supabase/server';
 import { createClient } from '@supabase/supabase-js';
 import type { H3Event } from 'h3';
+import { getRequestURL, getRequestHeader, getQuery } from 'h3';
 import { TABLES } from '@/constants/db/tables';
 import { PROFILES_COLUMNS, USER_PREFERENCES_COLUMNS } from '@/constants/db/columns';
 import { SCORE_WEIGHTS } from '@/constants/domain/scoring';
 import { LanguageCode, toTMDBLanguageCode } from '@/constants/languages';
+import { extractLangFromPath } from '@/composables/useRouteWithLang';
 
 /**
  * Get user preferences from server-side (using createClient)
@@ -122,12 +124,64 @@ export async function getUserTMDBParams(event?: H3Event): Promise<{
   }
 
   try {
-    // Get language from URL (route.params.lang) - deterministic source of truth
+    // Get language from URL - deterministic source of truth
+    // Priority: 1) query parameter (lang), 2) route.params.lang (if available), 3) extract from Referer header, 4) extract from request URL path, 5) default
     let language = defaults.language;
     try {
-      // Try to get lang from route params (URL-based language)
-      const params = event.context.params || {};
-      const langFromUrl = params.lang as string | undefined;
+      const query = getQuery(event);
+      let langFromUrl: string | undefined;
+      
+      // Priority 1: Query parameter (most reliable for API calls from pages)
+      if (query.lang && typeof query.lang === 'string') {
+        langFromUrl = query.lang.toLowerCase();
+      }
+      
+      // Priority 2: Try to get lang from route params (if route has :lang parameter)
+      if (!langFromUrl) {
+        const params = event.context.params || {};
+        langFromUrl = params.lang as string | undefined;
+      }
+      
+      // Priority 3: If not in params, try to extract from Referer header
+      // This handles cases where API routes don't have :lang in their route definition
+      // but the request comes from a page URL that does have the language prefix (e.g., /gl/movie/123)
+      if (!langFromUrl) {
+        try {
+          const referer = getRequestHeader(event, 'referer');
+          if (referer) {
+            try {
+              const refererUrl = new URL(referer);
+              const extractedLang = extractLangFromPath(refererUrl.pathname);
+              if (extractedLang) {
+                langFromUrl = extractedLang;
+              }
+            } catch {
+              // If URL parsing fails, try direct path extraction
+              const extractedLang = extractLangFromPath(referer);
+              if (extractedLang) {
+                langFromUrl = extractedLang;
+              }
+            }
+          }
+        } catch {
+          // If referer extraction fails, continue to next priority
+        }
+      }
+      
+      // Priority 4: If still not found, try to extract from request URL path
+      // This is a fallback for cases where referer is not available
+      if (!langFromUrl) {
+        try {
+          const requestUrl = getRequestURL(event);
+          const pathname = requestUrl.pathname;
+          const extractedLang = extractLangFromPath(pathname);
+          if (extractedLang) {
+            langFromUrl = extractedLang;
+          }
+        } catch {
+          // If extraction fails, continue with default
+        }
+      }
       
       if (langFromUrl) {
         // Map URL code to i18n code, then to TMDB language code
@@ -135,10 +189,26 @@ export async function getUserTMDBParams(event?: H3Event): Promise<{
         const i18nCode = getI18nCodeFromUrlCode(langFromUrl.toLowerCase());
         if (i18nCode) {
           language = toTMDBLanguageCode(i18nCode);
+          if (import.meta.dev) {
+            console.log(
+              `[getUserTMDBParams] Language extracted: URL code=${langFromUrl}, i18nCode=${i18nCode}, TMDB code=${language}`
+            );
+          }
+        } else if (import.meta.dev) {
+          console.warn(
+            `[getUserTMDBParams] Could not map URL code to i18n code: ${langFromUrl}`
+          );
         }
+      } else if (import.meta.dev) {
+        console.warn(
+          `[getUserTMDBParams] No language found in URL, using default: ${language}`
+        );
       }
-    } catch {
+    } catch (error) {
       // If error reading from URL, use default
+      if (import.meta.dev) {
+        console.warn('[getUserTMDBParams] Error extracting language from URL:', error);
+      }
       language = defaults.language;
     }
 
