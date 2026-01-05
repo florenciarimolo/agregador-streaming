@@ -51,8 +51,11 @@ export default defineNuxtPlugin(async () => {
             userStore.setAuthInitialized(true);
             authInitialized = true;
           }
-          // Fetch profile in background (don't block)
-          userStore.fetchProfile().catch((error) => {
+          // Fetch profile - await to ensure it completes before navigation
+          // The store uses a mutex pattern to avoid race conditions
+          try {
+            await userStore.fetchProfile();
+          } catch (error) {
             // Only log non-refresh-token errors
             if (!isRefreshTokenError(error)) {
               if (process.env.NODE_ENV === 'development') {
@@ -62,7 +65,7 @@ export default defineNuxtPlugin(async () => {
                 );
               }
             }
-          });
+          }
         } else {
           userStore.reset();
         }
@@ -93,15 +96,13 @@ export default defineNuxtPlugin(async () => {
       userStore.setUser(session.user);
     }
 
-    // Mark auth as initialized after session check (even if no session)
-    if (!authInitialized) {
-      userStore.setAuthInitialized(true);
-      authInitialized = true;
-    }
-
-    // Fetch profile in background if we have a user, but NOT on reset-password page
+    // Fetch profile if we have a user, but NOT on reset-password page
+    // IMPORTANT: We await this to ensure profile is loaded before middleware runs
+    // This makes the onboarding flow deterministic as per documentation
     if (session?.user && !isResetPasswordPage) {
-      userStore.fetchProfile().catch((error) => {
+      try {
+        await userStore.fetchProfile();
+      } catch (error) {
         // Only log non-refresh-token errors
         if (!isRefreshTokenError(error)) {
           if (process.env.NODE_ENV === 'development') {
@@ -111,7 +112,13 @@ export default defineNuxtPlugin(async () => {
             );
           }
         }
-      });
+      }
+    }
+
+    // Mark auth as initialized after profile is loaded (or after session check if no user)
+    if (!authInitialized) {
+      userStore.setAuthInitialized(true);
+      authInitialized = true;
     }
   } catch (error) {
     // Silently handle refresh token errors - they're expected when tokens are invalid/expired

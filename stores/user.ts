@@ -22,6 +22,7 @@ interface UserState {
   loading: boolean;
   likesCount: number | null;
   authInitialized: boolean; // Track if auth has been initialized
+  _fetchProfilePromise: Promise<void> | null; // Track pending profile fetch to avoid race conditions
 }
 
 export const useUserStore = defineStore('user', {
@@ -31,6 +32,7 @@ export const useUserStore = defineStore('user', {
     loading: false,
     likesCount: null,
     authInitialized: false, // Start as false, set to true after plugin initializes
+    _fetchProfilePromise: null, // Track pending profile fetch to avoid race conditions
   }),
 
   getters: {
@@ -63,6 +65,14 @@ export const useUserStore = defineStore('user', {
     },
 
     async fetchProfile() {
+      // If there's already a fetch in progress, wait for it instead of starting a new one
+      // This prevents race conditions where multiple concurrent fetches could overwrite each other
+      if (this._fetchProfilePromise) {
+        console.log('[UserStore] fetchProfile: Already in progress, waiting...');
+        await this._fetchProfilePromise;
+        return;
+      }
+
       // Supabase user can have either 'id' or 'sub' as the identifier
       const userId = this.user?.id || (this.user as { sub?: string })?.sub;
 
@@ -73,6 +83,17 @@ export const useUserStore = defineStore('user', {
         return;
       }
 
+      // Create a promise to track this fetch operation
+      this._fetchProfilePromise = this._doFetchProfile(userId);
+      
+      try {
+        await this._fetchProfilePromise;
+      } finally {
+        this._fetchProfilePromise = null;
+      }
+    },
+
+    async _doFetchProfile(userId: string) {
       try {
         // Fetch profile and likes count in PARALLEL for faster loading
         const [profileResult, likesResult] = await Promise.all([
@@ -88,7 +109,7 @@ export const useUserStore = defineStore('user', {
           // If profile doesn't exist, try to create it
           if (isNotFoundError(profileError)) {
             const userEmail =
-              (this.user as { email?: string }).email || this.user.email;
+              (this.user as { email?: string }).email || (this.user as { email?: string })?.email;
             const { data: newProfile, error: createError } =
               await insertProfile({
                 id: userId,
@@ -159,6 +180,7 @@ export const useUserStore = defineStore('user', {
       this.profile = null;
       this.loading = false;
       this.likesCount = null;
+      this._fetchProfilePromise = null;
       // Don't reset authInitialized on reset - it should stay true once initialized
     },
 
