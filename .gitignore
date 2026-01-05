@@ -64,6 +64,7 @@ layouts/**/*.js
 composables/**/*.js
 utils/**/*.js
 stores/**/*.js
+services/**/*.js
 
 # Config and plugin compiled files
 config/**/*.js
