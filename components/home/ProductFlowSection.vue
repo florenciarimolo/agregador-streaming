@@ -141,7 +141,6 @@ import SectionTitle from '@/components/layout/SectionTitle.vue';
 import Card from '@/components/ui/Card.vue';
 import MoodAttentionSelection from './mockups/MoodAttentionSelection.vue';
 import MomentConfirmation from './mockups/MomentConfirmation.vue';
-import { useSupabaseUser } from '#imports';
 
 const user = useSupabaseUser();
 const showHero = computed(() => !user.value);
