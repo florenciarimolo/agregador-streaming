@@ -1,6 +1,9 @@
 import { createClient } from '@supabase/supabase-js';
-import { TITLES_COLUMNS, DISCOVER_LISTS_COLUMNS } from '@/constants/db/columns';
-import { TABLES } from '@/constants/db/tables';
+import {
+  TITLES_COLUMNS,
+  DISCOVER_LISTS_COLUMNS,
+} from '../../constants/db/columns';
+import { TABLES } from '../../constants/db/tables';
 
 /**
  * Get all movie and TV show IDs from Supabase for sitemap generation
@@ -14,7 +17,6 @@ import { TABLES } from '@/constants/db/tables';
 export async function getTitleIdsForSitemap(): Promise<
   Array<{ tmdb_id: number; type: 'movie' | 'tv'; updated_at: string }>
 > {
-  console.log('[Sitemap] getTitleIdsForSitemap() called');
   try {
     // Try to use runtime config, fallback to env vars for sitemap generation context
     let supabaseUrl: string;
@@ -41,14 +43,6 @@ export async function getTitleIdsForSitemap(): Promise<
       return [];
     }
 
-    // Log which key is being used (for debugging)
-    const isUsingServiceRole = !!process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (import.meta.dev) {
-      console.log(
-        `[Sitemap] Using ${isUsingServiceRole ? 'SERVICE_ROLE_KEY' : 'ANON_KEY'} for Supabase connection`
-      );
-    }
-
     const supabase = createClient(supabaseUrl, supabaseKey, {
       auth: {
         persistSession: false,
@@ -69,11 +63,8 @@ export async function getTitleIdsForSitemap(): Promise<
     }
 
     if (!data) {
-      console.warn('[Sitemap] No data returned from Supabase query');
       return [];
     }
-
-    console.log(`[Sitemap] Fetched ${data.length} titles from database`);
 
     // Map titles and validate that updated_at is present (NOT NULL in schema)
     // If updated_at is null, it's a data bug and we should fail explicitly
@@ -89,12 +80,6 @@ export async function getTitleIdsForSitemap(): Promise<
         updated_at: title.updated_at,
       };
     });
-
-    const moviesCount = mappedTitles.filter((t) => t.type === 'movie').length;
-    const tvShowsCount = mappedTitles.filter((t) => t.type === 'tv').length;
-    console.log(
-      `[Sitemap] Mapped titles: ${moviesCount} movies, ${tvShowsCount} TV shows`
-    );
 
     return mappedTitles;
   } catch (error) {

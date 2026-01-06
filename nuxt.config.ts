@@ -216,6 +216,9 @@ export default defineNuxtConfig({
   sitemap: {
     // @nuxtjs/sitemap v7 uses urls() - this is the correct API
     // The sitemap will be served at /sitemap.xml
+    // CRITICAL: siteUrl must be set explicitly and must NOT have trailing slash
+    // This prevents double slashes (//) when concatenating with loc paths
+    siteUrl: getSiteUrl(),
     exclude: [
       '/:lang/auth/**',
       '/:lang/auth/callback',
@@ -227,7 +230,6 @@ export default defineNuxtConfig({
       '/api/**',
     ],
     urls: async () => {
-      console.log('[Sitemap] urls() CALLED');
       const { getTitleIdsForSitemap, getDiscoverListsForSitemap } =
         await import('./server/utils/sitemap');
 
@@ -253,10 +255,6 @@ export default defineNuxtConfig({
       // Fetch data
       const titles = await getTitleIdsForSitemap();
       const discoverLists = await getDiscoverListsForSitemap();
-
-      console.log(
-        `[Sitemap] Generating sitemap: ${titles.length} titles, ${discoverLists.length} discover lists`
-      );
 
       const urls: Array<{ loc: string; lastmod: string }> = [];
 
@@ -306,22 +304,6 @@ export default defineNuxtConfig({
           });
         }
       }
-
-      // CRITICAL: Log final count to verify URLs are being generated
-      const expectedCount =
-        supportedLanguages.length *
-        (staticRoutes.length + discoverLists.length + titles.length);
-      console.log(
-        `[Sitemap] Total URLs generated: ${urls.length} (expected: ${expectedCount})`
-      );
-
-      // Verify we have dynamic routes
-      const movieUrls = urls.filter((u) => u.loc.includes('/movie/'));
-      const tvShowUrls = urls.filter((u) => u.loc.includes('/tv-show/'));
-      const discoverUrls = urls.filter((u) => u.loc.includes('/discover/list/'));
-      console.log(
-        `[Sitemap] URL breakdown: ${movieUrls.length} movies, ${tvShowUrls.length} TV shows, ${discoverUrls.length} discover lists`
-      );
 
       if (urls.length === 0) {
         console.error('[Sitemap] ERROR: No URLs generated!');
