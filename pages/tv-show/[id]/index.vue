@@ -86,7 +86,10 @@
                       class="flex items-center gap-2 dark:text-gray-300 text-gray-800 text-xs md:text-sm"
                     >
                       <IconCalendar icon-class="w-3 h-3 md:w-4 md:h-4" />
-                      <span class="truncate">{{
+                      <span
+                        class="truncate"
+                        :class="{ italic: !season.air_date || season.air_date.trim() === '' }"
+                      >{{
                         formatDateToSpanish(season.air_date, userRegion)
                       }}</span>
                     </div>

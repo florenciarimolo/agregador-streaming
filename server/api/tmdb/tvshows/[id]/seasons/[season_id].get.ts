@@ -9,6 +9,8 @@ import {
   type H3Event,
 } from 'h3';
 import { DEFAULT_LANGUAGE_ISO } from '@/constants/languages';
+import { createServerSupabaseClient } from '@/server/utils/supabase';
+import { upsertSeason } from '@/services/seasons';
 
 export default defineEventHandler(
   async (event: H3Event<EventHandlerRequest>) => {
@@ -103,6 +105,47 @@ export default defineEventHandler(
           }
           return episode;
         });
+      }
+
+      // If air_date is null, try to get it from the first episode
+      let finalAirDate = response.air_date;
+      if (!finalAirDate && response.episodes && response.episodes.length > 0) {
+        // Find the first episode with an air_date
+        const firstEpisodeWithDate = response.episodes.find(
+          (ep) => ep.air_date && ep.air_date.trim() !== ''
+        );
+        if (firstEpisodeWithDate?.air_date) {
+          finalAirDate = firstEpisodeWithDate.air_date;
+          // Update response with the date from first episode
+          response.air_date = finalAirDate;
+
+          // Save to database if we have the necessary data
+          try {
+            const config = useRuntimeConfig();
+            const supabase = createServerSupabaseClient(config);
+            const tvTmdbId = parseInt(id, 10);
+            const seasonNumber = parseInt(season_id, 10);
+
+            await upsertSeason(
+              {
+                tv_tmdb_id: tvTmdbId,
+                season_number: seasonNumber,
+                tmdb_season_id: response.id,
+                name: response.name || null,
+                air_date: finalAirDate,
+                poster_path: response.poster_path || null,
+                vote_average: response.vote_average || null,
+              },
+              supabase
+            );
+          } catch (dbError) {
+            // Log error but don't fail the request
+            console.error(
+              `[Season] Error saving air_date from first episode to database:`,
+              dbError
+            );
+          }
+        }
       }
 
       return response;

@@ -178,9 +178,14 @@
             class="mt-2 flex items-center gap-2 dark:text-gray-300 text-gray-800"
           >
             <IconCalendar icon-class="w-5 h-5" />
-            <span>{{
-              formatDateToSpanish(season?.air_date || '', userRegion)
-            }}</span>
+            <span
+              :class="{
+                italic: !season?.air_date || season.air_date.trim() === '',
+              }"
+              >{{
+                formatDateToSpanish(season?.air_date || '', userRegion)
+              }}</span
+            >
           </div>
           <div class="flex items-center gap-2 dark:text-gray-300 text-gray-800">
             <IconEpisodes icon-class="w-5 h-5" />
