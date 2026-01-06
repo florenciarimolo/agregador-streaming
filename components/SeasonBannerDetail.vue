@@ -11,6 +11,8 @@
           :alt="season.name"
           class="absolute inset-0 w-full h-full object-cover -z-10"
         />
+        <!-- Gradient overlay: black to transparent left to right -->
+        <div class="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent -z-10"></div>
         <!-- Back button - top left -->
         <button
           class="absolute top-6 left-4 inline-flex items-center gap-2 text-sm font-medium text-white transition-opacity hover:opacity-80 backdrop-blur-sm bg-black/30 rounded-lg px-3 py-2"
@@ -27,6 +29,13 @@
             class="lg:hidden"
           />
         </div>
+        <!-- Title - left aligned, vertically centered -->
+        <h1
+          v-if="season?.name"
+          class="absolute left-4 top-1/2 -translate-y-1/2 right-4 text-2xl font-bold text-white uppercase break-words"
+        >
+          {{ season.name }}
+        </h1>
       </div>
     </div>
     <Section>
@@ -61,7 +70,7 @@
           </div>
         </div>
       <div
-        class="z-10 relative flex flex-col flex-1 gap-6 rounded-lg px-4 pt-6 lg:p-6 lg:ml-8 w-full flex-shrink-0 min-h-[300px]"
+        class="z-10 relative flex flex-col flex-1 gap-6 rounded-lg pt-6 lg:p-6 lg:ml-8 w-full flex-shrink-0 min-h-[300px]"
       >
         <div class="text-left relative flex-row">
           <button
@@ -79,7 +88,7 @@
               class="flex items-center gap-3 flex-wrap xl:flex-nowrap xl:flex-1"
             >
               <h1
-                class="text-2xl font-bold dark:text-gray-300 text-gray-800 break-words xl:flex-1"
+                class="hidden lg:block text-2xl font-bold dark:text-gray-300 text-gray-800 break-words xl:flex-1"
                 >{{ season?.name }}</h1
               >
               <!-- Rating inline with title on desktop large, hidden on mobile/tablet (shown below) -->

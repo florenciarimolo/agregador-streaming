@@ -8,6 +8,8 @@
           :alt="mediaWithProviders.title"
           class="absolute inset-0 w-full h-full object-cover -z-10"
         />
+        <!-- Gradient overlay: black to transparent left to right -->
+        <div class="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent -z-10"></div>
         <!-- Back button - top left -->
         <button
           class="absolute top-6 left-4 inline-flex gap-2 items-center text-sm font-medium text-white transition-opacity hover:opacity-80 backdrop-blur-sm bg-black/30 rounded-lg px-3 py-2"
@@ -214,6 +216,14 @@
             </div>
           </Tooltip>
         </div>
+        <!-- Title - left aligned, vertically centered -->
+        <h1
+          class="absolute left-4 top-1/2 -translate-y-1/2 right-4 text-2xl font-bold text-white uppercase break-words"
+        >
+          {{
+            mediaWithProviders.title || (mediaWithProviders as any).name
+          }}
+        </h1>
       </div>
     </div>
     <Section>
@@ -281,7 +291,7 @@
         </div>
       </div>
       <div
-        class="z-10 relative flex flex-col flex-1 gap-6 rounded-lg px-4 pt-6 lg:p-6 lg:ml-8 w-full flex-shrink-0 min-h-[300px]"
+        class="z-10 relative flex flex-col flex-1 gap-6 rounded-lg pt-6 lg:p-6 lg:ml-8 w-full flex-shrink-0 min-h-[300px]"
       >
         <div class="relative flex-row text-left">
           <button
@@ -299,7 +309,7 @@
               class="flex flex-wrap gap-3 items-center xl:flex-nowrap xl:flex-1 xl:min-w-0"
             >
               <h1
-                class="text-2xl font-bold text-gray-800 break-words dark:text-gray-300 xl:flex-1 xl:min-w-0"
+                class="hidden lg:block text-2xl font-bold text-gray-800 break-words dark:text-gray-300 xl:flex-1 xl:min-w-0"
                 >{{
                   mediaWithProviders.title || (mediaWithProviders as any).name
                 }}</h1
