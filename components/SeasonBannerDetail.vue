@@ -4,13 +4,29 @@
     <div class="lg:hidden w-screen -mx-4 md:-mx-6 -mt-4">
       <div
         v-if="season?.poster_path"
-        class="relative w-full aspect-[16/9]"
+        class="relative w-full aspect-[16/9] p-4 pt-6"
       >
         <img
           :src="`https://image.tmdb.org/t/p/w780${season.poster_path}`"
           :alt="season.name"
-          class="w-full h-full object-cover"
+          class="absolute inset-0 w-full h-full object-cover -z-10"
         />
+        <!-- Back button - top left -->
+        <button
+          class="absolute top-6 left-4 inline-flex items-center gap-2 text-sm font-medium text-white transition-opacity hover:opacity-80 backdrop-blur-sm bg-black/30 rounded-lg px-3 py-2"
+          @click="handleBack"
+        >
+          <IconArrowLeft icon-class="w-4 h-4" />
+          {{ $t('media.backToSeries') }}
+        </button>
+        <!-- Rating - top right -->
+        <div class="absolute top-6 right-4">
+          <RatingBadge
+            v-if="season?.vote_average"
+            :rating="season.vote_average"
+            class="lg:hidden"
+          />
+        </div>
       </div>
     </div>
     <Section>
@@ -49,7 +65,7 @@
       >
         <div class="text-left relative flex-row">
           <button
-            class="inline-flex items-center gap-2 mb-4 text-sm font-medium dark:text-gray-300 text-gray-700 hover:dark:text-white hover:text-gray-900 transition-colors"
+            class="hidden lg:inline-flex items-center gap-2 mb-4 text-sm font-medium dark:text-gray-300 text-gray-700 hover:dark:text-white hover:text-gray-900 transition-colors"
             @click="handleBack"
           >
             <IconArrowLeft icon-class="w-4 h-4" />
@@ -75,7 +91,7 @@
               </div>
             </div>
             <!-- Rating row (mobile/tablet only, hidden on desktop large) -->
-            <div class="flex items-center gap-3 flex-shrink-0 xl:hidden">
+            <div class="hidden lg:flex items-center gap-3 flex-shrink-0 xl:hidden">
               <RatingBadge
                 v-if="season?.vote_average"
                 :rating="season.vote_average"
