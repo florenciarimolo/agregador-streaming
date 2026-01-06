@@ -468,7 +468,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed, toRef } from 'vue';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
+import { useUserStore } from '@/stores/user';
 import Avatar from './Avatar.vue';
 import ActionMenu from '@/components/ui/ActionMenu.vue';
 import Modal from '@/components/ui/Modal.vue';
@@ -499,8 +500,6 @@ try {
   }
 }
 const { signOut } = useAuth();
-const router = useRouter();
-const route = useRoute();
 const { routeWithLang } = useRouteWithLang();
 
 // Computed routes with language prefix
@@ -594,12 +593,20 @@ const handleLogoutClick = () => {
 const confirmLogout = async () => {
   try {
     showLogoutConfirm.value = false;
-    await signOut();
-    await router.push(homeRoute.value);
+    const result = await signOut();
+    if (result.error) {
+      throw result.error;
+    }
+    // signOut() already redirects, but we can also ensure the store is reset
+    if (userStore) {
+      userStore.reset();
+    }
   } catch (error) {
     if (process.env.NODE_ENV === 'development') {
       console.error('Error signing out:', error);
     }
+    // Reopen modal on error
+    showLogoutConfirm.value = true;
   }
 };
 

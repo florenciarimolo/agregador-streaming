@@ -252,6 +252,21 @@ export const useAuth = () => {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
 
+      // Reset user store immediately to ensure clean state
+      // The auth listener will also reset it, but doing it here ensures it happens synchronously
+      if (import.meta.client) {
+        try {
+          const { useUserStore } = await import('@/stores/user');
+          const userStore = useUserStore();
+          userStore.reset();
+        } catch (storeError) {
+          // Store might not be available, but that's okay - the listener will handle it
+          if (process.env.NODE_ENV === 'development') {
+            console.warn('[useAuth] Could not reset store during signOut:', storeError);
+          }
+        }
+      }
+
       // Get current language from URL and redirect to homepage with language
       const lang = getCurrentLang();
       await router.push(`/${lang}/`);
