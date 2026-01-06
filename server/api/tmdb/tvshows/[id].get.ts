@@ -181,6 +181,7 @@ export default defineEventHandler(async (event) => {
             number_of_seasons?: number;
             number_of_episodes?: number;
             in_production?: boolean;
+            status?: string;
           }>(`${tmdbConfig.baseUrl}/tv/${tmdbId}`, {
             query: {
               api_key: tmdbConfig.apiKey,
@@ -229,20 +230,23 @@ export default defineEventHandler(async (event) => {
         ? getTitleInLanguage(taglineJsonb, userLanguage, region)
         : null;
       
-      // If tagline is missing in DB but exists in TMDB response, save it
+      // If tagline or status is missing in DB but exists in TMDB response, save it
+      const needsUpdate: Record<string, unknown> = {};
       if (!taglineFromDb && fullTvShowResponse?.tagline) {
         const updatedTagline: MultiLanguageText = { ...(taglineJsonb || {}) };
         updatedTagline[userLanguage] = fullTvShowResponse.tagline;
-        
+        needsUpdate.tagline = updatedTagline;
+        taglineJsonb = updatedTagline;
+      }
+      if (!titleFromDb.status && fullTvShowResponse?.status) {
+        needsUpdate[TITLES_COLUMNS.STATUS] = fullTvShowResponse.status;
+      }
+      if (Object.keys(needsUpdate).length > 0) {
         await supabase
           .from(TABLES.TITLES)
-          .update({
-            tagline: updatedTagline,
-          })
+          .update(needsUpdate)
           .eq(TITLES_COLUMNS.TMDB_ID, tmdbId)
           .eq(TITLES_COLUMNS.TYPE, MEDIA_TYPE.TV);
-        
-        taglineJsonb = updatedTagline;
       }
 
       // Map DB title to TVShow format
@@ -275,6 +279,7 @@ export default defineEventHandler(async (event) => {
         number_of_seasons: fullTvShowResponse?.number_of_seasons || 0,
         number_of_episodes: fullTvShowResponse?.number_of_episodes,
         in_production: fullTvShowResponse?.in_production || false,
+        status: (titleFromDb.status as string | undefined) || undefined, // Only from DB, no TMDB fallback for display
         tagline: taglineJsonb && Object.keys(taglineJsonb).length > 0
           ? taglineJsonb
           : (taglineFromDb || undefined),
@@ -292,6 +297,25 @@ export default defineEventHandler(async (event) => {
       // Add alternative titles if available
       if (alternativeTitlesResponse?.titles) {
         tvShow.alternative_titles = alternativeTitlesResponse;
+      }
+
+      // Sync seasons from TMDB response to database
+      if (fullTvShowResponse?.seasons && fullTvShowResponse.seasons.length > 0) {
+        const { syncSeasonsFromTVShow } = await import('@/server/utils/season-sync');
+        await syncSeasonsFromTVShow(
+          tmdbId,
+          fullTvShowResponse.seasons.map((s) => ({
+            id: s.id || 0,
+            name: s.name || '',
+            season_number: s.season_number || 0,
+            overview: s.overview || '',
+            air_date: s.air_date || '',
+            poster_path: s.poster_path || null,
+            vote_average: s.vote_average || 0,
+            episode_count: s.episode_count,
+          })),
+          supabase
+        );
       }
 
       return tvShow;
@@ -312,6 +336,7 @@ export default defineEventHandler(async (event) => {
           backdrop_path?: string | null;
           first_air_date?: string;
           vote_average?: number;
+          status?: string;
           genres?: Array<{ id: number; name: string }>;
         }>(`${tmdbConfig.baseUrl}/tv/${tmdbId}`, {
           query: {
@@ -337,6 +362,7 @@ export default defineEventHandler(async (event) => {
     let backdropPath: string | null = null;
     let firstAirDate: string | null = null;
     let voteAverage: number | null = null;
+    let status: string | null = null;
     let genres: Array<{ id: number; name: string }> = [];
 
     languageResults.forEach(({ lang, data }) => {
@@ -352,6 +378,7 @@ export default defineEventHandler(async (event) => {
         if (!firstAirDate && data.first_air_date)
           firstAirDate = data.first_air_date;
         if (!voteAverage && data.vote_average) voteAverage = data.vote_average;
+        if (!status && data.status) status = data.status;
         if (genres.length === 0 && data.genres) genres = data.genres;
       }
     });
@@ -375,6 +402,7 @@ export default defineEventHandler(async (event) => {
           backdrop_path: backdropPath,
           first_air_date: firstAirDate,
           vote_average: voteAverage,
+          status: status,
           genres: genres,
         },
         {
@@ -393,6 +421,53 @@ export default defineEventHandler(async (event) => {
         statusCode: 404,
         statusMessage: 'TV Show not found',
       });
+    }
+
+    // Sync seasons from TMDB response to database
+    // Fetch full TV show data to get seasons array
+    // Reuse tmdbConfig already declared above
+    try {
+      const fullTvShowResponse = await $fetch<{
+        seasons?: Array<{
+          id: number;
+          name: string;
+          season_number: number;
+          overview: string;
+          air_date: string;
+          poster_path: string | null;
+          vote_average: number;
+          episode_count?: number;
+        }>;
+      }>(`${tmdbConfig.baseUrl}/tv/${tmdbId}`, {
+        query: {
+          api_key: tmdbConfig.apiKey,
+          language: tmdbConfig.language,
+          region: tmdbConfig.region,
+        },
+      });
+
+      if (fullTvShowResponse?.seasons && fullTvShowResponse.seasons.length > 0) {
+        const { syncSeasonsFromTVShow } = await import('@/server/utils/season-sync');
+        await syncSeasonsFromTVShow(
+          tmdbIdNum,
+          fullTvShowResponse.seasons.map((s) => ({
+            id: s.id || 0,
+            name: s.name || '',
+            season_number: s.season_number || 0,
+            overview: s.overview || '',
+            air_date: s.air_date || '',
+            poster_path: s.poster_path || null,
+            vote_average: s.vote_average || 0,
+            episode_count: s.episode_count,
+          })),
+          supabase
+        );
+      }
+    } catch (syncError) {
+      // Log but don't fail the request if season sync fails
+      if (import.meta.dev) {
+        console.error('[TV Show] Error syncing seasons:', syncError);
+      }
     }
 
     // Include tagline in response (as MultiLanguageText if available, or as string)

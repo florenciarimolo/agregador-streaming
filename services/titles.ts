@@ -2,6 +2,7 @@
 import { TABLES } from '@/constants/db/tables';
 import { TITLES_COLUMNS } from '@/constants/db/columns';
 import { MEDIA_TYPE } from '@/constants/domain/mediaType';
+import type { MultiLanguageVideos } from '@/types/Video';
 import {
   hasUnexpectedCharacters,
   getPrimaryLanguageForRegion,
@@ -793,5 +794,33 @@ export async function getTitleByTmdbIdWithLanguage(
     },
     error: null,
   };
+}
+
+/**
+ * Update title videos
+ * @param supabaseClient Optional Supabase client. If not provided, uses useSupabaseClient() (client-side only)
+ */
+export async function updateTitleVideos(
+  tmdbId: number,
+  type: typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV,
+  videos: MultiLanguageVideos,
+  videosUpdatedAt: Date,
+  supabaseClient?: ReturnType<typeof import('@supabase/supabase-js').createClient>
+): Promise<void> {
+  const supabase = supabaseClient || useSupabaseClient();
+  const { error } = await supabase
+    .from(TABLES.TITLES)
+    .update({
+      [TITLES_COLUMNS.VIDEOS]:
+        Object.keys(videos).length > 0 ? videos : {},
+      [TITLES_COLUMNS.VIDEOS_UPDATED_AT]: videosUpdatedAt.toISOString(),
+    })
+    .eq(TITLES_COLUMNS.TMDB_ID, tmdbId)
+    .eq(TITLES_COLUMNS.TYPE, type);
+
+  if (error) {
+    console.error('[updateTitleVideos] Error:', error);
+    throw error;
+  }
 }
 

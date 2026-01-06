@@ -430,10 +430,10 @@
                   :rating="mediaWithProviders.vote_average"
                   class="xl:hidden"
                 />
-                <!-- MediaStatusBadge -->
-                <MediaStatusBadge
-                  v-if="mediaType === MEDIA_TYPE.TV || inTheaters"
-                  :in-production="inProduction"
+                <!-- TmdbStatusBadge: Shows TMDB status or inTheaters -->
+                <TmdbStatusBadge
+                  v-if="mediaWithProviders.status || inTheaters"
+                  :status="mediaWithProviders.status"
                   :in-theaters="inTheaters"
                 />
                 <!-- Actions Menu (only show if user has session) -->
@@ -667,6 +667,19 @@
                 .join(', ') || $t('media.notAvailable')
             }}</span>
           </div>
+          <!-- Videos section -->
+          <div v-if="trailers || recaps" class="flex flex-col gap-6">
+            <VideoSection
+              v-if="trailers"
+              :videos="trailers"
+              :title="$t('media.trailers')"
+            />
+            <VideoSection
+              v-if="recaps"
+              :videos="recaps"
+              :title="$t('media.recaps')"
+            />
+          </div>
           <!-- Displaying watch providers with their logos (mobile only) -->
           <section class="flex flex-col gap-6 lg:hidden">
             <section v-if="hasAvailableProviders" class="flex flex-col gap-8">
@@ -743,14 +756,13 @@
 <script setup lang="ts">
 import RatingBadge from './RatingBadge.vue';
 import type { Media } from '@/types/Media';
-import { computed, nextTick, onMounted, PropType, ref } from 'vue';
-import { onUnmounted } from 'vue';
+import { computed, nextTick, onMounted, onUnmounted, PropType, ref } from 'vue';
 import { formatDateToSpanish } from '@/utils/formatDate';
 import type { Genre } from '@/types/Genre';
 import ProviderList from './ProviderList.vue';
 import type { Movie } from '@/types/Movie';
 import { MEDIA_TYPE } from '@/constants/domain/mediaType';
-import MediaStatusBadge from './MediaStatusBadge.vue';
+import TmdbStatusBadge from './TmdbStatusBadge.vue';
 import IconArrowLeft from './icons/IconArrowLeft.vue';
 import IconCalendar from './icons/IconCalendar.vue';
 import IconTag from './icons/IconTag.vue';
@@ -761,6 +773,10 @@ import IconHeart from './icons/IconHeart.vue';
 import IconHeartFilled from './icons/IconHeartFilled.vue';
 import IconX from './icons/IconX.vue';
 import IconClock from './icons/IconClock.vue';
+import VideoSection from './VideoSection.vue';
+import { getVideosForTitle, filterVideosByType } from '@/composables/useVideos';
+import { VIDEO_TYPE_TRAILER, VIDEO_TYPE_RECAP } from '@/constants/domain/videos';
+import type { Video } from '@/types/Video';
 import {
   TITLE_STATUS,
   type TitleStatusType,
@@ -800,6 +816,15 @@ const props = defineProps({
 });
 
 const mediaWithProviders = computed(() => props.media as unknown as Movie);
+
+// Videos state
+const allVideos = ref<Video[] | null>(null);
+const trailers = computed(() =>
+  allVideos.value ? filterVideosByType(allVideos.value, VIDEO_TYPE_TRAILER) : null
+);
+const recaps = computed(() =>
+  allVideos.value ? filterVideosByType(allVideos.value, VIDEO_TYPE_RECAP) : null
+);
 
 const hasAvailableProviders = computed(() => {
   return (
@@ -977,6 +1002,28 @@ onMounted(async () => {
   }
   // Check and fetch tagline if missing
   await fetchTaglineIfMissing();
+  // Fetch videos
+  try {
+    const videos = await getVideosForTitle(
+      mediaWithProviders.value.id,
+      props.mediaType === MEDIA_TYPE.MOVIE ? MEDIA_TYPE.MOVIE : MEDIA_TYPE.TV
+    );
+    allVideos.value = videos;
+    if (import.meta.dev) {
+      console.log('[MediaBannerDetail] Videos loaded:', {
+        count: videos?.length || 0,
+        allVideos: allVideos.value,
+        trailers: trailers.value,
+        trailersCount: trailers.value?.length || 0,
+        recaps: recaps.value,
+        recapsCount: recaps.value?.length || 0,
+        willShow: !!(trailers.value || recaps.value),
+      });
+    }
+  } catch (error) {
+    console.error('[MediaBannerDetail] Error loading videos:', error);
+    allVideos.value = null;
+  }
 });
 
 onUnmounted(() => {

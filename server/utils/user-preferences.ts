@@ -9,6 +9,17 @@ import { LanguageCode, toTMDBLanguageCode } from '@/constants/languages';
 import { extractLangFromPath } from '@/composables/useRouteWithLang';
 
 /**
+ * In-memory cache for user settings to avoid duplicate DB queries
+ * Key: userId, Value: { data: settings, timestamp: number }
+ * TTL: 5 seconds (short enough to be fresh, long enough to batch parallel requests)
+ */
+const settingsCache = new Map<
+  string,
+  { data: Record<string, unknown> | null; timestamp: number }
+>();
+const SETTINGS_CACHE_TTL_MS = 5000; // 5 seconds
+
+/**
  * Get user preferences from server-side (using createClient)
  */
 async function getUserPreferencesServer(userId: string) {
@@ -35,8 +46,18 @@ async function getUserPreferencesServer(userId: string) {
 
 /**
  * Get user settings from server-side (using createClient)
+ * Uses in-memory cache to avoid duplicate DB queries for parallel requests
  */
 async function getSettingsServer(userId: string) {
+  // Check cache first
+  const cached = settingsCache.get(userId);
+  const now = Date.now();
+  
+  if (cached && (now - cached.timestamp) < SETTINGS_CACHE_TTL_MS) {
+    return { data: cached.data, error: null };
+  }
+
+  // Cache miss or expired - fetch from DB
   const config = useRuntimeConfig();
   const supabaseKey =
     process.env.SUPABASE_SERVICE_ROLE_KEY || config.public.supabaseAnonKey;
@@ -56,12 +77,29 @@ async function getSettingsServer(userId: string) {
     .single();
 
   if (profileError || !profile) {
-    return { data: null, error: profileError };
+    const result = { data: null, error: profileError };
+    // Cache null result too (to avoid retrying on error)
+    settingsCache.set(userId, { data: null, timestamp: now });
+    return result;
+  }
+
+  const settingsData =
+    (profile[PROFILES_COLUMNS.SETTINGS] as Record<string, unknown>) || null;
+  
+  // Cache the result
+  settingsCache.set(userId, { data: settingsData, timestamp: now });
+  
+  // Clean up old cache entries (keep cache size reasonable)
+  if (settingsCache.size > 100) {
+    for (const [key, value] of settingsCache.entries()) {
+      if (now - value.timestamp > SETTINGS_CACHE_TTL_MS * 2) {
+        settingsCache.delete(key);
+      }
+    }
   }
 
   return {
-    data:
-      (profile[PROFILES_COLUMNS.SETTINGS] as Record<string, unknown>) || null,
+    data: settingsData,
     error: null,
   };
 }

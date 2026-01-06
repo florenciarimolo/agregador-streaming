@@ -160,6 +160,7 @@ export default defineEventHandler(async (event) => {
             backdrop_path?: string | null;
             release_date?: string;
             vote_average?: number;
+            status?: string;
             genres?: Array<{ id: number; name: string }>;
             genre_ids?: number[];
           }>(`${tmdbConfig.baseUrl}/movie/${tmdbId}`, {
@@ -207,20 +208,23 @@ export default defineEventHandler(async (event) => {
         ? getTitleInLanguage(taglineJsonb, userLanguage, region)
         : null;
       
-      // If tagline is missing in DB but exists in TMDB response, save it
+      // If tagline or status is missing in DB but exists in TMDB response, save it
+      const needsUpdate: Record<string, unknown> = {};
       if (!taglineFromDb && fullMovieResponse?.tagline) {
         const updatedTagline: MultiLanguageText = { ...(taglineJsonb || {}) };
         updatedTagline[userLanguage] = fullMovieResponse.tagline;
-        
+        needsUpdate.tagline = updatedTagline;
+        taglineJsonb = updatedTagline;
+      }
+      if (!titleFromDb.status && fullMovieResponse?.status) {
+        needsUpdate[TITLES_COLUMNS.STATUS] = fullMovieResponse.status;
+      }
+      if (Object.keys(needsUpdate).length > 0) {
         await supabase
           .from(TABLES.TITLES)
-          .update({
-            tagline: updatedTagline,
-          })
+          .update(needsUpdate)
           .eq(TITLES_COLUMNS.TMDB_ID, tmdbId)
           .eq(TITLES_COLUMNS.TYPE, MEDIA_TYPE.MOVIE);
-        
-        taglineJsonb = updatedTagline;
       }
 
       // Map DB title to Movie format
@@ -241,6 +245,7 @@ export default defineEventHandler(async (event) => {
         backdrop_path: titleFromDb.backdrop_path || null,
         release_date: titleFromDb.release_date || '',
         vote_average: titleFromDb.vote_average || 0,
+        status: (titleFromDb.status as string | undefined) || undefined, // Only from DB, no TMDB fallback for display
         genres: fullMovieResponse?.genres || titleFromDb.genres || [],
         genre_ids: fullMovieResponse?.genre_ids || [],
         tagline: taglineJsonb && Object.keys(taglineJsonb).length > 0
@@ -280,6 +285,7 @@ export default defineEventHandler(async (event) => {
           backdrop_path?: string | null;
           release_date?: string;
           vote_average?: number;
+          status?: string;
           genres?: Array<{ id: number; name: string }>;
         }>(`${tmdbConfig.baseUrl}/movie/${tmdbId}`, {
           query: {
@@ -305,6 +311,7 @@ export default defineEventHandler(async (event) => {
     let backdropPath: string | null = null;
     let releaseDate: string | null = null;
     let voteAverage: number | null = null;
+    let status: string | null = null;
     let genres: Array<{ id: number; name: string }> = [];
 
     languageResults.forEach(({ lang, data }) => {
@@ -319,6 +326,7 @@ export default defineEventHandler(async (event) => {
           backdropPath = data.backdrop_path;
         if (!releaseDate && data.release_date) releaseDate = data.release_date;
         if (!voteAverage && data.vote_average) voteAverage = data.vote_average;
+        if (!status && data.status) status = data.status;
         if (genres.length === 0 && data.genres) genres = data.genres;
       }
     });
@@ -342,6 +350,7 @@ export default defineEventHandler(async (event) => {
           backdrop_path: backdropPath,
           release_date: releaseDate,
           vote_average: voteAverage,
+          status: status,
           genres: genres,
         },
         {

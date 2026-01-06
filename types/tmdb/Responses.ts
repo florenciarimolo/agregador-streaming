@@ -33,6 +33,7 @@ export type TMDBTitleDetails = {
   poster_path: string | null;
   backdrop_path: string | null;
   vote_average: number | null;
+  status?: string;
   genres: Array<{ id: number; name: string }>;
   release_date?: string | null;
   first_air_date?: string | null;

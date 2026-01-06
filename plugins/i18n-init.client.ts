@@ -68,54 +68,21 @@ function getDefaultI18nCode(): string {
 /**
  * i18n initialization plugin (initial setup only)
  * 
- * NOTE: This plugin only runs once on initial load.
- * For ongoing synchronization, see middleware/sync-lang.ts which runs on every route change.
+ * NOTE: This plugin is now minimal - the sync-lang middleware handles all locale synchronization.
+ * This plugin only exists for documentation and potential future initialization needs.
  * 
  * CRITICAL: With prefix strategy, language comes from URL, not cookies.
  * The sync-lang middleware ensures i18n.locale stays synchronized with route.params.lang.
+ * 
+ * IMPORTANT: We cannot use useI18n() in plugins with enforce: 'pre' because Vue context
+ * is not fully initialized. The middleware/sync-lang.ts handles all locale synchronization.
  */
 export default defineNuxtPlugin({
   name: 'i18n-init',
   enforce: 'pre', // Run before other plugins
-  async setup() {
-    if (import.meta.client && typeof document !== 'undefined') {
-      try {
-        const route = useRoute();
-        const { locale, setLocale } = useI18n();
-
-        // With strategy: 'prefix', get language from URL
-        const langFromUrl = route.params?.lang as string | undefined;
-
-        if (langFromUrl) {
-          // Map URL code to i18n code
-          const i18nCode = getI18nCodeFromUrlCode(langFromUrl);
-          
-          if (i18nCode) {
-            // Set locale from URL - initial sync only
-            // The sync-lang middleware will handle ongoing synchronization
-            if (locale.value !== i18nCode) {
-              await setLocale(i18nCode);
-            }
-            // NOTE: No cookies are set - language is determined solely from URL
-          }
-        } else {
-          // No language prefix - this is a legacy route
-          // detectBrowserLanguage in nuxt.config.ts will handle redirect
-          // The sync-lang middleware will handle locale sync after redirect
-          const defaultI18nCode = getDefaultI18nCode();
-          
-          // Set default locale (no cookie - language comes from URL only)
-          if (locale.value !== defaultI18nCode) {
-            await setLocale(defaultI18nCode);
-          }
-        }
-      } catch (error) {
-        // If setting locale fails, fall back silently
-        // The sync-lang middleware will handle synchronization on route changes
-        if (process.env.NODE_ENV === 'development') {
-          console.warn('Error in i18n-init plugin:', error);
-        }
-      }
-    }
+  setup() {
+    // Plugin is intentionally minimal - sync-lang middleware handles locale sync
+    // Cannot use useI18n() here because Vue context is not ready in pre-enforce plugins
+    // The middleware/sync-lang.ts runs on every route change and handles synchronization
   },
 });

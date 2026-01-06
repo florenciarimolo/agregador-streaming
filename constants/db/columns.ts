@@ -33,7 +33,10 @@ export const TITLES_COLUMNS = {
   FIRST_AIR_DATE: 'first_air_date',
   GENRES: 'genres',
   VOTE_AVERAGE: 'vote_average',
+  STATUS: 'status',
   VIEWING_EFFORT: 'viewing_effort',
+  VIDEOS: 'videos',
+  VIDEOS_UPDATED_AT: 'videos_updated_at',
   CREATED_AT: 'created_at',
   UPDATED_AT: 'updated_at',
 } as const;
@@ -105,5 +108,24 @@ export const DISCOVER_LIST_ITEMS_COLUMNS = {
   TMDB_ID: 'tmdb_id',
   TYPE: 'type',
   POSITION: 'position',
+} as const;
+
+/**
+ * Field names for seasons table
+ */
+export const SEASONS_COLUMNS = {
+  ID: 'id',
+  TV_TMDB_ID: 'tv_tmdb_id',
+  SEASON_NUMBER: 'season_number',
+  TMDB_SEASON_ID: 'tmdb_season_id',
+  NAME: 'name',
+  AIR_DATE: 'air_date',
+  POSTER_PATH: 'poster_path',
+  VOTE_AVERAGE: 'vote_average',
+  OVERVIEW: 'overview',
+  VIDEOS: 'videos',
+  VIDEOS_UPDATED_AT: 'videos_updated_at',
+  CREATED_AT: 'created_at',
+  UPDATED_AT: 'updated_at',
 } as const;
 

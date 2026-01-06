@@ -646,6 +646,7 @@ export default defineEventHandler(async (event) => {
             poster_path?: string | null;
             backdrop_path?: string | null;
             vote_average?: number | null;
+            status?: string;
             genres?: Array<{ id: number; name: string }>;
             release_date?: string | null;
             first_air_date?: string | null;
@@ -774,6 +775,10 @@ export default defineEventHandler(async (event) => {
                   [TITLES_COLUMNS.FIRST_AIR_DATE]:
                     tmdbResponse.first_air_date ||
                     existingTitle?.first_air_date ||
+                    null,
+                  [TITLES_COLUMNS.STATUS]:
+                    tmdbResponse.status ||
+                    existingTitle?.status ||
                     null,
                 },
                 {

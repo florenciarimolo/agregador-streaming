@@ -11,5 +11,6 @@ export const TABLES = {
   RECOMMENDATION_POOL: 'recommendation_pool',
   DISCOVER_LISTS: 'discover_lists',
   DISCOVER_LIST_ITEMS: 'discover_list_items',
+  SEASONS: 'seasons',
 } as const;
 

@@ -1,5 +1,6 @@
 import type { Genre } from './Genre';
 import type { WatchProviderTypes } from './WatchProvider';
+import type { TmdbStatusType } from './enums/TmdbStatus';
 
 export type Episode = {
   id: number;
@@ -39,6 +40,7 @@ export type TVShow = {
   genres: Genre[];
   seasons: Season[];
   in_production: boolean;
+  status?: TmdbStatusType; // Production/release status from TMDB
   providers?: WatchProviderTypes; // Optional, as not all shows may have providers
 };
 

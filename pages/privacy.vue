@@ -87,6 +87,7 @@
           <ul class="mt-2 ml-4 list-disc space-y-1 dark:text-gray-300 text-gray-800">
             <li>{{ $t('privacy.cookiesTechnicalItem1') }}</li>
             <li>{{ $t('privacy.cookiesTechnicalItem2') }}</li>
+            <li>{{ $t('privacy.cookiesTechnicalItem3') }}</li>
           </ul>
         </div>
 

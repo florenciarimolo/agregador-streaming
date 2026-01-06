@@ -195,6 +195,19 @@
               )
             }}</span>
           </div>
+          <!-- Videos section -->
+          <div v-if="trailers || recaps" class="flex flex-col gap-6">
+            <VideoSection
+              v-if="trailers"
+              :videos="trailers"
+              :title="$t('media.trailers')"
+            />
+            <VideoSection
+              v-if="recaps"
+              :videos="recaps"
+              :title="$t('media.recaps')"
+            />
+          </div>
 
           <!-- Displaying watch providers (mobile only) -->
           <section class="flex flex-col gap-6 lg:hidden">
@@ -252,6 +265,16 @@ import Section from '@/components/layout/Section.vue';
 import { useUserRegion } from '@/composables/useUserRegion';
 import { getTitleInLanguage, type MultiLanguageText } from '@/services/titles';
 import { useCurrentLanguage } from '@/composables/useCurrentLanguage';
+import VideoSection from '@/components/VideoSection.vue';
+import {
+  getVideosForSeason,
+  filterVideosByType,
+} from '@/composables/useVideos';
+import {
+  VIDEO_TYPE_TRAILER,
+  VIDEO_TYPE_RECAP,
+} from '@/constants/domain/videos';
+import type { Video } from '@/types/Video';
 
 interface Props {
   season: (Season & { providers?: WatchProviderTypes }) | null | undefined;
@@ -266,6 +289,17 @@ const isMobile = ref(false);
 const { getUserRegion } = useUserRegion();
 const userRegion = ref<string | null>(null);
 const { currentLanguage } = useCurrentLanguage();
+
+// Videos state
+const allVideos = ref<Video[] | null>(null);
+const trailers = computed(() =>
+  allVideos.value
+    ? filterVideosByType(allVideos.value, VIDEO_TYPE_TRAILER)
+    : null
+);
+const recaps = computed(() =>
+  allVideos.value ? filterVideosByType(allVideos.value, VIDEO_TYPE_RECAP) : null
+);
 
 // Detect mobile/tablet screen size (use mobile style for tablet too)
 const checkMobile = () => {
@@ -352,6 +386,12 @@ onMounted(async () => {
   userRegion.value = await getUserRegion();
   // Check tagline (though it's unlikely to exist for seasons)
   checkTagline();
+  // Fetch videos
+  const videos = await getVideosForSeason(
+    props.tmdbId,
+    props.season?.season_number || 0
+  );
+  allVideos.value = videos;
 });
 
 onUnmounted(() => {

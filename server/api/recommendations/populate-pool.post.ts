@@ -386,6 +386,7 @@ export default defineEventHandler(async (event) => {
               [TITLES_COLUMNS.VOTE_AVERAGE]: fullResponse.vote_average ?? existingTitle?.vote_average ?? null,
               [TITLES_COLUMNS.RELEASE_DATE]: fullResponse.release_date || existingTitle?.release_date || null,
               [TITLES_COLUMNS.FIRST_AIR_DATE]: fullResponse.first_air_date || existingTitle?.first_air_date || null,
+              [TITLES_COLUMNS.STATUS]: fullResponse.status || existingTitle?.status || null,
             }, {
               onConflict: TITLES_COLUMNS.TMDB_ID,
             });

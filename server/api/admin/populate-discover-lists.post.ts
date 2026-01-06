@@ -299,6 +299,7 @@ async function ensureTitleInDatabase(
           release_date?: string;
           first_air_date?: string;
           vote_average?: number;
+          status?: string;
           genres?: Array<{ id: number; name: string }>;
         }>(`${tmdbConfig.baseUrl}/${endpoint}/${tmdbId}`, {
           query: {
@@ -323,6 +324,7 @@ async function ensureTitleInDatabase(
     let releaseDate: string | null = null;
     let firstAirDate: string | null = null;
     let voteAverage: number | null = null;
+    let status: string | null = null;
     let genres: Array<{ id: number; name: string }> = [];
 
     languageResults.forEach(({ lang, data }) => {
@@ -341,6 +343,7 @@ async function ensureTitleInDatabase(
             firstAirDate = data.first_air_date;
         }
         if (!voteAverage && data.vote_average) voteAverage = data.vote_average;
+        if (!status && data.status) status = data.status;
         if (genres.length === 0 && data.genres) genres = data.genres;
       }
     });
@@ -358,6 +361,7 @@ async function ensureTitleInDatabase(
             : null,
         backdrop_path: backdropPath,
         vote_average: voteAverage,
+        status: status,
         genres: genres,
       };
 
