@@ -1,190 +1,207 @@
 <template>
   <div>
     <!-- Mobile: Full width image right after navbar -->
-    <div class="lg:hidden w-screen -mx-4 md:-mx-6 -mt-4">
+    <div
+      v-if="mediaWithProviders.backdrop_path || mediaWithProviders.poster_path"
+      class="lg:hidden w-screen -mx-4 md:-mx-6 -mt-4"
+    >
       <div class="relative w-full aspect-[16/9] p-4 pt-6">
         <img
           :src="
-            `https://image.tmdb.org/t/p/w780` + mediaWithProviders.backdrop_path
+            `https://image.tmdb.org/t/p/w780` +
+            (mediaWithProviders.backdrop_path || mediaWithProviders.poster_path)
           "
           :alt="mediaWithProviders.title"
-          class="absolute inset-0 w-full h-full object-cover -z-10"
+          class="absolute inset-0 w-full h-full object-cover z-0"
         />
         <!-- Gradient overlay: black to transparent left to right -->
         <div
-          class="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent -z-10"
+          class="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent z-0"
         ></div>
-        <!-- Back button - top left -->
-        <button
-          class="absolute top-6 left-4 inline-flex gap-2 items-center text-sm font-medium text-white transition-opacity hover:opacity-80"
-          @click="handleBack"
+        <!-- Top row: Back button, Rating and Menu - aligned horizontally -->
+        <div
+          class="absolute top-6 left-4 right-4 flex items-center justify-between gap-4 z-20"
         >
-          <IconArrowLeft icon-class="w-4 h-4" />
-          {{ $t('media.back') }}
-        </button>
-        <!-- Rating and Menu - top right -->
-        <div class="absolute top-6 right-4 flex items-center gap-3">
-          <!-- Rating -->
-          <RatingBadge
-            v-if="mediaWithProviders.vote_average"
-            :rating="mediaWithProviders.vote_average"
-            class="lg:hidden"
-          />
-          <!-- Actions Menu (only show if user has session) -->
-          <ActionMenu
-            v-if="hasSession"
-            ref="mobileDropdownRef"
-            position="right"
-            width="w-48"
-            custom-class="left-0 right-auto backdrop-blur-xl dark:bg-gray-900/40 bg-gray-100/80 border-gray-300/50 dark:border-white/10 md:right-0 md:left-auto"
+          <!-- Back button - left -->
+          <button
+            class="inline-flex gap-2 items-center text-sm font-medium text-white transition-opacity hover:opacity-80 flex-shrink-0"
+            @click="handleBack"
           >
-            <template #trigger>
-              <IconButton
-                :icon="IconMoreVertical"
-                :aria-label="
-                  $t('media.actionsMenuFor', {
-                    title:
-                      mediaWithProviders.title ||
-                      (mediaWithProviders as any).name,
-                  })
-                "
-                size="small"
-                variant="default"
-                custom-class="menu-button p-2 rounded-full bg-black/50 hover:bg-gray-700/80 backdrop-blur-sm [&>svg]:text-white"
-              />
-            </template>
-            <div class="p-4">
-              <!-- If title has a state, only show option to remove that state -->
-              <!-- All remove actions use IconX -->
-              <Button
-                v-if="isLiked"
-                type="button"
-                variant="ghost"
-                size="small"
-                custom-class="justify-start w-full text-left"
-                @click.stop.prevent="
-                  mobileDropdownRef?.close();
-                  handleRemoveLike();
-                "
-              >
-                <template #icon>
-                  <IconX icon-class="w-4 h-4" />
-                </template>
-                {{ $t('media.removeFromLiked') }}
-              </Button>
-              <Button
-                v-else-if="isSeen && !isLiked"
-                type="button"
-                variant="ghost"
-                size="small"
-                custom-class="justify-start w-full text-left"
-                @click.stop.prevent="
-                  mobileDropdownRef?.close();
-                  handleAction(TITLE_STATUS.SEEN);
-                "
-              >
-                <template #icon>
-                  <IconX icon-class="w-4 h-4" />
-                </template>
-                {{ $t('media.removeFromSeen') }}
-              </Button>
-              <Button
-                v-else-if="isNotInterested"
-                type="button"
-                variant="ghost"
-                size="small"
-                custom-class="justify-start w-full text-left"
-                @click.stop.prevent="
-                  mobileDropdownRef?.close();
-                  handleAction(TITLE_STATUS.NOT_INTERESTED);
-                "
-              >
-                <template #icon>
-                  <IconX icon-class="w-4 h-4" />
-                </template>
-                {{ $t('media.removeFromNotInterested') }}
-              </Button>
-              <Button
-                v-else-if="isInWatchlist"
-                type="button"
-                variant="ghost"
-                size="small"
-                custom-class="justify-start w-full text-left"
-                @click.stop.prevent="
-                  mobileDropdownRef?.close();
-                  handleRemoveFromWatchlist();
-                "
-              >
-                <template #icon>
-                  <IconX icon-class="w-4 h-4" />
-                </template>
-                {{ $t('media.removeFromWatchlist') }}
-              </Button>
-              <!-- If title has no state, show all options to add states -->
-              <template v-else>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="small"
-                  custom-class="justify-start mb-2 w-full text-left"
-                  @click.stop.prevent="
-                    dropdownRef?.close();
-                    handleAction(TITLE_STATUS.SEEN);
+            <IconArrowLeft icon-class="w-4 h-4" />
+            <span class="hidden sm:inline">{{ $t('media.back') }}</span>
+          </button>
+          <!-- Rating and Menu - right -->
+          <div class="flex items-center gap-3 flex-shrink-0">
+            <!-- Rating -->
+            <RatingBadge
+              v-if="mediaWithProviders.vote_average"
+              :rating="mediaWithProviders.vote_average"
+              class="lg:hidden"
+            />
+            <!-- Actions Menu (only show if user has session) -->
+            <ActionMenu
+              v-if="hasSession"
+              ref="mobileDropdownRef"
+              position="right"
+              width="w-48"
+              custom-class="left-0 right-auto backdrop-blur-xl dark:bg-gray-900/40 bg-gray-100/80 border-gray-300/50 dark:border-white/10 md:right-0 md:left-auto"
+            >
+              <template #trigger>
+                <IconButton
+                  :icon="IconMoreVertical"
+                  :aria-label="
+                    $t('media.actionsMenuFor', {
+                      title:
+                        mediaWithProviders.title ||
+                        (mediaWithProviders as any).name,
+                    })
                   "
-                >
-                  <template #icon>
-                    <IconCheck icon-class="w-4 h-4" />
-                  </template>
-                  {{ $t('media.seen') }}
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
                   size="small"
-                  custom-class="justify-start mb-2 w-full text-left"
-                  @click.stop.prevent="
-                    mobileDropdownRef?.close();
-                    handleAction('liked');
-                  "
-                >
-                  <template #icon>
-                    <IconHeart icon-class="w-4 h-4" />
-                  </template>
-                  {{ $t('media.liked') }}
-                </Button>
+                  variant="default"
+                  custom-class="menu-button p-2 rounded-full bg-black/50 hover:bg-gray-700/80 backdrop-blur-sm [&>svg]:text-white"
+                />
+              </template>
+              <div class="p-4">
+                <!-- If title has a state, only show option to remove that state -->
+                <!-- All remove actions use IconX -->
                 <Button
-                  type="button"
-                  variant="ghost"
-                  size="small"
-                  custom-class="justify-start mb-2 w-full text-left"
-                  @click.stop.prevent="
-                    dropdownRef?.close();
-                    handleAction(TITLE_STATUS.NOT_INTERESTED);
-                  "
-                >
-                  <template #icon>
-                    <IconX icon-class="w-4 h-4" />
-                  </template>
-                  {{ $t('media.notInterested') }}
-                </Button>
-                <Button
+                  v-if="isLiked"
                   type="button"
                   variant="ghost"
                   size="small"
                   custom-class="justify-start w-full text-left"
                   @click.stop.prevent="
                     mobileDropdownRef?.close();
-                    handleAction(TITLE_STATUS.WATCHLIST);
+                    handleRemoveLike();
                   "
                 >
                   <template #icon>
-                    <IconClock icon-class="w-4 h-4" />
+                    <IconX icon-class="w-4 h-4" />
                   </template>
-                  {{ $t('media.watchLater') }}
+                  {{ $t('media.removeFromLiked') }}
                 </Button>
-              </template>
-            </div>
-          </ActionMenu>
+                <Button
+                  v-else-if="isSeen && !isLiked"
+                  type="button"
+                  variant="ghost"
+                  size="small"
+                  custom-class="justify-start w-full text-left"
+                  @click.stop.prevent="
+                    mobileDropdownRef?.close();
+                    handleAction(TITLE_STATUS.SEEN);
+                  "
+                >
+                  <template #icon>
+                    <IconX icon-class="w-4 h-4" />
+                  </template>
+                  {{ $t('media.removeFromSeen') }}
+                </Button>
+                <Button
+                  v-else-if="isNotInterested"
+                  type="button"
+                  variant="ghost"
+                  size="small"
+                  custom-class="justify-start w-full text-left"
+                  @click.stop.prevent="
+                    mobileDropdownRef?.close();
+                    handleAction(TITLE_STATUS.NOT_INTERESTED);
+                  "
+                >
+                  <template #icon>
+                    <IconX icon-class="w-4 h-4" />
+                  </template>
+                  {{ $t('media.removeFromNotInterested') }}
+                </Button>
+                <Button
+                  v-else-if="isInWatchlist"
+                  type="button"
+                  variant="ghost"
+                  size="small"
+                  custom-class="justify-start w-full text-left"
+                  @click.stop.prevent="
+                    mobileDropdownRef?.close();
+                    handleRemoveFromWatchlist();
+                  "
+                >
+                  <template #icon>
+                    <IconX icon-class="w-4 h-4" />
+                  </template>
+                  {{ $t('media.removeFromWatchlist') }}
+                </Button>
+                <!-- If title has no state, show all options to add states -->
+                <template v-else>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="small"
+                    custom-class="justify-start mb-2 w-full text-left"
+                    @click.stop.prevent="
+                      dropdownRef?.close();
+                      handleAction(TITLE_STATUS.SEEN);
+                    "
+                  >
+                    <template #icon>
+                      <IconCheck icon-class="w-4 h-4" />
+                    </template>
+                    {{ $t('media.seen') }}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="small"
+                    custom-class="justify-start mb-2 w-full text-left"
+                    @click.stop.prevent="
+                      mobileDropdownRef?.close();
+                      handleAction('liked');
+                    "
+                  >
+                    <template #icon>
+                      <IconHeart icon-class="w-4 h-4" />
+                    </template>
+                    {{ $t('media.liked') }}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="small"
+                    custom-class="justify-start mb-2 w-full text-left"
+                    @click.stop.prevent="
+                      dropdownRef?.close();
+                      handleAction(TITLE_STATUS.NOT_INTERESTED);
+                    "
+                  >
+                    <template #icon>
+                      <IconX icon-class="w-4 h-4" />
+                    </template>
+                    {{ $t('media.notInterested') }}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="small"
+                    custom-class="justify-start w-full text-left"
+                    @click.stop.prevent="
+                      mobileDropdownRef?.close();
+                      handleAction(TITLE_STATUS.WATCHLIST);
+                    "
+                  >
+                    <template #icon>
+                      <IconClock icon-class="w-4 h-4" />
+                    </template>
+                    {{ $t('media.watchLater') }}
+                  </Button>
+                </template>
+              </div>
+            </ActionMenu>
+          </div>
+        </div>
+        <!-- Title - separate line below top row -->
+        <div class="absolute left-4 top-20 right-4 z-20">
+          <h1
+            class="text-lg sm:text-xl font-bold text-white uppercase break-words line-clamp-2"
+          >
+            {{ mediaWithProviders.title || (mediaWithProviders as any).name }}
+          </h1>
         </div>
         <!-- Informative icons overlay (only show if user has session) -->
         <div
@@ -220,17 +237,9 @@
             </div>
           </Tooltip>
         </div>
-        <!-- Title - left aligned, vertically centered -->
-        <div class="absolute left-4 top-1/2 -translate-y-1/2 right-4 flex flex-col gap-2">
-          <h1
-            class="text-3xl font-bold text-white uppercase break-words"
-          >
-            {{ mediaWithProviders.title || (mediaWithProviders as any).name }}
-          </h1>
-          <p
-            v-if="tagline"
-            class="text-base italic text-white/90 break-words"
-          >
+        <!-- Tagline - below title with spacing -->
+        <div v-if="tagline" class="absolute left-4 bottom-6 right-4 z-20">
+          <p class="text-sm sm:text-base italic text-white/90 break-words">
             {{ tagline }}
           </p>
         </div>
@@ -402,7 +411,8 @@
                     class="text-4xl font-bold text-gray-800 break-words dark:text-gray-300 uppercase"
                   >
                     {{
-                      mediaWithProviders.title || (mediaWithProviders as any).name
+                      mediaWithProviders.title ||
+                      (mediaWithProviders as any).name
                     }}
                   </h1>
                   <p
@@ -776,7 +786,10 @@ import IconX from './icons/IconX.vue';
 import IconClock from './icons/IconClock.vue';
 import VideoSection from './VideoSection.vue';
 import { getVideosForTitle, filterVideosByType } from '@/composables/useVideos';
-import { VIDEO_TYPE_TRAILER, VIDEO_TYPE_RECAP } from '@/constants/domain/videos';
+import {
+  VIDEO_TYPE_TRAILER,
+  VIDEO_TYPE_RECAP,
+} from '@/constants/domain/videos';
 import type { Video } from '@/types/Video';
 import {
   TITLE_STATUS,
@@ -821,7 +834,9 @@ const mediaWithProviders = computed(() => props.media as unknown as Movie);
 // Videos state
 const allVideos = ref<Video[] | null>(null);
 const trailers = computed(() =>
-  allVideos.value ? filterVideosByType(allVideos.value, VIDEO_TYPE_TRAILER) : null
+  allVideos.value
+    ? filterVideosByType(allVideos.value, VIDEO_TYPE_TRAILER)
+    : null
 );
 const recaps = computed(() =>
   allVideos.value ? filterVideosByType(allVideos.value, VIDEO_TYPE_RECAP) : null
@@ -856,11 +871,11 @@ const tagline = computed(() => {
   const media = mediaWithProviders.value as Movie & {
     tagline?: string | MultiLanguageText;
   };
-  
+
   if (!media.tagline) {
     return '';
   }
-  
+
   // If tagline is a MultiLanguageText object, use getTitleInLanguage
   if (typeof media.tagline === 'object' && media.tagline !== null) {
     return getTitleInLanguage(
@@ -869,7 +884,7 @@ const tagline = computed(() => {
       userRegion.value
     );
   }
-  
+
   // If tagline is a string, return it directly
   return media.tagline;
 });
@@ -879,24 +894,24 @@ const fetchTaglineIfMissing = async () => {
   const media = mediaWithProviders.value as Movie & {
     tagline?: string | MultiLanguageText;
   };
-  
+
   // Check if tagline is missing or empty
-  const hasTagline = media.tagline && (
-    (typeof media.tagline === 'string' && media.tagline.trim() !== '') ||
-    (typeof media.tagline === 'object' && 
-     media.tagline !== null && 
-     Object.keys(media.tagline).length > 0 &&
-     getTitleInLanguage(
-       media.tagline as MultiLanguageText,
-       currentLanguage.value.i18nCode,
-       userRegion.value
-     ).trim() !== '')
-  );
-  
+  const hasTagline =
+    media.tagline &&
+    ((typeof media.tagline === 'string' && media.tagline.trim() !== '') ||
+      (typeof media.tagline === 'object' &&
+        media.tagline !== null &&
+        Object.keys(media.tagline).length > 0 &&
+        getTitleInLanguage(
+          media.tagline as MultiLanguageText,
+          currentLanguage.value.i18nCode,
+          userRegion.value
+        ).trim() !== ''));
+
   if (hasTagline) {
     return; // Tagline already exists
   }
-  
+
   try {
     // Fetch tagline from API
     const response = await $fetch<{
@@ -910,7 +925,7 @@ const fetchTaglineIfMissing = async () => {
         type: props.mediaType,
       },
     });
-    
+
     if (response.success && response.tagline) {
       // Update the media object with the new tagline
       // Note: This will trigger a reactive update

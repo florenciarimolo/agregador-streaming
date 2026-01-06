@@ -102,16 +102,8 @@ watchEffect(() => {
       },
     ],
     link: seoLinks,
-    htmlAttrs: isAuthenticated
-      ? {}
-      : {
-          class: 'home-page-dark-bg',
-        },
-    bodyAttrs: isAuthenticated
-      ? {}
-      : {
-          class: 'home-page-dark-bg',
-        },
+    htmlAttrs: {},
+    bodyAttrs: {},
   });
 
   useSeoMeta({
@@ -582,18 +574,3 @@ onMounted(() => {
     </template>
   </div>
 </template>
-
-<style>
-/* Background según tema para la página de inicio cuando no hay sesión */
-.dark .home-page-dark-bg,
-.dark .home-page-dark-bg html,
-.dark .home-page-dark-bg body {
-  background-color: #0a0a0a !important;
-}
-
-.light .home-page-dark-bg,
-.light .home-page-dark-bg html,
-.light .home-page-dark-bg body {
-  background-color: #ffffff !important;
-}
-</style>

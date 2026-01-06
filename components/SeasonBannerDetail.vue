@@ -1,45 +1,56 @@
 <template>
   <div>
     <!-- Mobile: Full width image right after navbar -->
-    <div class="lg:hidden w-screen -mx-4 md:-mx-6 -mt-4">
-      <div
-        v-if="season?.poster_path"
-        class="relative w-full aspect-[16/9] p-4 pt-6"
-      >
+    <div
+      v-if="season?.poster_path"
+      class="lg:hidden w-screen -mx-4 md:-mx-6 -mt-4"
+    >
+      <div class="relative w-full aspect-[16/9] p-4 pt-6">
         <img
           :src="`https://image.tmdb.org/t/p/w780${season.poster_path}`"
           :alt="season.name"
-          class="absolute inset-0 w-full h-full object-cover -z-10"
+          class="absolute inset-0 w-full h-full object-cover z-0"
         />
         <!-- Gradient overlay: black to transparent left to right -->
         <div
-          class="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent -z-10"
+          class="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent z-0"
         ></div>
-        <!-- Back button - top left -->
-        <button
-          class="absolute top-6 left-4 inline-flex items-center gap-2 text-sm font-medium text-white transition-opacity hover:opacity-80"
-          @click="handleBack"
+        <!-- Top row: Back button, Rating - aligned horizontally -->
+        <div
+          class="absolute top-6 left-4 right-4 flex items-center justify-between gap-4 z-20"
         >
-          <IconArrowLeft icon-class="w-4 h-4" />
-          {{ $t('media.backToSeries') }}
-        </button>
-        <!-- Rating - top right -->
-        <div class="absolute top-6 right-4">
-          <RatingBadge
-            v-if="season?.vote_average"
-            :rating="season.vote_average"
-            class="lg:hidden"
-          />
+          <!-- Back button - left -->
+          <button
+            class="inline-flex items-center gap-2 text-sm font-medium text-white transition-opacity hover:opacity-80 flex-shrink-0"
+            @click="handleBack"
+          >
+            <IconArrowLeft icon-class="w-4 h-4" />
+            <span class="hidden sm:inline">{{ $t('media.backToSeries') }}</span>
+          </button>
+          <!-- Rating - right -->
+          <div class="flex-shrink-0">
+            <RatingBadge
+              v-if="season?.vote_average"
+              :rating="season.vote_average"
+              class="lg:hidden"
+            />
+          </div>
         </div>
-        <!-- Title - left aligned, vertically centered -->
+        <!-- Title - separate line below top row -->
         <div
           v-if="season?.name"
-          class="absolute left-4 top-1/2 -translate-y-1/2 right-4 flex flex-col gap-2"
+          class="absolute left-4 top-20 right-4 z-20"
         >
-          <h1 class="text-3xl font-bold text-white uppercase break-words">
+          <h1 class="text-lg sm:text-xl font-bold text-white uppercase break-words line-clamp-2">
             {{ season.name }}
           </h1>
-          <p v-if="tagline" class="text-base italic text-white/90 break-words">
+        </div>
+        <!-- Tagline - below title with spacing -->
+        <div
+          v-if="tagline"
+          class="absolute left-4 bottom-6 right-4 z-20"
+        >
+          <p class="text-sm sm:text-base italic text-white/90 break-words">
             {{ tagline }}
           </p>
         </div>
