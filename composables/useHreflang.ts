@@ -45,25 +45,50 @@ const isIndexableRoute = (path: string): boolean => {
 /**
  * Get path without language prefix
  * @param fullPath - Full route path (e.g., '/es/movie/123')
- * @returns Path without language prefix (e.g., '/movie/123')
+ * @returns Path without language prefix (e.g., '/movie/123' or '/' for index)
  */
 const getPathWithoutLang = (fullPath: string): string => {
   // Remove leading slash and split
   const parts = fullPath.split('/').filter(Boolean);
 
-  // If first part is a language code, remove it
+  // If no parts, return root path
+  if (parts.length === 0) {
+    return '/';
+  }
+
+  // Check if first part is a language code
   const firstPart = parts[0];
   const isLangCode = SUPPORTED_LANGUAGES.some(
     (lang) => lang.urlCode === firstPart
   );
 
-  if (isLangCode && parts.length > 1) {
-    // Remove language code and reconstruct path
-    return '/' + parts.slice(1).join('/');
+  // If first part is a language code
+  if (isLangCode) {
+    // If only language code (e.g., '/es' or '/es/'), return root
+    if (parts.length === 1) {
+      return '/';
+    }
+
+    // Get remaining parts after language code
+    const remainingParts = parts.slice(1);
+    
+    // If remaining part is also a language code (e.g., '/es/es'), treat as index
+    const secondPart = remainingParts[0];
+    const isSecondPartLangCode = SUPPORTED_LANGUAGES.some(
+      (lang) => lang.urlCode === secondPart
+    );
+    
+    if (isSecondPartLangCode && remainingParts.length === 1) {
+      // This is likely a malformed route like '/es/es', treat as index
+      return '/';
+    }
+
+    // Reconstruct path without language prefix
+    return '/' + remainingParts.join('/');
   }
 
-  // If no language prefix or only language, return original
-  return fullPath;
+  // If no language prefix, return original path (normalize to start with /)
+  return fullPath.startsWith('/') ? fullPath : `/${fullPath}`;
 };
 
 /**
