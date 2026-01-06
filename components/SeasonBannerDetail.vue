@@ -12,10 +12,12 @@
           class="absolute inset-0 w-full h-full object-cover -z-10"
         />
         <!-- Gradient overlay: black to transparent left to right -->
-        <div class="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent -z-10"></div>
+        <div
+          class="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent -z-10"
+        ></div>
         <!-- Back button - top left -->
         <button
-          class="absolute top-6 left-4 inline-flex items-center gap-2 text-sm font-medium text-white transition-opacity hover:opacity-80 backdrop-blur-sm bg-black/30 rounded-lg px-3 py-2"
+          class="absolute top-6 left-4 inline-flex items-center gap-2 text-sm font-medium text-white transition-opacity hover:opacity-80"
           @click="handleBack"
         >
           <IconArrowLeft icon-class="w-4 h-4" />
@@ -69,110 +71,114 @@
             />
           </div>
         </div>
-      <div
-        class="z-10 relative flex flex-col flex-1 gap-6 rounded-lg pt-6 lg:p-6 lg:ml-8 w-full flex-shrink-0 min-h-[300px]"
-      >
-        <div class="text-left relative flex-row">
-          <button
-            class="hidden lg:inline-flex items-center gap-2 mb-4 text-sm font-medium dark:text-gray-300 text-gray-700 hover:dark:text-white hover:text-gray-900 transition-colors"
-            @click="handleBack"
-          >
-            <IconArrowLeft icon-class="w-4 h-4" />
-            {{ $t('media.backToSeries') }}
-          </button>
-          <div
-            class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2 w-full"
-          >
-            <!-- Title with Rating inline on desktop large -->
-            <div
-              class="flex items-center gap-3 flex-wrap xl:flex-nowrap xl:flex-1"
+        <div
+          class="z-10 relative flex flex-col flex-1 gap-6 rounded-lg pt-6 lg:p-6 lg:ml-8 w-full flex-shrink-0 min-h-[300px]"
+        >
+          <div class="text-left relative flex-row">
+            <button
+              class="hidden lg:inline-flex items-center gap-2 mb-4 text-sm font-medium dark:text-gray-300 text-gray-700 hover:dark:text-white hover:text-gray-900 transition-colors"
+              @click="handleBack"
             >
-              <h1
-                class="hidden lg:block text-2xl font-bold dark:text-gray-300 text-gray-800 break-words xl:flex-1"
-                >{{ season?.name }}</h1
+              <IconArrowLeft icon-class="w-4 h-4" />
+              {{ $t('media.backToSeries') }}
+            </button>
+            <div
+              class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2 w-full"
+            >
+              <!-- Title with Rating inline on desktop large -->
+              <div
+                class="flex items-center gap-3 flex-wrap xl:flex-nowrap xl:flex-1"
               >
-              <!-- Rating inline with title on desktop large, hidden on mobile/tablet (shown below) -->
-              <div class="hidden xl:block xl:flex-shrink-0">
+                <h1
+                  class="hidden lg:block text-2xl font-bold dark:text-gray-300 text-gray-800 break-words xl:flex-1 uppercase"
+                  >{{ season?.name }}</h1
+                >
+                <!-- Rating inline with title on desktop large, hidden on mobile/tablet (shown below) -->
+                <div class="hidden xl:block xl:flex-shrink-0">
+                  <RatingBadge
+                    v-if="season?.vote_average"
+                    :rating="season.vote_average"
+                  />
+                </div>
+              </div>
+              <!-- Rating row (mobile/tablet only, hidden on desktop large) -->
+              <div
+                class="hidden lg:flex items-center gap-3 flex-shrink-0 xl:hidden"
+              >
                 <RatingBadge
                   v-if="season?.vote_average"
                   :rating="season.vote_average"
                 />
               </div>
             </div>
-            <!-- Rating row (mobile/tablet only, hidden on desktop large) -->
-            <div class="hidden lg:flex items-center gap-3 flex-shrink-0 xl:hidden">
-              <RatingBadge
-                v-if="season?.vote_average"
-                :rating="season.vote_average"
-              />
-            </div>
           </div>
-        </div>
 
-        <p
-          :class="[
-            'dark:text-gray-300 text-gray-800',
-            { italic: !season?.overview },
-          ]"
-          >{{ season?.overview || $t('media.noDescriptionAvailable') }}</p
-        >
-        <div
-          class="mt-2 flex items-center gap-2 dark:text-gray-300 text-gray-800"
-        >
-          <IconCalendar icon-class="w-5 h-5" />
-          <span>{{ formatDateToSpanish(season?.air_date || '', userRegion) }}</span>
-        </div>
-        <div class="flex items-center gap-2 dark:text-gray-300 text-gray-800">
-          <IconEpisodes icon-class="w-5 h-5" />
-          <span>{{
-            $t(
-              (season?.episodes?.length || 0) === 1
-                ? 'media.episodesCount_one'
-                : 'media.episodesCount_other',
-              {
-                count: season?.episodes?.length || 0,
-              }
-            )
-          }}</span>
-        </div>
+          <p
+            :class="[
+              'dark:text-gray-300 text-gray-800',
+              { italic: !season?.overview },
+            ]"
+            >{{ season?.overview || $t('media.noDescriptionAvailable') }}</p
+          >
+          <div
+            class="mt-2 flex items-center gap-2 dark:text-gray-300 text-gray-800"
+          >
+            <IconCalendar icon-class="w-5 h-5" />
+            <span>{{
+              formatDateToSpanish(season?.air_date || '', userRegion)
+            }}</span>
+          </div>
+          <div class="flex items-center gap-2 dark:text-gray-300 text-gray-800">
+            <IconEpisodes icon-class="w-5 h-5" />
+            <span>{{
+              $t(
+                (season?.episodes?.length || 0) === 1
+                  ? 'media.episodesCount_one'
+                  : 'media.episodesCount_other',
+                {
+                  count: season?.episodes?.length || 0,
+                }
+              )
+            }}</span>
+          </div>
 
-        <!-- Displaying watch providers -->
-        <section class="flex flex-col gap-6">
-          <section v-if="hasAvailableProviders" class="flex flex-col gap-8">
-            <ProviderList
-              v-if="season?.providers?.flatrate?.length"
-              :media-provider-prop-list="season.providers.flatrate"
-              :watch-type-prop="$t('media.watchIn')"
-              :media-type="MEDIA_TYPE.TV"
-              :media-title="season?.name || ''"
-              :tmdb-id="tmdbId"
-            />
+          <!-- Displaying watch providers -->
+          <section class="flex flex-col gap-6">
+            <section v-if="hasAvailableProviders" class="flex flex-col gap-8">
+              <ProviderList
+                v-if="season?.providers?.flatrate?.length"
+                :media-provider-prop-list="season.providers.flatrate"
+                :watch-type-prop="$t('media.watchIn')"
+                :media-type="MEDIA_TYPE.TV"
+                :media-title="season?.name || ''"
+                :tmdb-id="tmdbId"
+              />
 
-            <ProviderList
-              v-if="season?.providers?.buy?.length"
-              :media-provider-prop-list="season.providers.buy"
-              :watch-type-prop="$t('media.buyIn')"
-              :media-type="MEDIA_TYPE.TV"
-              :media-title="season?.name || ''"
-              :tmdb-id="tmdbId"
-            />
+              <ProviderList
+                v-if="season?.providers?.buy?.length"
+                :media-provider-prop-list="season.providers.buy"
+                :watch-type-prop="$t('media.buyIn')"
+                :media-type="MEDIA_TYPE.TV"
+                :media-title="season?.name || ''"
+                :tmdb-id="tmdbId"
+              />
 
-            <ProviderList
-              v-if="season?.providers?.rent?.length"
-              :media-provider-prop-list="season.providers.rent"
-              :watch-type-prop="$t('media.rentIn')"
-              :media-type="MEDIA_TYPE.TV"
-              :media-title="season?.name || ''"
-              :tmdb-id="tmdbId"
-            />
+              <ProviderList
+                v-if="season?.providers?.rent?.length"
+                :media-provider-prop-list="season.providers.rent"
+                :watch-type-prop="$t('media.rentIn')"
+                :media-type="MEDIA_TYPE.TV"
+                :media-title="season?.name || ''"
+                :tmdb-id="tmdbId"
+              />
+            </section>
+            <section v-else class="dark:text-gray-400 text-gray-600">
+              <p class="italic">{{ $t('media.noPlatforms') }}</p>
+            </section>
           </section>
-          <section v-else class="dark:text-gray-400 text-gray-600">
-            <p class="italic">{{ $t('media.noPlatforms') }}</p>
-          </section>
-        </section>
-      </div>
-    </section>
-  </Section>
+        </div>
+      </section>
+    </Section>
   </div>
 </template>
 

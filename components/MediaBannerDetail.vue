@@ -4,15 +4,19 @@
     <div class="lg:hidden w-screen -mx-4 md:-mx-6 -mt-4">
       <div class="relative w-full aspect-[16/9] p-4 pt-6">
         <img
-          :src="`https://image.tmdb.org/t/p/w780` + mediaWithProviders.backdrop_path"
+          :src="
+            `https://image.tmdb.org/t/p/w780` + mediaWithProviders.backdrop_path
+          "
           :alt="mediaWithProviders.title"
           class="absolute inset-0 w-full h-full object-cover -z-10"
         />
         <!-- Gradient overlay: black to transparent left to right -->
-        <div class="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent -z-10"></div>
+        <div
+          class="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent -z-10"
+        ></div>
         <!-- Back button - top left -->
         <button
-          class="absolute top-6 left-4 inline-flex gap-2 items-center text-sm font-medium text-white transition-opacity hover:opacity-80 backdrop-blur-sm bg-black/30 rounded-lg px-3 py-2"
+          class="absolute top-6 left-4 inline-flex gap-2 items-center text-sm font-medium text-white transition-opacity hover:opacity-80"
           @click="handleBack"
         >
           <IconArrowLeft icon-class="w-4 h-4" />
@@ -220,9 +224,7 @@
         <h1
           class="absolute left-4 top-1/2 -translate-y-1/2 right-4 text-2xl font-bold text-white uppercase break-words"
         >
-          {{
-            mediaWithProviders.title || (mediaWithProviders as any).name
-          }}
+          {{ mediaWithProviders.title || (mediaWithProviders as any).name }}
         </h1>
       </div>
     </div>
@@ -250,219 +252,161 @@
             class="relative overflow-hidden rounded-3xl w-full aspect-[2/3] h-full max-h-[500px]"
           >
             <img
-              :src="`https://image.tmdb.org/t/p/w780` + mediaWithProviders.poster_path"
+              :src="
+                `https://image.tmdb.org/t/p/w780` +
+                mediaWithProviders.poster_path
+              "
               :alt="mediaWithProviders.title"
               class="w-full h-full object-cover rounded-3xl"
             />
-          <!-- Informative icons overlay (only show if user has session) -->
-          <div
-            v-if="hasSession"
-            class="media-banner-tooltips flex absolute top-2 right-2 gap-2 z-20"
-          >
-            <Tooltip v-if="isLiked" :text="$t('media.liked')">
-              <div
-                class="flex justify-center items-center w-8 h-8 rounded-full backdrop-blur-sm bg-primary-600/90"
-              >
-                <IconHeartFilled icon-class="w-5 h-5 text-white" />
-              </div>
-            </Tooltip>
-            <Tooltip v-if="isSeen && !isLiked" :text="$t('media.seen')">
-              <div
-                class="flex justify-center items-center w-8 h-8 rounded-full backdrop-blur-sm bg-primary-600/90"
-              >
-                <IconCheck icon-class="w-5 h-5 text-white" />
-              </div>
-            </Tooltip>
-            <Tooltip v-if="isNotInterested" :text="$t('media.notInterested')">
-              <div
-                class="flex justify-center items-center w-8 h-8 rounded-full backdrop-blur-sm bg-primary-600/90"
-              >
-                <IconX icon-class="w-5 h-5 text-white" />
-              </div>
-            </Tooltip>
-            <Tooltip v-if="isInWatchlist" :text="$t('media.watchLater')">
-              <div
-                class="flex justify-center items-center w-8 h-8 rounded-full backdrop-blur-sm bg-primary-600/90"
-              >
-                <IconClock icon-class="w-5 h-5 text-white" />
-              </div>
-            </Tooltip>
+            <!-- Informative icons overlay (only show if user has session) -->
+            <div
+              v-if="hasSession"
+              class="media-banner-tooltips flex absolute top-2 right-2 gap-2 z-20"
+            >
+              <Tooltip v-if="isLiked" :text="$t('media.liked')">
+                <div
+                  class="flex justify-center items-center w-8 h-8 rounded-full backdrop-blur-sm bg-primary-600/90"
+                >
+                  <IconHeartFilled icon-class="w-5 h-5 text-white" />
+                </div>
+              </Tooltip>
+              <Tooltip v-if="isSeen && !isLiked" :text="$t('media.seen')">
+                <div
+                  class="flex justify-center items-center w-8 h-8 rounded-full backdrop-blur-sm bg-primary-600/90"
+                >
+                  <IconCheck icon-class="w-5 h-5 text-white" />
+                </div>
+              </Tooltip>
+              <Tooltip v-if="isNotInterested" :text="$t('media.notInterested')">
+                <div
+                  class="flex justify-center items-center w-8 h-8 rounded-full backdrop-blur-sm bg-primary-600/90"
+                >
+                  <IconX icon-class="w-5 h-5 text-white" />
+                </div>
+              </Tooltip>
+              <Tooltip v-if="isInWatchlist" :text="$t('media.watchLater')">
+                <div
+                  class="flex justify-center items-center w-8 h-8 rounded-full backdrop-blur-sm bg-primary-600/90"
+                >
+                  <IconClock icon-class="w-5 h-5 text-white" />
+                </div>
+              </Tooltip>
+            </div>
           </div>
         </div>
-      </div>
-      <div
-        class="z-10 relative flex flex-col flex-1 gap-6 rounded-lg pt-6 lg:p-6 lg:ml-8 w-full flex-shrink-0 min-h-[300px]"
-      >
-        <div class="relative flex-row text-left">
-          <button
-            class="hidden lg:inline-flex gap-2 items-center mb-4 text-sm font-medium text-gray-700 transition-colors dark:text-gray-300 hover:dark:text-white hover:text-gray-900"
-            @click="handleBack"
-          >
-            <IconArrowLeft icon-class="w-4 h-4" />
-            {{ $t('media.back') }}
-          </button>
-          <div
-            class="flex flex-col gap-2 w-full xl:flex-row xl:items-center xl:justify-between"
-          >
-            <!-- Title with Rating inline on desktop large -->
-            <div
-              class="flex flex-wrap gap-3 items-center xl:flex-nowrap xl:flex-1 xl:min-w-0"
+        <div
+          class="z-10 relative flex flex-col flex-1 gap-6 rounded-lg pt-6 lg:p-6 lg:ml-8 w-full flex-shrink-0 min-h-[300px]"
+        >
+          <div class="relative flex-row text-left">
+            <button
+              class="hidden lg:inline-flex gap-2 items-center mb-4 text-sm font-medium text-gray-700 transition-colors dark:text-gray-300 hover:dark:text-white hover:text-gray-900"
+              @click="handleBack"
             >
-              <h1
-                class="hidden lg:block text-2xl font-bold text-gray-800 break-words dark:text-gray-300 xl:flex-1 xl:min-w-0"
-                >{{
-                  mediaWithProviders.title || (mediaWithProviders as any).name
-                }}</h1
+              <IconArrowLeft icon-class="w-4 h-4" />
+              {{ $t('media.back') }}
+            </button>
+            <div
+              class="flex flex-col gap-2 w-full xl:flex-row xl:items-center xl:justify-between"
+            >
+              <!-- Title with Rating inline on desktop large -->
+              <div
+                class="flex flex-wrap gap-3 items-center xl:flex-nowrap xl:flex-1 xl:min-w-0"
               >
-              <!-- Rating inline with title on desktop large, hidden on mobile/tablet (shown below) -->
-              <div class="hidden xl:block xl:flex-shrink-0">
+                <h1
+                  class="hidden lg:block text-2xl font-bold text-gray-800 break-words dark:text-gray-300 xl:flex-1 xl:min-w-0 uppercase"
+                  >{{
+                    mediaWithProviders.title || (mediaWithProviders as any).name
+                  }}</h1
+                >
+                <!-- Rating inline with title on desktop large, hidden on mobile/tablet (shown below) -->
+                <div class="hidden xl:block xl:flex-shrink-0">
+                  <RatingBadge
+                    v-if="mediaWithProviders.vote_average"
+                    :rating="mediaWithProviders.vote_average"
+                  />
+                </div>
+              </div>
+              <!-- Rating, Status, Menu row (mobile/tablet) or Status, Menu (desktop large) -->
+              <div
+                class="hidden lg:flex flex-shrink-0 gap-3 items-center xl:gap-2"
+              >
+                <!-- Rating only on mobile/tablet (hidden on desktop large, already shown above) -->
                 <RatingBadge
                   v-if="mediaWithProviders.vote_average"
                   :rating="mediaWithProviders.vote_average"
+                  class="xl:hidden"
                 />
-              </div>
-            </div>
-            <!-- Rating, Status, Menu row (mobile/tablet) or Status, Menu (desktop large) -->
-            <div class="hidden lg:flex flex-shrink-0 gap-3 items-center xl:gap-2">
-              <!-- Rating only on mobile/tablet (hidden on desktop large, already shown above) -->
-              <RatingBadge
-                v-if="mediaWithProviders.vote_average"
-                :rating="mediaWithProviders.vote_average"
-                class="xl:hidden"
-              />
-              <!-- MediaStatusBadge -->
-              <MediaStatusBadge
-                v-if="mediaType === MEDIA_TYPE.TV || inTheaters"
-                :in-production="inProduction"
-                :in-theaters="inTheaters"
-              />
-              <!-- Actions Menu (only show if user has session) -->
-              <ActionMenu
-                v-if="hasSession"
-                ref="dropdownRef"
-                position="right"
-                width="w-48"
-                custom-class="left-0 right-auto backdrop-blur-xl dark:bg-gray-900/40 bg-gray-100/80 border-gray-300/50 dark:border-white/10 md:right-0 md:left-auto"
-              >
-                <template #trigger>
-                  <IconButton
-                    :icon="IconMoreVertical"
-                    :aria-label="
-                      $t('media.actionsMenuFor', {
-                        title:
-                          mediaWithProviders.title ||
-                          (mediaWithProviders as any).name,
-                      })
-                    "
-                    size="small"
-                    variant="default"
-                    custom-class="menu-button p-2 rounded-full bg-black/50 hover:bg-gray-700/80 backdrop-blur-sm [&>svg]:text-white"
-                  />
-                </template>
-                <div class="p-4">
-                  <!-- If title has a state, only show option to remove that state -->
-                  <!-- All remove actions use IconX -->
-                  <Button
-                    v-if="isLiked"
-                    type="button"
-                    variant="ghost"
-                    size="small"
-                    custom-class="justify-start w-full text-left"
-                    @click.stop.prevent="
-                      dropdownRef?.close();
-                      handleRemoveLike();
-                    "
-                  >
-                    <template #icon>
-                      <IconX icon-class="w-4 h-4" />
-                    </template>
-                    {{ $t('media.removeFromLiked') }}
-                  </Button>
-                  <Button
-                    v-else-if="isSeen && !isLiked"
-                    type="button"
-                    variant="ghost"
-                    size="small"
-                    custom-class="justify-start w-full text-left"
-                    @click.stop.prevent="
-                      dropdownRef?.close();
-                      handleAction(TITLE_STATUS.SEEN);
-                    "
-                  >
-                    <template #icon>
-                      <IconX icon-class="w-4 h-4" />
-                    </template>
-                    {{ $t('media.removeFromSeen') }}
-                  </Button>
-                  <Button
-                    v-else-if="isNotInterested"
-                    type="button"
-                    variant="ghost"
-                    size="small"
-                    custom-class="justify-start w-full text-left"
-                    @click.stop.prevent="
-                      dropdownRef?.close();
-                      handleAction(TITLE_STATUS.NOT_INTERESTED);
-                    "
-                  >
-                    <template #icon>
-                      <IconX icon-class="w-4 h-4" />
-                    </template>
-                    {{ $t('media.removeFromNotInterested') }}
-                  </Button>
-                  <Button
-                    v-else-if="isInWatchlist"
-                    type="button"
-                    variant="ghost"
-                    size="small"
-                    custom-class="justify-start w-full text-left"
-                    @click.stop.prevent="
-                      dropdownRef?.close();
-                      handleRemoveFromWatchlist();
-                    "
-                  >
-                    <template #icon>
-                      <IconX icon-class="w-4 h-4" />
-                    </template>
-                    {{ $t('media.removeFromWatchlist') }}
-                  </Button>
-                  <!-- If title has no state, show all options to add states -->
-                  <template v-else>
+                <!-- MediaStatusBadge -->
+                <MediaStatusBadge
+                  v-if="mediaType === MEDIA_TYPE.TV || inTheaters"
+                  :in-production="inProduction"
+                  :in-theaters="inTheaters"
+                />
+                <!-- Actions Menu (only show if user has session) -->
+                <ActionMenu
+                  v-if="hasSession"
+                  ref="dropdownRef"
+                  position="right"
+                  width="w-48"
+                  custom-class="left-0 right-auto backdrop-blur-xl dark:bg-gray-900/40 bg-gray-100/80 border-gray-300/50 dark:border-white/10 md:right-0 md:left-auto"
+                >
+                  <template #trigger>
+                    <IconButton
+                      :icon="IconMoreVertical"
+                      :aria-label="
+                        $t('media.actionsMenuFor', {
+                          title:
+                            mediaWithProviders.title ||
+                            (mediaWithProviders as any).name,
+                        })
+                      "
+                      size="small"
+                      variant="default"
+                      custom-class="menu-button p-2 rounded-full bg-black/50 hover:bg-gray-700/80 backdrop-blur-sm [&>svg]:text-white"
+                    />
+                  </template>
+                  <div class="p-4">
+                    <!-- If title has a state, only show option to remove that state -->
+                    <!-- All remove actions use IconX -->
                     <Button
+                      v-if="isLiked"
                       type="button"
                       variant="ghost"
                       size="small"
-                      custom-class="justify-start mb-2 w-full text-left"
+                      custom-class="justify-start w-full text-left"
+                      @click.stop.prevent="
+                        dropdownRef?.close();
+                        handleRemoveLike();
+                      "
+                    >
+                      <template #icon>
+                        <IconX icon-class="w-4 h-4" />
+                      </template>
+                      {{ $t('media.removeFromLiked') }}
+                    </Button>
+                    <Button
+                      v-else-if="isSeen && !isLiked"
+                      type="button"
+                      variant="ghost"
+                      size="small"
+                      custom-class="justify-start w-full text-left"
                       @click.stop.prevent="
                         dropdownRef?.close();
                         handleAction(TITLE_STATUS.SEEN);
                       "
                     >
                       <template #icon>
-                        <IconCheck icon-class="w-4 h-4" />
+                        <IconX icon-class="w-4 h-4" />
                       </template>
-                      {{ $t('media.seen') }}
+                      {{ $t('media.removeFromSeen') }}
                     </Button>
                     <Button
+                      v-else-if="isNotInterested"
                       type="button"
                       variant="ghost"
                       size="small"
-                      custom-class="justify-start mb-2 w-full text-left"
-                      @click.stop.prevent="
-                        dropdownRef?.close();
-                        handleAction('liked');
-                      "
-                    >
-                      <template #icon>
-                        <IconHeart icon-class="w-4 h-4" />
-                      </template>
-                      {{ $t('media.liked') }}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="small"
-                      custom-class="justify-start mb-2 w-full text-left"
+                      custom-class="justify-start w-full text-left"
                       @click.stop.prevent="
                         dropdownRef?.close();
                         handleAction(TITLE_STATUS.NOT_INTERESTED);
@@ -471,171 +415,235 @@
                       <template #icon>
                         <IconX icon-class="w-4 h-4" />
                       </template>
-                      {{ $t('media.notInterested') }}
+                      {{ $t('media.removeFromNotInterested') }}
                     </Button>
                     <Button
+                      v-else-if="isInWatchlist"
                       type="button"
                       variant="ghost"
                       size="small"
                       custom-class="justify-start w-full text-left"
                       @click.stop.prevent="
                         dropdownRef?.close();
-                        handleAction(TITLE_STATUS.WATCHLIST);
+                        handleRemoveFromWatchlist();
                       "
                     >
                       <template #icon>
-                        <IconClock icon-class="w-4 h-4" />
+                        <IconX icon-class="w-4 h-4" />
                       </template>
-                      {{ $t('media.watchLater') }}
+                      {{ $t('media.removeFromWatchlist') }}
                     </Button>
-                  </template>
-                </div>
-              </ActionMenu>
+                    <!-- If title has no state, show all options to add states -->
+                    <template v-else>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="small"
+                        custom-class="justify-start mb-2 w-full text-left"
+                        @click.stop.prevent="
+                          dropdownRef?.close();
+                          handleAction(TITLE_STATUS.SEEN);
+                        "
+                      >
+                        <template #icon>
+                          <IconCheck icon-class="w-4 h-4" />
+                        </template>
+                        {{ $t('media.seen') }}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="small"
+                        custom-class="justify-start mb-2 w-full text-left"
+                        @click.stop.prevent="
+                          dropdownRef?.close();
+                          handleAction('liked');
+                        "
+                      >
+                        <template #icon>
+                          <IconHeart icon-class="w-4 h-4" />
+                        </template>
+                        {{ $t('media.liked') }}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="small"
+                        custom-class="justify-start mb-2 w-full text-left"
+                        @click.stop.prevent="
+                          dropdownRef?.close();
+                          handleAction(TITLE_STATUS.NOT_INTERESTED);
+                        "
+                      >
+                        <template #icon>
+                          <IconX icon-class="w-4 h-4" />
+                        </template>
+                        {{ $t('media.notInterested') }}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="small"
+                        custom-class="justify-start w-full text-left"
+                        @click.stop.prevent="
+                          dropdownRef?.close();
+                          handleAction(TITLE_STATUS.WATCHLIST);
+                        "
+                      >
+                        <template #icon>
+                          <IconClock icon-class="w-4 h-4" />
+                        </template>
+                        {{ $t('media.watchLater') }}
+                      </Button>
+                    </template>
+                  </div>
+                </ActionMenu>
+              </div>
             </div>
           </div>
-        </div>
 
-        <p
-          :class="[
-            'dark:text-gray-300 text-gray-800',
-            { italic: !mediaWithProviders.overview },
-          ]"
-          >{{ mediaWithProviders.overview || $t('media.noDescription') }}</p
-        >
-        <div
-          class="flex gap-2 items-center mt-2 text-gray-800 dark:text-gray-300"
-        >
-          <IconCalendar icon-class="w-5 h-5" />
-          <span>{{
-            formatDateToSpanish(
-              mediaWithProviders.release_date ||
-                (mediaWithProviders as any).first_air_date ||
-                '',
-              userRegion
-            )
-          }}</span>
-        </div>
-        <div
-          v-if="
-            mediaType === MEDIA_TYPE.TV &&
-            ((mediaWithProviders as any).number_of_episodes ||
-              (mediaWithProviders as any).number_of_seasons)
-          "
-          class="flex gap-2 items-center text-gray-800 dark:text-gray-300"
-        >
-          <IconEpisodes icon-class="w-5 h-5" />
-          <span>
-            <template v-if="(mediaWithProviders as any).number_of_seasons">
-              {{
-                $t(
-                  (mediaWithProviders as any).number_of_seasons === 1
-                    ? 'media.seasonsCount_one'
-                    : 'media.seasonsCount_other',
-                  {
-                    count: (mediaWithProviders as any).number_of_seasons || 0,
-                  }
-                )
-              }}
-            </template>
-            <template
-              v-if="
-                (mediaWithProviders as any).number_of_seasons &&
-                (mediaWithProviders as any).number_of_episodes
-              "
-              >,
-            </template>
-            <template v-if="(mediaWithProviders as any).number_of_episodes">
-              {{
-                $t(
-                  (mediaWithProviders as any).number_of_episodes === 1
-                    ? 'media.episodesCount_one'
-                    : 'media.episodesCount_other',
-                  {
-                    count: (mediaWithProviders as any).number_of_episodes || 0,
-                  }
-                )
-              }}
-            </template>
-          </span>
-        </div>
-        <div class="flex gap-2 items-center text-gray-800 dark:text-gray-300">
-          <IconTag icon-class="w-5 h-5" />
-          <span>{{
-            mediaWithProviders?.genres
-              ?.map((genre: Genre) => genre.name)
-              .join(', ') || $t('media.notAvailable')
-          }}</span>
-        </div>
-        <!-- Displaying watch providers with their logos-->
-        <section class="flex flex-col gap-6">
-          <section v-if="hasAvailableProviders" class="flex flex-col gap-8">
-            <ProviderList
-              :media-provider-prop-list="
-                mediaWithProviders.providers?.flatrate || []
-              "
-              :watch-type-prop="$t('media.watchIn')"
-              :media-title="
-                mediaWithProviders.title ||
-                (mediaWithProviders as any).name ||
-                ''
-              "
-              :original-title="
-                mediaWithProviders.original_title ||
-                (mediaWithProviders as any).original_name ||
-                ''
-              "
-              :alternative-titles="alternativeTitles"
-              :media-type="mediaType"
-              :tmdb-id="mediaWithProviders.id"
-            />
+          <p
+            :class="[
+              'dark:text-gray-300 text-gray-800',
+              { italic: !mediaWithProviders.overview },
+            ]"
+            >{{ mediaWithProviders.overview || $t('media.noDescription') }}</p
+          >
+          <div
+            class="flex gap-2 items-center mt-2 text-gray-800 dark:text-gray-300"
+          >
+            <IconCalendar icon-class="w-5 h-5" />
+            <span>{{
+              formatDateToSpanish(
+                mediaWithProviders.release_date ||
+                  (mediaWithProviders as any).first_air_date ||
+                  '',
+                userRegion
+              )
+            }}</span>
+          </div>
+          <div
+            v-if="
+              mediaType === MEDIA_TYPE.TV &&
+              ((mediaWithProviders as any).number_of_episodes ||
+                (mediaWithProviders as any).number_of_seasons)
+            "
+            class="flex gap-2 items-center text-gray-800 dark:text-gray-300"
+          >
+            <IconEpisodes icon-class="w-5 h-5" />
+            <span>
+              <template v-if="(mediaWithProviders as any).number_of_seasons">
+                {{
+                  $t(
+                    (mediaWithProviders as any).number_of_seasons === 1
+                      ? 'media.seasonsCount_one'
+                      : 'media.seasonsCount_other',
+                    {
+                      count: (mediaWithProviders as any).number_of_seasons || 0,
+                    }
+                  )
+                }}
+              </template>
+              <template
+                v-if="
+                  (mediaWithProviders as any).number_of_seasons &&
+                  (mediaWithProviders as any).number_of_episodes
+                "
+                >,
+              </template>
+              <template v-if="(mediaWithProviders as any).number_of_episodes">
+                {{
+                  $t(
+                    (mediaWithProviders as any).number_of_episodes === 1
+                      ? 'media.episodesCount_one'
+                      : 'media.episodesCount_other',
+                    {
+                      count:
+                        (mediaWithProviders as any).number_of_episodes || 0,
+                    }
+                  )
+                }}
+              </template>
+            </span>
+          </div>
+          <div class="flex gap-2 items-center text-gray-800 dark:text-gray-300">
+            <IconTag icon-class="w-5 h-5" />
+            <span>{{
+              mediaWithProviders?.genres
+                ?.map((genre: Genre) => genre.name)
+                .join(', ') || $t('media.notAvailable')
+            }}</span>
+          </div>
+          <!-- Displaying watch providers with their logos-->
+          <section class="flex flex-col gap-6">
+            <section v-if="hasAvailableProviders" class="flex flex-col gap-8">
+              <ProviderList
+                :media-provider-prop-list="
+                  mediaWithProviders.providers?.flatrate || []
+                "
+                :watch-type-prop="$t('media.watchIn')"
+                :media-title="
+                  mediaWithProviders.title ||
+                  (mediaWithProviders as any).name ||
+                  ''
+                "
+                :original-title="
+                  mediaWithProviders.original_title ||
+                  (mediaWithProviders as any).original_name ||
+                  ''
+                "
+                :alternative-titles="alternativeTitles"
+                :media-type="mediaType"
+                :tmdb-id="mediaWithProviders.id"
+              />
 
-            <ProviderList
-              :media-provider-prop-list="
-                mediaWithProviders.providers?.buy || []
-              "
-              :watch-type-prop="$t('media.buyIn')"
-              :media-title="
-                mediaWithProviders.title ||
-                (mediaWithProviders as any).name ||
-                ''
-              "
-              :original-title="
-                mediaWithProviders.original_title ||
-                (mediaWithProviders as any).original_name ||
-                ''
-              "
-              :alternative-titles="alternativeTitles"
-              :media-type="mediaType"
-              :tmdb-id="mediaWithProviders.id"
-            />
+              <ProviderList
+                :media-provider-prop-list="
+                  mediaWithProviders.providers?.buy || []
+                "
+                :watch-type-prop="$t('media.buyIn')"
+                :media-title="
+                  mediaWithProviders.title ||
+                  (mediaWithProviders as any).name ||
+                  ''
+                "
+                :original-title="
+                  mediaWithProviders.original_title ||
+                  (mediaWithProviders as any).original_name ||
+                  ''
+                "
+                :alternative-titles="alternativeTitles"
+                :media-type="mediaType"
+                :tmdb-id="mediaWithProviders.id"
+              />
 
-            <ProviderList
-              :media-provider-prop-list="
-                mediaWithProviders.providers?.rent || []
-              "
-              :watch-type-prop="$t('media.rentIn')"
-              :media-title="
-                mediaWithProviders.title ||
-                (mediaWithProviders as any).name ||
-                ''
-              "
-              :original-title="
-                mediaWithProviders.original_title ||
-                (mediaWithProviders as any).original_name ||
-                ''
-              "
-              :alternative-titles="alternativeTitles"
-              :media-type="mediaType"
-              :tmdb-id="mediaWithProviders.id"
-            />
+              <ProviderList
+                :media-provider-prop-list="
+                  mediaWithProviders.providers?.rent || []
+                "
+                :watch-type-prop="$t('media.rentIn')"
+                :media-title="
+                  mediaWithProviders.title ||
+                  (mediaWithProviders as any).name ||
+                  ''
+                "
+                :original-title="
+                  mediaWithProviders.original_title ||
+                  (mediaWithProviders as any).original_name ||
+                  ''
+                "
+                :alternative-titles="alternativeTitles"
+                :media-type="mediaType"
+                :tmdb-id="mediaWithProviders.id"
+              />
+            </section>
+            <section v-else class="text-gray-600 dark:text-gray-400">
+              <p class="italic">{{ $t('media.noPlatforms') }}</p>
+            </section>
           </section>
-          <section v-else class="text-gray-600 dark:text-gray-400">
-            <p class="italic">{{ $t('media.noPlatforms') }}</p>
-          </section>
-        </section>
-      </div>
-    </section>
-  </Section>
+        </div>
+      </section>
+    </Section>
   </div>
 </template>
 
