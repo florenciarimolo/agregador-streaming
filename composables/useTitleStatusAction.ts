@@ -70,9 +70,9 @@ export const useTitleStatusAction = () => {
 
         // Show toast with undo button
         const removeMessages: Record<TitleStatusType, string> = {
-          [TITLE_STATUS.SEEN]: t('home.titleRemovedFromSeen', { title }),
-          [TITLE_STATUS.NOT_INTERESTED]: t('home.titleRemovedFromNotInterested', { title }),
-          [TITLE_STATUS.WATCHLIST]: t('home.titleRemovedFromWatchlist', { title }),
+          [TITLE_STATUS.SEEN]: t('seen.titleRemoved', { title }),
+          [TITLE_STATUS.NOT_INTERESTED]: t('notInterested.titleRemoved', { title }),
+          [TITLE_STATUS.WATCHLIST]: t('watchlist.titleRemoved', { title }),
         };
 
         showToast(removeMessages[targetStatus], {
@@ -126,9 +126,9 @@ export const useTitleStatusAction = () => {
 
         // Show toast with "View list" button
         const addMessages: Record<TitleStatusType, string> = {
-          [TITLE_STATUS.SEEN]: t('home.titleMarkedSeen', { title }),
-          [TITLE_STATUS.NOT_INTERESTED]: t('home.titleMarkedNotInterested', { title }),
-          [TITLE_STATUS.WATCHLIST]: t('home.titleSavedWatchlist', { title }),
+          [TITLE_STATUS.SEEN]: t('seen.titleAdded', { title }),
+          [TITLE_STATUS.NOT_INTERESTED]: t('notInterested.titleAdded', { title }),
+          [TITLE_STATUS.WATCHLIST]: t('watchlist.titleAdded', { title }),
         };
 
         const viewRoutes: Record<TitleStatusType, string> = {
@@ -195,7 +195,7 @@ export const useTitleStatusAction = () => {
           },
         });
 
-        showToast(t('home.likeRemoved', { title }), {
+        showToast(t('preferences.titleRemoved', { title }), {
           label: t('undo.undo'),
           variant: 'secondary',
           action: async () => {
@@ -245,7 +245,7 @@ export const useTitleStatusAction = () => {
         });
 
         // If hideViewListButton is true, don't show the button (e.g., when already on that list page)
-        showToast(t('home.titleAddedFavorites', { title }), hideViewListButton ? null : {
+        showToast(t('preferences.titleAdded', { title }), hideViewListButton ? null : {
           label: t('home.viewFavorites'),
           variant: 'secondary',
           action: async () => {

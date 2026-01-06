@@ -1049,7 +1049,7 @@ const confirmRemoveLikeFromSeen = async () => {
 
     // Show success toast with undo button
     showToast(
-      t('home.titleRemovedFavorites', { title: title.title }),
+      t('preferences.titleRemoved', { title: title.title }),
       {
         label: t('undo.undo'),
         action: async () => {
@@ -1113,7 +1113,7 @@ const confirmRemoveLikeFromSeen = async () => {
       console.error('Error in confirmRemoveLikeFromSeen:', error);
     }
     showToast(
-      t('home.errorRemovingFavorites', { title: title.title }),
+      t('preferences.errorRemoving', { title: title.title }),
       null,
       3000
     );

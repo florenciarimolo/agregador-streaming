@@ -773,7 +773,7 @@ const handleRemoveLike = async () => {
 
     // Show success toast
     showToast(
-      t('home.likeRemoved', { title: mediaTitle }),
+      t('preferences.titleRemoved', { title: mediaTitle }),
       {
         label: t('undo.undo'),
         variant: 'secondary',
@@ -810,7 +810,7 @@ const handleRemoveLike = async () => {
   } catch (error) {
     console.error('[handleRemoveLike] Error:', error);
     showToast(
-      t('home.errorRemovingFavorites', { title: mediaTitle }),
+      t('preferences.errorRemoving', { title: mediaTitle }),
       null,
       3000
     );
@@ -885,7 +885,7 @@ const handleRemoveFromWatchlist = async () => {
 
     // Show toast with undo button
     showToast(
-      t('home.titleRemovedFromWatchlist', { title: mediaTitle }),
+      t('watchlist.titleRemoved', { title: mediaTitle }),
       {
         label: t('undo.undo'),
         variant: 'secondary',
