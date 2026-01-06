@@ -107,8 +107,28 @@ export default defineEventHandler(
         });
       }
 
+      // Get season from database to check if we need to fetch episode_count
+      const runtimeConfig = useRuntimeConfig();
+      const supabase = createServerSupabaseClient(runtimeConfig);
+      const tvTmdbId = parseInt(id, 10);
+      const seasonNumber = parseInt(season_id, 10);
+
+      const { getSeasonByTmdbIds } = await import('@/services/seasons');
+      const seasonFromDb = await getSeasonByTmdbIds(tvTmdbId, seasonNumber, supabase);
+
+      // Check if episode_count is null in database
+      let needsEpisodeCountUpdate = false;
+      let episodeCount: number | null = null;
+
+      if (!seasonFromDb?.episode_count && response.episodes) {
+        // Calculate episode_count from episodes array
+        episodeCount = response.episodes.length;
+        needsEpisodeCountUpdate = true;
+      }
+
       // If air_date is null, try to get it from the first episode
       let finalAirDate = response.air_date;
+      let needsAirDateUpdate = false;
       if (!finalAirDate && response.episodes && response.episodes.length > 0) {
         // Find the first episode with an air_date
         const firstEpisodeWithDate = response.episodes.find(
@@ -118,34 +138,38 @@ export default defineEventHandler(
           finalAirDate = firstEpisodeWithDate.air_date;
           // Update response with the date from first episode
           response.air_date = finalAirDate;
-
-          // Save to database if we have the necessary data
-          try {
-            const config = useRuntimeConfig();
-            const supabase = createServerSupabaseClient(config);
-            const tvTmdbId = parseInt(id, 10);
-            const seasonNumber = parseInt(season_id, 10);
-
-            await upsertSeason(
-              {
-                tv_tmdb_id: tvTmdbId,
-                season_number: seasonNumber,
-                tmdb_season_id: response.id,
-                name: response.name || null,
-                air_date: finalAirDate,
-                poster_path: response.poster_path || null,
-                vote_average: response.vote_average || null,
-              },
-              supabase
-            );
-          } catch (dbError) {
-            // Log error but don't fail the request
-            console.error(
-              `[Season] Error saving air_date from first episode to database:`,
-              dbError
-            );
-          }
+          needsAirDateUpdate = true;
         }
+      }
+
+      // Update database if we have data to save
+      if (needsEpisodeCountUpdate || needsAirDateUpdate) {
+        try {
+          await upsertSeason(
+            {
+              tv_tmdb_id: tvTmdbId,
+              season_number: seasonNumber,
+              tmdb_season_id: response.id,
+              name: response.name || null,
+              air_date: needsAirDateUpdate ? finalAirDate : undefined,
+              poster_path: response.poster_path || null,
+              vote_average: response.vote_average || null,
+              episode_count: needsEpisodeCountUpdate ? episodeCount : undefined,
+            },
+            supabase
+          );
+        } catch (dbError) {
+          // Log error but don't fail the request
+          console.error(
+            `[Season] Error saving season data to database:`,
+            dbError
+          );
+        }
+      }
+
+      // Set episode_count in response if we calculated it
+      if (episodeCount !== null) {
+        response.episode_count = episodeCount;
       }
 
       return response;

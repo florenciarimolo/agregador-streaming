@@ -43,6 +43,7 @@ export async function getSeasonByTmdbIds(
     air_date: data.air_date || '',
     poster_path: data.poster_path || null,
     vote_average: data.vote_average || 0,
+    episode_count: data.episode_count || undefined,
   };
 }
 
@@ -59,6 +60,7 @@ export async function upsertSeason(
     poster_path?: string | null;
     vote_average?: number | null;
     overview?: MultiLanguageText | null;
+    episode_count?: number | null;
   },
   supabaseClient: SupabaseClient
 ): Promise<Season | null> {
@@ -77,6 +79,7 @@ export async function upsertSeason(
           seasonData.overview && Object.keys(seasonData.overview).length > 0
             ? seasonData.overview
             : null,
+        [SEASONS_COLUMNS.EPISODE_COUNT]: seasonData.episode_count ?? null,
       },
       {
         onConflict: `${SEASONS_COLUMNS.TV_TMDB_ID},${SEASONS_COLUMNS.SEASON_NUMBER}`,
@@ -98,6 +101,7 @@ export async function upsertSeason(
     air_date: data.air_date || '',
     poster_path: data.poster_path || null,
     vote_average: data.vote_average || 0,
+    episode_count: data.episode_count || undefined,
   };
 }
 
@@ -132,7 +136,7 @@ export async function getSeasonsByTvTmdbId(
     air_date: row.air_date || '',
     poster_path: row.poster_path || null,
     vote_average: row.vote_average || 0,
-    episode_count: undefined, // Not stored in DB, fetched on-demand
+    episode_count: row.episode_count || undefined,
   }));
 }
 

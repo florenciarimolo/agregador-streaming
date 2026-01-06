@@ -125,6 +125,7 @@ export const SEASONS_COLUMNS = {
   OVERVIEW: 'overview',
   VIDEOS: 'videos',
   VIDEOS_UPDATED_AT: 'videos_updated_at',
+  EPISODE_COUNT: 'episode_count',
   CREATED_AT: 'created_at',
   UPDATED_AT: 'updated_at',
 } as const;

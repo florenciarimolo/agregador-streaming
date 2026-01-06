@@ -51,10 +51,10 @@ export async function syncSeasonsFromTVShow(
     return;
   }
 
-  // Get existing seasons from DB for this TV show (including air_date and tmdb_season_id to check for nulls)
+  // Get existing seasons from DB for this TV show (including air_date, episode_count and tmdb_season_id to check for nulls)
   const { data: existingSeasons, error: fetchError } = await supabase
     .from(TABLES.SEASONS)
-    .select(`${SEASONS_COLUMNS.SEASON_NUMBER}, ${SEASONS_COLUMNS.AIR_DATE}, ${SEASONS_COLUMNS.TMDB_SEASON_ID}, ${SEASONS_COLUMNS.NAME}, ${SEASONS_COLUMNS.POSTER_PATH}, ${SEASONS_COLUMNS.VOTE_AVERAGE}`)
+    .select(`${SEASONS_COLUMNS.SEASON_NUMBER}, ${SEASONS_COLUMNS.AIR_DATE}, ${SEASONS_COLUMNS.EPISODE_COUNT}, ${SEASONS_COLUMNS.TMDB_SEASON_ID}, ${SEASONS_COLUMNS.NAME}, ${SEASONS_COLUMNS.POSTER_PATH}, ${SEASONS_COLUMNS.VOTE_AVERAGE}`)
     .eq(SEASONS_COLUMNS.TV_TMDB_ID, tvTmdbId);
 
   if (fetchError) {
@@ -79,8 +79,17 @@ export async function syncSeasonsFromTVShow(
     (s) => !s.air_date || s.air_date.trim() === ''
   ) || [];
 
-  // If no seasons to create and no existing seasons with null dates, return early
-  if (seasonsToCreate.length === 0 && existingSeasonsWithNullDate.length === 0) {
+  // Find existing seasons with null episode_count (to update them)
+  const existingSeasonsWithNullEpisodeCount = existingSeasons?.filter(
+    (s) => s.episode_count === null || s.episode_count === undefined
+  ) || [];
+
+  // If no seasons to create and no existing seasons with null dates/episode_count, return early
+  if (
+    seasonsToCreate.length === 0 &&
+    existingSeasonsWithNullDate.length === 0 &&
+    existingSeasonsWithNullEpisodeCount.length === 0
+  ) {
     return;
   }
 
@@ -117,8 +126,57 @@ export async function syncSeasonsFromTVShow(
     );
   }
 
-  // After syncing, check for seasons with null air_date and try to get it from first episode
+  // After syncing, check for seasons with null air_date or episode_count and try to get them from TMDB
   if (tmdbConfig) {
+    // Process existing seasons with null episode_count
+    for (const existingSeason of existingSeasonsWithNullEpisodeCount) {
+      try {
+        // Fetch season details from TMDB to get episodes
+        const seasonResponse = await $fetch<{
+          id: number;
+          episodes?: Array<unknown>;
+        }>(`${tmdbConfig.baseUrl}/tv/${tvTmdbId}/season/${existingSeason.season_number}`, {
+          query: {
+            api_key: tmdbConfig.apiKey,
+            language: tmdbConfig.language,
+            region: tmdbConfig.region,
+          },
+        });
+
+        // Calculate episode_count from episodes array
+        const episodeCount = seasonResponse.episodes?.length || null;
+
+        // If we found episode_count, update the season in the database
+        if (episodeCount !== null) {
+          await upsertSeason(
+            {
+              tv_tmdb_id: tvTmdbId,
+              season_number: existingSeason.season_number,
+              tmdb_season_id: existingSeason.tmdb_season_id,
+              name: existingSeason.name || null,
+              poster_path: existingSeason.poster_path || null,
+              vote_average: existingSeason.vote_average || null,
+              episode_count: episodeCount,
+            },
+            supabase
+          );
+
+          if (import.meta.dev) {
+            console.log(
+              `[syncSeasonsFromTVShow] Updated episode_count for existing season ${existingSeason.season_number}: ${episodeCount}`
+            );
+          }
+        }
+      } catch (episodeError) {
+        // Log error but don't fail the sync
+        if (import.meta.dev) {
+          console.error(
+            `[syncSeasonsFromTVShow] Error fetching episode_count for existing season ${existingSeason.season_number}:`,
+            episodeError
+          );
+        }
+      }
+    }
     // Combine new seasons with null dates and existing seasons with null dates
     const newSeasonsWithNullDate = seasonsToCreate.filter(
       (s) => !s.air_date || s.air_date.trim() === ''
@@ -155,25 +213,36 @@ export async function syncSeasonsFromTVShow(
           }
         }
 
-        // If we found a date, update the season in the database
-        if (finalAirDate) {
+        // Calculate episode_count from episodes array
+        const episodeCount = seasonResponse.episodes?.length || null;
+
+        // If we found a date or episode_count, update the season in the database
+        if (finalAirDate || episodeCount !== null) {
           await upsertSeason(
             {
               tv_tmdb_id: tvTmdbId,
               season_number: season.season_number,
               tmdb_season_id: season.id,
               name: season.name || null,
-              air_date: finalAirDate,
+              air_date: finalAirDate || undefined,
               poster_path: season.poster_path || null,
               vote_average: season.vote_average || null,
+              episode_count: episodeCount,
             },
             supabase
           );
 
           if (import.meta.dev) {
-            console.log(
-              `[syncSeasonsFromTVShow] Updated air_date for season ${season.season_number} from first episode: ${finalAirDate}`
-            );
+            if (finalAirDate) {
+              console.log(
+                `[syncSeasonsFromTVShow] Updated air_date for season ${season.season_number} from first episode: ${finalAirDate}`
+              );
+            }
+            if (episodeCount !== null) {
+              console.log(
+                `[syncSeasonsFromTVShow] Updated episode_count for season ${season.season_number}: ${episodeCount}`
+              );
+            }
           }
         }
       } catch (episodeError) {
@@ -218,25 +287,36 @@ export async function syncSeasonsFromTVShow(
           }
         }
 
-        // If we found a date, update the season in the database
-        if (finalAirDate) {
+        // Calculate episode_count from episodes array
+        const episodeCount = seasonResponse.episodes?.length || null;
+
+        // If we found a date or episode_count, update the season in the database
+        if (finalAirDate || episodeCount !== null) {
           await upsertSeason(
             {
               tv_tmdb_id: tvTmdbId,
               season_number: existingSeason.season_number,
               tmdb_season_id: existingSeason.tmdb_season_id,
               name: existingSeason.name || null,
-              air_date: finalAirDate,
+              air_date: finalAirDate || undefined,
               poster_path: existingSeason.poster_path || null,
               vote_average: existingSeason.vote_average || null,
+              episode_count: episodeCount,
             },
             supabase
           );
 
           if (import.meta.dev) {
-            console.log(
-              `[syncSeasonsFromTVShow] Updated air_date for existing season ${existingSeason.season_number} from first episode: ${finalAirDate}`
-            );
+            if (finalAirDate) {
+              console.log(
+                `[syncSeasonsFromTVShow] Updated air_date for existing season ${existingSeason.season_number} from first episode: ${finalAirDate}`
+              );
+            }
+            if (episodeCount !== null) {
+              console.log(
+                `[syncSeasonsFromTVShow] Updated episode_count for existing season ${existingSeason.season_number}: ${episodeCount}`
+              );
+            }
           }
         }
       } catch (episodeError) {
