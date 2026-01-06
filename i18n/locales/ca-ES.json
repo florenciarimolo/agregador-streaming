@@ -144,7 +144,8 @@
     "description": "UpNext et recomana pel·lícules i sèries segons com et sents i el teu **nivell d'atenció en aquest moment**.",
     "tagline": "Menys decidir. Més veure.",
     "discoverButton": "Descobrir què veure ara",
-    "howItWorksButton": "Saber com funciona"
+    "howItWorksButton": "Saber com funciona",
+    "exploreDiscover": "O explora Discover al teu ritme"
   },
   "home": {
     "generatingRecommendations": "Generant recomanacions",
@@ -200,6 +201,15 @@
         "title": "Rep recomanacions",
         "description": "Troba contingut perfecte per ara."
       },
+      "step4": {
+        "title": "Gestiona les teves recomanacions",
+        "description": "Marca com a vista, afegeix a preferits o guarda per després."
+      },
+      "discover": {
+        "title": "Prefereixes explorar al teu ritme?",
+        "description": "Quan no vols decidir ara. Explora llistes curades sense filtres ni decisions.",
+        "cta": "Explorar Discover"
+      },
       "mockup": {
         "mainTitle": "Exemple de recomanació",
         "mainType": "Pel·lícula · Drama",
@@ -231,7 +241,7 @@
     },
     "faq": {
       "title": "Preguntes freqüents",
-      "q1": "En què es diferencia UpNext de Netflix o altres plataformes?",
+      "q1": "En què es diferencia UpNext d'altres plataformes?",
       "a1": "UpNext se centra en el teu moment actual: com et sents i quanta atenció pots dedicar ara. No et mostra llistes infinites, sinó poques recomanacions ben escollides que encaixen amb el teu estat d'ànim i nivell d'atenció en aquest moment específic.",
       "q2": "UpNext decideix per mi?",
       "a2": "No, UpNext no decideix per tu. Et mostra recomanacions basades en els teus gustos i el teu moment actual, però tu sempre tens el control. Pots canviar el teu estat d'ànim i nivell d'atenció quan vulguis, i les recomanacions s'ajustaran.",

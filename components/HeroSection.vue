@@ -6,11 +6,13 @@ interface Props {
   buttonText: string;
   showAuthForm?: boolean;
   isAuthenticated?: boolean;
+  hideBackground?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   showAuthForm: false,
   isAuthenticated: false,
+  hideBackground: false,
 });
 
 const emit = defineEmits<{
@@ -18,14 +20,16 @@ const emit = defineEmits<{
   signupSuccess: [];
 }>();
 
-const { routeWithLang } = useRouteWithLang();
 const { t } = useI18n();
 
-// Computed routes with language prefix
-// CRITICAL: routeWithLang() accesses route.params.lang directly, ensuring reactivity
-// These computed will automatically re-evaluate when route.params.lang changes
-const discoverRoute = computed(() => routeWithLang('/discover'));
-const howItWorksRoute = computed(() => routeWithLang('/how-it-works'));
+// Scroll to section function
+const scrollToSection = (sectionId: string) => {
+  if (typeof window === 'undefined') return;
+  const element = document.getElementById(sectionId);
+  if (element) {
+    element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+};
 
 // Process description to handle **bold** markdown
 const descriptionParts = computed(() => {
@@ -66,51 +70,74 @@ const descriptionParts = computed(() => {
 </script>
 
 <template>
-  <section class="overflow-hidden relative py-16 px-4">
-    <!-- Animated Background -->
-    <AnimatedBackground />
-
+  <section
+    class="overflow-hidden relative py-16 px-4 md:py-30 min-h-[80vh] flex items-center"
+  >
     <!-- Content -->
     <div
-      class="container overflow-visible relative z-10 mx-auto max-w-5xl text-center"
+      class="container overflow-visible relative z-10 mx-auto max-w-3xl text-center w-full"
     >
+      <!-- Logo -->
+      <div class="mb-8 flex justify-center">
+        <img
+          src="/logo-light.png"
+          :alt="$t('common.appName')"
+          class="object-contain w-auto h-12 md:h-16 dark:hidden"
+        />
+        <img
+          src="/logo-dark.png"
+          :alt="$t('common.appName')"
+          class="hidden object-contain w-auto h-12 md:h-16 dark:block"
+        />
+      </div>
       <h1
-        class="mb-6 text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-b drop-shadow-2xl md:text-7xl font-heading from-primary-800 via-primary-800 to-primary-900 dark:from-white dark:via-white dark:to-gray-400"
+        class="mb-8 text-hero font-heading font-bold text-transparent bg-clip-text bg-gradient-to-b drop-shadow-2xl from-primary-800 via-primary-800 to-primary-900 dark:from-white dark:via-white dark:to-gray-400"
         style="
-          line-height: 1.15;
+          line-height: 1.1;
           padding-top: 0.15em;
           padding-bottom: 0.15em;
           background-clip: text;
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
+          font-size: clamp(4rem, 10vw, 7rem);
         "
       >
         {{ $t('hero.title') }}
       </h1>
       <p
-        class="mx-auto mb-8 max-w-3xl text-lg font-medium leading-relaxed text-gray-800 md:text-xl dark:text-gray-300"
+        class="mx-auto mb-12 max-w-3xl text-subtitle font-body text-gray-600 dark:text-gray-400"
       >
-        <template
-          v-for="(part, index) in descriptionParts"
-          :key="index"
-        >
+        <template v-for="(part, index) in descriptionParts" :key="index">
           <span v-if="part.bold" class="font-bold">{{ part.text }}</span>
           <span v-else>{{ part.text }}</span>
         </template>
         <br />
         <span class="font-medium">{{ $t('hero.tagline') }}</span>
       </p>
-      <div class="flex flex-col gap-4 justify-center items-center sm:flex-row">
-        <nuxt-link :to="discoverRoute">
-          <Button size="medium" variant="primary">
-            {{ props.buttonText }}
-          </Button>
-        </nuxt-link>
-        <nuxt-link :to="howItWorksRoute">
-          <Button size="medium" variant="secondary">
-            {{ $t('hero.howItWorksButton') }}
-          </Button>
-        </nuxt-link>
+      <div class="flex flex-col gap-6 justify-center items-center sm:flex-row">
+        <Button
+          size="medium"
+          variant="primary"
+          @click="scrollToSection('discover')"
+        >
+          {{ props.buttonText }}
+        </Button>
+        <Button
+          size="medium"
+          variant="secondary"
+          @click="scrollToSection('how-it-works')"
+        >
+          {{ $t('hero.howItWorksButton') }}
+        </Button>
+      </div>
+      <!-- Enlace discreto a Discover -->
+      <div class="mt-4">
+        <button
+          class="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors underline cursor-pointer bg-transparent border-none p-0"
+          @click="scrollToSection('discover')"
+        >
+          {{ $t('hero.exploreDiscover') }}
+        </button>
       </div>
     </div>
 

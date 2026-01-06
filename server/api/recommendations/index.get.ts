@@ -983,10 +983,24 @@ export default defineEventHandler(async (event) => {
       }
 
       // Transform sorted pool entries to recommendations
+      // Deduplicate by tmdb_id to ensure no duplicates
       const recommendations: Recommendation[] = [];
       const tmdbIdsToTrack: number[] = [];
+      const seenTmdbIds = new Set<number>();
 
-      for (const entry of balancedEntries.slice(0, MAX_RECOMMENDATIONS)) {
+      for (const entry of balancedEntries.slice(0, MAX_RECOMMENDATIONS * 2)) {
+        // Skip if we've already seen this tmdb_id
+        if (seenTmdbIds.has(entry.tmdb_id)) {
+          continue;
+        }
+
+        // Stop if we've reached the maximum number of recommendations
+        if (recommendations.length >= MAX_RECOMMENDATIONS) {
+          break;
+        }
+
+        // Mark this tmdb_id as seen
+        seenTmdbIds.add(entry.tmdb_id);
         const titleData = entry.titleData;
 
         // Fetch providers from TMDB (still need this for display)

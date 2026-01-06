@@ -144,7 +144,8 @@
     "description": "UpNext recommends movies and TV shows based on how you feel and your **attention level right now**.",
     "tagline": "Less deciding. More watching.",
     "discoverButton": "Discover what to watch now",
-    "howItWorksButton": "Learn how it works"
+    "howItWorksButton": "Learn how it works",
+    "exploreDiscover": "Or explore Discover at your own pace"
   },
   "home": {
     "generatingRecommendations": "Generating recommendations",
@@ -200,6 +201,15 @@
         "title": "Get recommendations",
         "description": "Find perfect content for right now."
       },
+      "step4": {
+        "title": "Manage your recommendations",
+        "description": "Mark as seen, add to favourites, or save for later."
+      },
+      "discover": {
+        "title": "Prefer to explore at your own pace?",
+        "description": "When you don't want to decide right now. Explore curated lists without filters or decisions.",
+        "cta": "Explore Discover"
+      },
       "mockup": {
         "mainTitle": "Example recommendation",
         "mainType": "Movie · Drama",
@@ -231,7 +241,7 @@
     },
     "faq": {
       "title": "Frequently asked questions",
-      "q1": "How is UpNext different from Netflix or other platforms?",
+      "q1": "How is UpNext different from other platforms?",
       "a1": "UpNext focuses on your current moment: how you feel and how much attention you can dedicate right now. It doesn't show you infinite lists, but rather few well-chosen recommendations that fit your mood and attention level at this specific moment.",
       "q2": "Does UpNext decide for me?",
       "a2": "No, UpNext doesn't decide for you. It shows you recommendations based on your tastes and your current moment, but you always have control. You can change your mood and attention level whenever you want, and the recommendations will adjust.",

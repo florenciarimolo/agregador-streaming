@@ -1,13 +1,13 @@
 <template>
-  <div class="space-y-4">
+  <div class="space-y-4 text-center">
     <h2
-      class="text-2xl font-semibold text-gray-800 md:text-3xl dark:text-gray-300 font-heading"
+      class="text-h2 font-heading font-semibold text-gray-800 dark:text-gray-300"
     >
       <slot />
     </h2>
     <p
       v-if="description"
-      class="text-sm text-gray-800 dark:text-gray-300 md:text-base"
+      class="text-subtitle font-body text-gray-800 dark:text-gray-300"
     >
       {{ description }}
     </p>

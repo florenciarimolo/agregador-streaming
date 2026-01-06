@@ -1,73 +1,130 @@
 <template>
-  <section v-if="showHero" class="py-6">
+  <section v-if="showHero" id="how-it-works" class="py-6">
     <AppShell>
       <PageContainer>
         <Section>
-          <SectionTitle>{{ $t('home.productFlow.title') }}</SectionTitle>
-          <p class="mb-6 text-gray-800 dark:text-gray-300">
+          <div class="home-section-title">
+            <SectionTitle>{{ $t('home.productFlow.title') }}</SectionTitle>
+          </div>
+          <p
+            class="mx-auto mb-10 text-subtitle text-center font-body text-gray-600 dark:text-gray-400 max-w-3xl"
+          >
             {{ $t('home.productFlow.description') }}
           </p>
 
-          <div class="grid gap-6 md:grid-cols-3">
-            <!-- Step 1: Selection -->
-            <div class="flex flex-col gap-3">
-              <div
-                class="flex justify-center items-center mx-auto w-12 h-12 bg-gradient-to-r rounded-full from-primary to-accent"
-              >
-                <span class="text-xl font-bold text-white">1</span>
+          <!-- Bento Grid Narrativo -->
+          <div class="grid gap-6 md:gap-8 grid-cols-1 lg:grid-cols-6">
+            <!-- Step 1: Selecciona tu momento (lg:col-span-4) - Card protagonista -->
+            <Card
+              padding="lg"
+              custom-class="!bg-white/60 dark:!bg-gray-900/40 md:p-6 relative overflow-hidden flex flex-col lg:col-span-4"
+            >
+              <div class="flex flex-col gap-4 text-center">
+                <div
+                  class="flex justify-center items-center w-16 h-16 bg-gradient-to-r rounded-full from-primary to-accent mx-auto"
+                >
+                  <span class="text-xl font-bold text-white">1</span>
+                </div>
+                <h3
+                  class="text-h3 font-heading font-semibold text-gray-800 dark:text-gray-300"
+                >
+                  {{ $t('home.productFlow.step1.title') }}
+                </h3>
+                <p class="text-body font-body text-gray-600 dark:text-gray-400">
+                  {{ $t('home.productFlow.step1.description') }}
+                </p>
+                <div class="mt-4">
+                  <MoodAttentionSelection />
+                </div>
               </div>
-              <h3
-                class="text-lg font-semibold text-center text-gray-800 dark:text-gray-300"
-              >
-                {{ $t('home.productFlow.step1.title') }}
-              </h3>
-              <p
-                class="text-sm text-center text-gray-600 dark:text-gray-400"
-              >
-                {{ $t('home.productFlow.step1.description') }}
-              </p>
-              <MoodAttentionSelection />
-            </div>
+            </Card>
 
-            <!-- Step 2: Confirmation -->
-            <div class="flex flex-col gap-3">
-              <div
-                class="flex justify-center items-center mx-auto w-12 h-12 bg-gradient-to-r rounded-full from-accent to-secondary"
-              >
-                <span class="text-xl font-bold text-white">2</span>
+            <!-- Step 2: Confirma tu momento (lg:col-span-2) - Card compacta -->
+            <Card
+              padding="lg"
+              custom-class="!bg-white/60 dark:!bg-gray-900/40 md:p-6 relative overflow-hidden flex flex-col lg:col-span-2"
+            >
+              <div class="flex flex-col gap-4 text-center items-center">
+                <div
+                  class="flex justify-center items-center w-16 h-16 bg-gradient-to-r rounded-full from-accent to-secondary mx-auto"
+                >
+                  <span class="text-xl font-bold text-white">2</span>
+                </div>
+                <h3
+                  class="text-h3 font-heading font-semibold text-gray-800 dark:text-gray-300"
+                >
+                  {{ $t('home.productFlow.step2.title') }}
+                </h3>
+                <p class="text-body font-body text-gray-600 dark:text-gray-400">
+                  {{ $t('home.productFlow.step2.description') }}
+                </p>
+                <div class="mt-4 w-full flex justify-center">
+                  <MomentConfirmation />
+                </div>
               </div>
-              <h3
-                class="text-lg font-semibold text-center text-gray-800 dark:text-gray-300"
-              >
-                {{ $t('home.productFlow.step2.title') }}
-              </h3>
-              <p
-                class="text-sm text-center text-gray-600 dark:text-gray-400"
-              >
-                {{ $t('home.productFlow.step2.description') }}
-              </p>
-              <MomentConfirmation />
-            </div>
+            </Card>
 
-            <!-- Step 3: Result -->
-            <div class="flex flex-col gap-3">
-              <div
-                class="flex justify-center items-center mx-auto w-12 h-12 bg-gradient-to-r rounded-full from-secondary to-pink"
-              >
-                <span class="text-xl font-bold text-white">3</span>
+            <!-- Step 3: Recibe recomendación (lg:col-span-3) - Contenido más pequeño -->
+            <Card
+              padding="lg"
+              custom-class="!bg-white/60 dark:!bg-gray-900/40 md:p-6 relative overflow-hidden flex flex-col lg:col-span-3"
+            >
+              <div class="flex flex-col gap-4 text-center">
+                <div
+                  class="flex justify-center items-center w-16 h-16 bg-gradient-to-r rounded-full from-secondary to-pink mx-auto"
+                >
+                  <span class="text-xl font-bold text-white">3</span>
+                </div>
+                <h3
+                  class="text-h3 font-heading font-semibold text-gray-800 dark:text-gray-300"
+                >
+                  {{ $t('home.productFlow.step3.title') }}
+                </h3>
+                <p class="text-body font-body text-gray-600 dark:text-gray-400">
+                  {{ $t('home.productFlow.step3.description') }}
+                </p>
+                <div
+                  class="mt-4 max-h-[400px] overflow-hidden flex justify-center"
+                >
+                  <img
+                    src="/mockups/step3-result-mockup.webp"
+                    alt="Mockup de recomendaciones"
+                    class="max-h-[400px] w-auto object-contain rounded-lg"
+                  />
+                </div>
               </div>
-              <h3
-                class="text-lg font-semibold text-center text-gray-800 dark:text-gray-300"
-              >
-                {{ $t('home.productFlow.step3.title') }}
-              </h3>
-              <p
-                class="text-sm text-center text-gray-600 dark:text-gray-400"
-              >
-                {{ $t('home.productFlow.step3.description') }}
-              </p>
-              <RecommendationResult />
-            </div>
+            </Card>
+
+            <!-- Step 4: Gestiona tus recomendaciones (lg:col-span-3) - Contenido más pequeño -->
+            <Card
+              padding="lg"
+              custom-class="!bg-white/60 dark:!bg-gray-900/40 md:p-6 relative overflow-hidden flex flex-col lg:col-span-3"
+            >
+              <div class="flex flex-col gap-4 text-center">
+                <div
+                  class="flex justify-center items-center w-16 h-16 bg-gradient-to-r rounded-full from-pink to-primary mx-auto"
+                >
+                  <span class="text-xl font-bold text-white">4</span>
+                </div>
+                <h3
+                  class="text-h3 font-heading font-semibold text-gray-800 dark:text-gray-300"
+                >
+                  {{ $t('home.productFlow.step4.title') }}
+                </h3>
+                <p class="text-body font-body text-gray-600 dark:text-gray-400">
+                  {{ $t('home.productFlow.step4.description') }}
+                </p>
+                <div
+                  class="mt-4 max-h-[400px] overflow-hidden flex justify-center"
+                >
+                  <img
+                    src="/mockups/step4-actions-mockup.webp"
+                    alt="Mockup de acciones de recomendaciones"
+                    class="max-h-[400px] w-auto object-contain rounded-lg"
+                  />
+                </div>
+              </div>
+            </Card>
           </div>
         </Section>
       </PageContainer>
@@ -81,12 +138,17 @@ import AppShell from '@/components/layout/AppShell.vue';
 import PageContainer from '@/components/layout/PageContainer.vue';
 import Section from '@/components/layout/Section.vue';
 import SectionTitle from '@/components/layout/SectionTitle.vue';
+import Card from '@/components/ui/Card.vue';
 import MoodAttentionSelection from './mockups/MoodAttentionSelection.vue';
 import MomentConfirmation from './mockups/MomentConfirmation.vue';
-import RecommendationResult from './mockups/RecommendationResult.vue';
 import { useSupabaseUser } from '#imports';
 
 const user = useSupabaseUser();
 const showHero = computed(() => !user.value);
 </script>
 
+<style scoped>
+.home-section-title :deep(h2) {
+  font-size: clamp(2rem, 4vw, 3rem) !important;
+}
+</style>

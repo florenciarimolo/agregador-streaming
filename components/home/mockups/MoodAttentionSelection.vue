@@ -6,7 +6,7 @@
     <div class="flex flex-col gap-6">
       <div class="flex flex-col gap-2">
         <label
-          class="text-xs font-semibold uppercase tracking-wide text-gray-800 dark:text-gray-300"
+          class="text-xs font-semibold uppercase tracking-wide text-gray-800 dark:text-gray-300 text-left"
         >
           {{ $t('mood.label') }}
         </label>
@@ -30,7 +30,7 @@
 
       <div class="flex flex-col gap-2">
         <label
-          class="text-xs font-semibold uppercase tracking-wide text-gray-800 dark:text-gray-300"
+          class="text-xs font-semibold uppercase tracking-wide text-gray-800 dark:text-gray-300 text-left"
         >
           {{ $t('attention.label') }}
         </label>

@@ -144,7 +144,8 @@
     "description": "UpNext-ek nola sentitzen zaren eta zure **arreta maila oraintxe bertan** kontuan hartuta filmak eta telesailak gomendatzen dizkizu.",
     "tagline": "Gutxiago erabakitzea. Gehiago ikustea.",
     "discoverButton": "Zer ikusi orain aurkitu",
-    "howItWorksButton": "Nola funtzionatzen duen jakin"
+    "howItWorksButton": "Nola funtzionatzen duen jakin",
+    "exploreDiscover": "Edo esploratu Discover zure erritmoan"
   },
   "home": {
     "generatingRecommendations": "Generando recomendaciones",
@@ -200,6 +201,15 @@
         "title": "Jaso gomendioak",
         "description": "Aurki oraintxe bertarako eduki perfektua."
       },
+      "step4": {
+        "title": "Zure gomendioak kudeatu",
+        "description": "Ikusita bezala markatu, gogokoenetara gehitu edo geroago gorde."
+      },
+      "discover": {
+        "title": "Zure erritmoan esploratzea nahiago duzu?",
+        "description": "Orain erabakitzeko gogorik ez duzunean. Iragazkirik edo erabakirik gabe kuratutako zerrendak esploratu.",
+        "cta": "Discover esploratu"
+      },
       "mockup": {
         "mainTitle": "Gomendio adibidea",
         "mainType": "Filma · Drama",
@@ -231,7 +241,7 @@
     },
     "faq": {
       "title": "Maiz egindako galderak",
-      "q1": "Zer aldetan da UpNext Netflix edo beste plataformetatik desberdina?",
+      "q1": "Zer aldetan da UpNext beste plataformetatik desberdina?",
       "a1": "UpNext zure uneko momentuan zentratzen da: nola sentitzen zaren eta zenbat arreta eskaini dezakezun oraintxe. Ez dizu zerrenda infinituak erakusten, baizik eta zure egoera eta arreta mailarekin bat datozen gomendio gutxi ongi aukeratuak une zehatz honetan.",
       "q2": "UpNext-ek niretzat erabakitzen du?",
       "a2": "Ez, UpNext-ek ez du zuretzat erabakitzen. Zure gustuetan eta zure uneko momentuan oinarritutako gomendioak erakusten dizkizu, baina zuk beti duzu kontrola. Zure egoera eta arreta maila nahi duzunean aldatu dezakezu, eta gomendioak egokituko dira.",

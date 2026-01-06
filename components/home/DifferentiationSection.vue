@@ -3,40 +3,42 @@
     <AppShell>
       <PageContainer>
         <Section>
-          <SectionTitle>{{ $t('home.differentiation.title') }}</SectionTitle>
-          <div class="grid gap-6 md:grid-cols-2">
+          <div class="home-section-title">
+            <SectionTitle>{{ $t('home.differentiation.title') }}</SectionTitle>
+          </div>
+          <div class="grid gap-8 md:gap-12 md:grid-cols-2">
             <!-- Other Platforms -->
             <Card
               padding="lg"
               custom-class="!bg-white/60 dark:!bg-gray-900/40 border-gray-300/50 dark:border-white/10"
             >
               <h3
-                class="mb-4 text-xl font-semibold text-gray-800 dark:text-gray-300"
+                class="mb-4 text-h3 font-heading font-semibold text-gray-800 dark:text-gray-300 text-center"
               >
                 {{ $t('home.differentiation.others.title') }}
               </h3>
-              <ul class="space-y-3 list-none">
-                <li class="flex items-start gap-3">
-                  <span class="text-gray-400 dark:text-gray-600 text-xl mt-0.5"
+              <ul class="space-y-4 list-none text-center">
+                <li class="flex items-center justify-center gap-3">
+                  <span class="text-gray-400 dark:text-gray-600 text-xl flex-shrink-0"
                     >×</span
                   >
-                  <span class="text-gray-800 dark:text-gray-300">{{
+                  <span class="text-body font-body text-gray-800 dark:text-gray-300">{{
                     $t('home.differentiation.others.item1')
                   }}</span>
                 </li>
-                <li class="flex items-start gap-3">
-                  <span class="text-gray-400 dark:text-gray-600 text-xl mt-0.5"
+                <li class="flex items-center justify-center gap-3">
+                  <span class="text-gray-400 dark:text-gray-600 text-xl flex-shrink-0"
                     >×</span
                   >
-                  <span class="text-gray-800 dark:text-gray-300">{{
+                  <span class="text-body font-body text-gray-800 dark:text-gray-300">{{
                     $t('home.differentiation.others.item2')
                   }}</span>
                 </li>
-                <li class="flex items-start gap-3">
-                  <span class="text-gray-400 dark:text-gray-600 text-xl mt-0.5"
+                <li class="flex items-center justify-center gap-3">
+                  <span class="text-gray-400 dark:text-gray-600 text-xl flex-shrink-0"
                     >×</span
                   >
-                  <span class="text-gray-800 dark:text-gray-300">{{
+                  <span class="text-body font-body text-gray-800 dark:text-gray-300">{{
                     $t('home.differentiation.others.item3')
                   }}</span>
                 </li>
@@ -49,26 +51,26 @@
               custom-class="!bg-white/60 dark:!bg-gray-900/40 border-primary/30 dark:border-primary/20"
             >
               <h3
-                class="mb-4 text-xl font-semibold text-gray-800 dark:text-gray-300"
+                class="mb-4 text-h3 font-heading font-semibold text-gray-800 dark:text-gray-300 text-center"
               >
                 {{ $t('home.differentiation.upnext.title') }}
               </h3>
-              <ul class="space-y-3 list-none">
-                <li class="flex items-start gap-3">
-                  <span class="text-primary text-xl mt-0.5">✓</span>
-                  <span class="text-gray-800 dark:text-gray-300">{{
+              <ul class="space-y-4 list-none text-center">
+                <li class="flex items-center justify-center gap-3">
+                  <span class="text-primary text-xl flex-shrink-0">✓</span>
+                  <span class="text-body font-body text-gray-800 dark:text-gray-300">{{
                     $t('home.differentiation.upnext.item1')
                   }}</span>
                 </li>
-                <li class="flex items-start gap-3">
-                  <span class="text-primary text-xl mt-0.5">✓</span>
-                  <span class="text-gray-800 dark:text-gray-300">{{
+                <li class="flex items-center justify-center gap-3">
+                  <span class="text-primary text-xl flex-shrink-0">✓</span>
+                  <span class="text-body font-body text-gray-800 dark:text-gray-300">{{
                     $t('home.differentiation.upnext.item2')
                   }}</span>
                 </li>
-                <li class="flex items-start gap-3">
-                  <span class="text-primary text-xl mt-0.5">✓</span>
-                  <span class="text-gray-800 dark:text-gray-300">{{
+                <li class="flex items-center justify-center gap-3">
+                  <span class="text-primary text-xl flex-shrink-0">✓</span>
+                  <span class="text-body font-body text-gray-800 dark:text-gray-300">{{
                     $t('home.differentiation.upnext.item3')
                   }}</span>
                 </li>
@@ -93,4 +95,10 @@ import { useSupabaseUser } from '#imports';
 const user = useSupabaseUser();
 const showHero = computed(() => !user.value);
 </script>
+
+<style scoped>
+.home-section-title :deep(h2) {
+  font-size: clamp(2rem, 4vw, 3rem) !important;
+}
+</style>
 

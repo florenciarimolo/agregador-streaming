@@ -3,29 +3,31 @@
     <AppShell>
       <PageContainer>
         <Section>
-          <SectionTitle>{{ $t('home.problem.title') }}</SectionTitle>
-          <Card padding="lg" custom-class="!bg-white/60 dark:!bg-gray-900/40">
-            <ul class="space-y-4 list-none">
-              <li class="flex items-start gap-3">
-                <span class="text-primary text-xl mt-0.5">•</span>
-                <span class="text-gray-800 dark:text-gray-300">{{
+          <div class="home-section-title">
+            <SectionTitle>{{ $t('home.problem.title') }}</SectionTitle>
+          </div>
+          <Card padding="lg" custom-class="!bg-white/60 dark:!bg-gray-900/40 !p-8 md:!p-12">
+            <ul class="space-y-6 list-none text-left">
+              <li class="flex items-start gap-4">
+                <span class="text-primary text-xl mt-0.5 flex-shrink-0">•</span>
+                <span class="text-body font-body text-gray-800 dark:text-gray-300">{{
                   $t('home.problem.bullet1')
                 }}</span>
               </li>
-              <li class="flex items-start gap-3">
-                <span class="text-primary text-xl mt-0.5">•</span>
-                <span class="text-gray-800 dark:text-gray-300">{{
+              <li class="flex items-start gap-4">
+                <span class="text-primary text-xl mt-0.5 flex-shrink-0">•</span>
+                <span class="text-body font-body text-gray-800 dark:text-gray-300">{{
                   $t('home.problem.bullet2')
                 }}</span>
               </li>
-              <li class="flex items-start gap-3">
-                <span class="text-primary text-xl mt-0.5">•</span>
-                <span class="text-gray-800 dark:text-gray-300">{{
+              <li class="flex items-start gap-4">
+                <span class="text-primary text-xl mt-0.5 flex-shrink-0">•</span>
+                <span class="text-body font-body text-gray-800 dark:text-gray-300">{{
                   $t('home.problem.bullet3')
                 }}</span>
               </li>
             </ul>
-            <p class="mt-6 text-gray-800 dark:text-gray-300">
+            <p class="mt-8 text-body font-body text-gray-800 dark:text-gray-300 text-center">
               {{ $t('home.problem.closure') }}
             </p>
           </Card>
@@ -47,4 +49,10 @@ import { useSupabaseUser } from '#imports';
 const user = useSupabaseUser();
 const showHero = computed(() => !user.value);
 </script>
+
+<style scoped>
+.home-section-title :deep(h2) {
+  font-size: clamp(2rem, 4vw, 3rem) !important;
+}
+</style>
 

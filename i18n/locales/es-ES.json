@@ -144,7 +144,8 @@
     "description": "UpNext te recomienda películas y series según cómo te sientes y tu **nivel de atención en este momento**.",
     "tagline": "Menos decidir. Más ver.",
     "discoverButton": "Descubrir qué ver ahora",
-    "howItWorksButton": "Saber cómo funciona"
+    "howItWorksButton": "Saber cómo funciona",
+    "exploreDiscover": "O explora Discover a tu ritmo"
   },
   "home": {
     "generatingRecommendations": "Generando recomendaciones",
@@ -200,13 +201,42 @@
         "title": "Recibe recomendaciones",
         "description": "Encuentra contenido perfecto para ahora."
       },
-      "mockup": {
-        "mainTitle": "Ejemplo de recomendación",
-        "mainType": "Película · Drama",
-        "mainDescription": "Una historia que encaja perfectamente con tu momento actual.",
-        "alternatives": "Alternativas",
-        "alternativeTitle": "Opción {number}"
+      "step4": {
+        "title": "Gestiona tus recomendaciones",
+        "description": "Marca como vista, añade a favoritos o guarda para más tarde."
       }
+    },
+    "discover": {
+      "title": "¿Prefieres explorar a tu ritmo?",
+      "description": "Cuando no quieres decidir ahora. Explora listas curadas sin filtros ni decisiones.",
+      "cta": "Explorar Discover",
+      "list1": {
+        "title": "Películas de culto",
+        "description": "Clásicos que han marcado generaciones",
+        "count": "45 títulos"
+      },
+      "list2": {
+        "title": "Series para maratonear",
+        "description": "Ideal para un fin de semana largo",
+        "count": "32 títulos"
+      },
+      "list3": {
+        "title": "Thrillers psicológicos",
+        "description": "Suspense que te mantiene en vilo",
+        "count": "28 títulos"
+      },
+      "list4": {
+        "title": "Comedias románticas",
+        "description": "Para relajarte y sonreír",
+        "count": "38 títulos"
+      }
+    },
+    "mockup": {
+      "mainTitle": "Ejemplo de recomendación",
+      "mainType": "Película · Drama",
+      "mainDescription": "Una historia que encaja perfectamente con tu momento actual.",
+      "alternatives": "Alternativas",
+      "alternativeTitle": "Opción {number}"
     },
     "differentiation": {
       "title": "No es otra lista más",
@@ -231,7 +261,7 @@
     },
     "faq": {
       "title": "Preguntas frecuentes",
-      "q1": "¿En qué se diferencia UpNext de Netflix u otras plataformas?",
+      "q1": "¿En qué se diferencia UpNext de otras plataformas?",
       "a1": "UpNext se centra en tu momento actual: cómo te sientes y cuánta atención puedes dedicar ahora. No te muestra listas infinitas, sino pocas recomendaciones bien elegidas que encajan con tu estado de ánimo y nivel de atención en este momento específico.",
       "q2": "¿UpNext decide por mí?",
       "a2": "No, UpNext no decide por ti. Te muestra recomendaciones basadas en tus gustos y tu momento actual, pero tú siempre tienes el control. Puedes cambiar tu estado de ánimo y nivel de atención cuando quieras, y las recomendaciones se ajustarán.",

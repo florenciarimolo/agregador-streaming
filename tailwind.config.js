@@ -21,7 +21,7 @@ export default {
           'sans-serif',
         ],
         heading: [
-          'Oswald',
+          'Satoshi',
           'Inter',
           'system-ui',
           '-apple-system',
@@ -30,6 +30,36 @@ export default {
           'Roboto',
           'sans-serif',
         ],
+        body: [
+          'Inter',
+          'system-ui',
+          '-apple-system',
+          'BlinkMacSystemFont',
+          'Segoe UI',
+          'Roboto',
+          'sans-serif',
+        ],
+      },
+      fontSize: {
+        // Semantic typography tokens - DO NOT use direct sizes (text-xl, text-sm) for critical typography
+        // Use these semantic tokens instead: text-hero, text-h1, text-h2, text-subtitle, text-body, text-label
+        // IMPORTANT: 'hero' is ONLY for the main Hero H1. No other section should use this size.
+        'hero': ['clamp(2.5rem, 8vw, 6rem)', { lineHeight: '1.1', letterSpacing: '-0.03em' }], // Responsive: 56px-96px - Hero title (LANDING ONLY) - MUY GRANDE para imponer
+        'h1': ['2.25rem', { lineHeight: '1.2', letterSpacing: '-0.02em' }], // 36px - Page titles (non-hero)
+        'h2': ['clamp(2rem, 4vw, 3rem)', { lineHeight: '1.25', letterSpacing: '-0.01em' }], // Responsive: 32px-48px - Section titles (AUMENTADO para mejor jerarquía)
+        'h3': ['1.5rem', { lineHeight: '1.3', letterSpacing: '0' }], // 24px - Subsection titles
+        'subtitle': ['1.25rem', { lineHeight: '1.5', letterSpacing: '0' }], // 20px - Supporting text (increased from 18px)
+        'body': ['1rem', { lineHeight: '1.6', letterSpacing: '0' }], // 16px - Body text
+        'label': ['0.75rem', { lineHeight: '1.4', letterSpacing: '0.12em' }], // 12px - UI labels (uppercase)
+        'overline': ['0.75rem', { lineHeight: '1', letterSpacing: '0.12em' }], // 12px - Section overlines (uppercase)
+      },
+      letterSpacing: {
+        'overline': '0.12em', // For section labels and UI labels
+      },
+      fontWeight: {
+        'heading': '600', // For H1, H2, H3
+        'body': '400', // For body text
+        'label': '500', // For labels and overlines
       },
       colors: {
         primary: {

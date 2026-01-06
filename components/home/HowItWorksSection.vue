@@ -3,60 +3,80 @@
     <AppShell>
       <PageContainer>
         <Section>
-          <SectionTitle>{{ $t('home.howItWorksTitle') }}</SectionTitle>
-          <div class="grid gap-4 md:grid-cols-3">
+          <div class="home-section-title">
+            <SectionTitle>{{ $t('home.howItWorksTitle') }}</SectionTitle>
+          </div>
+          <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
             <Card
               padding="lg"
-              custom-class="!bg-white/60 dark:!bg-gray-900/40 md:p-8 relative overflow-hidden group hover:border-primary/50 dark:hover:border-purple-500/30 transition-colors flex flex-col text-center"
+              custom-class="!bg-white/60 dark:!bg-gray-900/40 md:p-6 relative overflow-hidden group hover:border-primary/50 dark:hover:border-purple-500/30 transition-colors flex flex-col !col-span-1"
             >
               <div
-                class="flex justify-center items-center mx-auto mb-4 w-16 h-16 bg-gradient-to-r rounded-full from-primary to-accent"
+                class="flex justify-center items-center mb-4 w-14 h-14 bg-gradient-to-r rounded-full from-primary to-accent mx-auto"
               >
-                <span class="text-2xl font-bold text-white">1</span>
+                <span class="text-xl font-bold text-white">1</span>
               </div>
               <h3
-                class="mb-2 text-xl font-semibold text-gray-800 dark:text-gray-300 font-heading"
+                class="mb-3 text-h3 font-heading font-semibold text-gray-800 dark:text-gray-300 text-center"
               >
                 {{ $t('home.step1Title') }}
               </h3>
-              <p class="text-gray-800 dark:text-gray-300">
+              <p class="text-body font-body text-gray-600 dark:text-gray-400 text-center">
                 {{ $t('home.step1Description') }}
               </p>
             </Card>
             <Card
               padding="lg"
-              custom-class="!bg-white/60 dark:!bg-gray-900/40 md:p-8 relative overflow-hidden group hover:border-primary/50 dark:hover:border-purple-500/30 transition-colors flex flex-col text-center"
+              custom-class="!bg-white/60 dark:!bg-gray-900/40 md:p-6 relative overflow-hidden group hover:border-primary/50 dark:hover:border-purple-500/30 transition-colors flex flex-col !col-span-1"
             >
               <div
-                class="flex justify-center items-center mx-auto mb-4 w-16 h-16 bg-gradient-to-r rounded-full from-accent to-secondary"
+                class="flex justify-center items-center mb-4 w-14 h-14 bg-gradient-to-r rounded-full from-accent to-secondary mx-auto"
               >
-                <span class="text-2xl font-bold text-white">2</span>
+                <span class="text-xl font-bold text-white">2</span>
               </div>
               <h3
-                class="mb-2 text-xl font-semibold text-gray-800 dark:text-gray-300 font-heading"
+                class="mb-3 text-h3 font-heading font-semibold text-gray-800 dark:text-gray-300 text-center"
               >
                 {{ $t('home.step2Title') }}
               </h3>
-              <p class="text-gray-800 dark:text-gray-300">
+              <p class="text-body font-body text-gray-600 dark:text-gray-400 text-center">
                 {{ $t('home.step2Description') }}
               </p>
             </Card>
             <Card
               padding="lg"
-              custom-class="!bg-white/60 dark:!bg-gray-900/40 md:p-8 relative overflow-hidden group hover:border-primary/50 dark:hover:border-purple-500/30 transition-colors flex flex-col text-center"
+              custom-class="!bg-white/60 dark:!bg-gray-900/40 md:p-6 relative overflow-hidden group hover:border-primary/50 dark:hover:border-purple-500/30 transition-colors flex flex-col !col-span-1"
             >
               <div
-                class="flex justify-center items-center mx-auto mb-4 w-16 h-16 bg-gradient-to-r rounded-full from-secondary to-pink"
+                class="flex justify-center items-center mb-4 w-14 h-14 bg-gradient-to-r rounded-full from-secondary to-pink mx-auto"
               >
-                <span class="text-2xl font-bold text-white">3</span>
+                <span class="text-xl font-bold text-white">3</span>
               </div>
               <h3
-                class="mb-2 text-xl font-semibold text-gray-800 dark:text-gray-300 font-heading"
+                class="mb-3 text-h3 font-heading font-semibold text-gray-800 dark:text-gray-300 text-center"
               >
                 {{ $t('home.step3Title') }}
               </h3>
-              <p class="text-gray-800 dark:text-gray-300">
+              <p class="text-body font-body text-gray-600 dark:text-gray-400 text-center">
                 {{ $t('home.step3Description') }}
+              </p>
+            </Card>
+            <Card
+              padding="lg"
+              custom-class="!bg-white/60 dark:!bg-gray-900/40 md:p-6 relative overflow-hidden group hover:border-primary/50 dark:hover:border-purple-500/30 transition-colors flex flex-col !col-span-1"
+            >
+              <div
+                class="flex justify-center items-center mb-4 w-14 h-14 bg-gradient-to-r rounded-full from-pink to-primary mx-auto"
+              >
+                <span class="text-xl font-bold text-white">4</span>
+              </div>
+              <h3
+                class="mb-3 text-h3 font-heading font-semibold text-gray-800 dark:text-gray-300 text-center"
+              >
+                {{ $t('home.step4.title') }}
+              </h3>
+              <p class="text-body font-body text-gray-600 dark:text-gray-400 text-center">
+                {{ $t('home.step4.description') }}
               </p>
             </Card>
           </div>
@@ -78,4 +98,21 @@ import { useSupabaseUser } from '#imports';
 const user = useSupabaseUser();
 const showHero = computed(() => !user.value);
 </script>
+
+<style scoped>
+.home-section-title :deep(h2) {
+  font-size: clamp(2rem, 4vw, 3rem) !important;
+}
+
+/* Asegurar que el grid funcione correctamente */
+.grid {
+  display: grid;
+}
+
+@media (min-width: 768px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+</style>
 

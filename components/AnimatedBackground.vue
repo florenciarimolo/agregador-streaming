@@ -18,46 +18,12 @@
       ></div>
     </div>
 
-    <!-- Neural network connections -->
+    <!-- Neural network nodes (sin conexiones/líneas) -->
     <svg
       class="neural-network"
       viewBox="0 0 1000 1000"
       preserveAspectRatio="xMidYMid slice"
     >
-      <defs>
-        <linearGradient
-          id="connectionGradient"
-          x1="0%"
-          y1="0%"
-          x2="100%"
-          y2="100%"
-        >
-          <stop
-            offset="0%"
-            :style="`stop-color: rgba(33, 24, 110, 0.3); stop-opacity: 1`"
-          />
-          <stop
-            offset="50%"
-            :style="`stop-color: rgba(139, 92, 246, 0.2); stop-opacity: 1`"
-          />
-          <stop
-            offset="100%"
-            :style="`stop-color: rgba(33, 24, 110, 0.1); stop-opacity: 0`"
-          />
-        </linearGradient>
-      </defs>
-      <g class="connections">
-        <line
-          v-for="(connection, idx) in neuralConnections"
-          :key="`connection-${idx}`"
-          :x1="connection.x1"
-          :y1="connection.y1"
-          :x2="connection.x2"
-          :y2="connection.y2"
-          class="connection-line"
-          :style="`animation-delay: ${connection.delay}s`"
-        />
-      </g>
       <g class="nodes">
         <circle
           v-for="(node, idx) in neuralNodes"
@@ -112,27 +78,6 @@ const generateNeuralNodes = () => {
 };
 
 const neuralNodes = generateNeuralNodes();
-
-// Generate neural network connections (once on component creation)
-const generateNeuralConnections = () => {
-  const connections = [];
-  for (let i = 0; i < neuralNodes.length; i++) {
-    for (let j = i + 1; j < Math.min(i + 3, neuralNodes.length); j++) {
-      if (Math.random() > 0.6) {
-        connections.push({
-          x1: neuralNodes[i].x,
-          y1: neuralNodes[i].y,
-          x2: neuralNodes[j].x,
-          y2: neuralNodes[j].y,
-          delay: Math.random() * 2,
-        });
-      }
-    }
-  }
-  return connections;
-};
-
-const neuralConnections = generateNeuralConnections();
 
 // Generate particle styles (use index as seed for consistent positioning)
 const getParticleStyle = (index: number) => {
@@ -323,25 +268,6 @@ const getCardStyle = (index: number) => {
   opacity: 0.6;
 }
 
-.connection-line {
-  stroke: url(#connectionGradient);
-  stroke-width: 1;
-  opacity: 0;
-  animation: connectionPulse 4s ease-in-out infinite;
-}
-
-@keyframes connectionPulse {
-  0%,
-  100% {
-    opacity: 0;
-    stroke-width: 0.5;
-  }
-  50% {
-    opacity: 0.6;
-    stroke-width: 1.5;
-  }
-}
-
 .neural-node {
   fill: rgba(33, 24, 110, 0.4);
   opacity: 0;
@@ -494,11 +420,6 @@ const getCardStyle = (index: number) => {
 
   .particle {
     animation: none;
-  }
-
-  .connection-line {
-    animation: none;
-    opacity: 0.3;
   }
 
   .neural-node {

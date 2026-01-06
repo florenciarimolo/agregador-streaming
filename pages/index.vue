@@ -16,10 +16,11 @@ import Button from '@/components/ui/Button.vue';
 import ProblemSection from '@/components/home/ProblemSection.vue';
 import ProductFlowSection from '@/components/home/ProductFlowSection.vue';
 import DifferentiationSection from '@/components/home/DifferentiationSection.vue';
-import HowItWorksSection from '@/components/home/HowItWorksSection.vue';
+import DiscoverSection from '@/components/home/DiscoverSection.vue';
 import ProductValueSection from '@/components/home/ProductValueSection.vue';
 import FaqSection from '@/components/home/FaqSection.vue';
 import FinalCtaSection from '@/components/home/FinalCtaSection.vue';
+import AnimatedBackground from '@/components/AnimatedBackground.vue';
 
 // Middleware handles onboarding check - if user has session, onboarding is completed
 definePageMeta({
@@ -101,6 +102,16 @@ watchEffect(() => {
       },
     ],
     link: seoLinks,
+    htmlAttrs: isAuthenticated
+      ? {}
+      : {
+          class: 'home-page-dark-bg',
+        },
+    bodyAttrs: isAuthenticated
+      ? {}
+      : {
+          class: 'home-page-dark-bg',
+        },
   });
 
   useSeoMeta({
@@ -304,7 +315,12 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="w-full">
+  <div class="w-full relative">
+    <!-- Animated Background - Solo cuando no hay sesión, fijo al hacer scroll -->
+    <ClientOnly>
+      <AnimatedBackground v-if="showHero" />
+    </ClientOnly>
+
     <!-- Global Loading State - Show while state is initializing -->
     <ClientOnly>
       <template #default>
@@ -344,6 +360,7 @@ onMounted(() => {
             :button-text="$t('hero.discoverButton')"
             :show-auth-form="showAuthForm"
             :is-authenticated="false"
+            :hide-background="true"
             @auth-success="handleAuthSuccess"
             @signup-success="handleSignupSuccess"
           />
@@ -356,8 +373,8 @@ onMounted(() => {
       <!-- New Landing Page Sections (only for non-authenticated users) -->
       <ProblemSection />
       <ProductFlowSection />
+      <DiscoverSection />
       <DifferentiationSection />
-      <HowItWorksSection />
       <ProductValueSection />
       <FaqSection />
       <FinalCtaSection />
@@ -378,7 +395,7 @@ onMounted(() => {
                   >
                     <div class="flex flex-col gap-2">
                       <label
-                        class="text-xs font-semibold tracking-wide text-gray-800 uppercase dark:text-gray-300"
+                        class="text-label uppercase tracking-overline font-label text-gray-800 dark:text-gray-300"
                       >
                         {{ $t('home.contentTypeFilter') }}
                       </label>
@@ -416,29 +433,15 @@ onMounted(() => {
 
               <!-- Skeleton loading -->
               <Section v-if="showSkeleton && loading && !hasAttemptedLoad">
-                <div class="space-y-4 md:space-y-8">
-                  <!-- First row: full row -->
-                  <div
-                    class="grid grid-cols-2 gap-4 md:grid-cols-5 lg:grid-cols-6 overflow-visible"
-                  >
-                    <SkeletonMediaCard
-                      v-for="i in 6"
-                      :key="`skeleton-${i}`"
-                      :show-rating="i % 3 !== 0"
-                      :show-watchlist="i % 4 === 0"
-                    />
-                  </div>
-                  <!-- Second row: only 2 cards -->
-                  <div
-                    class="grid grid-cols-2 gap-4 md:grid-cols-5 lg:grid-cols-6 overflow-visible"
-                  >
-                    <SkeletonMediaCard
-                      v-for="i in 2"
-                      :key="`skeleton-${i + 6}`"
-                      :show-rating="(i + 6) % 3 !== 0"
-                      :show-watchlist="(i + 6) % 4 === 0"
-                    />
-                  </div>
+                <div
+                  class="grid grid-cols-2 gap-4 md:grid-cols-5 lg:grid-cols-6 overflow-visible"
+                >
+                  <SkeletonMediaCard
+                    v-for="i in 20"
+                    :key="`skeleton-${i}`"
+                    :show-rating="i % 3 !== 0"
+                    :show-watchlist="i % 4 === 0"
+                  />
                 </div>
               </Section>
 
@@ -460,11 +463,13 @@ onMounted(() => {
                       />
                     </svg>
                     <h3
-                      class="mb-2 text-xl font-semibold text-gray-800 dark:text-gray-300 font-heading"
+                      class="mb-2 text-h3 font-heading font-semibold text-gray-800 dark:text-gray-300"
                     >
                       {{ $t('home.noRegion') }}
                     </h3>
-                    <p class="mb-6 text-gray-800 dark:text-gray-300">
+                    <p
+                      class="mb-6 text-body font-body text-gray-800 dark:text-gray-300"
+                    >
                       {{ $t('home.noRegionDescription') }}
                     </p>
                     <nuxt-link
@@ -495,11 +500,13 @@ onMounted(() => {
                       />
                     </svg>
                     <h3
-                      class="mb-2 text-xl font-semibold text-gray-800 dark:text-gray-300 font-heading"
+                      class="mb-2 text-h3 font-heading font-semibold text-gray-800 dark:text-gray-300"
                     >
                       {{ $t('home.noRecommendations') }}
                     </h3>
-                    <p class="mb-6 text-gray-800 dark:text-gray-300">
+                    <p
+                      class="mb-6 text-body font-body text-gray-800 dark:text-gray-300"
+                    >
                       {{ $t('home.noRecommendationsDescription') }}
                     </p>
                     <nuxt-link
@@ -517,11 +524,13 @@ onMounted(() => {
                 <div class="py-12 text-center">
                   <div class="mx-auto w-full max-w-md">
                     <h3
-                      class="mb-3 text-xl font-semibold text-gray-800 dark:text-gray-300"
+                      class="mb-3 text-h3 font-heading font-semibold text-gray-800 dark:text-gray-300"
                     >
                       {{ $t('home.noResultsWithFilters') }}
                     </h3>
-                    <p class="mb-6 text-gray-600 dark:text-gray-400">
+                    <p
+                      class="mb-6 text-body font-body text-gray-600 dark:text-gray-400"
+                    >
                       {{ $t('home.noResultsWithFiltersDescription') }}
                     </p>
                     <div class="flex justify-center">
@@ -573,3 +582,12 @@ onMounted(() => {
     </template>
   </div>
 </template>
+
+<style>
+/* Background negro muy oscuro solo para la página de inicio cuando no hay sesión */
+.home-page-dark-bg,
+.home-page-dark-bg html,
+.home-page-dark-bg body {
+  background-color: #0a0a0a !important;
+}
+</style>
