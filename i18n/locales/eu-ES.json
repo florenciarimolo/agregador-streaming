@@ -141,10 +141,10 @@
   },
   "hero": {
     "title": "Ez dakizu orain zer ikusi?",
-    "description": "UpNext-ek zure unea, energia eta denbora kontuan hartuta filmak eta telesailak gomendatzen dizkizu.",
-    "tagline": "Gutxiago erabakitzea, gehiago ikustea.",
-    "discoverButton": "Zer ikusi aurkitu",
-    "howItWorksButton": "Gehiago jakin"
+    "description": "UpNext-ek nola sentitzen zaren eta zure **arreta maila oraintxe bertan** kontuan hartuta filmak eta telesailak gomendatzen dizkizu.",
+    "tagline": "Gutxiago erabakitzea. Gehiago ikustea.",
+    "discoverButton": "Zer ikusi orain aurkitu",
+    "howItWorksButton": "Nola funtzionatzen duen jakin"
   },
   "home": {
     "generatingRecommendations": "Generando recomendaciones",
@@ -171,13 +171,79 @@
     "contentTypeAll": "Todo",
     "contentTypeMovie": "Filmak",
     "contentTypeTv": "Telesailak",
-    "howItWorksTitle": "Cómo funciona",
-    "step1Title": "Dinos qué te gusta",
-    "step1Description": "Selecciona hasta 10 filmak y telesailak que disfrutas. Esto nos ayuda a conocerte mejor.",
-    "step2Title": "Cuéntanos tu momento",
-    "step2Description": "Indica cómo te sientes, tu nivel de energía y el tiempo que tienes disponible.",
-    "step3Title": "Te decimos qué ver ahora",
-    "step3Description": "Recibe recomendaciones personalizadas basadas en tus gustos y tu momento actual.",
+    "howItWorksTitle": "Nola funtzionatzen duen",
+    "step1Title": "Esaguzu zer gustatzen zaizun",
+    "step1Description": "Aukeratu film eta telesail batzuk ezagutzeko.",
+    "step2Title": "Esaguzu zure unea",
+    "step2Description": "Nola sentitzen zaren eta zenbat arreta eskaini dezakezun oraintxe.",
+    "step3Title": "Zer ikusi esaten dizugu",
+    "step3Description": "Une zehatz honetarako pentsatutako gomendioak.",
+    "problem": {
+      "title": "Zer ikusi aukeratzea agortzailea bihurtu da",
+      "bullet1": "Opcion gehiegi, argitasun gutxi",
+      "bullet2": "Zure momentuarekin inoiz bat ez datozen gauzak gordetzen dituzu",
+      "bullet3": "Zure arreta gaur ez da atzo bezalakoa",
+      "closure": "UpNext frikzioa hori ezabatzeko existitzen da."
+    },
+    "productFlow": {
+      "title": "UpNext honela funtzionatzen du",
+      "description": "Zure momentuarekin bat datorren zerbait aurkitzeko hiru urrats sinple.",
+      "step1": {
+        "title": "Aukeratu zure unea",
+        "description": "Aukeratu nola sentitzen zaren eta zure arreta maila."
+      },
+      "step2": {
+        "title": "Berretsi zure unea",
+        "description": "Berrikusi zure aukera eta jarraitu."
+      },
+      "step3": {
+        "title": "Jaso gomendioak",
+        "description": "Aurki oraintxe bertarako eduki perfektua."
+      },
+      "mockup": {
+        "mainTitle": "Gomendio adibidea",
+        "mainType": "Filma · Drama",
+        "mainDescription": "Zure uneko momentuarekin perfektuki bat datorren istorioa.",
+        "alternatives": "Alternatibak",
+        "alternativeTitle": "Aukera {number}"
+      }
+    },
+    "differentiation": {
+      "title": "Ez da beste zerrenda bat",
+      "others": {
+        "title": "Beste plataformak",
+        "item1": "Gomendio generikoak",
+        "item2": "Historialean soilik oinarrituta",
+        "item3": "Zerrenda infinituak"
+      },
+      "upnext": {
+        "title": "UpNext",
+        "item1": "Zure uneko momentuan oinarrituta",
+        "item2": "Zure arreta maila kontuan hartzen du",
+        "item3": "Aukera gutxi, ongi aukeratuak"
+      }
+    },
+    "value": {
+      "title": "Gutxiago erabakitzea. Gehiago gozatzea.",
+      "block1": "Pertsona errealentzat pentsatua: zure arreta aldatzen da, UpNext-ek ulertzen du.",
+      "block2": "Ez aukera infinituak: gomendio argi gutxi.",
+      "block3": "Zure momentua garrantzitsua da: ez dugu gaur eta bihar gauza bera gomendatzen."
+    },
+    "faq": {
+      "title": "Maiz egindako galderak",
+      "q1": "Zer aldetan da UpNext Netflix edo beste plataformetatik desberdina?",
+      "a1": "UpNext zure uneko momentuan zentratzen da: nola sentitzen zaren eta zenbat arreta eskaini dezakezun oraintxe. Ez dizu zerrenda infinituak erakusten, baizik eta zure egoera eta arreta mailarekin bat datozen gomendio gutxi ongi aukeratuak une zehatz honetan.",
+      "q2": "UpNext-ek niretzat erabakitzen du?",
+      "a2": "Ez, UpNext-ek ez du zuretzat erabakitzen. Zure gustuetan eta zure uneko momentuan oinarritutako gomendioak erakusten dizkizu, baina zuk beti duzu kontrola. Zure egoera eta arreta maila nahi duzunean aldatu dezakezu, eta gomendioak egokituko dira.",
+      "q3": "Zerrendak sortu behar ditut?",
+      "a3": "Ez da beharrezkoa zerrendak sortzea. UpNext zure hobespenekin (gustatzen zaizkizun filmak eta telesailak) eta zure uneko momentuarekin funtzionatzen du. Geroago gordetzeko tituluak gorde ditzakezu nahi baduzu, baina ez da beharrezkoa.",
+      "q4": "Nire arreta maila nahi dudanean alda dezakezu?",
+      "a4": "Bai, zure egoera eta arreta maila edozein unetan aldatu dezakezu. Gomendioak automatikoki eguneratuko dira zure uneko momentu berria islatzeko."
+    },
+    "finalCta": {
+      "text": "Zuk hartutako erabakia da, baina pentsatu gabe.",
+      "button": "Zer ikusi orain aurkitu"
+    },
     "manualGenerateHint": "Si ya esperaste un momento y no aparecen recomendaciones, haz clic en el botón para generarlas manualmente.",
     "addFavorites": "Agregar favoritos",
     "noResultsWithFilters": "No hemos encontrado nada con estos filtros",

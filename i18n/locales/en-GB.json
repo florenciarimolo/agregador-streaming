@@ -141,10 +141,10 @@
   },
   "hero": {
     "title": "Don't know what to watch now?",
-    "description": "UpNext recommends movies and TV shows based on your mood, energy, and available time.",
-    "tagline": "Less deciding, more watching.",
-    "discoverButton": "Discover what to watch",
-    "howItWorksButton": "Learn more"
+    "description": "UpNext recommends movies and TV shows based on how you feel and your **attention level right now**.",
+    "tagline": "Less deciding. More watching.",
+    "discoverButton": "Discover what to watch now",
+    "howItWorksButton": "Learn how it works"
   },
   "home": {
     "generatingRecommendations": "Generating recommendations",
@@ -173,11 +173,77 @@
     "contentTypeTv": "TV Shows",
     "howItWorksTitle": "How it works",
     "step1Title": "Tell us what you like",
-    "step1Description": "Select up to 10 movies and TV shows you enjoy. This helps us get to know you better.",
+    "step1Description": "Select some movies and TV shows so we can get to know you.",
     "step2Title": "Tell us your moment",
-    "step2Description": "Indicate how you feel, your energy level, and the time you have available.",
-    "step3Title": "We tell you what to watch now",
-    "step3Description": "Receive personalized recommendations based on your preferences and current moment.",
+    "step2Description": "How you feel and how much attention you can dedicate right now.",
+    "step3Title": "We tell you what to watch",
+    "step3Description": "Recommendations tailored for this specific moment.",
+    "problem": {
+      "title": "Choosing what to watch has become exhausting",
+      "bullet1": "Too many options, little clarity",
+      "bullet2": "You save things that never fit your moment",
+      "bullet3": "Your attention today is not the same as yesterday",
+      "closure": "UpNext exists to eliminate that friction."
+    },
+    "productFlow": {
+      "title": "How UpNext works",
+      "description": "Three simple steps to find something that fits your moment.",
+      "step1": {
+        "title": "Select your moment",
+        "description": "Choose how you feel and your attention level."
+      },
+      "step2": {
+        "title": "Confirm your moment",
+        "description": "Review your selection and continue."
+      },
+      "step3": {
+        "title": "Get recommendations",
+        "description": "Find perfect content for right now."
+      },
+      "mockup": {
+        "mainTitle": "Example recommendation",
+        "mainType": "Movie · Drama",
+        "mainDescription": "A story that fits perfectly with your current moment.",
+        "alternatives": "Alternatives",
+        "alternativeTitle": "Option {number}"
+      }
+    },
+    "differentiation": {
+      "title": "It's not just another list",
+      "others": {
+        "title": "Other platforms",
+        "item1": "Generic recommendations",
+        "item2": "Based only on history",
+        "item3": "Infinite lists"
+      },
+      "upnext": {
+        "title": "UpNext",
+        "item1": "Based on your current moment",
+        "item2": "Takes into account your attention level",
+        "item3": "Few options, well chosen"
+      }
+    },
+    "value": {
+      "title": "Less deciding. More enjoying.",
+      "block1": "Designed for real people: your attention changes, UpNext understands.",
+      "block2": "No infinite options: few clear recommendations.",
+      "block3": "Your moment matters: we don't recommend the same thing today as tomorrow."
+    },
+    "faq": {
+      "title": "Frequently asked questions",
+      "q1": "How is UpNext different from Netflix or other platforms?",
+      "a1": "UpNext focuses on your current moment: how you feel and how much attention you can dedicate right now. It doesn't show you infinite lists, but rather few well-chosen recommendations that fit your mood and attention level at this specific moment.",
+      "q2": "Does UpNext decide for me?",
+      "a2": "No, UpNext doesn't decide for you. It shows you recommendations based on your tastes and your current moment, but you always have control. You can change your mood and attention level whenever you want, and the recommendations will adjust.",
+      "q3": "Do I have to create lists?",
+      "a3": "You don't need to create lists. UpNext works with your preferences (movies and TV shows you like) and your current moment. You can save titles for later if you want, but it's not required.",
+      "q4": "Can I change my attention level whenever I want?",
+      "a4": "Yes, you can change your mood and attention level at any time. The recommendations will update automatically to reflect your new moment."
+    },
+    "finalCta": {
+      "text": "It's a decision made by you, but without thinking.",
+      "button": "Discover what to watch now"
+    },
     "manualGenerateHint": "If you've already waited a moment and recommendations don't appear, click the button to generate them manually.",
     "addFavorites": "Add favorites",
     "noResultsWithFilters": "No hemos encontrado nada con estos filtros",

@@ -14,6 +14,7 @@
     "postinstall": "cross-env NODE_OPTIONS=--no-warnings nuxt prepare",
     "lint": "eslint . --ext .ts,.vue",
     "typecheck": "nuxt prepare && vue-tsc -b",
+    "clean": "rm -rf .nuxt .output .nitro .nitro.json node_modules/.vite node_modules/.cache",
     "supabase:start": "supabase start",
     "supabase:stop": "supabase stop",
     "supabase:status": "supabase status",

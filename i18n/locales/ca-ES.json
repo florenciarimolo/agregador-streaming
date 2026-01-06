@@ -141,10 +141,10 @@
   },
   "hero": {
     "title": "No saps què veure ara?",
-    "description": "UpNext et recomana pel·lícules i sèries segons el teu moment, la teva energia i el temps que tens.",
-    "tagline": "Menys decidir, més veure.",
-    "discoverButton": "Descobrir què veure",
-    "howItWorksButton": "Saber més"
+    "description": "UpNext et recomana pel·lícules i sèries segons com et sents i el teu **nivell d'atenció en aquest moment**.",
+    "tagline": "Menys decidir. Més veure.",
+    "discoverButton": "Descobrir què veure ara",
+    "howItWorksButton": "Saber com funciona"
   },
   "home": {
     "generatingRecommendations": "Generant recomanacions",
@@ -173,11 +173,77 @@
     "contentTypeTv": "Sèries",
     "howItWorksTitle": "Com funciona",
     "step1Title": "Digues-nos què t'agrada",
-    "step1Description": "Selecciona fins a 10 pel·lícules i sèries que gaudeixes. Això ens ajuda a conèixer-te millor.",
+    "step1Description": "Selecciona algunes pel·lícules i sèries per conèixer-te.",
     "step2Title": "Explica'ns el teu moment",
-    "step2Description": "Indica com et sents, el teu nivell d'energia i el temps que tens disponible.",
-    "step3Title": "Et diem què veure ara",
-    "step3Description": "Rep recomanacions personalitzades basades en els teus gustos i el teu moment actual.",
+    "step2Description": "Com et sents i quanta atenció pots dedicar ara.",
+    "step3Title": "Et diem què veure",
+    "step3Description": "Recomanacions pensades per a aquest moment concret.",
+    "problem": {
+      "title": "Elegir què veure s'ha tornat agotador",
+      "bullet1": "Massa opcions, poca claredat",
+      "bullet2": "Guardeixes coses que mai encaixen amb el teu moment",
+      "bullet3": "La teva atenció avui no és la mateixa que ahir",
+      "closure": "UpNext existeix per eliminar aquesta fricció."
+    },
+    "productFlow": {
+      "title": "Així funciona UpNext",
+      "description": "Tres passos simples per trobar alguna cosa que encaixi amb el teu moment.",
+      "step1": {
+        "title": "Selecciona el teu moment",
+        "description": "Tria com et sents i el teu nivell d'atenció."
+      },
+      "step2": {
+        "title": "Confirma el teu moment",
+        "description": "Revisa la teva selecció i continua."
+      },
+      "step3": {
+        "title": "Rep recomanacions",
+        "description": "Troba contingut perfecte per ara."
+      },
+      "mockup": {
+        "mainTitle": "Exemple de recomanació",
+        "mainType": "Pel·lícula · Drama",
+        "mainDescription": "Una història que encaixa perfectament amb el teu moment actual.",
+        "alternatives": "Alternatives",
+        "alternativeTitle": "Opció {number}"
+      }
+    },
+    "differentiation": {
+      "title": "No és una altra llista més",
+      "others": {
+        "title": "Altres plataformes",
+        "item1": "Recomanacions genèriques",
+        "item2": "Basades només en historial",
+        "item3": "Llistes infinites"
+      },
+      "upnext": {
+        "title": "UpNext",
+        "item1": "Basat en el teu moment actual",
+        "item2": "Té en compte el teu nivell d'atenció",
+        "item3": "Poques opcions, ben escollides"
+      }
+    },
+    "value": {
+      "title": "Menys decidir. Més gaudir.",
+      "block1": "Pensat per a persones reals: la teva atenció canvia, UpNext ho entén.",
+      "block2": "No infinites opcions: poques recomanacions clares.",
+      "block3": "El teu moment importa: no recomanem el mateix avui que demà."
+    },
+    "faq": {
+      "title": "Preguntes freqüents",
+      "q1": "En què es diferencia UpNext de Netflix o altres plataformes?",
+      "a1": "UpNext se centra en el teu moment actual: com et sents i quanta atenció pots dedicar ara. No et mostra llistes infinites, sinó poques recomanacions ben escollides que encaixen amb el teu estat d'ànim i nivell d'atenció en aquest moment específic.",
+      "q2": "UpNext decideix per mi?",
+      "a2": "No, UpNext no decideix per tu. Et mostra recomanacions basades en els teus gustos i el teu moment actual, però tu sempre tens el control. Pots canviar el teu estat d'ànim i nivell d'atenció quan vulguis, i les recomanacions s'ajustaran.",
+      "q3": "He de crear llistes?",
+      "a3": "No cal crear llistes. UpNext funciona amb les teves preferències (pel·lícules i sèries que t'agraden) i el teu moment actual. Pots guardar títols per més tard si vols, però no és obligatori.",
+      "q4": "Puc canviar el meu nivell d'atenció quan vulgui?",
+      "a4": "Sí, pots canviar el teu estat d'ànim i nivell d'atenció en qualsevol moment. Les recomanacions s'actualitzaran automàticament per reflectir el teu nou moment."
+    },
+    "finalCta": {
+      "text": "És una decisió feta per tu, però sense pensar.",
+      "button": "Descobrir què veure ara"
+    },
     "manualGenerateHint": "Si ja has esperat un moment i no apareixen recomanacions, fes clic al botó per generar-les manualment.",
     "addFavorites": "Afegir favorits",
     "noResultsWithFilters": "No hemos encontrado nada con estos filtros",

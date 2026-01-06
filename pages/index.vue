@@ -5,7 +5,6 @@ import { useUserStore } from '@/stores/user';
 import { useRecommendations } from '@/composables/useRecommendations';
 import { useTitleActions } from '@/composables/useTitleActions';
 import { useUserRegion } from '@/composables/useUserRegion';
-import { getSession } from '@/services/auth';
 import { TITLE_STATUS } from '@/constants/domain/titleStatus';
 import { QUERY_PARAMS } from '@/constants/api/queryParams';
 import { useHreflang } from '@/composables/useHreflang';
@@ -13,8 +12,14 @@ import { useCanonical } from '@/composables/useCanonical';
 import AppShell from '@/components/layout/AppShell.vue';
 import PageContainer from '@/components/layout/PageContainer.vue';
 import Section from '@/components/layout/Section.vue';
-import Card from '@/components/ui/Card.vue';
 import Button from '@/components/ui/Button.vue';
+import ProblemSection from '@/components/home/ProblemSection.vue';
+import ProductFlowSection from '@/components/home/ProductFlowSection.vue';
+import DifferentiationSection from '@/components/home/DifferentiationSection.vue';
+import HowItWorksSection from '@/components/home/HowItWorksSection.vue';
+import ProductValueSection from '@/components/home/ProductValueSection.vue';
+import FaqSection from '@/components/home/FaqSection.vue';
+import FinalCtaSection from '@/components/home/FinalCtaSection.vue';
 
 // Middleware handles onboarding check - if user has session, onboarding is completed
 definePageMeta({
@@ -348,6 +353,15 @@ onMounted(() => {
         </template>
       </ClientOnly>
 
+      <!-- New Landing Page Sections (only for non-authenticated users) -->
+      <ProblemSection />
+      <ProductFlowSection />
+      <DifferentiationSection />
+      <HowItWorksSection />
+      <ProductValueSection />
+      <FaqSection />
+      <FinalCtaSection />
+
       <!-- Recommendations Section -->
       <ClientOnly v-if="showRecommendations">
         <section>
@@ -556,116 +570,6 @@ onMounted(() => {
           </section>
         </template>
       </ClientOnly>
-
-      <!-- How It Works Section -->
-      <section v-if="showHero" id="como-funciona" class="py-6">
-        <AppShell>
-          <PageContainer>
-            <Section>
-              <h2
-                class="mb-6 text-3xl font-bold text-center text-gray-800 md:text-4xl dark:text-gray-300 font-heading"
-              >
-                {{ $t('home.howItWorksTitle') }}
-              </h2>
-              <div class="grid gap-4 md:grid-cols-3">
-                <Card
-                  padding="lg"
-                  custom-class="!bg-white/60 dark:!bg-gray-900/40 md:p-8 relative overflow-hidden group hover:border-primary/50 dark:hover:border-purple-500/30 transition-colors flex flex-col text-center"
-                >
-                  <div
-                    class="flex justify-center items-center mx-auto mb-4 w-16 h-16 bg-gradient-to-r rounded-full from-primary to-accent"
-                  >
-                    <span class="text-2xl font-bold text-white">1</span>
-                  </div>
-                  <h3
-                    class="mb-2 text-xl font-semibold text-gray-800 dark:text-gray-300 font-heading"
-                  >
-                    {{ $t('home.step1Title') }}
-                  </h3>
-                  <p class="text-gray-800 dark:text-gray-300">
-                    {{ $t('home.step1Description') }}
-                  </p>
-                </Card>
-                <Card
-                  padding="lg"
-                  custom-class="!bg-white/60 dark:!bg-gray-900/40 md:p-8 relative overflow-hidden group hover:border-primary/50 dark:hover:border-purple-500/30 transition-colors flex flex-col text-center"
-                >
-                  <div
-                    class="flex justify-center items-center mx-auto mb-4 w-16 h-16 bg-gradient-to-r rounded-full from-accent to-secondary"
-                  >
-                    <span class="text-2xl font-bold text-white">2</span>
-                  </div>
-                  <h3
-                    class="mb-2 text-xl font-semibold text-gray-800 dark:text-gray-300 font-heading"
-                  >
-                    {{ $t('home.step2Title') }}
-                  </h3>
-                  <p class="text-gray-800 dark:text-gray-300">
-                    {{ $t('home.step2Description') }}
-                  </p>
-                </Card>
-                <Card
-                  padding="lg"
-                  custom-class="!bg-white/60 dark:!bg-gray-900/40 md:p-8 relative overflow-hidden group hover:border-primary/50 dark:hover:border-purple-500/30 transition-colors flex flex-col text-center"
-                >
-                  <div
-                    class="flex justify-center items-center mx-auto mb-4 w-16 h-16 bg-gradient-to-r rounded-full from-secondary to-pink"
-                  >
-                    <span class="text-2xl font-bold text-white">3</span>
-                  </div>
-                  <h3
-                    class="mb-2 text-xl font-semibold text-gray-800 dark:text-gray-300 font-heading"
-                  >
-                    {{ $t('home.step3Title') }}
-                  </h3>
-                  <p class="text-gray-800 dark:text-gray-300">
-                    {{ $t('home.step3Description') }}
-                  </p>
-                </Card>
-              </div>
-            </Section>
-          </PageContainer>
-        </AppShell>
-      </section>
-
-      <!-- Value Proposition Section -->
-      <section v-if="showHero" class="pb-16 md:pt-16">
-        <AppShell>
-          <PageContainer>
-            <div class="w-full text-center">
-              <p
-                class="mb-6 text-2xl font-semibold leading-relaxed text-gray-900 md:text-3xl dark:text-gray-100"
-              >
-                {{ $t('home.tagline1') }}
-              </p>
-              <p
-                class="text-3xl font-semibold leading-relaxed text-gray-900 md:text-5xl dark:text-gray-100"
-              >
-                {{ $t('home.tagline2') }}
-                <span
-                  class="text-transparent bg-clip-text bg-gradient-to-r from-primary-700 via-primary-800 to-primary-900 dark:from-primary-400 dark:via-primary-500 dark:to-primary-600"
-                  style="
-                    background-clip: text;
-                    -webkit-background-clip: text;
-                    -webkit-text-fill-color: transparent;
-                  "
-                  >{{ $t('home.tagline3') }}</span
-                >
-                {{ $t('home.tagline4') }}
-                <span
-                  class="text-transparent bg-clip-text bg-gradient-to-r from-primary-700 via-primary-800 to-primary-900 dark:from-primary-400 dark:via-primary-500 dark:to-primary-600"
-                  style="
-                    background-clip: text;
-                    -webkit-background-clip: text;
-                    -webkit-text-fill-color: transparent;
-                  "
-                  >{{ $t('home.tagline5') }}</span
-                >{{ $t('home.tagline6') }}
-              </p>
-            </div>
-          </PageContainer>
-        </AppShell>
-      </section>
     </template>
   </div>
 </template>

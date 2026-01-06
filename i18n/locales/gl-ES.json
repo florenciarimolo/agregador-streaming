@@ -141,10 +141,10 @@
   },
   "hero": {
     "title": "Non sabes que ver agora?",
-    "description": "UpNext recoméndache películas e series segundo o teu momento, a túa enerxía e o tempo que tes.",
-    "tagline": "Menos decidir, máis ver.",
-    "discoverButton": "Descubrir que ver",
-    "howItWorksButton": "Saber máis"
+    "description": "UpNext recoméndache películas e series segundo como te sintes e o teu **nivel de atención neste momento**.",
+    "tagline": "Menos decidir. Máis ver.",
+    "discoverButton": "Descubrir que ver agora",
+    "howItWorksButton": "Saber como funciona"
   },
   "home": {
     "generatingRecommendations": "Generando recomendaciones",
@@ -171,13 +171,79 @@
     "contentTypeAll": "Todo",
     "contentTypeMovie": "Películas",
     "contentTypeTv": "Series",
-    "howItWorksTitle": "Cómo funciona",
-    "step1Title": "Dinos qué te gusta",
-    "step1Description": "Selecciona hasta 10 películas y series que disfrutas. Esto nos ayuda a conocerte mejor.",
-    "step2Title": "Cuéntanos tu momento",
-    "step2Description": "Indica cómo te sientes, tu nivel de energía y el tiempo que tienes disponible.",
-    "step3Title": "Te decimos qué ver ahora",
-    "step3Description": "Recibe recomendaciones personalizadas basadas en tus gustos y tu momento actual.",
+    "howItWorksTitle": "Como funciona",
+    "step1Title": "Dínos que che gusta",
+    "step1Description": "Selecciona algunhas películas e series para coñecerte.",
+    "step2Title": "Cóntanos o teu momento",
+    "step2Description": "Como te sintes e canta atención podes dedicar agora.",
+    "step3Title": "Dicímosche que ver",
+    "step3Description": "Recomendacións pensadas para este momento concreto.",
+    "problem": {
+      "title": "Elexir que ver volveuse agotador",
+      "bullet1": "Demasiadas opcións, pouca claridade",
+      "bullet2": "Gardas cousas que nunca encaixan co teu momento",
+      "bullet3": "A túa atención hoxe non é a mesma que onte",
+      "closure": "UpNext existe para eliminar esa fricción."
+    },
+    "productFlow": {
+      "title": "Así funciona UpNext",
+      "description": "Tres pasos simples para atopar algo que encaixe co teu momento.",
+      "step1": {
+        "title": "Selecciona o teu momento",
+        "description": "Elixe como te sintes e o teu nivel de atención."
+      },
+      "step2": {
+        "title": "Confirma o teu momento",
+        "description": "Revisa a túa selección e continúa."
+      },
+      "step3": {
+        "title": "Recibe recomendacións",
+        "description": "Atopa contido perfecto para agora."
+      },
+      "mockup": {
+        "mainTitle": "Exemplo de recomendación",
+        "mainType": "Película · Drama",
+        "mainDescription": "Unha historia que encaixa perfectamente co teu momento actual.",
+        "alternatives": "Alternativas",
+        "alternativeTitle": "Opción {number}"
+      }
+    },
+    "differentiation": {
+      "title": "Non é outra lista máis",
+      "others": {
+        "title": "Outras plataformas",
+        "item1": "Recomendacións xenéricas",
+        "item2": "Baseadas só en historial",
+        "item3": "Listas infinitas"
+      },
+      "upnext": {
+        "title": "UpNext",
+        "item1": "Baseado no teu momento actual",
+        "item2": "Ten en conta o teu nivel de atención",
+        "item3": "Poucas opcións, ben elixidas"
+      }
+    },
+    "value": {
+      "title": "Menos decidir. Máis disfrutar.",
+      "block1": "Pensado para persoas reais: a túa atención cambia, UpNext enténdeo.",
+      "block2": "Non infinitas opcións: poucas recomendacións claras.",
+      "block3": "O teu momento importa: non recomendamos o mesmo hoxe que mañá."
+    },
+    "faq": {
+      "title": "Preguntas frecuentes",
+      "q1": "En que se diferencia UpNext de Netflix ou outras plataformas?",
+      "a1": "UpNext céntrase no teu momento actual: como te sintes e canta atención podes dedicar agora. Non che mostra listas infinitas, senón poucas recomendacións ben elixidas que encaixan co teu estado de ánimo e nivel de atención neste momento específico.",
+      "q2": "UpNext decide por min?",
+      "a2": "Non, UpNext non decide por ti. Móstrache recomendacións baseadas nos teus gustos e o teu momento actual, pero ti sempre tes o control. Podes cambiar o teu estado de ánimo e nivel de atención cando queiras, e as recomendacións axustaranse.",
+      "q3": "Teño que crear listas?",
+      "a3": "Non é necesario crear listas. UpNext funciona coas túas preferencias (películas e series que che gustan) e o teu momento actual. Podes gardar títulos para máis tarde se queres, pero non é obrigatorio.",
+      "q4": "Podo cambiar o meu nivel de atención cando queira?",
+      "a4": "Si, podes cambiar o teu estado de ánimo e nivel de atención en calquera momento. As recomendacións actualizaranse automaticamente para reflectir o teu novo momento."
+    },
+    "finalCta": {
+      "text": "É unha decisión feita por ti, pero sen pensar.",
+      "button": "Descubrir que ver agora"
+    },
     "manualGenerateHint": "Si ya esperaste un momento y no aparecen recomendaciones, haz clic en el botón para generarlas manualmente.",
     "addFavorites": "Agregar favoritos",
     "noResultsWithFilters": "No hemos encontrado nada con estos filtros",

@@ -19,12 +19,50 @@ const emit = defineEmits<{
 }>();
 
 const { routeWithLang } = useRouteWithLang();
+const { t } = useI18n();
 
 // Computed routes with language prefix
 // CRITICAL: routeWithLang() accesses route.params.lang directly, ensuring reactivity
 // These computed will automatically re-evaluate when route.params.lang changes
 const discoverRoute = computed(() => routeWithLang('/discover'));
 const howItWorksRoute = computed(() => routeWithLang('/how-it-works'));
+
+// Process description to handle **bold** markdown
+const descriptionParts = computed(() => {
+  const description = t('hero.description');
+  const parts: Array<{ text: string; bold: boolean }> = [];
+  const regex = /\*\*(.*?)\*\*/g;
+  let lastIndex = 0;
+  let match;
+
+  while ((match = regex.exec(description)) !== null) {
+    // Add text before the bold part
+    if (match.index > lastIndex) {
+      parts.push({
+        text: description.substring(lastIndex, match.index),
+        bold: false,
+      });
+    }
+    // Add the bold part
+    parts.push({
+      text: match[1],
+      bold: true,
+    });
+    lastIndex = regex.lastIndex;
+  }
+  // Add remaining text
+  if (lastIndex < description.length) {
+    parts.push({
+      text: description.substring(lastIndex),
+      bold: false,
+    });
+  }
+  // If no bold markers found, return the whole text
+  if (parts.length === 0) {
+    parts.push({ text: description, bold: false });
+  }
+  return parts;
+});
 </script>
 
 <template>
@@ -52,7 +90,14 @@ const howItWorksRoute = computed(() => routeWithLang('/how-it-works'));
       <p
         class="mx-auto mb-8 max-w-3xl text-lg font-medium leading-relaxed text-gray-800 md:text-xl dark:text-gray-300"
       >
-        {{ $t('hero.description') }}<br />
+        <template
+          v-for="(part, index) in descriptionParts"
+          :key="index"
+        >
+          <span v-if="part.bold" class="font-bold">{{ part.text }}</span>
+          <span v-else>{{ part.text }}</span>
+        </template>
+        <br />
         <span class="font-medium">{{ $t('hero.tagline') }}</span>
       </p>
       <div class="flex flex-col gap-4 justify-center items-center sm:flex-row">
