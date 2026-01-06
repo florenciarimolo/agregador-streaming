@@ -9,7 +9,7 @@
           <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
             <Card
               padding="lg"
-              custom-class="!bg-white/60 dark:!bg-gray-900/40 md:p-6 relative overflow-hidden group hover:border-primary/50 dark:hover:border-purple-500/30 transition-colors flex flex-col !col-span-1"
+              custom-class="md:p-6 relative overflow-hidden group hover:border-primary/50 dark:hover:border-purple-500/30 transition-colors flex flex-col !col-span-1"
             >
               <div
                 class="flex justify-center items-center mb-4 w-14 h-14 bg-gradient-to-r rounded-full from-primary to-accent mx-auto"
@@ -27,7 +27,7 @@
             </Card>
             <Card
               padding="lg"
-              custom-class="!bg-white/60 dark:!bg-gray-900/40 md:p-6 relative overflow-hidden group hover:border-primary/50 dark:hover:border-purple-500/30 transition-colors flex flex-col !col-span-1"
+              custom-class="md:p-6 relative overflow-hidden group hover:border-primary/50 dark:hover:border-purple-500/30 transition-colors flex flex-col !col-span-1"
             >
               <div
                 class="flex justify-center items-center mb-4 w-14 h-14 bg-gradient-to-r rounded-full from-accent to-secondary mx-auto"
@@ -45,7 +45,7 @@
             </Card>
             <Card
               padding="lg"
-              custom-class="!bg-white/60 dark:!bg-gray-900/40 md:p-6 relative overflow-hidden group hover:border-primary/50 dark:hover:border-purple-500/30 transition-colors flex flex-col !col-span-1"
+              custom-class="md:p-6 relative overflow-hidden group hover:border-primary/50 dark:hover:border-purple-500/30 transition-colors flex flex-col !col-span-1"
             >
               <div
                 class="flex justify-center items-center mb-4 w-14 h-14 bg-gradient-to-r rounded-full from-secondary to-pink mx-auto"
@@ -63,7 +63,7 @@
             </Card>
             <Card
               padding="lg"
-              custom-class="!bg-white/60 dark:!bg-gray-900/40 md:p-6 relative overflow-hidden group hover:border-primary/50 dark:hover:border-purple-500/30 transition-colors flex flex-col !col-span-1"
+              custom-class="md:p-6 relative overflow-hidden group hover:border-primary/50 dark:hover:border-purple-500/30 transition-colors flex flex-col !col-span-1"
             >
               <div
                 class="flex justify-center items-center mb-4 w-14 h-14 bg-gradient-to-r rounded-full from-pink to-primary mx-auto"

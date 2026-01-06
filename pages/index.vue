@@ -584,10 +584,16 @@ onMounted(() => {
 </template>
 
 <style>
-/* Background negro muy oscuro solo para la página de inicio cuando no hay sesión */
-.home-page-dark-bg,
-.home-page-dark-bg html,
-.home-page-dark-bg body {
+/* Background según tema para la página de inicio cuando no hay sesión */
+.dark .home-page-dark-bg,
+.dark .home-page-dark-bg html,
+.dark .home-page-dark-bg body {
   background-color: #0a0a0a !important;
+}
+
+.light .home-page-dark-bg,
+.light .home-page-dark-bg html,
+.light .home-page-dark-bg body {
+  background-color: #ffffff !important;
 }
 </style>

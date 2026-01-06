@@ -6,28 +6,28 @@
           <div class="home-section-title">
             <SectionTitle>{{ $t('home.problem.title') }}</SectionTitle>
           </div>
-          <Card padding="lg" custom-class="!bg-white/60 dark:!bg-gray-900/40 !p-8 md:!p-12">
+          <Card padding="lg" custom-class="!p-8 md:!p-12 hover:border-primary/50 dark:hover:border-purple-500/30 transition-colors">
             <ul class="space-y-6 list-none text-left">
               <li class="flex items-start gap-4">
                 <span class="text-primary text-xl mt-0.5 flex-shrink-0">•</span>
-                <span class="text-body font-body text-gray-800 dark:text-gray-300">{{
+                <span class="text-body font-body text-gray-600 dark:text-gray-400">{{
                   $t('home.problem.bullet1')
                 }}</span>
               </li>
               <li class="flex items-start gap-4">
                 <span class="text-primary text-xl mt-0.5 flex-shrink-0">•</span>
-                <span class="text-body font-body text-gray-800 dark:text-gray-300">{{
+                <span class="text-body font-body text-gray-600 dark:text-gray-400">{{
                   $t('home.problem.bullet2')
                 }}</span>
               </li>
               <li class="flex items-start gap-4">
                 <span class="text-primary text-xl mt-0.5 flex-shrink-0">•</span>
-                <span class="text-body font-body text-gray-800 dark:text-gray-300">{{
+                <span class="text-body font-body text-gray-600 dark:text-gray-400">{{
                   $t('home.problem.bullet3')
                 }}</span>
               </li>
             </ul>
-            <p class="mt-8 text-body font-body text-gray-800 dark:text-gray-300 text-center">
+            <p class="mt-8 text-body font-body text-gray-600 dark:text-gray-400 text-center">
               {{ $t('home.problem.closure') }}
             </p>
           </Card>

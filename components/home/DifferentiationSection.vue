@@ -10,7 +10,7 @@
             <!-- Other Platforms -->
             <Card
               padding="lg"
-              custom-class="!bg-white/60 dark:!bg-gray-900/40 border-gray-300/50 dark:border-white/10"
+              custom-class="hover:border-primary/50 dark:hover:border-purple-500/30 transition-colors"
             >
               <h3
                 class="mb-4 text-h3 font-heading font-semibold text-gray-800 dark:text-gray-300 text-center"
@@ -22,7 +22,7 @@
                   <span class="text-gray-400 dark:text-gray-600 text-xl flex-shrink-0"
                     >×</span
                   >
-                  <span class="text-body font-body text-gray-800 dark:text-gray-300">{{
+                  <span class="text-body font-body text-gray-600 dark:text-gray-400">{{
                     $t('home.differentiation.others.item1')
                   }}</span>
                 </li>
@@ -30,7 +30,7 @@
                   <span class="text-gray-400 dark:text-gray-600 text-xl flex-shrink-0"
                     >×</span
                   >
-                  <span class="text-body font-body text-gray-800 dark:text-gray-300">{{
+                  <span class="text-body font-body text-gray-600 dark:text-gray-400">{{
                     $t('home.differentiation.others.item2')
                   }}</span>
                 </li>
@@ -38,7 +38,7 @@
                   <span class="text-gray-400 dark:text-gray-600 text-xl flex-shrink-0"
                     >×</span
                   >
-                  <span class="text-body font-body text-gray-800 dark:text-gray-300">{{
+                  <span class="text-body font-body text-gray-600 dark:text-gray-400">{{
                     $t('home.differentiation.others.item3')
                   }}</span>
                 </li>
@@ -48,7 +48,7 @@
             <!-- UpNext -->
             <Card
               padding="lg"
-              custom-class="!bg-white/60 dark:!bg-gray-900/40 border-primary/30 dark:border-primary/20"
+              custom-class="border-primary/30 dark:border-primary/20 hover:border-primary/50 dark:hover:border-purple-500/30 transition-colors"
             >
               <h3
                 class="mb-4 text-h3 font-heading font-semibold text-gray-800 dark:text-gray-300 text-center"
@@ -58,19 +58,19 @@
               <ul class="space-y-4 list-none text-center">
                 <li class="flex items-center justify-center gap-3">
                   <span class="text-primary text-xl flex-shrink-0">✓</span>
-                  <span class="text-body font-body text-gray-800 dark:text-gray-300">{{
+                  <span class="text-body font-body text-gray-600 dark:text-gray-400">{{
                     $t('home.differentiation.upnext.item1')
                   }}</span>
                 </li>
                 <li class="flex items-center justify-center gap-3">
                   <span class="text-primary text-xl flex-shrink-0">✓</span>
-                  <span class="text-body font-body text-gray-800 dark:text-gray-300">{{
+                  <span class="text-body font-body text-gray-600 dark:text-gray-400">{{
                     $t('home.differentiation.upnext.item2')
                   }}</span>
                 </li>
                 <li class="flex items-center justify-center gap-3">
                   <span class="text-primary text-xl flex-shrink-0">✓</span>
-                  <span class="text-body font-body text-gray-800 dark:text-gray-300">{{
+                  <span class="text-body font-body text-gray-600 dark:text-gray-400">{{
                     $t('home.differentiation.upnext.item3')
                   }}</span>
                 </li>

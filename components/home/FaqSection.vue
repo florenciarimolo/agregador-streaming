@@ -12,7 +12,7 @@
               :key="i"
               v-slot="{ open }"
               as="div"
-              class="bg-white/60 dark:bg-gray-900/40 backdrop-blur-xl rounded-2xl border border-gray-300/50 dark:border-white/10 overflow-hidden"
+              class="bg-gray-100/80 dark:bg-gray-900/40 backdrop-blur-xl rounded-2xl border border-gray-300/50 dark:border-white/10 overflow-hidden hover:border-primary/50 dark:hover:border-purple-500/30 transition-colors"
             >
               <DisclosureButton
                 class="w-full p-6 md:p-8 cursor-pointer font-heading dark:text-gray-300 text-gray-800 hover:bg-gray-100/50 dark:hover:bg-gray-800/50 transition-colors text-left"
@@ -29,7 +29,7 @@
               <DisclosurePanel
                 class="px-6 md:px-8 pt-4 pb-6 md:pb-8 dark:text-gray-300 text-gray-800"
               >
-                <p class="text-body font-body text-left">
+                <p class="text-body font-body text-gray-600 dark:text-gray-400 text-left">
                   {{ $t(`home.faq.a${i}`) }}
                 </p>
               </DisclosurePanel>

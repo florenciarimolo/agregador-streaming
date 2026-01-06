@@ -17,7 +17,7 @@
             <!-- Step 1: Selecciona tu momento (lg:col-span-4) - Card protagonista -->
             <Card
               padding="lg"
-              custom-class="!bg-white/60 dark:!bg-gray-900/40 md:p-6 relative overflow-hidden flex flex-col lg:col-span-4"
+              custom-class="md:p-6 relative overflow-hidden flex flex-col lg:col-span-4 hover:border-primary/50 dark:hover:border-purple-500/30 transition-colors"
             >
               <div class="flex flex-col gap-4 text-center">
                 <div
@@ -42,7 +42,7 @@
             <!-- Step 2: Confirma tu momento (lg:col-span-2) - Card compacta -->
             <Card
               padding="lg"
-              custom-class="!bg-white/60 dark:!bg-gray-900/40 md:p-6 relative overflow-hidden flex flex-col lg:col-span-2"
+              custom-class="md:p-6 relative overflow-hidden flex flex-col lg:col-span-2 hover:border-primary/50 dark:hover:border-purple-500/30 transition-colors"
             >
               <div class="flex flex-col gap-4 text-center items-center">
                 <div
@@ -67,7 +67,7 @@
             <!-- Step 3: Recibe recomendación (lg:col-span-3) - Contenido más pequeño -->
             <Card
               padding="lg"
-              custom-class="!bg-white/60 dark:!bg-gray-900/40 md:p-6 relative overflow-hidden flex flex-col lg:col-span-3"
+              custom-class="md:p-6 relative overflow-hidden flex flex-col lg:col-span-3 hover:border-primary/50 dark:hover:border-purple-500/30 transition-colors"
             >
               <div class="flex flex-col gap-4 text-center">
                 <div
@@ -98,7 +98,7 @@
             <!-- Step 4: Gestiona tus recomendaciones (lg:col-span-3) - Contenido más pequeño -->
             <Card
               padding="lg"
-              custom-class="!bg-white/60 dark:!bg-gray-900/40 md:p-6 relative overflow-hidden flex flex-col lg:col-span-3"
+              custom-class="md:p-6 relative overflow-hidden flex flex-col lg:col-span-3 hover:border-primary/50 dark:hover:border-purple-500/30 transition-colors"
             >
               <div class="flex flex-col gap-4 text-center">
                 <div

@@ -9,25 +9,25 @@
           <div class="grid gap-6 md:gap-8 grid-cols-1 md:grid-cols-3">
             <Card
               padding="lg"
-              custom-class="!bg-white/60 dark:!bg-gray-900/40 border-gray-300/50 dark:border-white/10 !p-6 md:!p-8"
+              custom-class="!p-6 md:!p-8 hover:border-primary/50 dark:hover:border-purple-500/30 transition-colors"
             >
-              <p class="text-body font-body text-gray-800 dark:text-gray-300 text-center">
+              <p class="text-body font-body text-gray-600 dark:text-gray-400 text-center">
                 {{ $t('home.value.block1') }}
               </p>
             </Card>
             <Card
               padding="lg"
-              custom-class="!bg-white/60 dark:!bg-gray-900/40 border-gray-300/50 dark:border-white/10 !p-6 md:!p-8"
+              custom-class="!p-6 md:!p-8 hover:border-primary/50 dark:hover:border-purple-500/30 transition-colors"
             >
-              <p class="text-body font-body text-gray-800 dark:text-gray-300 text-center">
+              <p class="text-body font-body text-gray-600 dark:text-gray-400 text-center">
                 {{ $t('home.value.block2') }}
               </p>
             </Card>
             <Card
               padding="lg"
-              custom-class="!bg-white/60 dark:!bg-gray-900/40 border-gray-300/50 dark:border-white/10 !p-6 md:!p-8"
+              custom-class="!p-6 md:!p-8 hover:border-primary/50 dark:hover:border-purple-500/30 transition-colors"
             >
-              <p class="text-body font-body text-gray-800 dark:text-gray-300 text-center">
+              <p class="text-body font-body text-gray-600 dark:text-gray-400 text-center">
                 {{ $t('home.value.block3') }}
               </p>
             </Card>

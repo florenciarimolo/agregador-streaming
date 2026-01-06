@@ -128,6 +128,7 @@ const getCardStyle = (index: number) => {
   z-index: 0;
   opacity: 0.8;
   overflow: hidden;
+  background-color: transparent;
 }
 
 /* Animated gradient orbs */
@@ -229,7 +230,7 @@ const getCardStyle = (index: number) => {
 
 .particle {
   position: absolute;
-  background: rgba(255, 255, 255, 0.6);
+  background: rgba(0, 0, 0, 0.2);
   border-radius: 50%;
   animation: particleFloat ease-in-out infinite;
   will-change: transform, opacity;

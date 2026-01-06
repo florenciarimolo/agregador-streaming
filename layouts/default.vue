@@ -6,7 +6,7 @@
     <TheNavbar />
 
     <!-- Contenido principal -->
-    <main class="pb-[54px] pt-4 md:pt-[64px] relative z-0">
+    <main class="pb-[54px] pt-4 md:pt-[64px] relative">
       <slot />
     </main>
 
