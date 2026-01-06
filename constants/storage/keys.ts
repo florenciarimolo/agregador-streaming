@@ -12,7 +12,7 @@ export const STORAGE_KEYS = {
   
   /**
    * Theme preference
-   * Values: 'light' | 'dark'
+   * Values: Theme.LIGHT | Theme.DARK (from @/types/enums/Theme)
    */
   THEME: 'theme',
   
@@ -24,7 +24,7 @@ export const STORAGE_KEYS = {
   
   /**
    * Cookie consent status
-   * Values: 'accepted' | 'rejected'
+   * Values: CookieConsentStatus.ACCEPTED | CookieConsentStatus.REJECTED (from @/types/enums/CookieConsentStatus)
    */
   COOKIE_CONSENT: 'cookie_consent',
 } as const;

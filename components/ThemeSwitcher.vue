@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { Theme } from '@/types/enums/Theme';
+
 const { theme, toggleTheme, syncTheme } = useTheme();
 
 // Sync theme on mount
@@ -7,7 +9,7 @@ onMounted(() => {
 });
 
 // Computed para determinar si está en modo oscuro
-const isDark = computed(() => theme.value === 'dark');
+const isDark = computed(() => theme.value === Theme.DARK);
 </script>
 
 <template>

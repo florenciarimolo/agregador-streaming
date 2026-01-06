@@ -4,6 +4,7 @@
  * Must run synchronously before any rendering
  */
 import { STORAGE_KEYS } from '@/constants/storage/keys';
+import { Theme } from '@/types/enums/Theme';
 
 export default defineNuxtPlugin({
   name: 'theme-init',
@@ -14,22 +15,23 @@ export default defineNuxtPlugin({
 
       const hasManualTheme =
         localStorage.getItem(STORAGE_KEYS.THEME_MANUAL) === 'true';
-      const savedTheme = localStorage.getItem(STORAGE_KEYS.THEME) as
-        | 'light'
-        | 'dark'
-        | null;
+      const storedTheme = localStorage.getItem(STORAGE_KEYS.THEME);
+      const savedTheme =
+        storedTheme === Theme.LIGHT || storedTheme === Theme.DARK
+          ? (storedTheme as Theme)
+          : null;
 
       if (hasManualTheme && savedTheme) {
         // User has changed theme before, use saved preference immediately
-        document.documentElement.classList.remove('light', 'dark');
+        document.documentElement.classList.remove(Theme.LIGHT, Theme.DARK);
         document.documentElement.classList.add(savedTheme);
       } else {
         // First time or no saved preference, use system preference
         const systemPrefersDark = window.matchMedia(
           '(prefers-color-scheme: dark)'
         ).matches;
-        const initialTheme = systemPrefersDark ? 'dark' : 'light';
-        document.documentElement.classList.remove('light', 'dark');
+        const initialTheme = systemPrefersDark ? Theme.DARK : Theme.LIGHT;
+        document.documentElement.classList.remove(Theme.LIGHT, Theme.DARK);
         document.documentElement.classList.add(initialTheme);
       }
     }

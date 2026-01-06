@@ -80,6 +80,7 @@ import { useRuntimeConfig } from '#app';
 import type { DiscoverList } from '@/composables/database/discoverLists';
 import Badge from './Badge.vue';
 import { useTheme } from '@/composables/useTheme';
+import { Theme } from '@/types/enums/Theme';
 
 interface ExtendedDiscoverList extends DiscoverList {
   itemCount?: number;
@@ -94,7 +95,7 @@ const props = defineProps<Props>();
 const config = useRuntimeConfig();
 const TMDB_IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w500';
 const { theme } = useTheme();
-const isDark = computed(() => theme.value === 'dark');
+const isDark = computed(() => theme.value === Theme.DARK);
 
 function getPosterUrl(posterPath: string | null): string {
   if (!posterPath) return '';

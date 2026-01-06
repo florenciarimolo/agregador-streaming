@@ -10,43 +10,45 @@
     >
       <div
         v-if="isUnset"
-        class="fixed bottom-0 left-0 right-0 z-50 w-full px-4 py-4 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-t border-gray-200 dark:border-gray-700 shadow-lg"
+        class="fixed bottom-0 left-0 right-0 z-50 w-full"
       >
-      <div class="container mx-auto max-w-7xl">
-        <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <!-- Text Content -->
-          <div class="flex-1">
-            <p class="text-sm text-gray-800 dark:text-gray-300">
-              {{ $t('cookies.message') }}
-              <nuxt-link
-                :to="privacyRoute"
-                class="text-gray-800 dark:text-gray-300 hover:text-primary dark:hover:text-primary-400 transition-colors font-medium"
-              >
-                {{ $t('cookies.privacyLink') }}
-              </nuxt-link>
-            </p>
-          </div>
+        <AppShell>
+          <div class="rounded-3xl border shadow-md backdrop-blur-xl dark:bg-gray-900/40 bg-gray-100/80 border-gray-300/50 dark:border-white/10 py-4 px-4 md:px-6 mb-4">
+            <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <!-- Text Content -->
+              <div class="flex-1">
+                <p class="text-sm text-gray-800 dark:text-gray-300">
+                  {{ $t('cookies.message') }}
+                  <nuxt-link
+                    :to="privacyRoute"
+                    class="text-gray-800 dark:text-gray-300 hover:text-primary dark:hover:text-primary-400 transition-colors font-medium"
+                  >
+                    {{ $t('cookies.privacyLink') }}
+                  </nuxt-link>
+                </p>
+              </div>
 
-          <!-- Actions -->
-          <div class="flex flex-row gap-2 items-center">
-            <Button
-              variant="outline"
-              size="small"
-              @click="rejectCookies"
-            >
-              {{ $t('cookies.reject') }}
-            </Button>
-            <Button
-              variant="primary"
-              size="small"
-              @click="acceptCookies"
-            >
-              {{ $t('cookies.accept') }}
-            </Button>
+              <!-- Actions -->
+              <div class="flex flex-row gap-2 items-center">
+                <Button
+                  variant="outline"
+                  size="small"
+                  @click="rejectCookies"
+                >
+                  {{ $t('cookies.reject') }}
+                </Button>
+                <Button
+                  variant="primary"
+                  size="small"
+                  @click="acceptCookies"
+                >
+                  {{ $t('cookies.accept') }}
+                </Button>
+              </div>
+            </div>
           </div>
-        </div>
+        </AppShell>
       </div>
-    </div>
     </Transition>
   </ClientOnly>
 </template>
@@ -55,6 +57,7 @@
 import { computed } from 'vue';
 import { useCookieConsent } from '@/composables/useCookieConsent';
 import Button from '@/components/ui/Button.vue';
+import AppShell from '@/components/layout/AppShell.vue';
 
 const { isUnset, acceptCookies, rejectCookies } = useCookieConsent();
 const { routeWithLang } = useRouteWithLang();
