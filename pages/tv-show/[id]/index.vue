@@ -66,11 +66,6 @@
                 :hover-text="$t('media.viewEpisodes')"
                 custom-class="shadow-lg hover:border-gray-300/50 dark:hover:border-white/10"
               >
-                <!-- Season name badge - top left -->
-                <template #top-left-badges>
-                  <Badge :label="season.name" />
-                </template>
-
                 <!-- RatingBadge - top right -->
                 <template #top-right-actions>
                   <RatingBadge
@@ -79,9 +74,15 @@
                   />
                 </template>
 
-                <!-- Content: Date and episode count -->
+                <!-- Content: Season name, Date and episode count -->
                 <template #content>
                   <div class="flex flex-col gap-3">
+                    <!-- Season name as text -->
+                    <h4
+                      class="font-semibold dark:text-gray-300 text-gray-800 text-sm md:text-base line-clamp-2"
+                    >
+                      {{ season.name }}
+                    </h4>
                     <div
                       class="flex items-center gap-2 dark:text-gray-300 text-gray-800 text-xs md:text-sm"
                     >
