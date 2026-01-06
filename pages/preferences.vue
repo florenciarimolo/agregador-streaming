@@ -1,28 +1,26 @@
 <template>
   <AppShell>
     <PageContainer>
-      <!-- Show loading while checking onboarding -->
-      <div v-if="profilePending" class="flex items-center justify-center py-12">
+      <!-- Show loading while checking profile -->
+      <div
+        v-if="!isProfileReady"
+        class="flex items-center justify-center py-12"
+      >
         <div
           class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"
         ></div>
       </div>
-      <div
-        v-else-if="!userStore.value?.hasCompletedOnboarding"
-        class="pt-6 pb-6 w-full"
-      >
-        <!-- Redirecting message (shouldn't be visible for long) -->
-        <div class="flex items-center justify-center py-12">
-          <div
-            class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"
-          ></div>
-        </div>
-      </div>
-      <div v-else class="pt-6 pb-6 w-full">
+      <div v-else>
         <!-- Undo Toast -->
         <Toast />
 
-        <!-- Content Preferences -->
+        <Section>
+          <!-- Page Title -->
+          <SectionTitle :description="$t('preferences.description')">
+            {{ $t('preferences.title') }}
+          </SectionTitle>
+
+          <!-- Content Preferences -->
         <div class="space-y-6">
           <!-- Region -->
           <Card padding="lg">
@@ -163,6 +161,7 @@
             </Button>
           </div>
         </div>
+        </Section>
 
         <!-- Generating Recommendations Modal -->
         <Modal :is-open="showGeneratingModal" :close-on-overlay-click="false">
@@ -268,6 +267,8 @@ import Button from '@/components/ui/Button.vue';
 import Modal from '@/components/ui/Modal.vue';
 import AppShell from '@/components/layout/AppShell.vue';
 import PageContainer from '@/components/layout/PageContainer.vue';
+import Section from '@/components/layout/Section.vue';
+import SectionTitle from '@/components/layout/SectionTitle.vue';
 import Card from '@/components/ui/Card.vue';
 import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 import { getSession } from '@/services/auth';
@@ -326,6 +327,8 @@ const showUnsavedChangesModal = ref(false);
 const showSaveConfirmationModal = ref(false);
 const showGeneratingModal = ref(false);
 const pendingNavigation = ref<(() => void) | null>(null);
+// Profile ready flag - controls main render, separate from loading states
+const isProfileReady = ref(false);
 const savedContentPreferences = ref<{
   favorite_genres?: number[];
   included_providers?: number[];
@@ -1029,42 +1032,20 @@ watch(
   { immediate: true }
 );
 
-// Preload profile and verify onboarding before content loads
-const { pending: profilePending } = useAsyncData(
-  'preferences-profile-check',
-  async () => {
-    // Ensure profile is loaded
-    await userStore.value.ensureProfile();
-
-    // Check onboarding status
-    const hasCompletedOnboarding = userStore.value?.hasCompletedOnboarding;
-
-    // If onboarding not completed, redirect to onboarding
-    if (!hasCompletedOnboarding) {
-      const { routeWithLang } = useRouteWithLang();
-      await navigateTo(routeWithLang('/onboarding'), { replace: true });
-      return false; // Prevent content from loading
-    }
-
-    return true; // Allow content to load
-  },
-  {
-    server: false, // Only fetch on client
-    default: () => false,
-  }
-);
-
 // Lifecycle
 onMounted(async () => {
-  // Wait for profile check to complete
-  while (profilePending.value) {
-    await new Promise((resolve) => setTimeout(resolve, 50));
-  }
+  // Ensure profile is loaded
+  await userStore.value.ensureProfile();
 
-  // If redirected, don't continue
+  // Check onboarding status
   if (!userStore.value?.hasCompletedOnboarding) {
+    const { routeWithLang } = useRouteWithLang();
+    await navigateTo(routeWithLang('/onboarding'), { replace: true });
     return;
   }
+
+  // Profile is ready, show content
+  isProfileReady.value = true;
 
   // Fetch content preferences
   await fetchContentPreferences();

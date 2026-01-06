@@ -17,7 +17,8 @@
     "search": "Search",
     "noResults": "No results found",
     "noImage": "No image",
-    "optional": "Optional"
+    "optional": "Optional",
+    "lists": "Lists"
   },
   "navbar": {
     "home": "Home",
@@ -182,7 +183,7 @@
     "noResultsWithFilters": "No hemos encontrado nada con estos filtros",
     "noResultsWithFiltersDescription": "Esta combinación es bastante específica. Prueba a ajustar el nivel de atención o el estado de ánimo.",
     "relaxFilters": "Relajar filtros automáticamente",
-    "removeFilters": "Quitar filtros",
+    "removeFilters": "Clear filters",
     "sessionError": "Error: Could not get session",
     "poolPopulated": "Pool populated: {inserted} recommendations added",
     "generateError": "Error generating recommendations. Please try again.",
@@ -314,7 +315,8 @@
       "seen": "Seen",
       "notInterested": "Not interested",
       "watchlist": "Watchlist"
-    }
+    },
+    "listsDescription": "Manage your liked titles, seen content, and titles you're not interested in. Organize your viewing history and preferences."
   },
   "preferences": {
     "title": "Preferences",
@@ -404,9 +406,7 @@
     "titleRemoved": "Title removed from history successfully.",
     "errorRemoving": "Error removing title. Please try again.",
     "notAuthenticated": "You are not authenticated. Please sign in.",
-    "removeFromList": "Remove",
-    "removeFromSeenList": "Remove {title} from seen list",
-    "removeFromNotInterestedList": "Remove {title} from not interested list"
+    "removeFromList": "Remove"
   },
   "footer": {
     "howItWorks": "How it works",
@@ -418,10 +418,10 @@
   },
   "media": {
     "watchNow": "Watch now",
-    "addToWatchlist": "Add to Watchlist",
-    "markAsSeen": "Mark {title} as seen",
-    "markAsNotInterested": "Mark as 'Not interested'",
-    "removeFromSeen": "Remove from seen",
+    "addToWatchlist": "Watchlist",
+    "markAsSeen": "Seen",
+    "markAsNotInterested": "Not interested",
+    "removeFromSeen": "Remove from 'Seen'",
     "removeFromNotInterested": "Remove from 'Not interested'",
     "inTheaters": "In theaters",
     "streaming": "Streaming",
@@ -447,11 +447,11 @@
     "back": "Back",
     "seen": "Seen",
     "liked": "Liked",
-    "like": "Like",
+    "like": "Liked",
     "removeFromLiked": "Remove from 'Liked'",
     "notInterested": "Not interested",
     "watchLater": "Watchlist",
-    "removeFromWatchlist": "Remove from Watchlist",
+    "removeFromWatchlist": "Remove from 'Watchlist'",
     "noDescription": "No description available",
     "notAvailable": "Not available",
     "watchIn": "Watch on:",

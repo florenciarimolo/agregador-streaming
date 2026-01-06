@@ -136,6 +136,7 @@
                 </template>
                 <div class="p-4">
                   <!-- If title has a state, only show option to remove that state -->
+                  <!-- All remove actions use IconX -->
                   <Button
                     v-if="isLiked"
                     type="button"
@@ -148,7 +149,7 @@
                     "
                   >
                     <template #icon>
-                      <IconHeart icon-class="w-4 h-4" />
+                      <IconX icon-class="w-4 h-4" />
                     </template>
                     {{ $t('media.removeFromLiked') }}
                   </Button>
@@ -164,7 +165,7 @@
                     "
                   >
                     <template #icon>
-                      <IconCheck icon-class="w-4 h-4" />
+                      <IconX icon-class="w-4 h-4" />
                     </template>
                     {{ $t('media.removeFromSeen') }}
                   </Button>
@@ -196,7 +197,7 @@
                     "
                   >
                     <template #icon>
-                      <IconClock icon-class="w-4 h-4" />
+                      <IconX icon-class="w-4 h-4" />
                     </template>
                     {{ $t('media.removeFromWatchlist') }}
                   </Button>

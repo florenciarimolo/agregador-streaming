@@ -25,7 +25,10 @@
           @click.stop.prevent="handleMenuAction(menuAction.action)"
         >
           <template #icon>
-            <IconCheck v-if="menuAction.icon === 'IconCheck'" icon-class="w-4 h-4" />
+            <!-- All remove actions use IconX -->
+            <IconX v-if="menuAction.showRemove" icon-class="w-4 h-4" />
+            <!-- Add actions keep their original icons -->
+            <IconCheck v-else-if="menuAction.icon === 'IconCheck'" icon-class="w-4 h-4" />
             <IconHeart v-else-if="menuAction.icon === 'IconHeart'" icon-class="w-4 h-4" />
             <IconClock v-else-if="menuAction.icon === 'IconClock'" icon-class="w-4 h-4" />
             <IconX v-else-if="menuAction.icon === 'IconX'" icon-class="w-4 h-4" />

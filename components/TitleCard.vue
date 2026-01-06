@@ -112,6 +112,7 @@
                 </template>
                 <div class="p-4">
                   <!-- If title has a state, only show option to remove that state -->
+                  <!-- All remove actions use IconX -->
                   <Button
                     v-if="recommendation.liked"
                     type="button"
@@ -121,7 +122,7 @@
                     @click.stop.prevent="handleAction('remove-liked')"
                   >
                     <template #icon>
-                      <IconHeart icon-class="w-4 h-4" />
+                      <IconX icon-class="w-4 h-4" />
                     </template>
                     {{ t('media.removeFromLiked') }}
                   </Button>
@@ -134,7 +135,7 @@
                     @click.stop.prevent="handleAction(TITLE_STATUS.WATCHLIST)"
                   >
                     <template #icon>
-                      <IconClock icon-class="w-4 h-4" />
+                      <IconX icon-class="w-4 h-4" />
                     </template>
                     {{ t('media.removeFromWatchlist') }}
                   </Button>

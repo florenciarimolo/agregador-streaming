@@ -51,12 +51,13 @@ export const useTitleMenuActions = (
     const { isLiked, isSeen, isNotInterested, isInWatchlist } = status.value;
 
     // If title has a state, only show option to remove that state
+    // All remove actions use IconX
     if (isLiked) {
       return [
         {
           action: 'remove-liked',
           label: 'media.removeFromLiked',
-          icon: 'IconHeart',
+          icon: 'IconX',
           showRemove: true,
         },
       ];
@@ -67,7 +68,7 @@ export const useTitleMenuActions = (
         {
           action: TITLE_STATUS.SEEN,
           label: 'media.removeFromSeen',
-          icon: 'IconCheck',
+          icon: 'IconX',
           showRemove: true,
         },
       ];
@@ -89,7 +90,7 @@ export const useTitleMenuActions = (
         {
           action: 'remove-watchlist',
           label: 'media.removeFromWatchlist',
-          icon: 'IconClock',
+          icon: 'IconX',
           showRemove: true,
         },
       ];

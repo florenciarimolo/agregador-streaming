@@ -17,7 +17,8 @@
     "search": "Bilatu",
     "noResults": "Ez da emaitzarik aurkitu",
     "noImage": "Irudirik ez",
-    "optional": "Aukerakoa"
+    "optional": "Aukerakoa",
+    "lists": "Zerrendak"
   },
   "navbar": {
     "home": "Inicio",
@@ -182,7 +183,7 @@
     "noResultsWithFilters": "No hemos encontrado nada con estos filtros",
     "noResultsWithFiltersDescription": "Esta combinación es bastante específica. Prueba a ajustar el nivel de atención o el estado de ánimo.",
     "relaxFilters": "Relajar filtros automáticamente",
-    "removeFilters": "Quitar filtros",
+    "removeFilters": "Garbitu iragazkiak",
     "sessionError": "Errorea: No se pudo obtener la sesión",
     "poolPopulated": "Pool poblado: {inserted} recomendaciones agregadas",
     "generateError": "Errorea al generar recomendaciones. Mesedez, saiatu berriro.",
@@ -205,7 +206,7 @@
     "regeneratingRecommendations": "Se están regenerando las recomendaciones",
     "likeRemoved": "\"{title}\" eliminado de 'Me gusta'",
     "titleRemovedFavorites": "\"{title}\" eliminado de favoritos",
-    "errorRemovingFavorites": "Errorea al quitar \"{title}\" de favoritos",
+    "errorRemovingFavorites": "Errorea al eliminar \"{title}\" de favoritos",
     "confirmRemoveLikeTitle": "Eliminazioa berretsi",
     "confirmRemoveLikeMessage": "Ziur zaude \"{title}\" zure gogokoetatik kendu nahi duzula?"
   },
@@ -314,7 +315,8 @@
       "seen": "Vistos",
       "notInterested": "No me interesa",
       "watchlist": "Watchlist"
-    }
+    },
+    "listsDescription": "Kudeatu gogoko tituluak, ikusitako edukia eta interesik ez duzun tituluak. Antolatu zure ikuskatze historia eta hobespenak."
   },
   "preferences": {
     "title": "Preferencias",
@@ -404,9 +406,7 @@
     "titleRemoved": "Título eliminado del historial exitosamente.",
     "errorRemoving": "Errorea al eliminar el título. Mesedez, saiatu berriro.",
     "notAuthenticated": "No estás autenticado. Mesedez, inicia sesión.",
-    "removeFromList": "Ezabatu",
-    "removeFromSeenList": "Ezabatu {title} de la lista de vistas",
-    "removeFromNotInterestedList": "Ezabatu {title} de la lista de no me interesan"
+    "removeFromList": "Ezabatu"
   },
   "footer": {
     "howItWorks": "Cómo funciona",
@@ -418,11 +418,11 @@
   },
   "media": {
     "watchNow": "Ver ahora",
-    "addToWatchlist": "Añadir a la Watchlist",
-    "markAsSeen": "Marcar {title} como visto",
-    "markAsNotInterested": "Marcar como 'No me interesa'",
-    "removeFromSeen": "Quitar de visto",
-    "removeFromNotInterested": "Quitar de 'No me interesa'",
+    "addToWatchlist": "Watchlist",
+    "markAsSeen": "Ikusia",
+    "markAsNotInterested": "Ez du interesik",
+    "removeFromSeen": "Ezabatu 'Ikusia'-tik",
+    "removeFromNotInterested": "Ezabatu 'Ez du interesik'-etik",
     "inTheaters": "En cines",
     "streaming": "Streaming",
     "rent": "Alquilar",
@@ -445,13 +445,13 @@
     "noProviders": "No disponible en streaming",
     "viewDetails": "Ver detalles",
     "back": "Atzera",
-    "seen": "Visto",
+    "seen": "Ikusia",
     "liked": "Me gusta",
     "like": "Gustatzen zait",
-    "removeFromLiked": "Ezabatu de 'Me gusta'",
-    "notInterested": "No me interesa",
+    "removeFromLiked": "Ezabatu 'Gustatzen zait'-tik",
+    "notInterested": "Ez du interesik",
     "watchLater": "Watchlist",
-    "removeFromWatchlist": "Ezabatu de la Watchlist",
+    "removeFromWatchlist": "Ezabatu 'Watchlist'-etik",
     "noDescription": "Sin descripción disponible",
     "notAvailable": "No disponible",
     "watchIn": "Ver en:",

@@ -10,209 +10,219 @@
           class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"
         ></div>
       </div>
-      <div v-else class="pt-6 pb-6 w-full">
+      <div v-else>
         <!-- Undo Toast -->
         <Toast />
 
-        <!-- Tabs for Lists -->
-        <Tabs
-          :default-tab="activeTab"
-          @tab-change="(tab) => handleTabChange(tab as ListTab)"
-        >
-          <template #buttons="{ activeTab: currentTab, setActiveTab }">
-            <TabButton
-              v-for="tab in tabs"
-              :key="tab.id"
-              :is-active="currentTab === tab.id"
-              :badge="
-                tab.count !== null && tab.count !== undefined
-                  ? tab.count
-                  : undefined
-              "
-              @click="handleTabButtonClick(tab.id as ListTab, setActiveTab)"
-            >
-              {{ tab.label }}
-            </TabButton>
-          </template>
-          <template #default="{ activeTab: currentTab }">
-            <!-- Liked Tab -->
-            <div v-if="currentTab === LIST_TAB.LIKED">
-              <Spinner v-if="isLoading" :message="$t('preferences.loading')" />
+        <Section>
+          <!-- Page Title -->
+          <SectionTitle :description="$t('profile.listsDescription')">
+            {{ $t('common.lists') }}
+          </SectionTitle>
 
-              <div
-                v-else-if="likedTitles.length > 0"
-                class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
+          <!-- Tabs for Lists -->
+          <Tabs
+            :default-tab="activeTab"
+            @tab-change="(tab) => handleTabChange(tab as ListTab)"
+          >
+            <template #buttons="{ activeTab: currentTab, setActiveTab }">
+              <TabButton
+                v-for="tab in tabs"
+                :key="tab.id"
+                :is-active="currentTab === tab.id"
+                :badge="
+                  tab.count !== null && tab.count !== undefined
+                    ? tab.count
+                    : undefined
+                "
+                @click="handleTabButtonClick(tab.id as ListTab, setActiveTab)"
               >
-                <TitleCard
-                  v-for="title in likedTitles"
-                  :key="title.id"
-                  :title="title.title"
-                  :poster-path="title.poster_path"
-                  :link-to="getTitleLink(title.type, title.tmdb_id)"
-                  :link-aria-label="
-                    $t('media.viewDetailsOf', { title: title.title })
-                  "
-                  :image-alt="$t('media.posterOf', { title: title.title })"
-                  :no-image-aria-label="
-                    $t('media.noPosterAvailableFor', { title: title.title })
-                  "
-                  :type="title.type"
-                  :aria-label="
-                    $t('media.titleCardLabel', { title: title.title })
-                  "
+                {{ tab.label }}
+              </TabButton>
+            </template>
+            <template #default="{ activeTab: currentTab }">
+              <!-- Liked Tab -->
+              <div v-if="currentTab === LIST_TAB.LIKED">
+                <Spinner
+                  v-if="isLoading"
+                  :message="$t('preferences.loading')"
+                />
+
+                <div
+                  v-else-if="likedTitles.length > 0"
+                  class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
                 >
-                  <template #top-right-actions>
-                    <Tooltip :text="$t('common.delete')">
-                      <IconButton
-                        :aria-label="$t('common.delete')"
-                        size="small"
-                        variant="default"
-                        custom-class="p-2 rounded-full backdrop-blur-sm pointer-events-auto w-fit h-fit bg-black/50 hover:bg-red-600/80"
-                        @click.stop.prevent="handleRemoveLikedClick(title)"
-                      >
-                        <IconX icon-class="w-4 h-4 text-white" />
-                      </IconButton>
-                    </Tooltip>
-                  </template>
-                </TitleCard>
+                  <TitleCard
+                    v-for="title in likedTitles"
+                    :key="title.id"
+                    :title="title.title"
+                    :poster-path="title.poster_path"
+                    :link-to="getTitleLink(title.type, title.tmdb_id)"
+                    :link-aria-label="
+                      $t('media.viewDetailsOf', { title: title.title })
+                    "
+                    :image-alt="$t('media.posterOf', { title: title.title })"
+                    :no-image-aria-label="
+                      $t('media.noPosterAvailableFor', { title: title.title })
+                    "
+                    :type="title.type"
+                    :aria-label="
+                      $t('media.titleCardLabel', { title: title.title })
+                    "
+                  >
+                    <template #top-right-actions>
+                      <Tooltip :text="$t('common.delete')">
+                        <IconButton
+                          :aria-label="$t('common.delete')"
+                          size="small"
+                          variant="default"
+                          custom-class="p-2 rounded-full backdrop-blur-sm pointer-events-auto w-fit h-fit bg-black/50 hover:bg-red-600/80"
+                          @click.stop.prevent="handleRemoveLikedClick(title)"
+                        >
+                          <IconX icon-class="w-4 h-4 text-white" />
+                        </IconButton>
+                      </Tooltip>
+                    </template>
+                  </TitleCard>
+                </div>
+
+                <EmptyState
+                  v-else
+                  :message="$t('preferences.emptyState')"
+                  icon="heart"
+                  :cta-text="$t('preferences.emptyStateCta')"
+                  :cta-action="goToRecommendations"
+                />
               </div>
 
-              <EmptyState
-                v-else
-                :message="$t('preferences.emptyState')"
-                icon="heart"
-                :cta-text="$t('preferences.emptyStateCta')"
-                :cta-action="goToRecommendations"
-              />
-            </div>
+              <!-- Seen Tab -->
+              <div v-if="currentTab === LIST_TAB.SEEN">
+                <Spinner v-if="isLoading" :message="$t('seen.loading')" />
 
-            <!-- Seen Tab -->
-            <div v-if="currentTab === LIST_TAB.SEEN">
-              <Spinner v-if="isLoading" :message="$t('seen.loading')" />
-
-              <div
-                v-else-if="seenTitles.length > 0"
-                class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
-              >
-                <TitleCard
-                  v-for="title in seenTitles"
-                  :key="title.id"
-                  :title="title.title"
-                  :poster-path="title.poster_path"
-                  :link-to="getTitleLink(title.type, title.tmdb_id)"
-                  :link-aria-label="
-                    $t('media.viewDetailsOf', { title: title.title })
-                  "
-                  :image-alt="$t('media.posterOf', { title: title.title })"
-                  :no-image-aria-label="
-                    $t('media.noPosterAvailableFor', { title: title.title })
-                  "
-                  :type="title.type"
-                  :aria-label="
-                    $t('media.titleCardLabel', { title: title.title })
-                  "
+                <div
+                  v-else-if="seenTitles.length > 0"
+                  class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
                 >
-                  <template #top-left-badges>
-                    <Tooltip :text="$t('media.liked')">
-                      <IconButton
-                        :aria-label="$t('media.liked')"
-                        size="small"
-                        variant="default"
-                        :custom-class="`p-2 rounded-full backdrop-blur-sm pointer-events-auto w-fit h-fit ${
-                          title.liked === true
-                            ? 'bg-primary-800 text-white border border-gray-700/50 dark:bg-primary-600/70 dark:border-primary-800 hover:bg-primary-900 dark:hover:bg-primary-600'
-                            : 'bg-black/50 hover:bg-primary-900 dark:hover:bg-primary-600'
-                        }`"
-                        @click.stop.prevent="handleAddToLiked(title)"
-                      >
-                        <IconHeartFilled
-                          v-if="title.liked === true"
-                          icon-class="w-4 h-4 text-white"
-                        />
-                        <IconHeart v-else icon-class="w-4 h-4 text-white" />
-                      </IconButton>
-                    </Tooltip>
-                  </template>
-                  <template #top-right-actions>
-                    <Tooltip :text="$t('seen.removeFromList')">
-                      <IconButton
-                        :aria-label="$t('seen.removeFromList')"
-                        size="small"
-                        variant="default"
-                        custom-class="p-2 rounded-full backdrop-blur-sm pointer-events-auto w-fit h-fit bg-black/50 hover:bg-red-600/80"
-                        @click.stop.prevent="handleRemoveSeen(title)"
-                      >
-                        <IconX icon-class="w-4 h-4 text-white" />
-                      </IconButton>
-                    </Tooltip>
-                  </template>
-                </TitleCard>
+                  <TitleCard
+                    v-for="title in seenTitles"
+                    :key="title.id"
+                    :title="title.title"
+                    :poster-path="title.poster_path"
+                    :link-to="getTitleLink(title.type, title.tmdb_id)"
+                    :link-aria-label="
+                      $t('media.viewDetailsOf', { title: title.title })
+                    "
+                    :image-alt="$t('media.posterOf', { title: title.title })"
+                    :no-image-aria-label="
+                      $t('media.noPosterAvailableFor', { title: title.title })
+                    "
+                    :type="title.type"
+                    :aria-label="
+                      $t('media.titleCardLabel', { title: title.title })
+                    "
+                  >
+                    <template #top-left-badges>
+                      <Tooltip :text="$t('media.liked')">
+                        <IconButton
+                          :aria-label="$t('media.liked')"
+                          size="small"
+                          variant="default"
+                          :custom-class="`p-2 rounded-full backdrop-blur-sm pointer-events-auto w-fit h-fit ${
+                            title.liked === true
+                              ? 'bg-primary-800 text-white border border-gray-700/50 dark:bg-primary-600/70 dark:border-primary-800 hover:bg-primary-900 dark:hover:bg-primary-600'
+                              : 'bg-black/50 hover:bg-primary-900 dark:hover:bg-primary-600'
+                          }`"
+                          @click.stop.prevent="handleAddToLiked(title)"
+                        >
+                          <IconHeartFilled
+                            v-if="title.liked === true"
+                            icon-class="w-4 h-4 text-white"
+                          />
+                          <IconHeart v-else icon-class="w-4 h-4 text-white" />
+                        </IconButton>
+                      </Tooltip>
+                    </template>
+                    <template #top-right-actions>
+                      <Tooltip :text="$t('seen.removeFromList')">
+                        <IconButton
+                          :aria-label="$t('seen.removeFromList')"
+                          size="small"
+                          variant="default"
+                          custom-class="p-2 rounded-full backdrop-blur-sm pointer-events-auto w-fit h-fit bg-black/50 hover:bg-red-600/80"
+                          @click.stop.prevent="handleRemoveSeen(title)"
+                        >
+                          <IconX icon-class="w-4 h-4 text-white" />
+                        </IconButton>
+                      </Tooltip>
+                    </template>
+                  </TitleCard>
+                </div>
+
+                <EmptyState
+                  v-else
+                  :message="$t('seen.empty')"
+                  icon="eye"
+                  :cta-text="$t('seen.emptyCta')"
+                  :cta-action="goToRecommendations"
+                />
               </div>
 
-              <EmptyState
-                v-else
-                :message="$t('seen.empty')"
-                icon="eye"
-                :cta-text="$t('seen.emptyCta')"
-                :cta-action="goToRecommendations"
-              />
-            </div>
+              <!-- Not Interested Tab -->
+              <div v-if="currentTab === LIST_TAB.NOT_INTERESTED">
+                <Spinner
+                  v-if="isLoading"
+                  :message="$t('notInterested.loading')"
+                />
 
-            <!-- Not Interested Tab -->
-            <div v-if="currentTab === LIST_TAB.NOT_INTERESTED">
-              <Spinner
-                v-if="isLoading"
-                :message="$t('notInterested.loading')"
-              />
-
-              <div
-                v-else-if="notInterestedTitles.length > 0"
-                class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
-              >
-                <TitleCard
-                  v-for="title in notInterestedTitles"
-                  :key="title.id"
-                  :title="title.title"
-                  :poster-path="title.poster_path"
-                  :link-to="getTitleLink(title.type, title.tmdb_id)"
-                  :link-aria-label="
-                    $t('media.viewDetailsOf', { title: title.title })
-                  "
-                  :image-alt="$t('media.posterOf', { title: title.title })"
-                  :no-image-aria-label="
-                    $t('media.noPosterAvailableFor', { title: title.title })
-                  "
-                  :type="title.type"
-                  :aria-label="
-                    $t('media.titleCardLabel', { title: title.title })
-                  "
+                <div
+                  v-else-if="notInterestedTitles.length > 0"
+                  class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
                 >
-                  <template #top-right-actions>
-                    <Tooltip :text="$t('common.delete')">
-                      <IconButton
-                        :aria-label="$t('common.delete')"
-                        size="small"
-                        variant="default"
-                        custom-class="p-2 rounded-full backdrop-blur-sm pointer-events-auto w-fit h-fit bg-black/50 hover:bg-red-600/80"
-                        @click.stop.prevent="handleRemoveNotInterested(title)"
-                      >
-                        <IconX icon-class="w-4 h-4 text-white" />
-                      </IconButton>
-                    </Tooltip>
-                  </template>
-                </TitleCard>
-              </div>
+                  <TitleCard
+                    v-for="title in notInterestedTitles"
+                    :key="title.id"
+                    :title="title.title"
+                    :poster-path="title.poster_path"
+                    :link-to="getTitleLink(title.type, title.tmdb_id)"
+                    :link-aria-label="
+                      $t('media.viewDetailsOf', { title: title.title })
+                    "
+                    :image-alt="$t('media.posterOf', { title: title.title })"
+                    :no-image-aria-label="
+                      $t('media.noPosterAvailableFor', { title: title.title })
+                    "
+                    :type="title.type"
+                    :aria-label="
+                      $t('media.titleCardLabel', { title: title.title })
+                    "
+                  >
+                    <template #top-right-actions>
+                      <Tooltip :text="$t('common.delete')">
+                        <IconButton
+                          :aria-label="$t('common.delete')"
+                          size="small"
+                          variant="default"
+                          custom-class="p-2 rounded-full backdrop-blur-sm pointer-events-auto w-fit h-fit bg-black/50 hover:bg-red-600/80"
+                          @click.stop.prevent="handleRemoveNotInterested(title)"
+                        >
+                          <IconX icon-class="w-4 h-4 text-white" />
+                        </IconButton>
+                      </Tooltip>
+                    </template>
+                  </TitleCard>
+                </div>
 
-              <EmptyState
-                v-else
-                :message="$t('notInterested.empty')"
-                icon="x"
-                :cta-text="$t('notInterested.emptyCta')"
-                :cta-action="goToRecommendations"
-              />
-            </div>
-          </template>
-        </Tabs>
+                <EmptyState
+                  v-else
+                  :message="$t('notInterested.empty')"
+                  icon="x"
+                  :cta-text="$t('notInterested.emptyCta')"
+                  :cta-action="goToRecommendations"
+                />
+              </div>
+            </template>
+          </Tabs>
+        </Section>
 
         <!-- Modal for removing like -->
         <Modal
@@ -288,6 +298,8 @@ import Tooltip from '@/components/ui/Tooltip.vue';
 import EmptyState from '@/components/EmptyState.vue';
 import Spinner from '@/components/Spinner.vue';
 import Toast from '@/components/ui/Toast.vue';
+import Section from '@/components/layout/Section.vue';
+import SectionTitle from '@/components/layout/SectionTitle.vue';
 import { useUndoToast } from '@/composables/useUndoToast';
 import { useRouteWithLang } from '@/composables/useRouteWithLang';
 import { useTitleStatusAction } from '@/composables/useTitleStatusAction';

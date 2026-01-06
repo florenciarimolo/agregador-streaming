@@ -17,7 +17,8 @@
     "search": "Cercar",
     "noResults": "No s'han trobat resultats",
     "noImage": "Sense imatge",
-    "optional": "Opcional"
+    "optional": "Opcional",
+    "lists": "Llistes"
   },
   "navbar": {
     "home": "Inici",
@@ -182,7 +183,7 @@
     "noResultsWithFilters": "No hemos encontrado nada con estos filtros",
     "noResultsWithFiltersDescription": "Esta combinación es bastante específica. Prueba a ajustar el nivel de atención o el estado de ánimo.",
     "relaxFilters": "Relajar filtros automáticamente",
-    "removeFilters": "Quitar filtros",
+    "removeFilters": "Netejar filtres",
     "sessionError": "Error: No s'ha pogut obtenir la sessió",
     "poolPopulated": "Pool poblat: {inserted} recomanacions afegides",
     "generateError": "Error en generar recomanacions. Si us plau, intenta-ho de nou.",
@@ -205,7 +206,7 @@
     "regeneratingRecommendations": "S'estan regenerant les recomanacions",
     "likeRemoved": "\"{title}\" eliminat de 'M'agrada'",
     "titleRemovedFavorites": "\"{title}\" eliminat de favorits",
-    "errorRemovingFavorites": "Error en treure \"{title}\" de favorits",
+    "errorRemovingFavorites": "Error en eliminar \"{title}\" de favorits",
     "confirmRemoveLikeTitle": "Confirmar eliminació",
     "confirmRemoveLikeMessage": "Estàs segur que vols eliminar \"{title}\" dels teus favorits?"
   },
@@ -314,7 +315,8 @@
       "seen": "Vistos",
       "notInterested": "No m'interessa",
       "watchlist": "Watchlist"
-    }
+    },
+    "listsDescription": "Gestiona els teus títols preferits, contingut vist i títols que no t'interessen. Organitza el teu historial de visualització i preferències."
   },
   "preferences": {
     "title": "Preferències",
@@ -404,9 +406,7 @@
     "titleRemoved": "Títol eliminat de l'historial exitosament.",
     "errorRemoving": "Error en eliminar el títol. Si us plau, intenta-ho de nou.",
     "notAuthenticated": "No estàs autenticat. Si us plau, inicia sessió.",
-    "removeFromList": "Eliminar",
-    "removeFromSeenList": "Eliminar {title} de la llista de vistes",
-    "removeFromNotInterestedList": "Eliminar {title} de la llista de no m'interessen"
+    "removeFromList": "Eliminar"
   },
   "footer": {
     "howItWorks": "Com funciona",
@@ -418,11 +418,11 @@
   },
   "media": {
     "watchNow": "Veure ara",
-    "addToWatchlist": "Afegir a la Watchlist",
-    "markAsSeen": "Marcar {title} com a vist",
-    "markAsNotInterested": "Marcar com a 'No m'interessa'",
-    "removeFromSeen": "Treure de vist",
-    "removeFromNotInterested": "Treure de 'No m'interessa'",
+    "addToWatchlist": "Watchlist",
+    "markAsSeen": "Vist",
+    "markAsNotInterested": "No m'interessa",
+    "removeFromSeen": "Eliminar de 'Vist'",
+    "removeFromNotInterested": "Eliminar de 'No m'interessa'",
     "inTheaters": "Als cinemes",
     "streaming": "Streaming",
     "rent": "Llogar",
@@ -448,10 +448,10 @@
     "seen": "Vist",
     "liked": "M'agrada",
     "like": "M'agrada",
-    "removeFromLiked": "Treure de 'M'agrada'",
+    "removeFromLiked": "Eliminar de 'M'agrada'",
     "notInterested": "No m'interessa",
     "watchLater": "Watchlist",
-    "removeFromWatchlist": "Treure de la Watchlist",
+    "removeFromWatchlist": "Eliminar de 'Watchlist'",
     "noDescription": "Sense descripció disponible",
     "notAvailable": "No disponible",
     "watchIn": "Veure a:",
