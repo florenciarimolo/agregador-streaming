@@ -46,14 +46,17 @@ export const extractLangFromPath = (path: string): string | null => {
 };
 
 /**
- * Get current language URL code from route (reactive)
+ * Get current language URL code from route
+ * @param route - Route object (required when called outside setup function)
  * @returns Language URL code (e.g., 'es', 'en') or DEFAULT_LANGUAGE_URL_CODE as default
  *
  * NOTE: This function is NOT reactive by itself. Use the `lang` computed from `useRouteWithLang()`
- * for reactive language access, or call this function inside a computed().
+ * for reactive language access.
+ * 
+ * WARNING: When called outside a setup function, you MUST pass the route parameter.
+ * Inside a setup function, you can call useRoute() and pass it, or use the lang computed from useRouteWithLang().
  */
-export const getCurrentLangUrlCode = (): string => {
-  const route = useRoute();
+export const getCurrentLangUrlCode = (route: ReturnType<typeof useRoute>): string => {
   const langParam = route.params?.lang as string | undefined;
   if (langParam) {
     return langParam.toLowerCase();
@@ -73,8 +76,20 @@ export const getCurrentLangUrlCode = (): string => {
  * @param lang - Optional language code. If not provided, uses current route language
  * @returns Path with language prefix (e.g., '/es/', '/es/discover', '/es/movie/123')
  */
-export const routeWithLang = (path: string, lang?: string): string => {
-  const currentLang = lang || getCurrentLangUrlCode();
+export const routeWithLang = (path: string, lang?: string, route?: ReturnType<typeof useRoute>): string => {
+  // If lang is provided, use it. Otherwise, try to get from route if provided.
+  // WARNING: If neither lang nor route is provided, this function will use DEFAULT_LANGUAGE_URL_CODE.
+  // To get the current route language, use the routeWithLang function from useRouteWithLang() composable instead.
+  let currentLang: string;
+  if (lang) {
+    currentLang = lang;
+  } else if (route) {
+    currentLang = getCurrentLangUrlCode(route);
+  } else {
+    // Fallback to default if neither lang nor route is provided
+    // This should only happen if called incorrectly outside setup context
+    currentLang = DEFAULT_LANGUAGE_URL_CODE;
+  }
 
   // Normalize path (ensure it starts with /)
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
@@ -96,19 +111,19 @@ export const routeWithLang = (path: string, lang?: string): string => {
  * No caching, no stored state - always read from route
  */
 export const useRouteWithLang = () => {
+  // CRITICAL: Call useRoute() at the composable level, not inside computed
+  // This ensures it's called in the correct context (setup function)
+  const route = useRoute();
+  
   // Make lang reactive using computed - explicitly depend on route.params.lang
-  // CRITICAL: Call useRoute() inside the computed to ensure we always get the current route
-  // This ensures reactivity when the computed is accessed
+  // Use toRef to make route.params.lang reactive
   const lang = computed(() => {
-    // CRITICAL: Call useRoute() inside the computed to get the current route
-    // This ensures Vue tracks the dependency correctly
-    const currentRoute = useRoute();
-    const langParam = currentRoute.params?.lang as string | undefined;
+    const langParam = route.params?.lang as string | undefined;
     if (langParam) {
       return langParam.toLowerCase();
     }
     // Fallback: try to extract from path if params.lang is not available
-    const langFromPath = extractLangFromPath(currentRoute.path);
+    const langFromPath = extractLangFromPath(route.path);
     if (langFromPath) {
       return langFromPath;
     }
@@ -119,34 +134,12 @@ export const useRouteWithLang = () => {
   /**
    * Build route with language prefix - ALWAYS reactive
    *
-   * CRITICAL: This function MUST call useRoute() inside to get the current route
-   * when called from a computed(). This ensures Vue tracks the dependency correctly.
-   *
-   * When called from a computed():
-   * - It will call useRoute() to get the current route
-   * - It will access route.params.lang directly
-   * - Vue will track this as a dependency
-   * - The computed will re-evaluate when route.params.lang changes
+   * Uses the route from the composable scope, which is reactive.
+   * When langOverride is provided, uses that. Otherwise, uses the reactive lang computed.
    */
   const routeWithLang = (path: string, langOverride?: string): string => {
-    // CRITICAL: Call useRoute() inside the function to get the current route
-    // This ensures that when called from a computed(), Vue tracks the dependency on route.params.lang
-    let currentLang: string;
-    if (langOverride) {
-      currentLang = langOverride;
-    } else {
-      // CRITICAL: Call useRoute() here to get the current route (not use the route from outer scope)
-      // This ensures reactivity when called from computed()
-      const currentRoute = useRoute();
-      const langParam = currentRoute.params?.lang as string | undefined;
-      if (langParam) {
-        currentLang = langParam.toLowerCase();
-      } else {
-        // Fallback: try to extract from path if params.lang is not available
-        const langFromPath = extractLangFromPath(currentRoute.path);
-        currentLang = langFromPath || DEFAULT_LANGUAGE_URL_CODE;
-      }
-    }
+    // Use langOverride if provided, otherwise use the reactive lang computed
+    const currentLang = langOverride || lang.value;
 
     // Normalize path (ensure it starts with /)
     const normalizedPath = path.startsWith('/') ? path : `/${path}`;

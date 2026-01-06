@@ -21,6 +21,7 @@ export default {
           'sans-serif',
         ],
         heading: [
+          'Oswald',
           'Inter',
           'system-ui',
           '-apple-system',

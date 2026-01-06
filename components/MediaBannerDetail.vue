@@ -222,7 +222,7 @@
         </div>
         <!-- Title - left aligned, vertically centered -->
         <h1
-          class="absolute left-4 top-1/2 -translate-y-1/2 right-4 text-2xl font-bold text-white uppercase break-words"
+          class="absolute left-4 top-1/2 -translate-y-1/2 right-4 text-3xl font-bold text-white uppercase break-words"
         >
           {{ mediaWithProviders.title || (mediaWithProviders as any).name }}
         </h1>
@@ -314,7 +314,7 @@
                 class="flex flex-wrap gap-3 items-center xl:flex-nowrap xl:flex-1 xl:min-w-0"
               >
                 <h1
-                  class="hidden lg:block text-2xl font-bold text-gray-800 break-words dark:text-gray-300 xl:flex-1 xl:min-w-0 uppercase"
+                  class="hidden lg:block text-4xl font-bold text-gray-800 break-words dark:text-gray-300 xl:flex-1 xl:min-w-0 uppercase"
                   >{{
                     mediaWithProviders.title || (mediaWithProviders as any).name
                   }}</h1

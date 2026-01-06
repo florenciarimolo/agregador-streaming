@@ -19,7 +19,8 @@ export const useCurrentLanguage = () => {
 
   const currentLanguage = computed<Language>(() => {
     // Get URL code from route (handles both params.lang and path extraction)
-    const urlCode = getCurrentLangUrlCode();
+    // Pass route to avoid calling useRoute() again
+    const urlCode = getCurrentLangUrlCode(route);
 
     // Map URL code to i18n code (e.g., 'es' -> 'es-ES', 'gl' -> 'gl-ES')
     const i18nCode = getI18nCodeFromUrlCode(urlCode);
