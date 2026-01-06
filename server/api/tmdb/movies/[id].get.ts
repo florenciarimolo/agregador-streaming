@@ -210,6 +210,7 @@ export default defineEventHandler(async (event) => {
       
       // If tagline or status is missing in DB but exists in TMDB response, save it
       const needsUpdate: Record<string, unknown> = {};
+      let savedStatus: string | undefined = undefined;
       if (!taglineFromDb && fullMovieResponse?.tagline) {
         const updatedTagline: MultiLanguageText = { ...(taglineJsonb || {}) };
         updatedTagline[userLanguage] = fullMovieResponse.tagline;
@@ -218,6 +219,7 @@ export default defineEventHandler(async (event) => {
       }
       if (!titleFromDb.status && fullMovieResponse?.status) {
         needsUpdate[TITLES_COLUMNS.STATUS] = fullMovieResponse.status;
+        savedStatus = fullMovieResponse.status; // Store the value we're saving
       }
       if (Object.keys(needsUpdate).length > 0) {
         await supabase
@@ -245,7 +247,7 @@ export default defineEventHandler(async (event) => {
         backdrop_path: titleFromDb.backdrop_path || null,
         release_date: titleFromDb.release_date || '',
         vote_average: titleFromDb.vote_average || 0,
-        status: (titleFromDb.status as string | undefined) || undefined, // Only from DB, no TMDB fallback for display
+        status: (titleFromDb.status as string | undefined) || savedStatus || undefined, // Use saved value if we just saved it
         genres: fullMovieResponse?.genres || titleFromDb.genres || [],
         genre_ids: fullMovieResponse?.genre_ids || [],
         tagline: taglineJsonb && Object.keys(taglineJsonb).length > 0

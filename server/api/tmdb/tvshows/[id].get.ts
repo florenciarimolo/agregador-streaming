@@ -232,6 +232,7 @@ export default defineEventHandler(async (event) => {
       
       // If tagline or status is missing in DB but exists in TMDB response, save it
       const needsUpdate: Record<string, unknown> = {};
+      let savedStatus: string | undefined = undefined;
       if (!taglineFromDb && fullTvShowResponse?.tagline) {
         const updatedTagline: MultiLanguageText = { ...(taglineJsonb || {}) };
         updatedTagline[userLanguage] = fullTvShowResponse.tagline;
@@ -240,6 +241,7 @@ export default defineEventHandler(async (event) => {
       }
       if (!titleFromDb.status && fullTvShowResponse?.status) {
         needsUpdate[TITLES_COLUMNS.STATUS] = fullTvShowResponse.status;
+        savedStatus = fullTvShowResponse.status; // Store the value we're saving
       }
       if (Object.keys(needsUpdate).length > 0) {
         await supabase
@@ -279,7 +281,7 @@ export default defineEventHandler(async (event) => {
         number_of_seasons: fullTvShowResponse?.number_of_seasons || 0,
         number_of_episodes: fullTvShowResponse?.number_of_episodes,
         in_production: fullTvShowResponse?.in_production || false,
-        status: (titleFromDb.status as string | undefined) || undefined, // Only from DB, no TMDB fallback for display
+        status: (titleFromDb.status as string | undefined) || savedStatus || undefined, // Use saved value if we just saved it
         tagline: taglineJsonb && Object.keys(taglineJsonb).length > 0
           ? taglineJsonb
           : (taglineFromDb || undefined),
