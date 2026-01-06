@@ -789,7 +789,7 @@ const handleRemoveLikedClick = async (title: {
     }
 
     showToast(
-      t('preferences.titleRemoved'),
+      t('preferences.titleRemoved', { title: title.title }),
       {
         label: t('undo.undo'),
         action: async () => {
@@ -833,7 +833,7 @@ const handleRemoveLikedClick = async (title: {
       7000
     );
   } catch {
-    showError(t('preferences.errorRemoving'));
+    showError(t('preferences.errorRemoving', { title: title.title }));
     await fetchLikedTitles();
   }
 };
@@ -879,12 +879,12 @@ const handleRemoveSeen = async (title: {
       // Update local state - remove from list
       seenTitles.value = seenTitles.value.filter((t) => t.id !== title.id);
     } else if (!result.success) {
-      showError(t('seen.errorRemoving'));
+      showError(t('seen.errorRemoving', { title: title.title }));
       await fetchSeenTitles();
     }
   } catch (error) {
     console.error('[handleRemoveSeen] Error:', error);
-    showError(t('seen.errorRemoving'));
+    showError(t('seen.errorRemoving', { title: title.title }));
     await fetchSeenTitles();
   }
 };
@@ -986,12 +986,12 @@ const handleAddToLiked = async (title: {
         // Don't show error to user, pool regeneration is background task
       }
     } else if (!result.success) {
-      showError(t('preferences.errorAdding'));
+      showError(t('preferences.errorAdding', { title: title.title }));
       await fetchSeenTitles();
     }
   } catch (error) {
     console.error('Error adding to liked:', error);
-    showError(t('preferences.errorAdding'));
+    showError(t('preferences.errorAdding', { title: title.title }));
     await fetchSeenTitles();
   }
 };
@@ -1159,12 +1159,12 @@ const handleRemoveNotInterested = async (title: {
         (t) => t.id !== title.id
       );
     } else if (!result.success) {
-      showError(t('notInterested.errorRemoving'));
+      showError(t('notInterested.errorRemoving', { title: title.title }));
       await fetchNotInterestedTitles();
     }
   } catch (error) {
     console.error('[handleRemoveNotInterested] Error:', error);
-    showError(t('notInterested.errorRemoving'));
+    showError(t('notInterested.errorRemoving', { title: title.title }));
     await fetchNotInterestedTitles();
   }
 };
