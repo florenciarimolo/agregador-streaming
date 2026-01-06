@@ -1,7 +1,7 @@
 <template>
   <AppShell>
     <PageContainer>
-      <div class="w-full pt-6 pb-6">
+      <div class="w-full pt-0 pb-6 lg:pt-6">
         <!-- Loading state -->
         <div
           v-if="isLoading"

@@ -169,9 +169,7 @@
   <!-- Mobile Navbar -->
   <header class="w-full pt-4 md:hidden">
     <AppShell>
-      <nav
-        class="rounded-3xl border backdrop-blur-xl dark:bg-gray-900/40 bg-gray-100/90 border-gray-300/50 dark:border-white/10"
-      >
+      <nav>
         <div class="flex justify-between items-center py-3 px-4">
           <!-- Logo -->
           <nuxt-link :to="homeRoute" class="flex items-center">

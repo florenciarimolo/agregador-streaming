@@ -1,34 +1,77 @@
 <template>
-  <Section>
-    <section
-      class="relative flex flex-col items-center justify-between gap-16 dark:text-gray-300 text-gray-800 w-full flex-shrink-0 min-h-[400px] lg:flex-row lg:items-center lg:p-16 lg:bg-gray-100/80 dark:lg:bg-gray-900/40 lg:backdrop-blur-xl lg:border lg:gap-7 rounded-3xl lg:border-gray-300/50 lg:dark:border-primary-800 lg:shadow-lg lg:shadow-primary/20"
-    >
-      <div
-        class="hidden absolute inset-0 z-0 rounded-3xl lg:block"
-        :style="sectionStyle"
-      ></div>
-      <div
-        class="hidden absolute z-0 rounded-3xl lg:block bg-gray-100/90 dark:bg-gray-900/90"
-        style="top: 0px; right: 0px; bottom: 0px; left: 0px"
-      ></div>
-      <div
-        class="relative w-full max-w-[60%] mx-auto lg:max-w-80 lg:w-80 lg:mx-0 flex-shrink-0 lg:aspect-[2/3]"
-        style="
-          filter: drop-shadow(0 10px 15px -3px rgb(0 0 0 / 0.1))
-            drop-shadow(0 4px 6px -4px rgb(0 0 0 / 0.1))
-            drop-shadow(0 0 20px rgb(var(--color-primary) / 0.3));
-        "
+  <div>
+    <!-- Mobile: Full width image right after navbar -->
+    <div class="lg:hidden w-screen -mx-4 md:-mx-6 -mt-4">
+      <div class="relative w-full aspect-[16/9]">
+        <img
+          :src="`https://image.tmdb.org/t/p/w780` + mediaWithProviders.backdrop_path"
+          :alt="mediaWithProviders.title"
+          class="w-full h-full object-cover"
+        />
+        <!-- Informative icons overlay (only show if user has session) -->
+        <div
+          v-if="hasSession"
+          class="media-banner-tooltips flex absolute top-2 right-2 gap-2 z-20"
+        >
+          <Tooltip v-if="isLiked" :text="$t('media.liked')">
+            <div
+              class="flex justify-center items-center w-8 h-8 rounded-full backdrop-blur-sm bg-primary-600/90"
+            >
+              <IconHeartFilled icon-class="w-5 h-5 text-white" />
+            </div>
+          </Tooltip>
+          <Tooltip v-if="isSeen && !isLiked" :text="$t('media.seen')">
+            <div
+              class="flex justify-center items-center w-8 h-8 rounded-full backdrop-blur-sm bg-primary-600/90"
+            >
+              <IconCheck icon-class="w-5 h-5 text-white" />
+            </div>
+          </Tooltip>
+          <Tooltip v-if="isNotInterested" :text="$t('media.notInterested')">
+            <div
+              class="flex justify-center items-center w-8 h-8 rounded-full backdrop-blur-sm bg-primary-600/90"
+            >
+              <IconX icon-class="w-5 h-5 text-white" />
+            </div>
+          </Tooltip>
+          <Tooltip v-if="isInWatchlist" :text="$t('media.watchLater')">
+            <div
+              class="flex justify-center items-center w-8 h-8 rounded-full backdrop-blur-sm bg-primary-600/90"
+            >
+              <IconClock icon-class="w-5 h-5 text-white" />
+            </div>
+          </Tooltip>
+        </div>
+      </div>
+    </div>
+    <Section>
+      <section
+        class="relative flex flex-col items-center justify-between gap-16 dark:text-gray-300 text-gray-800 w-full flex-shrink-0 min-h-[400px] lg:flex-row lg:items-center lg:p-16 lg:bg-gray-100/80 dark:lg:bg-gray-900/40 lg:backdrop-blur-xl lg:border lg:gap-7 rounded-3xl lg:border-gray-300/50 lg:dark:border-primary-800 lg:shadow-lg lg:shadow-primary/20"
       >
         <div
-          class="relative overflow-hidden rounded-3xl w-full aspect-[2/3] max-h-[300px] lg:h-full lg:max-h-[500px]"
+          class="hidden absolute inset-0 z-0 rounded-3xl lg:block"
+          :style="sectionStyle"
+        ></div>
+        <div
+          class="hidden absolute z-0 rounded-3xl lg:block bg-gray-100/90 dark:bg-gray-900/90"
+          style="top: 0px; right: 0px; bottom: 0px; left: 0px"
+        ></div>
+        <div
+          class="hidden relative w-full max-w-[60%] mx-auto lg:flex lg:max-w-80 lg:w-80 lg:mx-0 flex-shrink-0 lg:aspect-[2/3]"
+          style="
+            filter: drop-shadow(0 10px 15px -3px rgb(0 0 0 / 0.1))
+              drop-shadow(0 4px 6px -4px rgb(0 0 0 / 0.1))
+              drop-shadow(0 0 20px rgb(var(--color-primary) / 0.3));
+          "
         >
-          <img
-            :src="
-              `https://image.tmdb.org/t/p/w780` + mediaWithProviders.poster_path
-            "
-            :alt="mediaWithProviders.title"
-            class="w-full h-full object-cover lg:rounded-3xl"
-          />
+          <div
+            class="relative overflow-hidden rounded-3xl w-full aspect-[2/3] h-full max-h-[500px]"
+          >
+            <img
+              :src="`https://image.tmdb.org/t/p/w780` + mediaWithProviders.poster_path"
+              :alt="mediaWithProviders.title"
+              class="w-full h-full object-cover rounded-3xl"
+            />
           <!-- Informative icons overlay (only show if user has session) -->
           <div
             v-if="hasSession"
@@ -66,7 +109,7 @@
         </div>
       </div>
       <div
-        class="z-10 relative flex flex-col flex-1 gap-6 rounded-lg lg:p-6 lg:ml-8 w-full flex-shrink-0 min-h-[300px]"
+        class="z-10 relative flex flex-col flex-1 gap-6 rounded-lg px-4 pt-6 lg:p-6 lg:ml-8 w-full flex-shrink-0 min-h-[300px]"
       >
         <div class="relative flex-row text-left">
           <button
@@ -411,6 +454,7 @@
       </div>
     </section>
   </Section>
+  </div>
 </template>
 
 <script setup lang="ts">

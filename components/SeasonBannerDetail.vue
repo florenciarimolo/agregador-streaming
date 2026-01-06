@@ -1,37 +1,51 @@
 <template>
-  <Section>
-    <section
-      class="relative flex flex-col items-center justify-between gap-16 pb-8 dark:text-gray-300 text-gray-800 w-full flex-shrink-0 min-h-[400px] lg:flex-row lg:items-center lg:p-16 lg:bg-gray-100/80 dark:lg:bg-gray-900/40 lg:backdrop-blur-xl lg:border lg:gap-7 rounded-3xl lg:border-gray-300/50 lg:dark:border-primary-800 lg:shadow-lg lg:shadow-primary/20 py-16"
-    >
+  <div>
+    <!-- Mobile: Full width image right after navbar -->
+    <div class="lg:hidden w-screen -mx-4 md:-mx-6 -mt-4">
       <div
-        class="absolute inset-0 z-0 hidden lg:block rounded-3xl"
-        :style="sectionStyle"
-      ></div>
-      <div
-        class="absolute z-0 hidden lg:block rounded-3xl bg-gray-100/90 dark:bg-gray-900/90"
-        style="top: 0px; right: 0px; bottom: 0px; left: 0px"
-      ></div>
-      <div
-        class="relative w-full max-w-[60%] mx-auto lg:max-w-80 lg:w-80 lg:mx-0 flex-shrink-0 lg:aspect-[2/3]"
-        style="
-          filter: drop-shadow(0 10px 15px -3px rgb(0 0 0 / 0.1))
-            drop-shadow(0 4px 6px -4px rgb(0 0 0 / 0.1))
-            drop-shadow(0 0 20px rgb(var(--color-primary) / 0.3));
-        "
+        v-if="season?.poster_path"
+        class="relative w-full aspect-[16/9]"
+      >
+        <img
+          :src="`https://image.tmdb.org/t/p/w780${season.poster_path}`"
+          :alt="season.name"
+          class="w-full h-full object-cover"
+        />
+      </div>
+    </div>
+    <Section>
+      <section
+        class="relative flex flex-col items-center justify-between gap-16 pb-8 dark:text-gray-300 text-gray-800 w-full flex-shrink-0 min-h-[400px] lg:flex-row lg:items-center lg:p-16 lg:bg-gray-100/80 dark:lg:bg-gray-900/40 lg:backdrop-blur-xl lg:border lg:gap-7 rounded-3xl lg:border-gray-300/50 lg:dark:border-primary-800 lg:shadow-lg lg:shadow-primary/20 py-16"
       >
         <div
-          v-if="season?.poster_path"
-          class="relative overflow-hidden rounded-3xl w-full aspect-[2/3] max-h-[300px] lg:h-full lg:max-h-[500px]"
+          class="absolute inset-0 z-0 hidden lg:block rounded-3xl"
+          :style="sectionStyle"
+        ></div>
+        <div
+          class="absolute z-0 hidden lg:block rounded-3xl bg-gray-100/90 dark:bg-gray-900/90"
+          style="top: 0px; right: 0px; bottom: 0px; left: 0px"
+        ></div>
+        <div
+          class="hidden relative w-full max-w-[60%] mx-auto lg:flex lg:max-w-80 lg:w-80 lg:mx-0 flex-shrink-0 lg:aspect-[2/3]"
+          style="
+            filter: drop-shadow(0 10px 15px -3px rgb(0 0 0 / 0.1))
+              drop-shadow(0 4px 6px -4px rgb(0 0 0 / 0.1))
+              drop-shadow(0 0 20px rgb(var(--color-primary) / 0.3));
+          "
         >
-          <img
-            :src="`https://image.tmdb.org/t/p/w780${season.poster_path}`"
-            :alt="season.name"
-            class="w-full h-full object-cover lg:rounded-3xl"
-          />
+          <div
+            v-if="season?.poster_path"
+            class="relative overflow-hidden rounded-3xl w-full aspect-[2/3] h-full max-h-[500px]"
+          >
+            <img
+              :src="`https://image.tmdb.org/t/p/w780${season.poster_path}`"
+              :alt="season.name"
+              class="w-full h-full object-cover rounded-3xl"
+            />
+          </div>
         </div>
-      </div>
       <div
-        class="z-10 relative flex flex-col flex-1 gap-6 rounded-lg lg:p-6 lg:ml-8 w-full flex-shrink-0 min-h-[300px]"
+        class="z-10 relative flex flex-col flex-1 gap-6 rounded-lg px-4 pt-6 lg:p-6 lg:ml-8 w-full flex-shrink-0 min-h-[300px]"
       >
         <div class="text-left relative flex-row">
           <button
@@ -134,6 +148,7 @@
       </div>
     </section>
   </Section>
+  </div>
 </template>
 
 <script setup lang="ts">

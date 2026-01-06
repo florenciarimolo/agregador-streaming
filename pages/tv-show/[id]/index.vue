@@ -1,7 +1,7 @@
 <template>
   <AppShell>
     <PageContainer>
-      <div class="w-full pt-6 pb-6">
+      <div class="w-full pt-0 pb-6 lg:pt-6">
         <!-- Skeleton loading (after delay) -->
         <template v-if="showSkeleton && isLoading">
           <SkeletonMediaDetail />
@@ -23,13 +23,13 @@
 
         <!-- Content -->
         <template v-else-if="!isLoading">
-          <Section>
+          <section class="pt-0 pb-6 w-full space-y-4 md:space-y-8 lg:pt-6">
             <MediaBannerDetail
               :media="tvShowWithProviders as unknown as Media"
               :media-type="MEDIA_TYPE.TV"
               :in-production="tvShowWithProviders.in_production"
             />
-          </Section>
+          </section>
           <Section>
             <div class="space-y-4">
               <div class="flex items-center gap-3">
