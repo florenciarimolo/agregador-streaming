@@ -607,11 +607,12 @@
           >
             <IconCalendar icon-class="w-5 h-5" />
             <span>{{
-              formatDateToSpanish(
+              formatDateByRegion(
                 mediaWithProviders.release_date ||
                   (mediaWithProviders as any).first_air_date ||
                   '',
-                userRegion
+                userRegion,
+                t
               )
             }}</span>
           </div>
@@ -757,7 +758,7 @@
 import RatingBadge from './RatingBadge.vue';
 import type { Media } from '@/types/Media';
 import { computed, nextTick, onMounted, onUnmounted, PropType, ref } from 'vue';
-import { formatDateToSpanish } from '@/utils/formatDate';
+import { formatDateByRegion } from '@/utils/formatDate';
 import type { Genre } from '@/types/Genre';
 import ProviderList from './ProviderList.vue';
 import type { Movie } from '@/types/Movie';

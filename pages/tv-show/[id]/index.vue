@@ -90,7 +90,7 @@
                         class="truncate"
                         :class="{ italic: !season.air_date || season.air_date.trim() === '' }"
                       >{{
-                        formatDateToSpanish(season.air_date, userRegion)
+                        formatDateByRegion(season.air_date, userRegion, t)
                       }}</span>
                     </div>
                     <div
@@ -126,7 +126,7 @@ import { computed, onMounted, watch, ref } from 'vue';
 import { useRouteWithLang } from '@/composables/useRouteWithLang';
 
 import type { TVShow } from '@/types/TVShow';
-import { formatDateToSpanish } from '@/utils/formatDate';
+import { formatDateByRegion } from '@/utils/formatDate';
 import { WatchProviderTypes } from '@/types/WatchProvider';
 import MediaBannerDetail from '@/components/MediaBannerDetail.vue';
 import { MEDIA_TYPE } from '@/constants/domain/mediaType';

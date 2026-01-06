@@ -59,9 +59,10 @@
             class="mb-1 text-xs text-gray-700 sm:text-sm dark:text-gray-100 sm:mb-2"
           >
             {{
-              formatDateToSpanish(
+              formatDateByRegion(
                 (mediaObject.release_date || mediaObject.first_air_date) ?? '',
-                userRegion
+                userRegion,
+                t
               )
             }}
           </p>
@@ -145,12 +146,13 @@
           v-if="mediaObject.release_date || mediaObject.first_air_date"
           class="text-sm text-center text-gray-700 dark:text-gray-100"
         >
-          {{
-            formatDateToSpanish(
-              (mediaObject.release_date || mediaObject.first_air_date) ?? '',
-              userRegion.value
-            )
-          }}
+            {{
+              formatDateByRegion(
+                (mediaObject.release_date || mediaObject.first_air_date) ?? '',
+                userRegion.value,
+                t
+              )
+            }}
         </p>
       </article>
     </div>
@@ -170,12 +172,14 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
-import { formatDateToSpanish } from '@/utils/formatDate';
+import { formatDateByRegion } from '@/utils/formatDate';
 import type { Media } from '@/types/Media';
 import RatingBadge from './RatingBadge.vue';
 import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 import Button from '@/components/ui/Button.vue';
 import { useUserRegion } from '@/composables/useUserRegion';
+
+const { t } = useI18n();
 
 const props = defineProps({
   mediaTrendingList: {

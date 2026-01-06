@@ -79,7 +79,7 @@
                     >
                       <IconCalendar icon-class="w-3 h-3 md:w-4 md:h-4" />
                       <span class="truncate">{{
-                        formatDateToSpanish(episode.air_date, userRegion)
+                        formatDateByRegion(episode.air_date, userRegion, t)
                       }}</span>
                     </div>
                     <!-- Duration -->
@@ -135,7 +135,7 @@ import RatingBadge from '@/components/RatingBadge.vue';
 import Alert from '@/components/ui/Alert.vue';
 import IconCalendar from '@/components/icons/IconCalendar.vue';
 import IconClock from '@/components/icons/IconClock.vue';
-import { formatDateToSpanish } from '@/utils/formatDate';
+import { formatDateByRegion } from '@/utils/formatDate';
 import { useUserRegion } from '@/composables/useUserRegion';
 
 const route = useRoute();

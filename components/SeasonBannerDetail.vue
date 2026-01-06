@@ -183,7 +183,7 @@
                 italic: !season?.air_date || season.air_date.trim() === '',
               }"
               >{{
-                formatDateToSpanish(season?.air_date || '', userRegion)
+                formatDateByRegion(season?.air_date || '', userRegion, t)
               }}</span
             >
           </div>
@@ -258,7 +258,7 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import type { Season } from '@/types/TVShow';
-import { formatDateToSpanish } from '@/utils/formatDate';
+import { formatDateByRegion } from '@/utils/formatDate';
 import type { WatchProviderTypes } from '@/types/WatchProvider';
 import ProviderList from '@/components/ProviderList.vue';
 import RatingBadge from '@/components/RatingBadge.vue';
@@ -294,6 +294,7 @@ const isMobile = ref(false);
 const { getUserRegion } = useUserRegion();
 const userRegion = ref<string | null>(null);
 const { currentLanguage } = useCurrentLanguage();
+const { t } = useI18n();
 
 // Videos state
 const allVideos = ref<Video[] | null>(null);
