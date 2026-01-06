@@ -170,7 +170,7 @@
   <header class="w-full pt-4 md:hidden">
     <AppShell>
       <nav>
-        <div class="flex justify-between items-center py-3 px-4">
+        <div class="flex justify-between items-center py-3">
           <!-- Logo -->
           <nuxt-link :to="homeRoute" class="flex items-center">
             <img
