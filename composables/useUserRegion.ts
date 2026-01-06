@@ -1,14 +1,19 @@
 import { getSession } from '@/services/auth';
 
 /**
+ * Shared Map to track loading promises across all composable instances
+ * This avoids storing Promises in useState (which can't be serialized during SSR)
+ * The Map is created at module level so it's shared across all instances
+ */
+const LOADING_PROMISE_KEY = 'user-region-loading';
+const loadingPromisesMap = new Map<string, Promise<string | null>>();
+
+/**
  * Composable to get user's region preference
  * Caches the region to avoid multiple API calls
  */
 export const useUserRegion = () => {
   const regionCache = useState<string | null>('user-region', () => null);
-  // Use useState for loadingPromise to share the same promise across all composable instances
-  // This ensures only one API call is made even if multiple components call getUserRegion() simultaneously
-  const loadingPromise = useState<Promise<string | null> | null>('user-region-loading-promise', () => null);
 
   /**
    * Get user's region from preferences
@@ -22,8 +27,9 @@ export const useUserRegion = () => {
     }
 
     // If already loading, wait for the existing promise
-    if (loadingPromise.value) {
-      return loadingPromise.value;
+    const existingPromise = loadingPromisesMap.get(LOADING_PROMISE_KEY);
+    if (existingPromise) {
+      return existingPromise;
     }
 
     // Create a new promise for this fetch
@@ -49,7 +55,7 @@ export const useUserRegion = () => {
         console.error('Error fetching user region:', error);
       } finally {
         // Clear the loading promise after completion
-        loadingPromise.value = null;
+        loadingPromisesMap.delete(LOADING_PROMISE_KEY);
       }
 
       // Default to null if no region found
@@ -58,7 +64,7 @@ export const useUserRegion = () => {
     })();
 
     // Store the promise so other concurrent calls can wait for it
-    loadingPromise.value = fetchPromise;
+    loadingPromisesMap.set(LOADING_PROMISE_KEY, fetchPromise);
     return fetchPromise;
   };
 
