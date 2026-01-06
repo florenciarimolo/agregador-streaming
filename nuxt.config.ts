@@ -230,8 +230,11 @@ export default defineNuxtConfig({
       '/api/**',
     ],
     urls: async () => {
-      const { getTitleIdsForSitemap, getDiscoverListsForSitemap } =
-        await import('./server/utils/sitemap');
+      const {
+        getTitleIdsForSitemap,
+        getDiscoverListsForSitemap,
+        getSeasonsForSitemap,
+      } = await import('./server/utils/sitemap');
 
       // Supported languages with URL codes
       const supportedLanguages = [
@@ -255,6 +258,7 @@ export default defineNuxtConfig({
       // Fetch data
       const titles = await getTitleIdsForSitemap();
       const discoverLists = await getDiscoverListsForSitemap();
+      const seasons = await getSeasonsForSitemap();
 
       const urls: Array<{ loc: string; lastmod: string }> = [];
 
@@ -291,7 +295,7 @@ export default defineNuxtConfig({
           });
         }
 
-        // Dynamic routes for TV shows per language (NO seasons)
+        // Dynamic routes for TV shows per language
         // Filter TV shows and sort by tmdb_id for stable order (DX improvement, not SEO)
         const tvShows = titles
           .filter((t) => t.type === 'tv')
@@ -301,6 +305,22 @@ export default defineNuxtConfig({
             loc: `/${lang.urlCode}/tv-show/${tvShow.tmdb_id}`,
             // updated_at is NOT NULL in schema, so it's always present
             lastmod: new Date(tvShow.updated_at).toISOString(),
+          });
+        }
+
+        // Dynamic routes for seasons per language
+        // Sort by tv_tmdb_id and season_number for stable order (DX improvement, not SEO)
+        const sortedSeasons = [...seasons].sort((a, b) => {
+          if (a.tv_tmdb_id !== b.tv_tmdb_id) {
+            return a.tv_tmdb_id - b.tv_tmdb_id;
+          }
+          return a.season_number - b.season_number;
+        });
+        for (const season of sortedSeasons) {
+          urls.push({
+            loc: `/${lang.urlCode}/tv-show/${season.tv_tmdb_id}/season/${season.season_number}`,
+            // updated_at is NOT NULL in schema, so it's always present
+            lastmod: new Date(season.updated_at).toISOString(),
           });
         }
       }
