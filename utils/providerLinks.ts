@@ -225,6 +225,7 @@ async function fetchAtresPlayerUrl(query: string): Promise<string | null> {
  * @param region User's region (e.g., 'ES', 'US'). If 'ES', will use Spanish title for providers
  * @param tmdbId TMDB ID of the media (required if region is 'ES' to fetch Spanish title)
  * @param mediaTypeForDb Type for database lookup ('movie' or 'tv')
+ * @param spanishTitle Optional pre-fetched Spanish title (to avoid duplicate API calls)
  */
 export async function generateProviderSearchUrl(
   providerName: string,
@@ -234,25 +235,21 @@ export async function generateProviderSearchUrl(
   mediaType?: MEDIA_TYPE,
   region?: string,
   tmdbId?: number,
-  mediaTypeForDb?: 'movie' | 'tv'
+  mediaTypeForDb?: 'movie' | 'tv',
+  spanishTitle?: string | null
 ): Promise<string | null> {
   const provider = getProviderLink(providerName);
   if (!provider) return null;
 
-  // If region is ES, fetch Spanish title from database
+  // If region is ES, use Spanish title (pre-fetched and passed as parameter)
+  // This avoids duplicate API calls when generating URLs for multiple providers
   let titleToUse = mediaTitle;
-  if (region === 'ES' && tmdbId && mediaTypeForDb) {
-    try {
-      const response = await $fetch<{ title: string | null }>(
-        `/api/titles/spanish-title?tmdb_id=${tmdbId}&type=${mediaTypeForDb}`
-      );
-      if (response.title) {
-        titleToUse = response.title;
-      }
-    } catch (error) {
-      console.error('Error fetching Spanish title for provider link:', error);
-      // Fallback to original mediaTitle
+  if (region === 'ES' && spanishTitle !== undefined) {
+    // Use pre-fetched Spanish title if available
+    if (spanishTitle) {
+      titleToUse = spanishTitle;
     }
+    // If spanishTitle is null, it means it was fetched but not found, so keep mediaTitle
   }
 
   // Special handling for Atres Player

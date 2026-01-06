@@ -1,25 +1,25 @@
 <template lang="">
-  <div
-    v-if="mediaProviderPropList.length > 0"
-    class="flex flex-col gap-3"
-  >
-    <h3 class="text-xl font-bold dark:text-gray-300 text-gray-800 uppercase font-heading">{{ watchTypeProp }}</h3>
-    <div class="flex flex-row flex-wrap items-center justify-start gap-4">
-    <a
-      v-for="provider in mediaProviderPropList"
-      :key="provider.provider_id"
-      :href="_getProviderUrl(provider.provider_name)"
-      target="_blank"
-      rel="noopener noreferrer"
-      class="inline-block mr-2 transition-transform duration-200 hover:scale-110 hover:shadow-lg"
-      :title="provider.provider_name"
+  <div v-if="mediaProviderPropList.length > 0" class="flex flex-col gap-3">
+    <h3
+      class="text-xl font-bold dark:text-gray-300 text-gray-800 uppercase font-heading"
+      >{{ watchTypeProp }}</h3
     >
-      <img
-        :src="`https://image.tmdb.org/t/p/w300${provider.logo_path}`"
-        :alt="provider.provider_name"
-        class="inline-block object-cover w-10 h-10 rounded shadow-md md:w-12 md:h-12 shadow-secondary/20 cursor-pointer"
-      />
-    </a>
+    <div class="flex flex-row flex-wrap items-center justify-start gap-4">
+      <a
+        v-for="provider in mediaProviderPropList"
+        :key="provider.provider_id"
+        :href="_getProviderUrl(provider.provider_name)"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="inline-block mr-2 transition-transform duration-200 hover:scale-110 hover:shadow-lg"
+        :title="provider.provider_name"
+      >
+        <img
+          :src="`https://image.tmdb.org/t/p/w300${provider.logo_path}`"
+          :alt="provider.provider_name"
+          class="inline-block object-cover w-10 h-10 rounded shadow-md md:w-12 md:h-12 shadow-secondary/20 cursor-pointer"
+        />
+      </a>
     </div>
   </div>
 </template>
@@ -30,8 +30,8 @@ import {
   generateProviderSearchUrl,
   getFallbackSearchUrl,
 } from '@/utils/providerLinks';
-import { MEDIA_TYPE } from '@/constants/domain/mediaType';
-import { getSession } from '@/services/auth';
+import { MEDIA_TYPE, type MediaType } from '@/constants/domain/mediaType';
+import { useUserRegion } from '@/composables/useUserRegion';
 
 const props = defineProps({
   mediaProviderPropList: {
@@ -55,7 +55,7 @@ const props = defineProps({
     default: () => [],
   },
   mediaType: {
-    type: String as PropType<MEDIA_TYPE>,
+    type: String as PropType<MediaType>,
     required: true,
   },
   tmdbId: {
@@ -88,38 +88,74 @@ const _getProviderUrl = (providerName: string): string => {
   );
 };
 
-// Get user region preference
-const userRegion = ref<string>('ES'); // Default to ES
+// Use composable for user region (cache included)
+const { getUserRegion } = useUserRegion();
+
+// Cache for Spanish title (key: "tmdbId-type")
+const spanishTitleCache = useState<Record<string, string | null>>(
+  'spanish-title-cache',
+  () => ({})
+);
+
+// Loading promises to prevent concurrent API calls (key: "tmdbId-type")
+const spanishTitleLoadingPromises = useState<
+  Record<string, Promise<string | null>>
+>('spanish-title-loading-promises', () => ({}));
 
 // Pre-fetch URLs for async providers
 onMounted(async () => {
   if (!props.mediaTitle) return;
 
-  // Get user region preference
-  try {
-    const { data: { session } } = await getSession();
-    if (session?.access_token) {
-      const prefsResponse = await $fetch<{
-        success: boolean;
-        preferences: { region?: string } | null;
-      }>('/api/users/preferences', {
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      });
-      if (prefsResponse.success && prefsResponse.preferences?.region) {
-        userRegion.value = prefsResponse.preferences.region;
-      }
-    }
-  } catch (error) {
-    console.error('Error fetching user region:', error);
-    // Keep default 'ES'
-  }
+  // Get user region from composable (uses cache)
+  const userRegion = (await getUserRegion()) || 'ES';
 
   // Convert MEDIA_TYPE to 'movie' | 'tv' for database
   const mediaTypeForDb: 'movie' | 'tv' =
     props.mediaType === MEDIA_TYPE.MOVIE ? 'movie' : 'tv';
 
+  // Fetch Spanish title ONCE before the loop (if needed and not cached)
+  let spanishTitle: string | null = null;
+  const cacheKey = `${props.tmdbId}-${mediaTypeForDb}`;
+
+  if (userRegion === 'ES' && props.tmdbId && mediaTypeForDb) {
+    // Check cache first
+    if (spanishTitleCache.value[cacheKey] !== undefined) {
+      spanishTitle = spanishTitleCache.value[cacheKey];
+    } else if (cacheKey in spanishTitleLoadingPromises.value) {
+      // If already loading, wait for existing promise
+      spanishTitle = await spanishTitleLoadingPromises.value[cacheKey];
+    } else {
+      // Create new promise for this fetch
+      const fetchPromise = (async () => {
+        try {
+          const response = await $fetch<{ title: string | null }>(
+            `/api/titles/spanish-title?tmdb_id=${props.tmdbId}&type=${mediaTypeForDb}`
+          );
+          const title = response.title || null;
+          spanishTitleCache.value[cacheKey] = title;
+          // Clear loading promise after completion
+          delete spanishTitleLoadingPromises.value[cacheKey];
+          return title;
+        } catch (error) {
+          console.error(
+            'Error fetching Spanish title for provider link:',
+            error
+          );
+          const title = null;
+          spanishTitleCache.value[cacheKey] = title;
+          // Clear loading promise after completion
+          delete spanishTitleLoadingPromises.value[cacheKey];
+          return title;
+        }
+      })();
+
+      // Store promise so other concurrent calls can wait for it
+      spanishTitleLoadingPromises.value[cacheKey] = fetchPromise;
+      spanishTitle = await fetchPromise;
+    }
+  }
+
+  // Generate URLs for all providers (using cached Spanish title)
   for (const provider of props.mediaProviderPropList) {
     const providerName = provider.provider_name;
 
@@ -134,9 +170,10 @@ onMounted(async () => {
             ? props.alternativeTitles
             : undefined,
           props.mediaType,
-          userRegion.value,
+          userRegion,
           props.tmdbId,
-          mediaTypeForDb
+          mediaTypeForDb,
+          spanishTitle // Pass cached Spanish title
         );
         if (url) {
           providerUrls.value[providerName] = url;
@@ -155,9 +192,10 @@ onMounted(async () => {
             ? props.alternativeTitles
             : undefined,
           props.mediaType,
-          userRegion.value,
+          userRegion,
           props.tmdbId,
-          mediaTypeForDb
+          mediaTypeForDb,
+          spanishTitle // Pass cached Spanish title
         );
         if (url) {
           providerUrls.value[providerName] = url;

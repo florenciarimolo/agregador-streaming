@@ -304,6 +304,7 @@ import {
   getTitleByTmdbIdWithLanguage,
 } from '@/services/titles';
 import { getSession } from '@/services/auth';
+import { useUserRegion } from '@/composables/useUserRegion';
 import TitleCard from '@/components/TitleCard.vue';
 import IconButton from '@/components/ui/IconButton.vue';
 import IconHeart from '@/components/icons/IconHeart.vue';
@@ -477,34 +478,19 @@ const goToRecommendations = () => {
   navigateTo(routeWithLang('/'), { replace: false });
 };
 
+// Use composable for user region (has cache, avoids duplicate API calls)
+const { getUserRegion } = useUserRegion();
+
 // Fetch content preferences region only (for API calls)
 const fetchContentPreferencesRegion = async () => {
   const id = userId.value;
   if (!id) return;
 
   try {
-    const {
-      data: { session },
-    } = await getSession();
-
-    if (!session?.access_token) {
-      return;
-    }
-
-    const response = await $fetch<{
-      success: boolean;
-      preferences: {
-        region?: string;
-      } | null;
-    }>('/api/users/preferences', {
-      headers: {
-        Authorization: `Bearer ${session.access_token}`,
-      },
-    });
-
-    if (response.success && response.preferences) {
+    const region = await getUserRegion();
+    if (region) {
       contentPreferences.value = {
-        region: response.preferences.region || undefined,
+        region: region,
       };
     }
   } catch (error) {

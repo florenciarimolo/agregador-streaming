@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { computed, watchEffect, onMounted, ref } from 'vue';
+import { computed, watchEffect, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useUserStore } from '@/stores/user';
 import { useRecommendations } from '@/composables/useRecommendations';
 import { useTitleActions } from '@/composables/useTitleActions';
+import { useUserRegion } from '@/composables/useUserRegion';
 import { getSession } from '@/services/auth';
 import { TITLE_STATUS } from '@/constants/domain/titleStatus';
 import { QUERY_PARAMS } from '@/constants/api/queryParams';
@@ -139,46 +140,39 @@ const {
   fetchRecommendations
 );
 
-// Fetch user preferences to check if region is set
-const { data: userPreferences, pending: preferencesPending } = useAsyncData(
-  'user-preferences-region',
-  async () => {
-    if (!user.value) return null;
+// Use composable for user region (has cache, avoids duplicate API calls)
+const { getUserRegion } = useUserRegion();
+const userRegion = ref<string | null>(null);
+const preferencesPending = ref(false);
 
+// Fetch user region once when user is available
+watch(
+  user,
+  async (newUser) => {
+    if (!newUser) {
+      userRegion.value = null;
+      preferencesPending.value = false;
+      return;
+    }
+
+    preferencesPending.value = true;
     try {
-      const {
-        data: { session },
-      } = await getSession();
-
-      if (!session?.access_token) {
-        return null;
-      }
-
-      const response = await $fetch<{
-        success: boolean;
-        preferences: {
-          region?: string;
-        } | null;
-      }>('/api/users/preferences', {
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      });
-
-      return response.success && response.preferences
-        ? response.preferences
-        : null;
+      userRegion.value = await getUserRegion();
     } catch (error) {
-      console.error('Error fetching user preferences:', error);
-      return null;
+      console.error('Error fetching user region:', error);
+      userRegion.value = null;
+    } finally {
+      preferencesPending.value = false;
     }
   },
-  {
-    server: false,
-    default: () => null,
-    watch: [user],
-  }
+  { immediate: true }
 );
+
+// Computed for userPreferences to match existing API
+const userPreferences = computed(() => {
+  if (!userRegion.value) return null;
+  return { region: userRegion.value };
+});
 
 // Computed: Check if auth is fully initialized
 const isAuthReady = computed(() => {

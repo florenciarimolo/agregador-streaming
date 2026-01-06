@@ -8,7 +8,8 @@ Before implementing, refactoring, or suggesting any solution, you MUST:
 1. Read the relevant documentation files:
    - docs/APP_LOGIC.md
    - docs/DESIGN_UX_GUIDELINES.md
-   - docs/SUPABASE_MIGRATIONS
+   - docs/SUPABASE_MIGRATIONS.md
+   - docs/NETWORK_OPTIMIZATION.md
    - docs/ENV_VARIABLES.md (if backend-related)
    - Any feature-specific documentation mentioned in the task
 
