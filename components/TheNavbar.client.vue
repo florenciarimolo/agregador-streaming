@@ -167,10 +167,7 @@
   </header>
 
   <!-- Mobile Navbar -->
-  <header
-    class="fixed left-0 top-4 z-50 w-full transition-transform duration-300 md:hidden"
-    :style="{ transform: `translateY(${isNavbarVisible ? '0' : '-10px'})` }"
-  >
+  <header class="w-full pt-4 md:hidden">
     <AppShell>
       <nav
         class="rounded-3xl border backdrop-blur-xl dark:bg-gray-900/40 bg-gray-100/90 border-gray-300/50 dark:border-white/10"
@@ -625,10 +622,6 @@ const handleSignupSuccess = () => {
 const showScrollToTop = ref(false);
 const isMobile = ref(false);
 
-// Navbar visibility state
-const isNavbarVisible = ref(true);
-const lastScrollY = ref(0);
-
 // Scroll to top functionality
 const scrollToTop = () => {
   window.scrollTo({
@@ -643,21 +636,6 @@ const handleScroll = () => {
 
   // Show/hide scroll to top button
   showScrollToTop.value = scrollTop > 300;
-
-  // Show/hide navbar ONLY on mobile
-  if (isMobile.value) {
-    if (scrollTop < 10) {
-      isNavbarVisible.value = true;
-    } else if (scrollTop > lastScrollY.value && scrollTop > 100) {
-      isNavbarVisible.value = false;
-    } else if (scrollTop < lastScrollY.value) {
-      isNavbarVisible.value = true;
-    }
-  } else {
-    isNavbarVisible.value = true;
-  }
-
-  lastScrollY.value = scrollTop;
 };
 
 // Detect mobile screen size
