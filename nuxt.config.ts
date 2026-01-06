@@ -121,6 +121,7 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     tmdbApiKey: process.env.NUXT_TMDB_API_KEY || '',
+    resendApiKey: process.env.RESEND_API_KEY || '',
     public: {
       tmdbBaseUrl: process.env.NUXT_TMDB_BASE_URL || '',
       supabaseUrl: process.env.NUXT_PUBLIC_SUPABASE_URL || '',

@@ -26,6 +26,14 @@ NUXT_TMDB_API_KEY=your_tmdb_api_key
 NUXT_TMDB_BASE_URL=https://api.themoviedb.org/3
 ```
 
+### Resend (Email service)
+
+```env
+# Resend API Key (Server only, NEVER in client)
+# Used for sending transactional emails
+RESEND_API_KEY=re_xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+```
+
 ### Base URL (Optional but recommended)
 
 ```env
@@ -57,7 +65,8 @@ NUXT_PUBLIC_BASE_URL=https://getupnext.io
 3. `SUPABASE_SERVICE_ROLE_KEY` ⚠️ **THIS IS THE ONE THAT'S PROBABLY MISSING**
 4. `NUXT_TMDB_API_KEY` ✅
 5. `NUXT_TMDB_BASE_URL` (optional, has default) ✅
-6. `NUXT_PUBLIC_BASE_URL` (optional, has default) ✅
+6. `RESEND_API_KEY` (optional, only if using email features) ✅
+7. `NUXT_PUBLIC_BASE_URL` (optional, has default) ✅
 
 ### ❌ Variables you DON'T need:
 
@@ -81,6 +90,11 @@ NUXT_PUBLIC_BASE_URL=https://getupnext.io
 - **`NUXT_PUBLIC_SUPABASE_ANON_KEY`**:
   - ✅ Can be in the client (that's why it has `PUBLIC_`)
   - ✅ Has RLS restrictions, that's why it doesn't work well for server queries
+
+- **`RESEND_API_KEY`**:
+  - ✅ Use it ONLY on the server (server/api/*, server/utils/*)
+  - ❌ NEVER expose it in the client
+  - ✅ Required for sending transactional emails via Resend
 
 ## Verification
 
