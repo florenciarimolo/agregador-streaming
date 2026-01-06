@@ -1,5 +1,5 @@
 <template>
-  <section v-if="showHero" class="py-6">
+  <section v-if="showHero" class="py-12 md:py-16">
     <AppShell>
       <PageContainer>
         <Section>

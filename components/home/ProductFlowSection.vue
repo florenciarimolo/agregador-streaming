@@ -1,5 +1,5 @@
 <template>
-  <section v-if="showHero" id="how-it-works" class="py-6">
+  <section v-if="showHero" id="how-it-works" class="py-12 md:py-16">
     <AppShell>
       <PageContainer>
         <Section>
@@ -84,12 +84,12 @@
                   {{ $t('home.productFlow.step3.description') }}
                 </p>
                 <div
-                  class="mt-4 max-h-[400px] overflow-hidden flex justify-center"
+                  class="mt-4 max-h-[300px] overflow-hidden flex justify-center"
                 >
                   <img
                     src="/mockups/step3-result-mockup.webp"
                     alt="Mockup de recomendaciones"
-                    class="max-h-[400px] w-auto object-contain rounded-lg"
+                    class="max-h-[300px] w-auto object-contain rounded-lg"
                   />
                 </div>
               </div>
@@ -115,12 +115,12 @@
                   {{ $t('home.productFlow.step4.description') }}
                 </p>
                 <div
-                  class="mt-4 max-h-[400px] overflow-hidden flex justify-center"
+                  class="mt-4 max-h-[300px] overflow-hidden flex justify-center"
                 >
                   <img
                     src="/mockups/step4-actions-mockup.webp"
                     alt="Mockup de acciones de recomendaciones"
-                    class="max-h-[400px] w-auto object-contain rounded-lg"
+                    class="max-h-[300px] w-auto object-contain rounded-lg"
                   />
                 </div>
               </div>

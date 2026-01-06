@@ -180,6 +180,7 @@
     "step3Title": "We tell you what to watch",
     "step3Description": "Recommendations tailored for this specific moment.",
     "problem": {
+      "overline": "The problem",
       "title": "Choosing what to watch has become exhausting",
       "bullet1": "Too many options, little clarity",
       "bullet2": "You save things that never fit your moment",
@@ -206,6 +207,7 @@
         "description": "Mark as seen, add to favourites, or save for later."
       },
       "discover": {
+        "modePill": "Exploration mode",
         "title": "Prefer to explore at your own pace?",
         "description": "When you don't want to decide right now. Explore curated lists without filters or decisions.",
         "cta": "Explore Discover"
@@ -235,9 +237,13 @@
     },
     "value": {
       "title": "Less deciding. More enjoying.",
-      "block1": "Designed for real people: your attention changes, UpNext understands.",
-      "block2": "No infinite options: few clear recommendations.",
-      "block3": "Your moment matters: we don't recommend the same thing today as tomorrow."
+      "subcopy": "UpNext adapts to how you are today, not how you were yesterday.",
+      "block1Title": "Your attention matters",
+      "block1": "You don't always have the same energy. UpNext understands.",
+      "block2Title": "Few options, well chosen",
+      "block2": "Better to decide quickly than waste 30 minutes.",
+      "block3Title": "Made for now",
+      "block3": "Recommendations designed for this specific moment."
     },
     "faq": {
       "title": "Frequently asked questions",

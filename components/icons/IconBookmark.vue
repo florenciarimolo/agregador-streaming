@@ -3,14 +3,14 @@
     xmlns="http://www.w3.org/2000/svg"
     fill="none"
     viewBox="0 0 24 24"
-    stroke-width="2"
+    stroke-width="1.5"
     stroke="currentColor"
     :class="iconClass"
   >
     <path
       stroke-linecap="round"
       stroke-linejoin="round"
-      d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+      d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0 1 11.186 0Z"
     />
   </svg>
 </template>
@@ -19,7 +19,8 @@
 defineProps({
   iconClass: {
     type: String,
-    default: 'w-4 h-4',
+    default: 'w-6 h-6',
   },
 });
 </script>
+

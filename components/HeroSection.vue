@@ -82,12 +82,12 @@ const descriptionParts = computed(() => {
         <img
           src="/logo-light.png"
           :alt="$t('common.appName')"
-          class="object-contain w-auto h-12 md:h-16 dark:hidden"
+          class="object-contain w-auto h-10 md:h-14 opacity-70 dark:hidden"
         />
         <img
           src="/logo-dark.png"
           :alt="$t('common.appName')"
-          class="hidden object-contain w-auto h-12 md:h-16 dark:block"
+          class="hidden object-contain w-auto h-10 md:h-14 opacity-70 dark:block"
         />
       </div>
       <h1

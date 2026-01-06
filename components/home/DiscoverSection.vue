@@ -1,8 +1,16 @@
 <template>
-  <section v-if="showHero" id="discover" class="py-6">
+  <section v-if="showHero" id="discover" class="py-12 md:py-16">
     <AppShell>
       <PageContainer>
         <Section>
+          <!-- Pill MODO EXPLORACIÓN -->
+          <div class="flex justify-center mb-6">
+            <span
+              class="inline-flex items-center w-fit px-4 py-1.5 text-xs font-semibold tracking-wider rounded-full shadow-sm shadow-black/50 z-10 border whitespace-nowrap bg-primary-800/90 dark:bg-primary-700/90 border-primary-600/30 dark:border-primary-500/30 text-primary-200 dark:text-primary-300"
+            >
+              🔎 {{ $t('home.discover.modePill') }}
+            </span>
+          </div>
           <div class="home-section-title">
             <SectionTitle>{{ $t('home.discover.title') }}</SectionTitle>
           </div>
@@ -35,8 +43,12 @@
               class="overflow-hidden rounded-2xl border backdrop-blur-xl dark:bg-gray-900/40 bg-gray-100/80 border-gray-300/50 dark:border-white/10 animate-pulse"
             >
               <div class="p-6">
-                <div class="h-6 bg-gray-300 dark:bg-gray-700 rounded mb-3"></div>
-                <div class="h-4 bg-gray-300 dark:bg-gray-700 rounded mb-4"></div>
+                <div
+                  class="h-6 bg-gray-300 dark:bg-gray-700 rounded mb-3"
+                ></div>
+                <div
+                  class="h-4 bg-gray-300 dark:bg-gray-700 rounded mb-4"
+                ></div>
                 <div class="flex -space-x-3">
                   <div
                     v-for="j in 4"
@@ -72,7 +84,6 @@ import SectionTitle from '@/components/layout/SectionTitle.vue';
 import Button from '@/components/ui/Button.vue';
 import DiscoverListCard from '@/components/DiscoverListCard.vue';
 import { useRouteWithLang } from '@/composables/useRouteWithLang';
-import { useSupabaseUser } from '#imports';
 import type { DiscoverList } from '@/composables/database/discoverLists';
 
 interface ExtendedDiscoverList extends DiscoverList {
@@ -93,7 +104,7 @@ const isLoading = ref(true);
 // Function to load lists
 const loadLists = async () => {
   if (!showHero.value) return;
-  
+
   isLoading.value = true;
   try {
     const response = await $fetch<{
@@ -131,4 +142,3 @@ watch(locale, () => {
   font-size: clamp(2rem, 4vw, 3rem) !important;
 }
 </style>
-

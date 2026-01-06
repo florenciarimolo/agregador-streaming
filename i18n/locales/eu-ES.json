@@ -180,6 +180,7 @@
     "step3Title": "Zer ikusi esaten dizugu",
     "step3Description": "Une zehatz honetarako pentsatutako gomendioak.",
     "problem": {
+      "overline": "Arazoa",
       "title": "Zer ikusi aukeratzea agortzailea bihurtu da",
       "bullet1": "Opcion gehiegi, argitasun gutxi",
       "bullet2": "Zure momentuarekin inoiz bat ez datozen gauzak gordetzen dituzu",
@@ -206,6 +207,7 @@
         "description": "Ikusita bezala markatu, gogokoenetara gehitu edo geroago gorde."
       },
       "discover": {
+        "modePill": "Esplorazio modua",
         "title": "Zure erritmoan esploratzea nahiago duzu?",
         "description": "Orain erabakitzeko gogorik ez duzunean. Iragazkirik edo erabakirik gabe kuratutako zerrendak esploratu.",
         "cta": "Discover esploratu"
@@ -235,9 +237,13 @@
     },
     "value": {
       "title": "Gutxiago erabakitzea. Gehiago gozatzea.",
-      "block1": "Pertsona errealentzat pentsatua: zure arreta aldatzen da, UpNext-ek ulertzen du.",
-      "block2": "Ez aukera infinituak: gomendio argi gutxi.",
-      "block3": "Zure momentua garrantzitsua da: ez dugu gaur eta bihar gauza bera gomendatzen."
+      "subcopy": "UpNext gaur nola zauden egokitzen da, ez atzo nola zeunden.",
+      "block1Title": "Zure arreta garrantzitsua da",
+      "block1": "Ez duzu beti energia bera. UpNext-ek ulertzen du.",
+      "block2Title": "Aukera gutxi, ongi aukeratuak",
+      "block2": "Hobe azkar erabakitzea 30 minutu galtzea baino.",
+      "block3Title": "Orainerako egina",
+      "block3": "Une zehatz honetarako pentsatutako gomendioak."
     },
     "faq": {
       "title": "Maiz egindako galderak",

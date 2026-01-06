@@ -180,6 +180,7 @@
     "step3Title": "Et diem què veure",
     "step3Description": "Recomanacions pensades per a aquest moment concret.",
     "problem": {
+      "overline": "El problema",
       "title": "Elegir què veure s'ha tornat agotador",
       "bullet1": "Massa opcions, poca claredat",
       "bullet2": "Guardeixes coses que mai encaixen amb el teu moment",
@@ -206,6 +207,7 @@
         "description": "Marca com a vista, afegeix a preferits o guarda per després."
       },
       "discover": {
+        "modePill": "Mode exploració",
         "title": "Prefereixes explorar al teu ritme?",
         "description": "Quan no vols decidir ara. Explora llistes curades sense filtres ni decisions.",
         "cta": "Explorar Discover"
@@ -235,9 +237,13 @@
     },
     "value": {
       "title": "Menys decidir. Més gaudir.",
-      "block1": "Pensat per a persones reals: la teva atenció canvia, UpNext ho entén.",
-      "block2": "No infinites opcions: poques recomanacions clares.",
-      "block3": "El teu moment importa: no recomanem el mateix avui que demà."
+      "subcopy": "UpNext s'adapta a com ets avui, no a com eres ahir.",
+      "block1Title": "La teva atenció importa",
+      "block1": "No sempre tens la mateixa energia. UpNext ho entén.",
+      "block2Title": "Poques opcions, ben triades",
+      "block2": "Millor decidir ràpid que perdre 30 minuts.",
+      "block3Title": "Fet per ara",
+      "block3": "Recomanacions pensades per a aquest moment concret."
     },
     "faq": {
       "title": "Preguntes freqüents",

@@ -180,6 +180,7 @@
     "step3Title": "Te decimos qué ver",
     "step3Description": "Recomendaciones pensadas para este momento concreto.",
     "problem": {
+      "overline": "El problema",
       "title": "Elegir qué ver se ha vuelto agotador",
       "bullet1": "Demasiadas opciones, poca claridad",
       "bullet2": "Guardas cosas que nunca encajan con tu momento",
@@ -207,6 +208,7 @@
       }
     },
     "discover": {
+      "modePill": "Modo exploración",
       "title": "¿Prefieres explorar a tu ritmo?",
       "description": "Cuando no quieres decidir ahora. Explora listas curadas sin filtros ni decisiones.",
       "cta": "Explorar Discover",
@@ -255,9 +257,13 @@
     },
     "value": {
       "title": "Menos decidir. Más disfrutar.",
-      "block1": "Pensado para personas reales: tu atención cambia, UpNext lo entiende.",
-      "block2": "No infinitas opciones: pocas recomendaciones claras.",
-      "block3": "Tu momento importa: no recomendamos lo mismo hoy que mañana."
+      "subcopy": "UpNext se adapta a cómo estás hoy, no a cómo estabas ayer.",
+      "block1Title": "Tu atención importa",
+      "block1": "No siempre tienes la misma energía. UpNext lo entiende.",
+      "block2Title": "Pocas opciones, bien elegidas",
+      "block2": "Mejor decidir rápido que perder 30 minutos.",
+      "block3Title": "Hecho para el ahora",
+      "block3": "Recomendaciones pensadas para este momento concreto."
     },
     "faq": {
       "title": "Preguntas frecuentes",
