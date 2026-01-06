@@ -5,7 +5,7 @@
         <Section>
           <div class="flex flex-col items-center text-center">
             <p
-              class="mb-8 text-h2 font-heading font-semibold text-transparent bg-clip-text bg-gradient-to-b from-primary-800 via-primary-800 to-primary-900 dark:text-gray-300"
+              class="mb-8 text-h2 font-heading font-semibold text-transparent bg-clip-text bg-gradient-to-b from-gray-800 via-gray-800 to-gray-600 dark:from-white dark:via-white dark:to-gray-400"
               :style="{
                 fontSize: 'clamp(2.5rem, 5vw, 4rem)',
                 backgroundClip: 'text',
@@ -16,7 +16,7 @@
               <template v-for="(part, index) in finalCtaTextParts" :key="index">
                 <span
                   v-if="part.isGradient"
-                  class="text-transparent bg-clip-text bg-gradient-to-b from-gray-800 via-gray-800 to-gray-600 dark:from-white dark:via-white dark:to-gray-400"
+                  class="text-transparent bg-clip-text bg-gradient-to-b from-primary-800 via-primary-800 to-primary-900 dark:text-gray-300"
                   :style="{
                     backgroundClip: 'text',
                     WebkitBackgroundClip: 'text',
@@ -55,7 +55,7 @@ const showHero = computed(() => !user.value);
 const { routeWithLang } = useRouteWithLang();
 const discoverRoute = computed(() => routeWithLang('/discover'));
 
-// Process finalCta text to apply gradient to "sin pensar"
+// Process finalCta text to apply gradient to "sin pensar" and the period after it
 const finalCtaTextParts = computed(() => {
   const text = t('home.finalCta.text');
   const parts: Array<{ text: string; isGradient: boolean }> = [];
@@ -73,16 +73,9 @@ const finalCtaTextParts = computed(() => {
     parts.push({ text: text.substring(0, index), isGradient: false });
   }
 
-  // Add "sin pensar" with gradient
-  parts.push({ text: gradientText, isGradient: true });
-
-  // Add text after "sin pensar"
-  if (index + gradientText.length < text.length) {
-    parts.push({
-      text: text.substring(index + gradientText.length),
-      isGradient: false,
-    });
-  }
+  // Add "sin pensar" and everything after it (including the period) with gradient
+  const remainingText = text.substring(index);
+  parts.push({ text: remainingText, isGradient: true });
 
   return parts;
 });
