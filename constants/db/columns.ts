@@ -28,6 +28,7 @@ export const TITLES_COLUMNS = {
   POSTER_PATH: 'poster_path',
   BACKDROP_PATH: 'backdrop_path',
   OVERVIEW: 'overview',
+  TAGLINE: 'tagline',
   RELEASE_DATE: 'release_date',
   FIRST_AIR_DATE: 'first_air_date',
   GENRES: 'genres',

@@ -221,11 +221,19 @@
           </Tooltip>
         </div>
         <!-- Title - left aligned, vertically centered -->
-        <h1
-          class="absolute left-4 top-1/2 -translate-y-1/2 right-4 text-3xl font-bold text-white uppercase break-words"
-        >
-          {{ mediaWithProviders.title || (mediaWithProviders as any).name }}
-        </h1>
+        <div class="absolute left-4 top-1/2 -translate-y-1/2 right-4 flex flex-col gap-2">
+          <h1
+            class="text-3xl font-bold text-white uppercase break-words"
+          >
+            {{ mediaWithProviders.title || (mediaWithProviders as any).name }}
+          </h1>
+          <p
+            v-if="tagline"
+            class="text-base italic text-white/90 break-words"
+          >
+            {{ tagline }}
+          </p>
+        </div>
       </div>
     </div>
     <Section>
@@ -389,12 +397,21 @@
               <div
                 class="flex flex-wrap gap-3 items-center xl:flex-nowrap xl:flex-1 xl:min-w-0"
               >
-                <h1
-                  class="hidden lg:block text-4xl font-bold text-gray-800 break-words dark:text-gray-300 xl:flex-1 xl:min-w-0 uppercase"
-                  >{{
-                    mediaWithProviders.title || (mediaWithProviders as any).name
-                  }}</h1
-                >
+                <div class="hidden lg:flex flex-col gap-2 xl:flex-1 xl:min-w-0">
+                  <h1
+                    class="text-4xl font-bold text-gray-800 break-words dark:text-gray-300 uppercase"
+                  >
+                    {{
+                      mediaWithProviders.title || (mediaWithProviders as any).name
+                    }}
+                  </h1>
+                  <p
+                    v-if="tagline"
+                    class="text-base italic text-gray-700 dark:text-gray-400 break-words"
+                  >
+                    {{ tagline }}
+                  </p>
+                </div>
                 <!-- Rating inline with title on desktop large, hidden on mobile/tablet (shown below) -->
                 <div class="hidden xl:block xl:flex-shrink-0">
                   <RatingBadge
@@ -759,6 +776,8 @@ import { getUserLikedTitle, getTitleStatus } from '@/services/userTitleStatus';
 import { useRouter } from 'vue-router';
 import Section from '@/components/layout/Section.vue';
 import { useUserRegion } from '@/composables/useUserRegion';
+import { getTitleInLanguage, type MultiLanguageText } from '@/services/titles';
+import { useCurrentLanguage } from '@/composables/useCurrentLanguage';
 
 const props = defineProps({
   media: {
@@ -806,6 +825,79 @@ const alternativeTitles = computed(() => {
   return [];
 });
 
+// Extract tagline with language fallback (same logic as overview)
+const tagline = computed(() => {
+  const media = mediaWithProviders.value as Movie & {
+    tagline?: string | MultiLanguageText;
+  };
+  
+  if (!media.tagline) {
+    return '';
+  }
+  
+  // If tagline is a MultiLanguageText object, use getTitleInLanguage
+  if (typeof media.tagline === 'object' && media.tagline !== null) {
+    return getTitleInLanguage(
+      media.tagline as MultiLanguageText,
+      currentLanguage.value.i18nCode,
+      userRegion.value
+    );
+  }
+  
+  // If tagline is a string, return it directly
+  return media.tagline;
+});
+
+// Check if tagline is missing and fetch it from TMDB
+const fetchTaglineIfMissing = async () => {
+  const media = mediaWithProviders.value as Movie & {
+    tagline?: string | MultiLanguageText;
+  };
+  
+  // Check if tagline is missing or empty
+  const hasTagline = media.tagline && (
+    (typeof media.tagline === 'string' && media.tagline.trim() !== '') ||
+    (typeof media.tagline === 'object' && 
+     media.tagline !== null && 
+     Object.keys(media.tagline).length > 0 &&
+     getTitleInLanguage(
+       media.tagline as MultiLanguageText,
+       currentLanguage.value.i18nCode,
+       userRegion.value
+     ).trim() !== '')
+  );
+  
+  if (hasTagline) {
+    return; // Tagline already exists
+  }
+  
+  try {
+    // Fetch tagline from API
+    const response = await $fetch<{
+      success: boolean;
+      tagline?: MultiLanguageText | null;
+      message?: string;
+    }>('/api/titles/fetch-tagline', {
+      method: 'POST',
+      body: {
+        tmdb_id: mediaWithProviders.value.id,
+        type: props.mediaType,
+      },
+    });
+    
+    if (response.success && response.tagline) {
+      // Update the media object with the new tagline
+      // Note: This will trigger a reactive update
+      (mediaWithProviders.value as any).tagline = response.tagline;
+    }
+  } catch (error) {
+    // Silently fail - tagline is optional
+    if (import.meta.dev) {
+      console.error('[MediaBannerDetail] Error fetching tagline:', error);
+    }
+  }
+};
+
 const isMobile = ref(false);
 const dropdownRef = ref<InstanceType<typeof ActionMenu> | null>(null);
 const mobileDropdownRef = ref<InstanceType<typeof ActionMenu> | null>(null);
@@ -816,6 +908,7 @@ const isNotInterested = ref(false);
 const router = useRouter();
 const { getUserRegion } = useUserRegion();
 const userRegion = ref<string | null>(null);
+const { currentLanguage } = useCurrentLanguage();
 
 // Check if user has session
 const user = useSupabaseUser();
@@ -882,6 +975,8 @@ onMounted(async () => {
   if (hasSession.value) {
     await fetchTitleStatus();
   }
+  // Check and fetch tagline if missing
+  await fetchTaglineIfMissing();
 });
 
 onUnmounted(() => {

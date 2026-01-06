@@ -32,12 +32,17 @@
           />
         </div>
         <!-- Title - left aligned, vertically centered -->
-        <h1
+        <div
           v-if="season?.name"
-          class="absolute left-4 top-1/2 -translate-y-1/2 right-4 text-3xl font-bold text-white uppercase break-words"
+          class="absolute left-4 top-1/2 -translate-y-1/2 right-4 flex flex-col gap-2"
         >
-          {{ season.name }}
-        </h1>
+          <h1 class="text-3xl font-bold text-white uppercase break-words">
+            {{ season.name }}
+          </h1>
+          <p v-if="tagline" class="text-base italic text-white/90 break-words">
+            {{ tagline }}
+          </p>
+        </div>
       </div>
     </div>
     <Section>
@@ -129,10 +134,19 @@
               <div
                 class="flex items-center gap-3 flex-wrap xl:flex-nowrap xl:flex-1"
               >
-                <h1
-                  class="hidden lg:block text-4xl font-bold dark:text-gray-300 text-gray-800 break-words xl:flex-1 uppercase"
-                  >{{ season?.name }}</h1
-                >
+                <div class="hidden lg:flex flex-col gap-2 xl:flex-1">
+                  <h1
+                    class="text-4xl font-bold dark:text-gray-300 text-gray-800 break-words uppercase"
+                  >
+                    {{ season?.name }}
+                  </h1>
+                  <p
+                    v-if="tagline"
+                    class="text-base italic text-gray-700 dark:text-gray-400 break-words"
+                  >
+                    {{ tagline }}
+                  </p>
+                </div>
                 <!-- Rating inline with title on desktop large, hidden on mobile/tablet (shown below) -->
                 <div class="hidden xl:block xl:flex-shrink-0">
                   <RatingBadge
@@ -236,6 +250,8 @@ import IconCalendar from '@/components/icons/IconCalendar.vue';
 import IconEpisodes from '@/components/icons/IconEpisodes.vue';
 import Section from '@/components/layout/Section.vue';
 import { useUserRegion } from '@/composables/useUserRegion';
+import { getTitleInLanguage, type MultiLanguageText } from '@/services/titles';
+import { useCurrentLanguage } from '@/composables/useCurrentLanguage';
 
 interface Props {
   season: (Season & { providers?: WatchProviderTypes }) | null | undefined;
@@ -249,6 +265,7 @@ const router = useRouter();
 const isMobile = ref(false);
 const { getUserRegion } = useUserRegion();
 const userRegion = ref<string | null>(null);
+const { currentLanguage } = useCurrentLanguage();
 
 // Detect mobile/tablet screen size (use mobile style for tablet too)
 const checkMobile = () => {
@@ -289,11 +306,52 @@ const sectionStyle = computed(() => ({
   backgroundPosition: isMobile.value ? 'center' : 'center',
 }));
 
+// Extract tagline with language fallback (same logic as overview)
+const tagline = computed(() => {
+  const seasonData = props.season as Season & {
+    tagline?: string | MultiLanguageText;
+  };
+
+  if (!seasonData?.tagline) {
+    return '';
+  }
+
+  // If tagline is a MultiLanguageText object, use getTitleInLanguage
+  if (typeof seasonData.tagline === 'object' && seasonData.tagline !== null) {
+    return getTitleInLanguage(
+      seasonData.tagline as MultiLanguageText,
+      currentLanguage.value.i18nCode,
+      userRegion.value
+    );
+  }
+
+  // If tagline is a string, return it directly
+  return seasonData.tagline;
+});
+
+// Check if tagline is missing and try to get it from the season data
+// Note: Seasons don't have tagline in TMDB, but we check anyway for consistency
+const checkTagline = () => {
+  const seasonData = props.season as Season & {
+    tagline?: string | MultiLanguageText;
+  };
+
+  // If tagline is missing, we could try to fetch it, but TMDB doesn't provide
+  // tagline for seasons, so we just return
+  // This is here for consistency with MediaBannerDetail
+  if (!seasonData?.tagline) {
+    // Tagline not available for seasons in TMDB
+    return;
+  }
+};
+
 onMounted(async () => {
   checkMobile();
   window.addEventListener('resize', handleResize);
   // Get user region for date formatting
   userRegion.value = await getUserRegion();
+  // Check tagline (though it's unlikely to exist for seasons)
+  checkTagline();
 });
 
 onUnmounted(() => {

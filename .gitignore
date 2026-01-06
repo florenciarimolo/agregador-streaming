@@ -75,3 +75,8 @@ vite.*.js
 
 # Vercel
 .vercel
+
+# Supabase
+.supabase
+*.db
+*.db-journal

@@ -22,7 +22,7 @@ export default defineEventHandler(
         season_id: string;
       };
 
-      const response: Season = await $fetch(
+      const response: Season & { tagline?: string } = await $fetch(
         `${config.baseUrl}/tv/${id}/season/${season_id}`,
         {
           query: {

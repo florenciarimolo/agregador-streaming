@@ -56,6 +56,7 @@ export default defineEventHandler(async (event) => {
       let titleJsonb = titleFromDb.title as MultiLanguageText;
       let overviewJsonb = titleFromDb.overview as MultiLanguageText | null;
       let posterPathJsonb = titleFromDb.poster_path as MultiLanguageText | null;
+      let taglineJsonb = titleFromDb.tagline as MultiLanguageText | null;
 
       // Check which languages we already have
       const existingLanguages = new Set<string>();
@@ -86,6 +87,7 @@ export default defineEventHandler(async (event) => {
             const response = await $fetch<{
               title?: string;
               overview?: string;
+              tagline?: string;
               poster_path?: string | null;
             }>(`${tmdbConfig.baseUrl}/movie/${tmdbId}`, {
               query: {
@@ -107,6 +109,7 @@ export default defineEventHandler(async (event) => {
         const updatedTitle = { ...(titleJsonb || {}) };
         const updatedOverview = { ...(overviewJsonb || {}) };
         const updatedPosterPath = { ...(posterPathJsonb || {}) };
+        const updatedTagline = { ...(taglineJsonb || {}) };
 
         languageResults.forEach(({ lang, data }) => {
           if (data) {
@@ -114,6 +117,7 @@ export default defineEventHandler(async (event) => {
             if (data.title) updatedTitle[lang] = data.title;
             if (data.overview) updatedOverview[lang] = data.overview || '';
             if (data.poster_path) updatedPosterPath[lang] = data.poster_path;
+            if (data.tagline) updatedTagline[lang] = data.tagline;
           }
         });
 
@@ -127,6 +131,10 @@ export default defineEventHandler(async (event) => {
               Object.keys(updatedPosterPath).length > 0
                 ? updatedPosterPath
                 : null,
+            tagline:
+              Object.keys(updatedTagline).length > 0
+                ? updatedTagline
+                : null,
           })
           .eq(TITLES_COLUMNS.TMDB_ID, tmdbId)
           .eq(TITLES_COLUMNS.TYPE, MEDIA_TYPE.MOVIE);
@@ -135,6 +143,7 @@ export default defineEventHandler(async (event) => {
         titleJsonb = updatedTitle;
         overviewJsonb = updatedOverview;
         posterPathJsonb = updatedPosterPath;
+        taglineJsonb = updatedTagline;
       }
 
       // Get user preferences for genres, providers and alternative titles
@@ -146,6 +155,7 @@ export default defineEventHandler(async (event) => {
           $fetch<{
             title?: string;
             overview?: string;
+            tagline?: string;
             poster_path?: string | null;
             backdrop_path?: string | null;
             release_date?: string;
@@ -191,6 +201,28 @@ export default defineEventHandler(async (event) => {
         config,
       });
 
+      // Get tagline from DB or TMDB
+      const { getTitleInLanguage } = await import('@/services/titles');
+      const taglineFromDb = taglineJsonb
+        ? getTitleInLanguage(taglineJsonb, userLanguage, region)
+        : null;
+      
+      // If tagline is missing in DB but exists in TMDB response, save it
+      if (!taglineFromDb && fullMovieResponse?.tagline) {
+        const updatedTagline: MultiLanguageText = { ...(taglineJsonb || {}) };
+        updatedTagline[userLanguage] = fullMovieResponse.tagline;
+        
+        await supabase
+          .from(TABLES.TITLES)
+          .update({
+            tagline: updatedTagline,
+          })
+          .eq(TITLES_COLUMNS.TMDB_ID, tmdbId)
+          .eq(TITLES_COLUMNS.TYPE, MEDIA_TYPE.MOVIE);
+        
+        taglineJsonb = updatedTagline;
+      }
+
       // Map DB title to Movie format
       // IMPORTANT: Use extracted data (from titles table or TMDB) - it already handles language correctly
       // Don't use fullMovieResponse as fallback since extractTitleDataWithFallback already fetches from TMDB if needed
@@ -199,6 +231,7 @@ export default defineEventHandler(async (event) => {
         title: string;
         overview: string;
         poster_path: string | null;
+        tagline?: string | MultiLanguageText;
         genre_ids?: number[];
       } = {
         id: titleFromDb.tmdb_id,
@@ -210,6 +243,9 @@ export default defineEventHandler(async (event) => {
         vote_average: titleFromDb.vote_average || 0,
         genres: fullMovieResponse?.genres || titleFromDb.genres || [],
         genre_ids: fullMovieResponse?.genre_ids || [],
+        tagline: taglineJsonb && Object.keys(taglineJsonb).length > 0
+          ? taglineJsonb
+          : (taglineFromDb || undefined),
       };
 
       // Add providers if available
@@ -239,6 +275,7 @@ export default defineEventHandler(async (event) => {
         const response = await $fetch<{
           title?: string;
           overview?: string;
+          tagline?: string;
           poster_path?: string | null;
           backdrop_path?: string | null;
           release_date?: string;
@@ -264,6 +301,7 @@ export default defineEventHandler(async (event) => {
     const titleMultiLang: MultiLanguageText = {};
     const overviewMultiLang: MultiLanguageText = {};
     const posterPathMultiLang: MultiLanguageText = {};
+    const taglineMultiLang: MultiLanguageText = {};
     let backdropPath: string | null = null;
     let releaseDate: string | null = null;
     let voteAverage: number | null = null;
@@ -275,6 +313,7 @@ export default defineEventHandler(async (event) => {
         if (data.title) titleMultiLang[lang] = data.title;
         if (data.overview) overviewMultiLang[lang] = data.overview;
         if (data.poster_path) posterPathMultiLang[lang] = data.poster_path;
+        if (data.tagline) taglineMultiLang[lang] = data.tagline;
         // Use first successful response for non-language fields
         if (!backdropPath && data.backdrop_path)
           backdropPath = data.backdrop_path;
@@ -295,6 +334,10 @@ export default defineEventHandler(async (event) => {
           poster_path:
             Object.keys(posterPathMultiLang).length > 0
               ? posterPathMultiLang
+              : null,
+          tagline:
+            Object.keys(taglineMultiLang).length > 0
+              ? taglineMultiLang
               : null,
           backdrop_path: backdropPath,
           release_date: releaseDate,
@@ -319,7 +362,18 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    return userLangData;
+    // Include tagline in response (as MultiLanguageText if available, or as string)
+    const response: Partial<Movie> & {
+      tagline?: string | MultiLanguageText;
+    } = {
+      ...userLangData,
+      tagline:
+        Object.keys(taglineMultiLang).length > 0
+          ? taglineMultiLang
+          : userLangData.tagline || undefined,
+    };
+
+    return response;
   } catch (error) {
     throw createError({
       statusCode: 500,
