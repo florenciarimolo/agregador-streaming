@@ -187,8 +187,6 @@
     "sessionError": "Error: No s'ha pogut obtenir la sessió",
     "poolPopulated": "Pool poblat: {inserted} recomanacions afegides",
     "generateError": "Error en generar recomanacions. Si us plau, intenta-ho de nou.",
-    "viewFavorites": "Veure favorits",
-    "viewSeen": "Veure vistos",
     "viewList": "Veure llista",
     "errorUpdatingStatus": "Error en actualitzar l'estat de \"{title}\"",
     "regeneratingRecommendations": "S'estan regenerant les recomanacions",

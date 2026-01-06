@@ -187,8 +187,6 @@
     "sessionError": "Erro: No se pudo obtener la sesión",
     "poolPopulated": "Pool poblado: {inserted} recomendaciones agregadas",
     "generateError": "Erro al generar recomendaciones. Por favor, tenta de novo.",
-    "viewFavorites": "Ver favoritos",
-    "viewSeen": "Ver vistos",
     "viewList": "Ver lista",
     "errorUpdatingStatus": "Erro al actualizar el estado de \"{title}\"",
     "regeneratingRecommendations": "Se están regenerando las recomendaciones",

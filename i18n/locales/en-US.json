@@ -187,8 +187,6 @@
     "sessionError": "Error: Could not get session",
     "poolPopulated": "Pool populated: {inserted} recommendations added",
     "generateError": "Error generating recommendations. Please try again.",
-    "viewFavorites": "View favorites",
-    "viewSeen": "View seen",
     "viewList": "View list",
     "errorUpdatingStatus": "Error updating status of \"{title}\"",
     "regeneratingRecommendations": "Recommendations are being regenerated",

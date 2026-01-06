@@ -138,7 +138,7 @@ export const useTitleStatusAction = () => {
         };
 
         const viewLabels: Record<TitleStatusType, string> = {
-          [TITLE_STATUS.SEEN]: t('home.viewSeen'),
+          [TITLE_STATUS.SEEN]: t('home.viewList'),
           [TITLE_STATUS.NOT_INTERESTED]: t('home.viewList'),
           [TITLE_STATUS.WATCHLIST]: t('home.viewList'),
         };
@@ -266,7 +266,7 @@ export const useTitleStatusAction = () => {
 
         // If hideViewListButton is true, don't show the button (e.g., when already on that list page)
         showToast(t('preferences.titleAdded', { title }), hideViewListButton ? null : {
-          label: t('home.viewFavorites'),
+          label: t('home.viewList'),
           variant: 'secondary',
           action: async () => {
             await navigateTo(routeWithLang('/lists?tab=liked'));
