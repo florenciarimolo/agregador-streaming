@@ -102,6 +102,41 @@ export async function upsertSeason(
 }
 
 /**
+ * Get all seasons for a TV show from database
+ */
+export async function getSeasonsByTvTmdbId(
+  tvTmdbId: number,
+  supabaseClient: SupabaseClient
+): Promise<Season[]> {
+  const { data, error } = await supabaseClient
+    .from(TABLES.SEASONS)
+    .select('*')
+    .eq(SEASONS_COLUMNS.TV_TMDB_ID, tvTmdbId)
+    .order(SEASONS_COLUMNS.SEASON_NUMBER, { ascending: true });
+
+  if (error) {
+    console.error('[getSeasonsByTvTmdbId] Error:', error);
+    return [];
+  }
+
+  if (!data || data.length === 0) {
+    return [];
+  }
+
+  // Map database rows to Season type
+  return data.map((row) => ({
+    id: row.tmdb_season_id,
+    name: row.name || '',
+    season_number: row.season_number,
+    overview: '', // Will be extracted from JSONB by caller if needed
+    air_date: row.air_date || '',
+    poster_path: row.poster_path || null,
+    vote_average: row.vote_average || 0,
+    episode_count: undefined, // Not stored in DB, fetched on-demand
+  }));
+}
+
+/**
  * Update season videos
  */
 export async function updateSeasonVideos(

@@ -8,6 +8,8 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { TABLES } from '@/constants/db/tables';
 import { SEASONS_COLUMNS } from '@/constants/db/columns';
 import type { Season } from '@/types/TVShow';
+import { upsertSeason } from '@/services/seasons';
+import { $fetch } from 'ofetch';
 
 /**
  * TMDB season structure from /tv/{id} response
@@ -24,23 +26,35 @@ type TMDBSeason = {
 };
 
 /**
+ * TMDB config for API calls
+ */
+type TMDBConfig = {
+  baseUrl: string;
+  apiKey: string;
+  language: string;
+  region: string;
+};
+
+/**
  * Sync seasons from TMDB TV show response to database
  * Compares season_number values and creates missing seasons with basic data only
+ * If a season has null air_date, attempts to fetch it from the first episode
  * Designed to be reusable by cron jobs in the future
  */
 export async function syncSeasonsFromTVShow(
   tvTmdbId: number,
   tmdbSeasons: TMDBSeason[],
-  supabase: SupabaseClient
+  supabase: SupabaseClient,
+  tmdbConfig?: TMDBConfig
 ): Promise<void> {
   if (!tmdbSeasons || tmdbSeasons.length === 0) {
     return;
   }
 
-  // Get existing seasons from DB for this TV show
+  // Get existing seasons from DB for this TV show (including air_date and tmdb_season_id to check for nulls)
   const { data: existingSeasons, error: fetchError } = await supabase
     .from(TABLES.SEASONS)
-    .select(SEASONS_COLUMNS.SEASON_NUMBER)
+    .select(`${SEASONS_COLUMNS.SEASON_NUMBER}, ${SEASONS_COLUMNS.AIR_DATE}, ${SEASONS_COLUMNS.TMDB_SEASON_ID}, ${SEASONS_COLUMNS.NAME}, ${SEASONS_COLUMNS.POSTER_PATH}, ${SEASONS_COLUMNS.VOTE_AVERAGE}`)
     .eq(SEASONS_COLUMNS.TV_TMDB_ID, tvTmdbId);
 
   if (fetchError) {
@@ -60,7 +74,13 @@ export async function syncSeasonsFromTVShow(
     (tmdbSeason) => !existingSeasonNumbers.has(tmdbSeason.season_number)
   );
 
-  if (seasonsToCreate.length === 0) {
+  // Find existing seasons with null air_date (to update them)
+  const existingSeasonsWithNullDate = existingSeasons?.filter(
+    (s) => !s.air_date || s.air_date.trim() === ''
+  ) || [];
+
+  // If no seasons to create and no existing seasons with null dates, return early
+  if (seasonsToCreate.length === 0 && existingSeasonsWithNullDate.length === 0) {
     return;
   }
 
@@ -95,6 +115,140 @@ export async function syncSeasonsFromTVShow(
     console.log(
       `[syncSeasonsFromTVShow] Created ${seasonsToCreate.length} new season(s) for TV show ${tvTmdbId}`
     );
+  }
+
+  // After syncing, check for seasons with null air_date and try to get it from first episode
+  if (tmdbConfig) {
+    // Combine new seasons with null dates and existing seasons with null dates
+    const newSeasonsWithNullDate = seasonsToCreate.filter(
+      (s) => !s.air_date || s.air_date.trim() === ''
+    );
+    
+    // Process new seasons with null air_date
+    for (const season of newSeasonsWithNullDate) {
+      try {
+        // Fetch season details from TMDB to get episodes
+        const seasonResponse = await $fetch<{
+          id: number;
+          name: string;
+          air_date: string | null;
+          episodes?: Array<{
+            air_date: string | null;
+          }>;
+        }>(`${tmdbConfig.baseUrl}/tv/${tvTmdbId}/season/${season.season_number}`, {
+          query: {
+            api_key: tmdbConfig.apiKey,
+            language: tmdbConfig.language,
+            region: tmdbConfig.region,
+          },
+        });
+
+        // If air_date is null, try to get it from the first episode
+        let finalAirDate = seasonResponse.air_date;
+        if (!finalAirDate && seasonResponse.episodes && seasonResponse.episodes.length > 0) {
+          // Find the first episode with an air_date
+          const firstEpisodeWithDate = seasonResponse.episodes.find(
+            (ep) => ep.air_date && ep.air_date.trim() !== ''
+          );
+          if (firstEpisodeWithDate?.air_date) {
+            finalAirDate = firstEpisodeWithDate.air_date;
+          }
+        }
+
+        // If we found a date, update the season in the database
+        if (finalAirDate) {
+          await upsertSeason(
+            {
+              tv_tmdb_id: tvTmdbId,
+              season_number: season.season_number,
+              tmdb_season_id: season.id,
+              name: season.name || null,
+              air_date: finalAirDate,
+              poster_path: season.poster_path || null,
+              vote_average: season.vote_average || null,
+            },
+            supabase
+          );
+
+          if (import.meta.dev) {
+            console.log(
+              `[syncSeasonsFromTVShow] Updated air_date for season ${season.season_number} from first episode: ${finalAirDate}`
+            );
+          }
+        }
+      } catch (episodeError) {
+        // Log error but don't fail the sync
+        if (import.meta.dev) {
+          console.error(
+            `[syncSeasonsFromTVShow] Error fetching air_date from first episode for season ${season.season_number}:`,
+            episodeError
+          );
+        }
+      }
+    }
+
+    // Process existing seasons with null air_date
+    for (const existingSeason of existingSeasonsWithNullDate) {
+      try {
+        // Fetch season details from TMDB to get episodes
+        const seasonResponse = await $fetch<{
+          id: number;
+          name: string;
+          air_date: string | null;
+          episodes?: Array<{
+            air_date: string | null;
+          }>;
+        }>(`${tmdbConfig.baseUrl}/tv/${tvTmdbId}/season/${existingSeason.season_number}`, {
+          query: {
+            api_key: tmdbConfig.apiKey,
+            language: tmdbConfig.language,
+            region: tmdbConfig.region,
+          },
+        });
+
+        // If air_date is null, try to get it from the first episode
+        let finalAirDate = seasonResponse.air_date;
+        if (!finalAirDate && seasonResponse.episodes && seasonResponse.episodes.length > 0) {
+          // Find the first episode with an air_date
+          const firstEpisodeWithDate = seasonResponse.episodes.find(
+            (ep) => ep.air_date && ep.air_date.trim() !== ''
+          );
+          if (firstEpisodeWithDate?.air_date) {
+            finalAirDate = firstEpisodeWithDate.air_date;
+          }
+        }
+
+        // If we found a date, update the season in the database
+        if (finalAirDate) {
+          await upsertSeason(
+            {
+              tv_tmdb_id: tvTmdbId,
+              season_number: existingSeason.season_number,
+              tmdb_season_id: existingSeason.tmdb_season_id,
+              name: existingSeason.name || null,
+              air_date: finalAirDate,
+              poster_path: existingSeason.poster_path || null,
+              vote_average: existingSeason.vote_average || null,
+            },
+            supabase
+          );
+
+          if (import.meta.dev) {
+            console.log(
+              `[syncSeasonsFromTVShow] Updated air_date for existing season ${existingSeason.season_number} from first episode: ${finalAirDate}`
+            );
+          }
+        }
+      } catch (episodeError) {
+        // Log error but don't fail the sync
+        if (import.meta.dev) {
+          console.error(
+            `[syncSeasonsFromTVShow] Error fetching air_date from first episode for existing season ${existingSeason.season_number}:`,
+            episodeError
+          );
+        }
+      }
+    }
   }
 }
 
