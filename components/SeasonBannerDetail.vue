@@ -34,7 +34,7 @@
         <!-- Title - left aligned, vertically centered -->
         <h1
           v-if="season?.name"
-          class="absolute left-4 top-1/2 -translate-y-1/2 right-4 text-2xl font-bold text-white uppercase break-words"
+          class="absolute left-4 top-1/2 -translate-y-1/2 right-4 text-3xl font-bold text-white uppercase break-words"
         >
           {{ season.name }}
         </h1>
@@ -42,7 +42,7 @@
     </div>
     <Section>
       <section
-        class="relative flex flex-col items-center justify-between gap-16 pb-8 dark:text-gray-300 text-gray-800 w-full flex-shrink-0 min-h-[400px] lg:flex-row lg:items-center lg:p-16 lg:bg-gray-100/80 dark:lg:bg-gray-900/40 lg:backdrop-blur-xl lg:border lg:gap-7 rounded-3xl lg:border-gray-300/50 lg:dark:border-primary-800 lg:shadow-lg lg:shadow-primary/20 py-16"
+        class="relative flex flex-col items-center justify-between gap-16 pb-8 dark:text-gray-300 text-gray-800 w-full flex-shrink-0 min-h-[400px] lg:flex-row lg:items-start lg:p-16 lg:bg-gray-100/80 dark:lg:bg-gray-900/40 lg:backdrop-blur-xl lg:border lg:gap-7 rounded-3xl lg:border-gray-300/50 lg:dark:border-primary-800 lg:shadow-lg lg:shadow-primary/20 py-16"
       >
         <div
           class="absolute inset-0 z-0 hidden lg:block rounded-3xl"
@@ -52,27 +52,67 @@
           class="absolute z-0 hidden lg:block rounded-3xl bg-gray-100/90 dark:bg-gray-900/90"
           style="top: 0px; right: 0px; bottom: 0px; left: 0px"
         ></div>
+        <!-- Left column: Image + Providers -->
         <div
-          class="hidden relative w-full max-w-[60%] mx-auto lg:flex lg:max-w-80 lg:w-80 lg:mx-0 flex-shrink-0 lg:aspect-[2/3]"
-          style="
-            filter: drop-shadow(0 10px 15px -3px rgb(0 0 0 / 0.1))
-              drop-shadow(0 4px 6px -4px rgb(0 0 0 / 0.1))
-              drop-shadow(0 0 20px rgb(var(--color-primary) / 0.3));
-          "
+          class="hidden lg:flex flex-col gap-6 lg:max-w-80 lg:w-80 flex-shrink-0 relative z-10"
         >
           <div
-            v-if="season?.poster_path"
-            class="relative overflow-hidden rounded-3xl w-full aspect-[2/3] h-full max-h-[500px]"
+            class="relative w-full lg:max-w-80 lg:w-80 flex-shrink-0 lg:aspect-[2/3]"
+            style="
+              filter: drop-shadow(0 10px 15px -3px rgb(0 0 0 / 0.1))
+                drop-shadow(0 4px 6px -4px rgb(0 0 0 / 0.1))
+                drop-shadow(0 0 20px rgb(var(--color-primary) / 0.3));
+            "
           >
-            <img
-              :src="`https://image.tmdb.org/t/p/w780${season.poster_path}`"
-              :alt="season.name"
-              class="w-full h-full object-cover rounded-3xl"
-            />
+            <div
+              v-if="season?.poster_path"
+              class="relative overflow-hidden rounded-3xl w-full aspect-[2/3] h-full max-h-[500px]"
+            >
+              <img
+                :src="`https://image.tmdb.org/t/p/w780${season.poster_path}`"
+                :alt="season.name"
+                class="w-full h-full object-cover rounded-3xl"
+              />
+            </div>
           </div>
+          <!-- Providers below image on desktop -->
+          <section class="flex flex-col gap-6">
+            <section v-if="hasAvailableProviders" class="flex flex-col gap-8">
+              <ProviderList
+                v-if="season?.providers?.flatrate?.length"
+                :media-provider-prop-list="season.providers.flatrate"
+                :watch-type-prop="$t('media.watchIn')"
+                :media-type="MEDIA_TYPE.TV"
+                :media-title="season?.name || ''"
+                :tmdb-id="tmdbId"
+              />
+
+              <ProviderList
+                v-if="season?.providers?.buy?.length"
+                :media-provider-prop-list="season.providers.buy"
+                :watch-type-prop="$t('media.buyIn')"
+                :media-type="MEDIA_TYPE.TV"
+                :media-title="season?.name || ''"
+                :tmdb-id="tmdbId"
+              />
+
+              <ProviderList
+                v-if="season?.providers?.rent?.length"
+                :media-provider-prop-list="season.providers.rent"
+                :watch-type-prop="$t('media.rentIn')"
+                :media-type="MEDIA_TYPE.TV"
+                :media-title="season?.name || ''"
+                :tmdb-id="tmdbId"
+              />
+            </section>
+            <section v-else class="dark:text-gray-400 text-gray-600">
+              <p class="italic">{{ $t('media.noPlatforms') }}</p>
+            </section>
+          </section>
         </div>
+        <!-- Right column: Content -->
         <div
-          class="z-10 relative flex flex-col flex-1 gap-6 rounded-lg pt-6 lg:p-6 lg:ml-8 w-full flex-shrink-0 min-h-[300px]"
+          class="z-10 relative flex flex-col flex-1 gap-6 rounded-lg lg:p-6 lg:ml-8 w-full flex-shrink-0 min-h-[300px]"
         >
           <div class="text-left relative flex-row">
             <button
@@ -90,7 +130,7 @@
                 class="flex items-center gap-3 flex-wrap xl:flex-nowrap xl:flex-1"
               >
                 <h1
-                  class="hidden lg:block text-2xl font-bold dark:text-gray-300 text-gray-800 break-words xl:flex-1 uppercase"
+                  class="hidden lg:block text-4xl font-bold dark:text-gray-300 text-gray-800 break-words xl:flex-1 uppercase"
                   >{{ season?.name }}</h1
                 >
                 <!-- Rating inline with title on desktop large, hidden on mobile/tablet (shown below) -->
@@ -142,8 +182,8 @@
             }}</span>
           </div>
 
-          <!-- Displaying watch providers -->
-          <section class="flex flex-col gap-6">
+          <!-- Displaying watch providers (mobile only) -->
+          <section class="flex flex-col gap-6 lg:hidden">
             <section v-if="hasAvailableProviders" class="flex flex-col gap-8">
               <ProviderList
                 v-if="season?.providers?.flatrate?.length"

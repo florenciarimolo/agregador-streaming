@@ -109,6 +109,8 @@ export async function getUserTMDBParamsByUserId(userId: string): Promise<{
  * Language is read from URL (route.params.lang), NOT from cookies or database
  * Region is read from database (profiles.settings.region)
  * Returns default values if user is not authenticated or preferences not set
+ * 
+ * Results are cached per request to avoid duplicate processing
  */
 export async function getUserTMDBParams(event?: H3Event): Promise<{
   language: string;
@@ -121,6 +123,12 @@ export async function getUserTMDBParams(event?: H3Event): Promise<{
 
   if (!event) {
     return defaults;
+  }
+
+  // Cache result per request to avoid duplicate processing
+  const cacheKey = '__getUserTMDBParams_cache__';
+  if (event.context[cacheKey]) {
+    return event.context[cacheKey] as { language: string; region: string };
   }
 
   try {
@@ -263,15 +271,23 @@ export async function getUserTMDBParams(event?: H3Event): Promise<{
       }
     }
 
-    return {
+    const result = {
       language,
       region,
     };
+    
+    // Cache result for this request
+    event.context[cacheKey] = result;
+    
+    return result;
   } catch (error) {
     // If any error occurs, return defaults
     if (import.meta.dev) {
       console.error('Error getting user TMDB params from event:', error);
     }
-    return defaults;
+    const result = defaults;
+    // Cache defaults too to avoid retrying on error
+    event.context[cacheKey] = result;
+    return result;
   }
 }

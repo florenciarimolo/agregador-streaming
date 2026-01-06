@@ -1,12 +1,10 @@
 <template lang="">
   <div
     v-if="mediaProviderPropList.length > 0"
-    class="flex flex-row flex-wrap items-center justify-start gap-4"
+    class="flex flex-col gap-3"
   >
-    <div class="flex items-center gap-2 dark:text-gray-300 text-gray-800">
-      <IconPlay icon-class="w-5 h-5" />
-      <span>{{ watchTypeProp }}</span>
-    </div>
+    <h3 class="text-xl font-bold dark:text-gray-300 text-gray-800 uppercase font-heading">{{ watchTypeProp }}</h3>
+    <div class="flex flex-row flex-wrap items-center justify-start gap-4">
     <a
       v-for="provider in mediaProviderPropList"
       :key="provider.provider_id"
@@ -22,6 +20,7 @@
         class="inline-block object-cover w-10 h-10 rounded shadow-md md:w-12 md:h-12 shadow-secondary/20 cursor-pointer"
       />
     </a>
+    </div>
   </div>
 </template>
 <script setup lang="ts">
@@ -33,8 +32,6 @@ import {
 } from '@/utils/providerLinks';
 import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 import { getSession } from '@/services/auth';
-// @ts-expect-error - Used in template, linter doesn't detect template usage
-import IconPlay from '@/components/icons/IconPlay.vue';
 
 const props = defineProps({
   mediaProviderPropList: {
