@@ -190,8 +190,6 @@
     "viewFavorites": "Veure favorits",
     "viewSeen": "Veure vistos",
     "viewList": "Veure llista",
-    "errorSavingWatchlist": "Error en desar \"{title}\" a la Watchlist",
-    "errorMarkingSeen": "Error en marcar \"{title}\" com a vist",
     "errorUpdatingStatus": "Error en actualitzar l'estat de \"{title}\"",
     "regeneratingRecommendations": "S'estan regenerant les recomanacions",
     "confirmRemoveLikeTitle": "Confirmar eliminació",
@@ -260,13 +258,13 @@
     "empty": "Encara no has marcat cap títol com a vist. Comença a explorar recomanacions i marca el que ja has vist.",
     "emptyCta": "Veure recomanacions",
     "titleRemoved": "\"{title}\" eliminat de 'Vistos'",
-    "titleAdded": "\"{title}\" marcat com a 'Vistos'",
+    "titleAdded": "\"{title}\" afegit a 'Vistos'",
     "errorRemoving": "Error en eliminar \"{title}\" de 'Vistos'",
-    "errorAdding": "Error en marcar \"{title}\" com a 'Vistos'",
+    "errorAdding": "Error en afegir \"{title}\" a 'Vistos'",
     "errorLoading": "Error en carregar els títols vistos.",
     "notAuthenticated": "No estàs autenticat. Si us plau, inicia sessió.",
-    "markedLiked": "Títol marcat com a m'agrada.",
-    "errorMarkingLiked": "Error en marcar com a m'agrada. Si us plau, intenta-ho de nou.",
+    "markedLiked": "Títol afegit a 'Favorits'.",
+    "errorMarkingLiked": "Error en afegir a 'Favorits'. Si us plau, intenta-ho de nou.",
     "removeFromList": "Eliminar",
     "noTitle": "Sense títol"
   },
@@ -280,9 +278,9 @@
     "notAuthenticated": "No estàs autenticat. Si us plau, inicia sessió.",
     "errorUndo": "Error en desfer. Si us plau, intenta-ho de nou.",
     "titleRemoved": "\"{title}\" eliminat de 'No m'interessa'",
-    "titleAdded": "\"{title}\" marcat com a 'No m'interessa'",
+    "titleAdded": "\"{title}\" afegit a 'No m'interessa'",
     "errorRemoving": "Error en eliminar \"{title}\" de 'No m'interessa'",
-    "errorAdding": "Error en marcar \"{title}\" com a 'No m'interessa'",
+    "errorAdding": "Error en afegir \"{title}\" a 'No m'interessa'",
     "noTitle": "Sense títol"
   },
   "profile": {
@@ -305,12 +303,12 @@
     "failedToUpload": "Error en pujar l'avatar.",
     "userAvatar": "Avatar d'usuari",
     "tabs": {
-      "liked": "M'agrada",
+      "liked": "Favorits",
       "seen": "Vistos",
       "notInterested": "No m'interessa",
       "watchlist": "Watchlist"
     },
-    "listsDescription": "Gestiona els teus títols preferits, contingut vist i títols que no t'interessen. Organitza el teu historial de visualització i preferències."
+    "listsDescription": "Gestiona els teus favorits, contingut vist i títols que no t'interessen. Organitza el teu historial de visualització i preferències."
   },
   "preferences": {
     "title": "Preferències",
@@ -334,7 +332,7 @@
     "removeFromList": "Eliminar",
     "removeTitle": "Eliminar {title}",
     "tabs": {
-      "favorites": "M'agrada",
+      "favorites": "Favorits",
       "content": "Preferències de contingut"
     },
     "content": {
@@ -439,9 +437,9 @@
     "viewDetails": "Veure detalls",
     "back": "Tornar",
     "seen": "Vist",
-    "liked": "M'agrada",
-    "like": "M'agrada",
-    "removeFromLiked": "Eliminar de 'M'agrada'",
+    "liked": "Favorits",
+    "like": "Favorits",
+    "removeFromLiked": "Eliminar de 'Favorits'",
     "notInterested": "No m'interessa",
     "watchLater": "Watchlist",
     "removeFromWatchlist": "Eliminar de 'Watchlist'",
@@ -622,7 +620,7 @@
     "organizeDescription": "Pots gestionar els teus títols de diverses formes:",
     "seenLabel": "Vist:",
     "seenDescription": "Marca contingut que ja has vist perquè no aparegui a les recomanacions.",
-    "likedLabel": "M'agrada:",
+    "likedLabel": "Favorits:",
     "likedDescription": "Desa els teus favorits per accedir-hi fàcilment.",
     "watchLaterLabel": "Watchlist:",
     "watchLaterDescription": "Crea una llista de contingut que vols veure en el futur.",
@@ -654,9 +652,9 @@
     "q3": "D'on obtenen la informació sobre disponibilitat en streaming?",
     "a3": "Utilitzem l'API de The Movie Database (TMDB) per obtenir informació actualitzada sobre en quines plataformes està disponible cada títol. Aquesta informació s'actualitza regularment, però tingues en compte que la disponibilitat pot variar segons la teva ubicació geogràfica.",
     "q4": "Puc canviar les meves preferències després de l'onboarding inicial?",
-    "a4": "Sí, pots actualitzar les teves preferències en qualsevol moment. Cada vegada que marques un títol com a vist, t'agrada, el deses per més tard o el marques com a no interessant, el sistema aprèn i ajusta les teves recomanacions automàticament. També pots cercar contingut específic i explorar diferents gèneres.",
-    "q5": "Quina diferència hi ha entre \"M'agrada\" i \"Veure més tard\"?",
-    "a5": "\"M'agrada\" s'utilitza per marcar contingut que ja has vist i t'ha agradat, ajudant el sistema a entendre les teves preferències. \"Watchlist\" és per contingut que encara no has vist però vols recordar per veure'l en el futur. Tots dos ajuden a millorar les teves recomanacions, però serveixen per a propòsits diferents.",
+    "a4": "Sí, pots actualitzar les teves preferències en qualsevol moment. Cada vegada que afegeixes un títol com a vist, als favorits, el deses per més tard o el marques com a no interessant, el sistema aprèn i ajusta les teves recomanacions automàticament. També pots cercar contingut específic i explorar diferents gèneres.",
+    "q5": "Quina diferència hi ha entre \"Favorits\" i \"Veure més tard\"?",
+    "a5": "\"Favorits\" s'utilitza per afegir contingut que ja has vist i t'ha agradat, ajudant el sistema a entendre les teves preferències. \"Watchlist\" és per contingut que encara no has vist però vols recordar per veure'l en el futur. Tots dos ajuden a millorar les teves recomanacions, però serveixen per a propòsits diferents.",
     "q6": "Per què no veig totes les plataformes de streaming disponibles?",
     "a6": "La disponibilitat de contingut en plataformes de streaming varia segons la teva ubicació geogràfica. Mostrem les plataformes disponibles a la teva regió basant-nos en les dades de TMDB. Si no veus una plataforma específica, pot ser que el contingut no estigui disponible al teu país o que la informació encara no s'hagi actualitzat.",
     "q7": "Com puc eliminar el meu compte?",

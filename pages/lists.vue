@@ -76,8 +76,13 @@
                           :aria-label="$t('common.delete')"
                           size="small"
                           variant="default"
-                          custom-class="p-2 rounded-full backdrop-blur-sm pointer-events-auto w-fit h-fit bg-black/50 hover:bg-red-600/80"
-                          @click.stop.prevent="handleRemoveLikedClick(title)"
+                          custom-class="p-2 rounded-full backdrop-blur-sm pointer-events-auto w-fit h-fit bg-black/50 hover:bg-red-600/80 relative z-50"
+                          @click.stop.prevent="
+                            () => {
+                              console.log('IconButton clicked', title);
+                              handleRemoveLikedClick(title);
+                            }
+                          "
                         >
                           <IconX icon-class="w-4 h-4 text-white" />
                         </IconButton>
@@ -148,8 +153,13 @@
                           :aria-label="$t('seen.removeFromList')"
                           size="small"
                           variant="default"
-                          custom-class="p-2 rounded-full backdrop-blur-sm pointer-events-auto w-fit h-fit bg-black/50 hover:bg-red-600/80"
-                          @click.stop.prevent="handleRemoveSeen(title)"
+                          custom-class="p-2 rounded-full backdrop-blur-sm pointer-events-auto w-fit h-fit bg-black/50 hover:bg-red-600/80 relative z-50"
+                          @click.stop.prevent="
+                            () => {
+                              console.log('IconButton clicked', title);
+                              handleRemoveSeen(title);
+                            }
+                          "
                         >
                           <IconX icon-class="w-4 h-4 text-white" />
                         </IconButton>
@@ -202,8 +212,13 @@
                           :aria-label="$t('common.delete')"
                           size="small"
                           variant="default"
-                          custom-class="p-2 rounded-full backdrop-blur-sm pointer-events-auto w-fit h-fit bg-black/50 hover:bg-red-600/80"
-                          @click.stop.prevent="handleRemoveNotInterested(title)"
+                          custom-class="p-2 rounded-full backdrop-blur-sm pointer-events-auto w-fit h-fit bg-black/50 hover:bg-red-600/80 relative z-50"
+                          @click.stop.prevent="
+                            () => {
+                              console.log('IconButton clicked', title);
+                              handleRemoveNotInterested(title);
+                            }
+                          "
                         >
                           <IconX icon-class="w-4 h-4 text-white" />
                         </IconButton>
@@ -761,6 +776,7 @@ const handleRemoveLikedClick = async (title: {
   title: string;
   tmdb_id: number;
 }) => {
+  console.log('[handleRemoveLikedClick] Called with title:', title);
   const titleToRestore = likedTitles.value.find((t) => t.id === title.id);
 
   try {
@@ -851,6 +867,7 @@ const handleRemoveSeen = async (title: {
   type: typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV;
   liked?: boolean;
 }) => {
+  console.log('[handleRemoveSeen] Called with title:', title);
   // Store original title for undo
   const titleToRestore = seenTitles.value.find((t) => t.id === title.id);
 
@@ -1127,6 +1144,7 @@ const handleRemoveNotInterested = async (title: {
   tmdb_id: number;
   type: typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV;
 }) => {
+  console.log('[handleRemoveNotInterested] Called with title:', title);
   // Store original title for undo
   const titleToRestore = notInterestedTitles.value.find(
     (t) => t.id === title.id

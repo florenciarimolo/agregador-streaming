@@ -156,7 +156,27 @@ export const useTitleStatusAction = () => {
       }
     } catch (error) {
       console.error('[useTitleStatusAction] Error:', error);
-      showToast(t('home.errorUpdatingStatus', { title }), null, 3000);
+      // Determine if we were adding or removing to show the appropriate error message
+      const isCurrentlySet = currentStatus === targetStatus;
+      const isRemoving = isCurrentlySet;
+      
+      if (isRemoving) {
+        // Error removing
+        const removeErrorMessages: Record<TitleStatusType, string> = {
+          [TITLE_STATUS.SEEN]: t('seen.errorRemoving', { title }),
+          [TITLE_STATUS.NOT_INTERESTED]: t('notInterested.errorRemoving', { title }),
+          [TITLE_STATUS.WATCHLIST]: t('watchlist.errorRemoving', { title }),
+        };
+        showToast(removeErrorMessages[targetStatus], null, 3000);
+      } else {
+        // Error adding
+        const addErrorMessages: Record<TitleStatusType, string> = {
+          [TITLE_STATUS.SEEN]: t('seen.errorAdding', { title }),
+          [TITLE_STATUS.NOT_INTERESTED]: t('notInterested.errorAdding', { title }),
+          [TITLE_STATUS.WATCHLIST]: t('watchlist.errorAdding', { title }),
+        };
+        showToast(addErrorMessages[targetStatus], null, 3000);
+      }
       return { success: false, action: 'removed', newStatus: null };
     }
   };
