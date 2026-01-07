@@ -408,9 +408,11 @@ export default defineEventHandler(async (event) => {
       const tmdbConfig = getTMDBConfig(language, region);
 
       // Helper to fetch watch providers for a title
+      // When filtering by providers, only returns flatrate providers
       const fetchWatchProviders = async (
         tmdbId: number,
-        type: 'movie' | 'tv'
+        type: 'movie' | 'tv',
+        onlyFlatrate: boolean = false
       ): Promise<number[]> => {
         try {
           const endpoint =
@@ -433,7 +435,7 @@ export default defineEventHandler(async (event) => {
 
           if (!response?.results) return [];
 
-          // Get providers from the region (flatrate, buy, rent)
+          // Get providers from the region
           const regionLower = region.toLowerCase();
           const regionUpper = region.toUpperCase();
           const regionData =
@@ -442,15 +444,22 @@ export default defineEventHandler(async (event) => {
             {};
           const providers: number[] = [];
 
-          // Combine all provider types
-          if (regionData.flatrate) {
-            providers.push(...regionData.flatrate.map((p) => p.provider_id));
-          }
-          if (regionData.buy) {
-            providers.push(...regionData.buy.map((p) => p.provider_id));
-          }
-          if (regionData.rent) {
-            providers.push(...regionData.rent.map((p) => p.provider_id));
+          // When filtering by providers, only consider flatrate
+          if (onlyFlatrate) {
+            if (regionData.flatrate) {
+              providers.push(...regionData.flatrate.map((p) => p.provider_id));
+            }
+          } else {
+            // Combine all provider types (for non-filtering scenarios)
+            if (regionData.flatrate) {
+              providers.push(...regionData.flatrate.map((p) => p.provider_id));
+            }
+            if (regionData.buy) {
+              providers.push(...regionData.buy.map((p) => p.provider_id));
+            }
+            if (regionData.rent) {
+              providers.push(...regionData.rent.map((p) => p.provider_id));
+            }
           }
 
           return providers;
@@ -463,29 +472,33 @@ export default defineEventHandler(async (event) => {
         }
       };
 
-      // Filter by providers if user has preferences (best-effort)
-      // If a title doesn't have provider data, include it anyway (best-effort)
+      // Filter by providers if user has preferences
+      // Only include titles that have the selected providers in flatrate
+      // Exclude titles that don't have the provider in flatrate
       if (includedProviders.length > 0) {
         const entriesWithProviders = await Promise.all(
           filteredEntries.map(async (entry) => {
-            const titleProviders = await fetchWatchProviders(
+            // Only fetch flatrate providers when filtering
+            const titleFlatrateProviders = await fetchWatchProviders(
               entry.tmdb_id,
-              entry.type as 'movie' | 'tv'
+              entry.type as 'movie' | 'tv',
+              true // onlyFlatrate = true
             );
 
-            // Best-effort: if no provider data, include the title anyway
-            if (titleProviders.length === 0) {
-              return entry; // Include if no data (best-effort)
+            // If no flatrate provider data, exclude the title
+            // (strict filtering: only include if we have data and it matches)
+            if (titleFlatrateProviders.length === 0) {
+              return null; // Exclude if no flatrate data
             }
 
-            // Check if any of the title's providers match user's included providers
-            const hasMatchingProvider = titleProviders.some((providerId) =>
-              includedProviders.includes(providerId)
+            // Check if any of the title's flatrate providers match user's included providers
+            const hasMatchingFlatrateProvider = titleFlatrateProviders.some(
+              (providerId) => includedProviders.includes(providerId)
             );
 
-            // Only exclude if we have provider data AND none match
-            if (!hasMatchingProvider) {
-              return null;
+            // Only include if there's a matching flatrate provider
+            if (!hasMatchingFlatrateProvider) {
+              return null; // Exclude if no matching flatrate provider
             }
 
             return entry;
