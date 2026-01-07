@@ -68,6 +68,24 @@
                   </a>
                 </p>
               </div>
+              <!-- TMDB Attribution -->
+              <footer class="text-xs text-gray-400 flex items-center gap-2 justify-center mt-2">
+                <span class="flex items-center">
+                  {{ $t('footer.tmdbAttribution') }}
+                </span>
+                <a
+                  href="https://www.themoviedb.org"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="inline-flex items-center"
+                >
+                  <img
+                    src="/tmdb-logo.svg"
+                    alt="The Movie Database (TMDB)"
+                    class="h-2 opacity-80 hover:opacity-100 transition"
+                  />
+                </a>
+              </footer>
             </div>
           </div>
         </div>
@@ -125,6 +143,24 @@
               hello@getupnext.io
             </a>
           </p>
+          <!-- TMDB Attribution -->
+          <footer class="text-xs text-gray-400 flex items-center gap-2 justify-center mt-4">
+            <span class="flex items-center">
+              {{ $t('footer.tmdbAttribution') }}
+            </span>
+            <a
+              href="https://www.themoviedb.org"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="inline-flex items-center"
+            >
+              <img
+                src="/tmdb-logo.svg"
+                alt="The Movie Database (TMDB)"
+                class="h-3 opacity-80 hover:opacity-100 transition"
+              />
+            </a>
+          </footer>
         </div>
       </div>
     </AppShell>

@@ -485,7 +485,8 @@
     "privacy": "Política de Privacitat",
     "copyright": "© {year} UpNext. Tots els drets reservats.",
     "developedBy": "Desenvolupat per",
-    "contact": "Contacte:"
+    "contact": "Contacte:",
+    "tmdbAttribution": "Aquest producte utilitza l'API de TMDB, però no està respaldat ni certificat per TMDB."
   },
   "media": {
     "watchNow": "Veure ara",

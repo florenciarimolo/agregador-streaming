@@ -485,7 +485,8 @@
     "privacy": "Privacy Policy",
     "copyright": "© {year} UpNext. All rights reserved.",
     "developedBy": "Developed by",
-    "contact": "Contact:"
+    "contact": "Contact:",
+    "tmdbAttribution": "This product uses the TMDB API but is not endorsed or certified by TMDB."
   },
   "media": {
     "watchNow": "Watch now",
