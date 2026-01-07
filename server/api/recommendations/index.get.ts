@@ -11,6 +11,14 @@ import {
   ATTENTION,
   type Attention,
 } from '@/constants/domain/attention';
+import {
+  EXPLORATION_MODE,
+  type ExplorationMode,
+} from '@/constants/domain/explorationMode';
+import {
+  PRIORITIZE_CONTENT,
+  type PrioritizeContent,
+} from '@/constants/domain/prioritizeContent';
 import { getTMDBConfig } from '@/server/utils/config';
 import { getUserTMDBParams } from '@/server/utils/user-tmdb';
 import { RECOMMENDATION_POOL_COLUMNS } from '@/constants/db/columns';
@@ -35,6 +43,42 @@ import {
  * Maximum number of recommendations to return
  */
 const MAX_RECOMMENDATIONS = 20;
+
+/**
+ * Check if a title is a recent release
+ * Movies: within last 2 years
+ * TV: within last 1 year
+ */
+function isRecentRelease(
+  titleData: { release_date: string | null; first_air_date: string | null },
+  type: 'movie' | 'tv'
+): boolean {
+  const dateStr = type === MEDIA_TYPE.MOVIE ? titleData.release_date : titleData.first_air_date;
+  if (!dateStr) return false;
+
+  const releaseDate = new Date(dateStr);
+  const now = new Date();
+  const yearsDiff = (now.getTime() - releaseDate.getTime()) / (1000 * 60 * 60 * 24 * 365);
+
+  return type === MEDIA_TYPE.MOVIE ? yearsDiff <= 2 : yearsDiff <= 1;
+}
+
+/**
+ * Check if a title is a classic (older than 20 years)
+ */
+function isClassic(titleData: {
+  release_date: string | null;
+  first_air_date: string | null;
+}): boolean {
+  const dateStr = titleData.release_date || titleData.first_air_date;
+  if (!dateStr) return false;
+
+  const releaseDate = new Date(dateStr);
+  const now = new Date();
+  const yearsDiff = (now.getTime() - releaseDate.getTime()) / (1000 * 60 * 60 * 24 * 365);
+
+  return yearsDiff > 20;
+}
 
 /**
  * Get recommendations for the authenticated user from recommendation_pool
@@ -93,11 +137,11 @@ export default defineEventHandler(async (event) => {
   });
 
   try {
-    // Get user preferences for providers and genres
+    // Get user preferences for providers, genres, exploration_mode, and prioritize_content
     const { data: userPreferences } = await supabase
       .from(TABLES.USER_PREFERENCES)
       .select(
-        `${USER_PREFERENCES_COLUMNS.INCLUDED_PROVIDERS}, ${USER_PREFERENCES_COLUMNS.FAVORITE_GENRES}`
+        `${USER_PREFERENCES_COLUMNS.INCLUDED_PROVIDERS}, ${USER_PREFERENCES_COLUMNS.FAVORITE_GENRES}, ${USER_PREFERENCES_COLUMNS.EXPLORATION_MODE}, ${USER_PREFERENCES_COLUMNS.PRIORITIZE_CONTENT}`
       )
       .eq(USER_PREFERENCES_COLUMNS.USER_ID, userId)
       .maybeSingle();
@@ -110,6 +154,14 @@ export default defineEventHandler(async (event) => {
       (userPreferences?.[USER_PREFERENCES_COLUMNS.FAVORITE_GENRES] as
         | number[]
         | null) || [];
+    const explorationMode =
+      (userPreferences?.[USER_PREFERENCES_COLUMNS.EXPLORATION_MODE] as
+        | ExplorationMode
+        | null) || EXPLORATION_MODE.BALANCED;
+    const prioritizeContent =
+      (userPreferences?.[USER_PREFERENCES_COLUMNS.PRIORITIZE_CONTENT] as
+        | PrioritizeContent
+        | null) || PRIORITIZE_CONTENT.NEW;
 
     // Get excluded titles (seen + not_interested + watchlist)
     // Watchlist titles should NOT appear in recommendations
@@ -271,9 +323,45 @@ export default defineEventHandler(async (event) => {
           // final_score = (base_score * 0.4 + preference_score * 0.4 + recency_weight * 0.2) * animation_bias
           // Note: recency_weight is normalized 0.5-1.0, so we scale it appropriately
           const recencyComponent = recencyWeight * 50; // Scale to 0-50 range
-          const finalScore =
+          let finalScore =
             (baseScore * 0.4 + preferenceScore * 0.4 + recencyComponent * 0.2) *
             animationBias;
+
+          // Store base finalScore before runtime boosts for cap calculation
+          const baseFinalScore = finalScore;
+
+          // Apply exploration_mode adjustments (runtime only, before mood/attention)
+          if (explorationMode === EXPLORATION_MODE.SIMILAR) {
+            // Boost titles with source = 'based_on_like' by 10%
+            if (entry.source === 'based_on_like') {
+              finalScore *= 1.1;
+            }
+          } else if (explorationMode === EXPLORATION_MODE.SURPRISE) {
+            // Boost titles with low preference_score (< 5) by 5%
+            // preference_score < 5 is considered "low historical affinity" (not reinforced by previous likes)
+            if (preferenceScore < 5) {
+              finalScore *= 1.05;
+            }
+          }
+          // BALANCED: No modification (default behavior)
+
+          // Apply prioritize_content adjustments (runtime only, after exploration_mode)
+          if (prioritizeContent === PRIORITIZE_CONTENT.NEW) {
+            // Boost recent releases: last 2 years for movies, 1 year for TV
+            if (isRecentRelease(titleData, entry.type as 'movie' | 'tv')) {
+              finalScore *= 1.05;
+            }
+          } else if (prioritizeContent === PRIORITIZE_CONTENT.CLASSICS) {
+            // Boost older titles (>20 years) with high base_score (>= 40)
+            if (isClassic(titleData) && baseScore >= 40) {
+              finalScore *= 1.05;
+            }
+          } else if (prioritizeContent === PRIORITIZE_CONTENT.TOP_RATED) {
+            // Boost titles with base_score >= 40
+            if (baseScore >= 40) {
+              finalScore *= 1.05;
+            }
+          }
 
           // Calculate boost factors for mood/attention (applied as runtime adjustment)
           // Note: runtime and episodeCount not available from titles table,
@@ -292,8 +380,20 @@ export default defineEventHandler(async (event) => {
           const combinedFactor =
             attentionFactor * BOOST_WEIGHTS.ATTENTION +
             moodFactor * BOOST_WEIGHTS.MOOD;
-          const adjustedFinalScore =
+          let adjustedFinalScore =
             finalScore * Math.max(1 + combinedFactor, PROTECTION_FACTOR);
+
+          // Apply boost cap: sum of runtime boosts never exceeds +25% of base score
+          // This prevents "hyper-optimized" feeds if more signals are added in the future
+          adjustedFinalScore = Math.min(adjustedFinalScore, baseFinalScore * 1.25);
+
+          // Determine runtime explanation code (MOOD_MATCH override if applicable)
+          // MOOD_MATCH has highest priority, then persisted explanation_code
+          let runtimeExplanationCode = entry.explanation_code;
+          if (mood && moodFactor > 0) {
+            // If mood is active and title matches mood (moodFactor > 0), override explanation
+            runtimeExplanationCode = 'MOOD_MATCH';
+          }
 
           return {
             ...entry,
@@ -305,6 +405,7 @@ export default defineEventHandler(async (event) => {
             voteAverage,
             recencyWeight,
             animationBias,
+            runtimeExplanationCode, // Include runtime explanation for use in recommendations array
           };
         })
       );
@@ -321,6 +422,7 @@ export default defineEventHandler(async (event) => {
           voteAverage: number | null;
           recencyWeight: number;
           animationBias: number;
+          runtimeExplanationCode: string | null;
         }
       >;
 
@@ -487,6 +589,8 @@ export default defineEventHandler(async (event) => {
         }
 
         // Map explanation_code to explanation text
+        // Priority: MOOD_MATCH (runtime) > persisted explanation_code > fallback
+        // Note: explanation is NOT a single causal reason, it's the best available explanation for the user
         const explanationMap: Record<string, string> = {
           BASED_ON_LIKE: 'Porque te gustó',
           TRENDING: 'Tendencia esta semana',
@@ -495,8 +599,12 @@ export default defineEventHandler(async (event) => {
           MOOD_MATCH: 'Perfecto para tu estado de ánimo',
         };
 
+        // Use runtime explanation code (may be MOOD_MATCH override) or fallback to persisted
+        const explanationCodeToUse = entry.runtimeExplanationCode || entry.explanation_code || null;
         const explanation =
-          explanationMap[entry.explanation_code || ''] || 'Recomendado para ti';
+          explanationCodeToUse && explanationMap[explanationCodeToUse]
+            ? explanationMap[explanationCodeToUse]
+            : 'Recomendado para ti';
 
         recommendations.push({
           id: `pool-${entry.tmdb_id}`,
@@ -512,7 +620,7 @@ export default defineEventHandler(async (event) => {
           release_date: titleData.release_date,
           first_air_date: titleData.first_air_date,
           explanation,
-          explanation_code: entry.explanation_code || null,
+          explanation_code: explanationCodeToUse,
           providers,
           in_watchlist: false, // Watchlist titles are excluded, so this is always false
         });

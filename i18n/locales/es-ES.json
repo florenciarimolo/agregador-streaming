@@ -472,6 +472,20 @@
         "default": "Seleccionar región...",
         "searchPlaceholder": "Buscar región..."
       },
+      "explorationMode": {
+        "title": "Explorar de forma:",
+        "description": "Elige cómo quieres que se mezcle el contenido en tus recomendaciones.",
+        "balanced": "Equilibrada",
+        "similar": "Similar a lo que me gusta",
+        "surprise": "Sorprenderme"
+      },
+      "prioritizeContent": {
+        "title": "Priorizar contenido:",
+        "description": "Define qué tipo de contenido se prioriza en tus recomendaciones.",
+        "new": "Novedades",
+        "classics": "Clásicos",
+        "topRated": "Mejor valorado"
+      },
       "unsavedChangesTitle": "Cambios sin guardar",
       "unsavedChangesMessage": "Tienes cambios sin guardar en tus preferencias de contenido. ¿Estás seguro de que quieres salir sin guardar?",
       "saveConfirmationTitle": "Cambiar región",

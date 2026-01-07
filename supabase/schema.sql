@@ -420,8 +420,8 @@ CREATE TABLE IF NOT EXISTS public.user_preferences (
   favorite_genres INTEGER[], -- TMDB genre IDs
   included_providers INTEGER[], -- TMDB provider IDs (if empty, all providers are included)
   region TEXT DEFAULT 'ES', -- ISO 3166-1 alpha-2 country code (e.g., 'ES', 'US', 'MX')
-  exploration_mode TEXT CHECK (exploration_mode IN ('similar', 'balanced', 'surprise')) DEFAULT 'balanced',
-  prioritize_content TEXT CHECK (prioritize_content IN ('new', 'classics', 'top_rated')) DEFAULT 'new',
+  exploration_mode TEXT CHECK (exploration_mode IN ('similar', 'balanced', 'surprise')) DEFAULT 'balanced', -- Runtime-only: Controls how content is mixed in recommendations (does NOT regenerate pool)
+  prioritize_content TEXT CHECK (prioritize_content IN ('new', 'classics', 'top_rated')) DEFAULT 'new', -- Runtime-only: Defines what type of content is prioritized (does NOT regenerate pool)
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL
 );

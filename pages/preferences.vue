@@ -146,6 +146,180 @@
             </p>
           </Card>
 
+          <!-- Exploration Mode -->
+          <Card padding="lg">
+            <h2
+              class="mb-2 text-xl font-semibold text-gray-800 dark:text-gray-300"
+            >
+              {{ $t('preferences.content.explorationMode.title') }}
+            </h2>
+            <p class="mb-6 text-sm text-gray-600 dark:text-gray-400">
+              {{ $t('preferences.content.explorationMode.description') }}
+            </p>
+
+            <!-- Radio Group -->
+            <div class="space-y-3">
+              <label
+                class="flex items-center gap-3 cursor-pointer"
+                @click="
+                  contentPreferences.exploration_mode = 'balanced';
+                  markContentPreferencesChanged();
+                "
+              >
+                <input
+                  type="radio"
+                  class="custom-radio"
+                  name="exploration_mode"
+                  value="balanced"
+                  :checked="
+                    !contentPreferences.exploration_mode ||
+                    contentPreferences.exploration_mode === 'balanced'
+                  "
+                  @change="
+                    contentPreferences.exploration_mode = 'balanced';
+                    markContentPreferencesChanged();
+                  "
+                />
+                <span class="text-sm text-gray-800 dark:text-gray-300">
+                  {{ $t('preferences.content.explorationMode.balanced') }}
+                </span>
+              </label>
+
+              <label
+                class="flex items-center gap-3 cursor-pointer"
+                @click="
+                  contentPreferences.exploration_mode = 'similar';
+                  markContentPreferencesChanged();
+                "
+              >
+                <input
+                  type="radio"
+                  class="custom-radio"
+                  name="exploration_mode"
+                  value="similar"
+                  :checked="contentPreferences.exploration_mode === 'similar'"
+                  @change="
+                    contentPreferences.exploration_mode = 'similar';
+                    markContentPreferencesChanged();
+                  "
+                />
+                <span class="text-sm text-gray-800 dark:text-gray-300">
+                  {{ $t('preferences.content.explorationMode.similar') }}
+                </span>
+              </label>
+
+              <label
+                class="flex items-center gap-3 cursor-pointer"
+                @click="
+                  contentPreferences.exploration_mode = 'surprise';
+                  markContentPreferencesChanged();
+                "
+              >
+                <input
+                  type="radio"
+                  class="custom-radio"
+                  name="exploration_mode"
+                  value="surprise"
+                  :checked="contentPreferences.exploration_mode === 'surprise'"
+                  @change="
+                    contentPreferences.exploration_mode = 'surprise';
+                    markContentPreferencesChanged();
+                  "
+                />
+                <span class="text-sm text-gray-800 dark:text-gray-300">
+                  {{ $t('preferences.content.explorationMode.surprise') }}
+                </span>
+              </label>
+            </div>
+          </Card>
+
+          <!-- Prioritize Content -->
+          <Card padding="lg">
+            <h2
+              class="mb-2 text-xl font-semibold text-gray-800 dark:text-gray-300"
+            >
+              {{ $t('preferences.content.prioritizeContent.title') }}
+            </h2>
+            <p class="mb-6 text-sm text-gray-600 dark:text-gray-400">
+              {{ $t('preferences.content.prioritizeContent.description') }}
+            </p>
+
+            <!-- Radio Group -->
+            <div class="space-y-3">
+              <label
+                class="flex items-center gap-3 cursor-pointer"
+                @click="
+                  contentPreferences.prioritize_content = 'new';
+                  markContentPreferencesChanged();
+                "
+              >
+                <input
+                  type="radio"
+                  class="custom-radio"
+                  name="prioritize_content"
+                  value="new"
+                  :checked="
+                    !contentPreferences.prioritize_content ||
+                    contentPreferences.prioritize_content === 'new'
+                  "
+                  @change="
+                    contentPreferences.prioritize_content = 'new';
+                    markContentPreferencesChanged();
+                  "
+                />
+                <span class="text-sm text-gray-800 dark:text-gray-300">
+                  {{ $t('preferences.content.prioritizeContent.new') }}
+                </span>
+              </label>
+
+              <label
+                class="flex items-center gap-3 cursor-pointer"
+                @click="
+                  contentPreferences.prioritize_content = 'classics';
+                  markContentPreferencesChanged();
+                "
+              >
+                <input
+                  type="radio"
+                  class="custom-radio"
+                  name="prioritize_content"
+                  value="classics"
+                  :checked="contentPreferences.prioritize_content === 'classics'"
+                  @change="
+                    contentPreferences.prioritize_content = 'classics';
+                    markContentPreferencesChanged();
+                  "
+                />
+                <span class="text-sm text-gray-800 dark:text-gray-300">
+                  {{ $t('preferences.content.prioritizeContent.classics') }}
+                </span>
+              </label>
+
+              <label
+                class="flex items-center gap-3 cursor-pointer"
+                @click="
+                  contentPreferences.prioritize_content = 'top_rated';
+                  markContentPreferencesChanged();
+                "
+              >
+                <input
+                  type="radio"
+                  class="custom-radio"
+                  name="prioritize_content"
+                  value="top_rated"
+                  :checked="contentPreferences.prioritize_content === 'top_rated'"
+                  @change="
+                    contentPreferences.prioritize_content = 'top_rated';
+                    markContentPreferencesChanged();
+                  "
+                />
+                <span class="text-sm text-gray-800 dark:text-gray-300">
+                  {{ $t('preferences.content.prioritizeContent.topRated') }}
+                </span>
+              </label>
+            </div>
+          </Card>
+
           <!-- Save Button -->
           <div class="flex justify-end mt-6">
             <Button
@@ -334,6 +508,8 @@ const savedContentPreferences = ref<{
   favorite_genres?: number[];
   included_providers?: number[];
   region?: string;
+  exploration_mode?: 'similar' | 'balanced' | 'surprise';
+  prioritize_content?: 'new' | 'classics' | 'top_rated';
 } | null>(null);
 const savedSelectedGenres = ref<Array<{ id: number; name: string }>>([]);
 const savedSelectedProviders = ref<
@@ -361,10 +537,14 @@ const contentPreferences = ref<{
   favorite_genres?: number[];
   included_providers?: number[];
   region?: string;
+  exploration_mode?: 'similar' | 'balanced' | 'surprise';
+  prioritize_content?: 'new' | 'classics' | 'top_rated';
 }>({
   favorite_genres: [],
   included_providers: [],
   region: undefined,
+  exploration_mode: undefined,
+  prioritize_content: undefined,
 });
 
 // Preload genres using useAsyncData (runs during setup, before mount)
@@ -553,6 +733,8 @@ const fetchContentPreferences = async () => {
         favorite_genres?: number[];
         included_providers?: number[];
         region?: string;
+        exploration_mode?: 'similar' | 'balanced' | 'surprise';
+        prioritize_content?: 'new' | 'classics' | 'top_rated';
       } | null;
     }>('/api/users/preferences', {
       headers: {
@@ -571,6 +753,8 @@ const fetchContentPreferences = async () => {
         favorite_genres: response.preferences.favorite_genres || [],
         included_providers: response.preferences.included_providers || [],
         region,
+        exploration_mode: response.preferences.exploration_mode || undefined,
+        prioritize_content: response.preferences.prioritize_content || undefined,
       };
 
       // Map genres - wait for genres to be available if needed
@@ -617,6 +801,8 @@ const fetchContentPreferences = async () => {
           ? [...contentPreferences.value.included_providers]
           : [],
         region: contentPreferences.value.region || undefined,
+        exploration_mode: contentPreferences.value.exploration_mode || undefined,
+        prioritize_content: contentPreferences.value.prioritize_content || undefined,
       };
       savedSelectedGenres.value = [...selectedGenres.value];
       savedSelectedProviders.value = [...selectedProviders.value];
@@ -732,7 +918,9 @@ const markContentPreferencesChanged = () => {
     hasUnsavedContentChanges.value =
       selectedGenres.value.length > 0 ||
       selectedProviders.value.length > 0 ||
-      !!contentPreferences.value.region;
+      !!contentPreferences.value.region ||
+      !!contentPreferences.value.exploration_mode ||
+      !!contentPreferences.value.prioritize_content;
     return;
   }
 
@@ -743,6 +931,8 @@ const markContentPreferencesChanged = () => {
       ...selectedProviders.value.map((p) => p.provider_id),
     ].sort(),
     region: contentPreferences.value.region || null,
+    exploration_mode: contentPreferences.value.exploration_mode || null,
+    prioritize_content: contentPreferences.value.prioritize_content || null,
   };
 
   // Build saved preferences object for comparison
@@ -754,6 +944,8 @@ const markContentPreferencesChanged = () => {
       ...(savedContentPreferences.value.included_providers || []),
     ].sort(),
     region: savedContentPreferences.value.region || null,
+    exploration_mode: savedContentPreferences.value.exploration_mode || null,
+    prioritize_content: savedContentPreferences.value.prioritize_content || null,
   };
 
   // Deep comparison using JSON.stringify
@@ -774,6 +966,8 @@ const revertContentPreferencesChanges = () => {
       ...(savedContentPreferences.value.included_providers || []),
     ],
     region: savedContentPreferences.value.region || undefined,
+    exploration_mode: savedContentPreferences.value.exploration_mode || undefined,
+    prioritize_content: savedContentPreferences.value.prioritize_content || undefined,
   };
 
   // Revert selected items
@@ -837,6 +1031,8 @@ const confirmSaveContentPreferences = async () => {
       favorite_genres?: number[];
       included_providers?: number[];
       region?: string;
+      exploration_mode?: 'similar' | 'balanced' | 'surprise';
+      prioritize_content?: 'new' | 'classics' | 'top_rated';
     } = {
       favorite_genres:
         selectedGenres.value.length > 0
@@ -846,6 +1042,8 @@ const confirmSaveContentPreferences = async () => {
         selectedProviders.value.length > 0
           ? selectedProviders.value.map((p) => p.provider_id)
           : [], // Empty = all providers
+      exploration_mode: contentPreferences.value.exploration_mode || undefined,
+      prioritize_content: contentPreferences.value.prioritize_content || undefined,
     };
 
     // Only include region if it's a valid string (never null)
@@ -916,6 +1114,8 @@ const confirmSaveContentPreferences = async () => {
           ...selectedProviders.value.map((p) => p.provider_id),
         ],
         region: contentPreferences.value.region || undefined,
+        exploration_mode: contentPreferences.value.exploration_mode || undefined,
+        prioritize_content: contentPreferences.value.prioritize_content || undefined,
       };
       // Update saved selected items for potential rollback
       savedSelectedGenres.value = [...selectedGenres.value];

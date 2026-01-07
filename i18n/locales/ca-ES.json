@@ -452,6 +452,20 @@
         "default": "Seleccionar regió...",
         "searchPlaceholder": "Cercar regió..."
       },
+      "explorationMode": {
+        "title": "Explorar de forma:",
+        "description": "Tria com vols que es barregi el contingut a les teves recomanacions.",
+        "balanced": "Equilibrada",
+        "similar": "Similar al que m'agrada",
+        "surprise": "Sorprendre'm"
+      },
+      "prioritizeContent": {
+        "title": "Prioritzar contingut:",
+        "description": "Defineix quin tipus de contingut es prioritza a les teves recomanacions.",
+        "new": "Novetats",
+        "classics": "Clàssics",
+        "topRated": "Millor valorat"
+      },
       "unsavedChangesTitle": "Canvis sense desar",
       "unsavedChangesMessage": "Tens canvis sense desar a les teves preferències de contingut. Estàs segur que vols sortir sense desar?",
       "saveConfirmationTitle": "Canviar regió",

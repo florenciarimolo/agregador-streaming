@@ -452,6 +452,20 @@
         "default": "Select region...",
         "searchPlaceholder": "Search region..."
       },
+      "explorationMode": {
+        "title": "Explore in a way that is:",
+        "description": "Choose how you want content to be mixed in your recommendations.",
+        "balanced": "Balanced",
+        "similar": "Similar to what I like",
+        "surprise": "Surprise me"
+      },
+      "prioritizeContent": {
+        "title": "Prioritize content:",
+        "description": "Define what type of content is prioritized in your recommendations.",
+        "new": "New releases",
+        "classics": "Classics",
+        "topRated": "Top rated"
+      },
       "unsavedChangesTitle": "Unsaved changes",
       "unsavedChangesMessage": "You have unsaved changes in your content preferences. Are you sure you want to leave without saving?",
       "saveConfirmationTitle": "Change region",

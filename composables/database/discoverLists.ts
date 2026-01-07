@@ -8,6 +8,7 @@ import { TABLES } from '@/constants/db/tables';
 import {
   DISCOVER_LISTS_COLUMNS,
   DISCOVER_LIST_ITEMS_COLUMNS,
+  TITLES_COLUMNS,
 } from '@/constants/db/columns';
 import { getTitleInLanguage, type MultiLanguageText } from './titles';
 import { getTitlesByTmdbIds } from './titles';
@@ -307,14 +308,45 @@ export async function insertDiscoverListIntoPool(
       return { inserted: 0, error: null };
     }
 
-    // Prepare entries for recommendation pool
-    const entries = itemsToInsert.map((item) => ({
-      tmdb_id: item.tmdb_id,
-      type: item.type as 'movie' | 'tv',
-      source: 'discover' as RecommendationPoolSource,
-      score: 0,
-      explanation_code: 'DISCOVER_LIST' as string,
-    }));
+    // Fetch titles to get vote_average for base_score calculation
+    const tmdbIds = itemsToInsert.map((item) => item.tmdb_id);
+    const { data: titles, error: titlesError } = await supabase
+      .from(TABLES.TITLES)
+      .select(`${TITLES_COLUMNS.TMDB_ID}, ${TITLES_COLUMNS.TYPE}, ${TITLES_COLUMNS.VOTE_AVERAGE}`)
+      .in(TITLES_COLUMNS.TMDB_ID, tmdbIds);
+
+    if (titlesError) {
+      console.error(
+        '[DiscoverLists] Error fetching titles for base_score:',
+        titlesError
+      );
+      return { inserted: 0, error: titlesError };
+    }
+
+    // Create a map of tmdb_id -> vote_average for quick lookup
+    const voteAverageMap = new Map<number, number | null>();
+    if (titles) {
+      titles.forEach((title) => {
+        voteAverageMap.set(title.tmdb_id, title.vote_average);
+      });
+    }
+
+    // Prepare entries for recommendation pool with base_score calculation
+    const entries = itemsToInsert.map((item) => {
+      const voteAverage = voteAverageMap.get(item.tmdb_id) ?? null;
+      // Calculate base_score: (vote_average / 10) * 50, or 25 if null
+      const baseScore = voteAverage !== null ? (voteAverage / 10) * 50 : 25;
+
+      return {
+        tmdb_id: item.tmdb_id,
+        type: item.type as 'movie' | 'tv',
+        source: 'discover' as RecommendationPoolSource,
+        base_score: baseScore,
+        preference_score: 0,
+        score: baseScore, // base_score + preference_score (0)
+        explanation_code: 'DISCOVER_LIST' as string,
+      };
+    });
 
     // Insert into pool (idempotent - ON CONFLICT DO NOTHING)
     const inserted = await insertPoolEntries(userId, entries, supabase);

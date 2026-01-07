@@ -389,13 +389,32 @@ CREATE TABLE recommendation_pool (
 The final ordering uses `final_score`, calculated at runtime:
 
 ```
-final_score = (base_score * 0.4 + preference_score * 0.4 + recency_weight * 0.2) * animation_bias
+base_final_score = (base_score * 0.4 + preference_score * 0.4 + recency_weight * 0.2) * animation_bias
 ```
 
-After calculating `final_score`:
-- Apply mood/attention boosts as runtime multiplicative adjustments
-- Apply controlled randomization (±5%)
-- **Order by `final_score` DESC** (NOT by `score`)
+After calculating base `final_score`, apply runtime adjustments in this order:
+
+1. **exploration_mode adjustments** (runtime only):
+   - `SIMILAR`: Boost titles with `source = 'based_on_like'` by 10%
+   - `BALANCED`: No modification (default)
+   - `SURPRISE`: Boost titles with `preference_score < 5` by 5%
+     - Note: `preference_score < 5` is considered "low historical affinity" (not reinforced by previous likes)
+
+2. **prioritize_content adjustments** (runtime only):
+   - `NEW`: Boost recent releases (last 2 years for movies, 1 year for TV) by 5%
+   - `CLASSICS`: Boost older titles (>20 years) with `base_score >= 40` by 5%
+   - `TOP_RATED`: Boost titles with `base_score >= 40` by 5%
+
+3. **mood/attention boosts** as runtime multiplicative adjustments
+
+4. **Boost cap**: Sum of runtime boosts never exceeds +25% of base score
+   - Formula: `final_score = Math.min(final_score, base_final_score * 1.25)`
+   - This prevents "hyper-optimized" feeds if more signals are added in the future
+
+5. Apply controlled randomization (±5%)
+6. **Order by `final_score` DESC** (NOT by `score`)
+
+**Important**: All runtime adjustments are applied without persisting changes. They only affect the current recommendation request.
 
 ### User Interaction Scoring
 
@@ -878,11 +897,22 @@ Allowed values:
 - Rendered as subtle helper text, not as a badge
 - Optional: if missing, nothing is shown
 
-### Important Notes
+### Runtime Explanation Override
+
+The `explanation_code` can be dynamically overridden at runtime:
+
+- **`MOOD_MATCH`** (runtime only): When a mood filter is active and a title matches the mood (determined by `moodFactor > 0` from `calculateBoostFactors`), the explanation is overridden to `MOOD_MATCH`
+- **Priority order**:
+  1. `MOOD_MATCH` (runtime, highest priority if applicable)
+  2. Persisted `explanation_code` from database
+  3. Fallback: "Recomendado para ti"
+
+**Important Notes**:
 
 - `source` is internal and must never be shown in the UI
 - `MOOD_MATCH` is not persisted in the database; it is calculated at read time
 - Explanations are meant to provide context, not transparency of the algorithm
+- **The explanation is NOT a single causal reason, it's the best available explanation for the user**. This prevents attempts to make it "exact" in the future that could break UX.
 
 ---
 
@@ -1014,10 +1044,12 @@ Stores the recommendation pool for each user.
 - `tmdb_id`: INTEGER NOT NULL - Title ID
 - `type`: TEXT NOT NULL CHECK (type IN ('movie', 'tv')) - Content type
 - `source`: TEXT NOT NULL CHECK (source IN ('based_on_like', 'trending', 'discover', 'easy', 'mood')) - Recommendation origin
-- `score`: DOUBLE PRECISION - Calculated score (can be negative)
+- `score`: DOUBLE PRECISION - Persisted score = `base_score + preference_score` (used as base for runtime calculations, NOT for direct ordering)
+- `base_score`: DOUBLE PRECISION DEFAULT 0 - Initial score based on popularity/quality (normalized from `vote_average`), set during pool population, never changes after initial population
+- `preference_score`: DOUBLE PRECISION DEFAULT 0 - Score component from user interactions (likes/dislikes and similarity propagation), updated incrementally
 - `explanation_code`: TEXT - Code explaining why it's recommended (see [Recommendation Explanations](#recommendation-explanations))
 - `created_at`: TIMESTAMP WITH TIME ZONE - Creation timestamp (auto-set)
-- `last_shown_at`: TIMESTAMP WITH TIME ZONE - Last time it was shown to the user
+- `last_shown_at`: TIMESTAMP WITH TIME ZONE - Last time it was shown to the user (used for recency_weight calculation)
 
 **Constraints:**
 
@@ -1058,6 +1090,31 @@ Stores user preferences.
 - `idx_user_preferences_user_id` on `user_id`
 
 **Note:** Language is managed through URL prefixes (`/:lang/`) for SEO and routing. The app derives language deterministically from the URL (`route.params.lang`) for SEO, title, and meta tags. No cookies are used for language - it is always determined from the URL. For TMDB API calls, the app uses the user's app language from the URL (mapped to i18n code). Region is stored in `user_preferences.region` in the database.
+
+**Runtime-Only Preferences:**
+
+- `exploration_mode`: Controls how content is mixed in recommendations (runtime only, does NOT regenerate pool)
+  - `similar`: Boosts titles similar to user's likes
+  - `balanced`: Default, no modification
+  - `surprise`: Introduces controlled diversity by boosting titles with low historical affinity
+
+- `prioritize_content`: Defines what type of content is prioritized (runtime only, does NOT regenerate pool)
+  - `new`: Prioritizes recent releases
+  - `classics`: Prioritizes older, well-rated titles
+  - `top_rated`: Prioritizes highly-rated content
+
+**Important**: These preferences are runtime-only adjustments. They do NOT:
+- Regenerate the recommendation pool
+- Modify `populate-pool` logic
+- Persist changes to pool entries
+- Affect onboarding or existing preferences (except UI display)
+
+**UI/UX Contract**: These options appear ONLY in `/preferences` page:
+- Each option is in its own Card component
+- Order: Region → Genres → Platforms → Exploration Mode → Prioritize Content → Save Button
+- Changing an option saves immediately (silent save, standard toast)
+- NO loaders, NO pool regeneration messages, NO previews
+- NOT shown in onboarding, home, filters, modals, or as badges in the feed
 
 ### Table: `user_activity`
 
@@ -1447,9 +1504,13 @@ When a user clicks "Usar esta lista como semilla" (Use this list as a seed):
 1. List items are inserted into `recommendation_pool` using:
    - `source = 'discover'` (use existing value, do NOT create new)
    - `explanation_code = 'DISCOVER_LIST'` (differentiates from algorithmic 'DISCOVER')
+   - `base_score` is calculated from `titles.vote_average` (same formula as other pool entries)
+   - `preference_score = 0` (explicitly initialized)
+   - `score = base_score` (base_score + preference_score)
 2. Insertion is idempotent: `ON CONFLICT (user_id, tmdb_id) DO NOTHING`
 3. Respects exclusions (titles already seen/marked as not_interested)
 4. **CRITICAL**: Using "Usar esta lista como semilla" **never modifies Discover lists or their content**, it only affects the user's `recommendation_pool`
+5. **Discover Lists participate in `prioritize_content` like the rest of the pool**: Once inserted into the pool, editorial titles are treated the same as algorithmic recommendations for runtime adjustments (no special handling needed)
 
 ### Differentiation
 

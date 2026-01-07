@@ -182,6 +182,14 @@ Where:
 - Enables multi-language support following the same pattern as `titles.title`
 - Supports ISO format (`xx-XX`) for language keys
 
+### Base Score Backfill
+
+`20260107190857_backfill_base_score.sql` backfills `base_score` for historical entries in `recommendation_pool`:
+- Updates all entries where `base_score = 0` by calculating from `titles.vote_average`
+- Formula: `base_score = (vote_average / 10) * 50` (or 25 if `vote_average` is NULL)
+- Recalculates `score = base_score + preference_score` for affected entries
+- This migration is a prerequisite for `prioritize_content` to function correctly, as it ensures all pool entries have a valid `base_score`
+
 ## Initial Migration with Existing Schema
 
 If your Supabase database already has the schema applied (for example, you applied it manually from `schema.sql`), you have two safe options:

@@ -452,6 +452,20 @@
         "default": "Seleccionar región...",
         "searchPlaceholder": "Bilatu región..."
       },
+      "explorationMode": {
+        "title": "Explorar de forma:",
+        "description": "Aukeratu nola nahi duzun nahastu edukia zure gomendioetan.",
+        "balanced": "Ekuilibratua",
+        "similar": "Gustatzen zaidana bezalakoa",
+        "surprise": "Harritzen nau"
+      },
+      "prioritizeContent": {
+        "title": "Edukia priorizatu:",
+        "description": "Definitu zein motatako edukia priorizatzen den zure gomendioetan.",
+        "new": "Berriak",
+        "classics": "Klasikoak",
+        "topRated": "Hobekien baloratua"
+      },
       "unsavedChangesTitle": "Cambios sin guardar",
       "unsavedChangesMessage": "Tienes cambios sin guardar en tus preferencias de contenido. ¿Estás seguro de que quieres salir sin guardar?",
       "saveConfirmationTitle": "Eskualdea aldatu",
