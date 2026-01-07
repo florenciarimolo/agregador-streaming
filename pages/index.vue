@@ -176,24 +176,39 @@ const selectedAttention = ref<Attention | null>(
   (route.query[QUERY_PARAMS.ATTENTION] as Attention) || null
 );
 
-// Preload genres using useAsyncData
-const { data: genresData } = useAsyncData(
-  'home-genres',
-  async () => {
-    const [movieResponse, tvResponse] = await Promise.all([
-      $fetch<{ genres: Array<{ id: number; name: string }> }>(
-        `/api/tmdb/genres?type=${MEDIA_TYPE.MOVIE}`
-      ),
-      $fetch<{ genres: Array<{ id: number; name: string }> }>(
-        `/api/tmdb/genres?type=${MEDIA_TYPE.TV}`
-      ),
-    ]);
-    return { movie: movieResponse, tv: tvResponse };
+// Genres data - only loaded when user is logged in
+// Genres are only needed for filters, which are only shown to authenticated users
+const genresData = ref<{
+  movie: { genres: Array<{ id: number; name: string }> };
+  tv: { genres: Array<{ id: number; name: string }> };
+} | null>(null);
+
+// Only fetch genres when user is logged in
+watch(
+  user,
+  async (newUser) => {
+    // Only fetch if user exists and genres haven't been loaded yet
+    if (newUser && !genresData.value) {
+      try {
+        const [movieResponse, tvResponse] = await Promise.all([
+          $fetch<{ genres: Array<{ id: number; name: string }> }>(
+            `/api/tmdb/genres?type=${MEDIA_TYPE.MOVIE}`
+          ),
+          $fetch<{ genres: Array<{ id: number; name: string }> }>(
+            `/api/tmdb/genres?type=${MEDIA_TYPE.TV}`
+          ),
+        ]);
+        genresData.value = { movie: movieResponse, tv: tvResponse };
+      } catch (error) {
+        console.error('Error fetching genres:', error);
+        genresData.value = { movie: { genres: [] }, tv: { genres: [] } };
+      }
+    } else if (!newUser) {
+      // Clear genres when user logs out
+      genresData.value = null;
+    }
   },
-  {
-    server: false,
-    default: () => ({ movie: { genres: [] }, tv: { genres: [] } }),
-  }
+  { immediate: false } // Don't execute immediately - wait for user to be available
 );
 
 const availableGenres = computed(() => {

@@ -52,6 +52,7 @@
             <template v-if="currentUser">
               <nuxt-link
                 :to="watchlistRoute"
+                no-prefetch
                 class="text-sm font-medium text-gray-800 transition-colors dark:text-gray-300 hover:text-primary dark:hover:text-primary-400"
                 active-class="text-primary dark:text-primary-400"
               >
@@ -100,6 +101,7 @@
                     </p>
                     <nuxt-link
                       :to="listsRoute"
+                      no-prefetch
                       class="block px-4 py-2 mb-2 w-full text-sm text-left text-gray-800 rounded-lg transition-colors dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                       @click="userMenuDropdownRef?.close()"
                     >
@@ -107,6 +109,7 @@
                     </nuxt-link>
                     <nuxt-link
                       :to="preferencesRoute"
+                      no-prefetch
                       class="block px-4 py-2 mb-2 w-full text-sm text-left text-gray-800 rounded-lg transition-colors dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                       @click="userMenuDropdownRef?.close()"
                     >
@@ -114,6 +117,7 @@
                     </nuxt-link>
                     <nuxt-link
                       :to="myAccountRoute"
+                      no-prefetch
                       class="block px-4 py-2 mb-2 w-full text-sm text-left text-gray-800 rounded-lg transition-colors dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                       @click="userMenuDropdownRef?.close()"
                     >
@@ -341,6 +345,7 @@
             </nuxt-link>
             <nuxt-link
               :to="watchlistRoute"
+              no-prefetch
               class="flex items-center px-4 py-3 text-sm font-medium text-gray-800 rounded-lg transition-colors dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
               active-class="bg-gray-100 dark:bg-gray-700 text-primary dark:text-primary-400"
               @click="showMobileMenu = false"
@@ -349,6 +354,7 @@
             </nuxt-link>
             <nuxt-link
               :to="listsRoute"
+              no-prefetch
               class="flex items-center px-4 py-3 text-sm font-medium text-gray-800 rounded-lg transition-colors dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
               active-class="bg-gray-100 dark:bg-gray-700 text-primary dark:text-primary-400"
               @click="showMobileMenu = false"
@@ -357,6 +363,7 @@
             </nuxt-link>
             <nuxt-link
               :to="preferencesRoute"
+              no-prefetch
               class="flex items-center px-4 py-3 text-sm font-medium text-gray-800 rounded-lg transition-colors dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
               active-class="bg-gray-100 dark:bg-gray-700 text-primary dark:text-primary-400"
               @click="showMobileMenu = false"
@@ -365,6 +372,7 @@
             </nuxt-link>
             <nuxt-link
               :to="myAccountRoute"
+              no-prefetch
               class="flex items-center px-4 py-3 text-sm font-medium text-gray-800 rounded-lg transition-colors dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
               active-class="bg-gray-100 dark:bg-gray-700 text-primary dark:text-primary-400"
               @click="showMobileMenu = false"
