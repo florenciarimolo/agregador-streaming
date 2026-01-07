@@ -3,7 +3,9 @@
     :type="type"
     :class="[
       // Base classes
-      'cursor-pointer rounded-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 flex items-center',
+      'rounded-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 flex items-center',
+      // Cursor classes - only pointer when not disabled
+      disabled ? 'cursor-not-allowed' : 'cursor-pointer',
       // Size classes
       sizeClasses,
       // Variant classes
@@ -11,7 +13,7 @@
       // Icon spacing
       (hasIcon || hasIconSlot) && hasText ? iconSpacing : '',
       // Disabled state
-      disabled ? 'opacity-50 cursor-not-allowed' : '',
+      disabled ? 'opacity-50' : '',
       // Custom classes
       customClass,
     ]"
