@@ -11,9 +11,6 @@
         ></div>
       </div>
       <div v-else>
-        <!-- Undo Toast -->
-        <Toast />
-
         <Section>
           <!-- Page Title -->
           <SectionTitle :description="$t('preferences.description')">
@@ -256,12 +253,17 @@
           </div>
         </Modal>
       </div>
+      
+      <!-- Toast - Always available, client-only to avoid hydration issues -->
+      <ClientOnly>
+        <Toast />
+      </ClientOnly>
     </PageContainer>
   </AppShell>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, watch, nextTick } from 'vue';
 import { onBeforeRouteLeave } from 'vue-router';
 import Button from '@/components/ui/Button.vue';
 import Modal from '@/components/ui/Modal.vue';
@@ -884,11 +886,25 @@ const confirmSaveContentPreferences = async () => {
               Authorization: `Bearer ${session.access_token}`,
             },
           });
+          // Show success toast after pool regeneration
+          await nextTick();
+          if (import.meta.client) {
+            showToast(t('preferences.content.saved'), null, 5000);
+          }
         } catch (poolError) {
           console.error('Error regenerating pool:', poolError);
-          showToast(t('home.generateError'), null, 5000);
+          await nextTick();
+          if (import.meta.client) {
+            showToast(t('home.generateError'), null, 5000);
+          }
         } finally {
           showGeneratingModal.value = false;
+        }
+      } else {
+        // Show success toast when saving without region change
+        await nextTick();
+        if (import.meta.client) {
+          showToast(t('preferences.content.saved'), null, 5000);
         }
       }
 
@@ -970,7 +986,10 @@ const confirmSaveContentPreferences = async () => {
       }
     }
 
-    showError(errorMessage);
+    await nextTick();
+    if (import.meta.client) {
+      showError(errorMessage);
+    }
   }
 };
 
