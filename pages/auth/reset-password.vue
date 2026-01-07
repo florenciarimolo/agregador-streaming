@@ -289,6 +289,7 @@ import {
   validatePassword,
   getPasswordHelperText,
 } from '@/utils/passwordValidation';
+import { useUserStore } from '@/stores/user';
 import Button from '@/components/ui/Button.vue';
 import IconButton from '@/components/ui/IconButton.vue';
 import IconEye from '@/components/icons/IconEye.vue';
@@ -371,95 +372,24 @@ const isPasswordValid = computed(() => {
 });
 
 // Validate recovery session
-// NO intercambia codes - el callback ya lo hizo
-// Solo verifica que hay una sesión de recovery usando recovery_sent_at
+// Simple and deterministic: check flag and session
 onMounted(async () => {
-  try {
-    // Protección: Verificar que estamos en el flujo de recovery correcto
-    if (typeof window !== 'undefined') {
-      const recoveryFlag = localStorage.getItem(STORAGE_KEYS.AUTH_RECOVERY);
-      let isRecoveryFlow = false;
+  const recoveryFlag = localStorage.getItem(STORAGE_KEYS.AUTH_RECOVERY);
 
-      if (recoveryFlag) {
-        try {
-          // New format: { value: 1, ts: timestamp }
-          const parsed = JSON.parse(recoveryFlag);
-          // Check if flag is valid (not older than 24 hours)
-          const maxAge = 24 * 60 * 60 * 1000; // 24 hours
-          if (parsed.value === 1 && Date.now() - parsed.ts < maxAge) {
-            isRecoveryFlow = true;
-          } else {
-            // Flag expired, remove it
-            localStorage.removeItem(STORAGE_KEYS.AUTH_RECOVERY);
-          }
-        } catch {
-          // Legacy format: '1' (string)
-          if (recoveryFlag === '1') {
-            isRecoveryFlow = true;
-          }
-        }
-      }
-
-      if (!isRecoveryFlow) {
-        // No estamos en el flujo de recovery - redirigir a login
-        if (process.env.NODE_ENV === 'development') {
-          console.log(
-            '[Reset Password] No recovery flag found, redirecting to login'
-          );
-        }
-        router.replace(routeWithLang('/?auth=login'));
-        return;
-      }
-    }
-
-    // Get the current session
-    const { data: sessionData, error: sessionError } =
-      await supabase.auth.getSession();
-
-    if (sessionError) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('[Reset Password] Session error:', sessionError);
-      }
-      error.value = t('media.sessionError');
-      codeValidated.value = true;
-      return;
-    }
-
-    if (!sessionData?.session) {
-      error.value = t('media.noRecoverySession');
-      codeValidated.value = true;
-      return;
-    }
-
-    const session = sessionData.session;
-
-    // Verify this is a recovery session using recovery_sent_at
-    // This is the ONLY reliable way to detect recovery
-    if (!session.user?.recovery_sent_at) {
-      // Not a recovery session - redirect to home
-      if (process.env.NODE_ENV === 'development') {
-        console.log(
-          '[Reset Password] Session is not a recovery session, redirecting to home'
-        );
-      }
-      router.replace(routeWithLang('/'));
-      return;
-    }
-
-    // Valid recovery session - show the form
-    if (process.env.NODE_ENV === 'development') {
-      console.log(
-        '[Reset Password] Valid recovery session found, showing form'
-      );
-    }
-    codeValidated.value = true;
-  } catch (err: unknown) {
-    if (process.env.NODE_ENV === 'development') {
-      console.error('[Reset Password] Error:', err);
-    }
-    error.value = t('media.recoverySessionError');
-    codeValidated.value = true;
+  if (!recoveryFlag) {
+    router.replace(routeWithLang('/?auth=login'));
+    return;
   }
+
+  const { data, error: sessionError } = await supabase.auth.getSession();
+
+  if (sessionError || !data.session) {
+    error.value = t('media.noRecoverySession');
+    codeValidated.value = true;
+    return;
+  }
+
+  codeValidated.value = true;
 });
 
 const handleResetPassword = async () => {

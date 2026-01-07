@@ -42,8 +42,9 @@ export const useAuthInit = () => {
     try {
       // Don't load profile if we're on reset-password page
       // This prevents loading profile and triggering redirects during password recovery
-      const route = useRoute();
-      const isResetPasswordPage = route.path === '/auth/reset-password';
+      // Use window.location instead of useRoute() to avoid middleware warnings
+      const isResetPasswordPage = typeof window !== 'undefined' && 
+                                   window.location.pathname.includes('/auth/reset-password');
 
       const result = await supabase.auth.getSession();
       const session = result.data?.session || null;
@@ -104,8 +105,10 @@ export const useAuthInit = () => {
       async (_event: string, session: Session | null) => {
         try {
           // Don't process auth state changes if we're on reset-password page
-          const route = useRoute();
-          if (route.path === '/auth/reset-password') {
+          // Use window.location instead of useRoute() to avoid middleware warnings
+          const isResetPasswordPage = typeof window !== 'undefined' && 
+                                       window.location.pathname.includes('/auth/reset-password');
+          if (isResetPasswordPage) {
             if (process.env.NODE_ENV === 'development') {
               console.log(
                 '[useAuthInit] Skipping auth state change on reset-password page'

@@ -30,33 +30,20 @@ export default defineNuxtRouteMiddleware(async (to) => {
     return;
   }
 
+  // ⛔️ IGNORAR COMPLETAMENTE recovery y callback flows
+  // Salir antes de tocar cualquier store o lógica
+  if (
+    to.path.includes('/auth/callback') ||
+    to.path.includes('/auth/reset-password')
+  ) {
+    return;
+  }
+
   const user = useSupabaseUser();
   const userStore = useUserStore();
 
   // Get language from URL
   const lang = getLangFromRoute(to);
-
-  console.log('[AUTH TRACE] middleware executing', {
-    path: to.path,
-    lang,
-    hasUser: !!user.value,
-    userId: user.value?.id || user.value?.sub,
-    hasProfile: userStore.profile !== null,
-    onboardingCompleted: userStore.profile?.onboarding_completed,
-  });
-
-  // Public routes (with language prefix)
-  const publicRoutes = [
-    `/${lang}`,
-    `/${lang}/`,
-    `/${lang}/auth/login`,
-    `/${lang}/auth/callback`,
-    `/${lang}/auth/reset-password`,
-  ];
-  if (publicRoutes.includes(to.path) || to.path.startsWith(`/${lang}/auth/`)) {
-    console.log('[AUTH TRACE] middleware allowing public route', to.path);
-    return;
-  }
 
   // Protect routes: redirect unauthenticated users to home (with language)
   if (!user.value) {
@@ -100,8 +87,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
   // Handle onboarding redirects (with language)
   if (
     !hasCompletedOnboarding &&
-    to.path !== `/${lang}/onboarding` &&
-    !to.path.startsWith(`/${lang}/auth/callback`)
+    to.path !== `/${lang}/onboarding`
   ) {
     console.log(
       '[AUTH TRACE] middleware redirecting to /onboarding (onboarding not completed)',

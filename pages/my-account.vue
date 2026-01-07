@@ -86,43 +86,157 @@
           {{ $t('myAccount.password.description') }}
         </p>
       </div>
-      <div class="space-y-4">
+      <form @submit.prevent="handleUpdatePassword" class="space-y-4">
         <Input
           id="current-password"
           v-model="currentPassword"
-          type="password"
+          :type="showCurrentPassword ? 'text' : 'password'"
           :label="$t('myAccount.password.currentPassword')"
           :placeholder="$t('auth.passwordPlaceholder')"
           autocomplete="current-password"
-        />
+          custom-class="pr-10"
+        >
+          <template #icon>
+            <IconButton
+              :icon="showCurrentPassword ? IconEye : IconEyeSlash"
+              :aria-label="
+                showCurrentPassword
+                  ? $t('auth.hidePassword')
+                  : $t('auth.showPassword')
+              "
+              size="medium"
+              variant="default"
+              custom-class="pointer-events-auto"
+              @click="showCurrentPassword = !showCurrentPassword"
+            />
+          </template>
+        </Input>
         <Input
           id="new-password"
           v-model="newPassword"
-          type="password"
+          :type="showNewPassword ? 'text' : 'password'"
           :label="$t('myAccount.password.newPassword')"
           :placeholder="$t('auth.passwordPlaceholder')"
           autocomplete="new-password"
-          :error="passwordError"
-        />
+          :error="
+            passwordValidation &&
+            !passwordValidation.isValid &&
+            newPassword.length > 0
+              ? $t('auth.passwordNotValid')
+              : passwordError
+          "
+          custom-class="pr-10"
+        >
+          <template #icon>
+            <IconButton
+              :icon="showNewPassword ? IconEye : IconEyeSlash"
+              :aria-label="
+                showNewPassword
+                  ? $t('auth.hidePassword')
+                  : $t('auth.showPassword')
+              "
+              size="medium"
+              variant="default"
+              custom-class="pointer-events-auto"
+              @click="showNewPassword = !showNewPassword"
+            />
+          </template>
+        </Input>
+        <!-- Helper text -->
+        <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+          {{ getPasswordHelperText() }}
+        </p>
+        <!-- Real-time validation checklist -->
+        <div
+          v-if="showPasswordValidation && passwordValidation"
+          class="mt-2 space-y-1.5"
+        >
+          <div
+            v-for="check in [
+              {
+                key: 'minLength',
+                label: $t('auth.passwordMinChars'),
+              },
+              {
+                key: 'hasUppercase',
+                label: $t('auth.passwordUppercase'),
+              },
+              {
+                key: 'hasLowercase',
+                label: $t('auth.passwordLowercase'),
+              },
+              {
+                key: 'hasNumber',
+                label: $t('auth.passwordNumber'),
+              },
+              {
+                key: 'hasSpecialChar',
+                label: $t('auth.passwordSymbol'),
+              },
+            ]"
+            :key="check.key"
+            class="flex gap-2 items-center text-xs"
+          >
+            <IconCheck
+              v-if="
+                passwordValidation.checks[
+                  check.key as keyof typeof passwordValidation.checks
+                ]
+              "
+              icon-class="flex-shrink-0 w-4 h-4 text-green-500"
+            />
+            <IconX
+              v-else
+              icon-class="flex-shrink-0 w-4 h-4 text-gray-400 dark:text-gray-500"
+            />
+            <span
+              :class="[
+                passwordValidation.checks[
+                  check.key as keyof typeof passwordValidation.checks
+                ]
+                  ? 'text-green-600 dark:text-green-400'
+                  : 'text-gray-500 dark:text-gray-400',
+              ]"
+            >
+              {{ check.label }}
+            </span>
+          </div>
+        </div>
         <Input
           id="confirm-password"
           v-model="confirmPassword"
-          type="password"
+          :type="showConfirmPassword ? 'text' : 'password'"
           :label="$t('myAccount.password.confirmPassword')"
           :placeholder="$t('auth.passwordPlaceholder')"
           autocomplete="new-password"
-        />
+          custom-class="pr-10"
+        >
+          <template #icon>
+            <IconButton
+              :icon="showConfirmPassword ? IconEye : IconEyeSlash"
+              :aria-label="
+                showConfirmPassword
+                  ? $t('auth.hidePassword')
+                  : $t('auth.showPassword')
+              "
+              size="medium"
+              variant="default"
+              custom-class="pointer-events-auto"
+              @click="showConfirmPassword = !showConfirmPassword"
+            />
+          </template>
+        </Input>
         <div class="flex justify-end">
           <Button
+            type="submit"
             variant="primary"
             size="small"
             :disabled="loadingPassword || !canUpdatePassword"
-            @click="handleUpdatePassword"
           >
             {{ $t('myAccount.password.title') }}
           </Button>
         </div>
-      </div>
+      </form>
     </section>
 
     <!-- Delete Account Section -->
@@ -194,9 +308,18 @@ import PageContainer from '@/components/layout/PageContainer.vue';
 import Input from '@/components/ui/Input.vue';
 import Button from '@/components/ui/Button.vue';
 import Modal from '@/components/ui/Modal.vue';
-import { validatePassword } from '@/utils/passwordValidation';
+import IconButton from '@/components/ui/IconButton.vue';
+import IconEye from '@/components/icons/IconEye.vue';
+import IconEyeSlash from '@/components/icons/IconEyeSlash.vue';
+import IconCheck from '@/components/icons/IconCheck.vue';
+import IconX from '@/components/icons/IconX.vue';
+import {
+  validatePassword,
+  getPasswordHelperText,
+} from '@/utils/passwordValidation';
 import { getSession } from '@/services/auth';
 import { useUndoToast } from '@/composables/useUndoToast';
+import { useUserStore } from '@/stores/user';
 
 definePageMeta({
   middleware: 'auth',
@@ -268,10 +391,25 @@ const newPassword = ref('');
 const confirmPassword = ref('');
 const loadingPassword = ref(false);
 const passwordError = ref('');
+const showCurrentPassword = ref(false);
+const showNewPassword = ref(false);
+const showConfirmPassword = ref(false);
 
 // Delete Account
 const showDeleteAccountModal = ref(false);
 const loadingDeleteAccount = ref(false);
+
+// Password validation
+const passwordValidation = computed(() => {
+  if (!newPassword.value) {
+    return null;
+  }
+  return validatePassword(newPassword.value);
+});
+
+const showPasswordValidation = computed(() => {
+  return newPassword.value.length > 0;
+});
 
 const canUpdatePassword = computed(() => {
   if (!currentPassword.value || !newPassword.value || !confirmPassword.value) {
