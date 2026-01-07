@@ -775,7 +775,12 @@ onMounted(() => {
           <AppShell>
             <PageContainer>
               <!-- Recommendations Title and Description -->
-              <Section v-if="canShowContent && showRecommendationsList">
+              <Section
+                v-if="
+                  canShowContent &&
+                  (showRecommendationsList || (showSkeleton && loading))
+                "
+              >
                 <SectionTitle
                   :description="$t('home.recommendationsDescription')"
                 >
