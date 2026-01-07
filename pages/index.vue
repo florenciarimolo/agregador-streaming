@@ -146,17 +146,12 @@ const {
 const pendingContentType = ref<'all' | 'movie' | 'tv'>('all');
 
 // Use title actions composable
-const {
-  loadingTitles,
-  fetchingReplacement,
-  handleTitleStatus,
-  handleMarkLiked,
-  handleRemoveLiked,
-} = useTitleActions(
-  recommendations,
-  allRecommendations,
-  filterRecommendationsByType
-);
+const { loadingTitles, handleTitleStatus, handleMarkLiked, handleRemoveLiked } =
+  useTitleActions(
+    recommendations,
+    allRecommendations,
+    filterRecommendationsByType
+  );
 
 // User region (will be set from preferences)
 const userRegion = ref<string | null>(null);
@@ -950,7 +945,7 @@ onMounted(() => {
                   :title="''"
                   :recommendations="recommendations"
                   :loading-titles="loadingTitles"
-                  :is-loading="fetchingReplacement"
+                  :is-loading="false"
                   @mark-seen="handleTitleStatus($event, TITLE_STATUS.SEEN)"
                   @mark-not-interested="
                     handleTitleStatus($event, TITLE_STATUS.NOT_INTERESTED)
