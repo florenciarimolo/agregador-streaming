@@ -769,14 +769,24 @@ const revertContentPreferencesChanges = () => {
   hasUnsavedContentChanges.value = false;
 };
 
-// Save content preferences - shows confirmation modal first
+// Save content preferences - shows confirmation modal only if region changed
 const saveContentPreferences = async () => {
   if (!hasUnsavedContentChanges.value) {
     return;
   }
 
-  // Show confirmation modal first
-  showSaveConfirmationModal.value = true;
+  // Check if region changed
+  const regionChanged = 
+    savedContentPreferences.value?.region !== contentPreferences.value.region;
+
+  // Only show confirmation modal if region changed
+  // Changes to genres or providers are saved directly without confirmation
+  if (regionChanged) {
+    showSaveConfirmationModal.value = true;
+  } else {
+    // Save directly without confirmation for genre/provider changes
+    await confirmSaveContentPreferences();
+  }
 };
 
 // Confirm save and actually save preferences
