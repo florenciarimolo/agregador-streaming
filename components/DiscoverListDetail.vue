@@ -93,7 +93,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import { useSupabaseUser } from '#imports';
-import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 import { TITLE_STATUS } from '@/constants/domain/titleStatus';

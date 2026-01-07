@@ -1,15 +1,13 @@
 import { createClient } from '@supabase/supabase-js';
-import { devLog, devError, safeError } from '@/server/utils/logger';
+import { devError, safeError } from '@/server/utils/logger';
 import { Recommendation, Provider } from '@/types/Recommendation';
 import { TITLE_STATUS } from '@/constants/domain/titleStatus';
 import { QUERY_PARAMS } from '@/constants/api/queryParams';
 import { getUserIdFromEvent } from '@/server/utils/user-auth';
 import {
-  MOOD,
   type Mood,
 } from '@/constants/domain/mood';
 import {
-  ATTENTION,
   type Attention,
 } from '@/constants/domain/attention';
 import { getTMDBConfig } from '@/server/utils/config';

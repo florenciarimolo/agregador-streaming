@@ -11,7 +11,6 @@ import type { MultiLanguageVideos } from '@/types/Video';
 import type { MultiLanguageText } from './titles';
 import { getTitleInLanguage } from './titles';
 import { getPrimaryLanguageForRegion } from '@/utils/language-detection';
-import { LanguageIsoCode } from '@/constants/languages';
 
 /**
  * Get season by TV TMDB ID and season number

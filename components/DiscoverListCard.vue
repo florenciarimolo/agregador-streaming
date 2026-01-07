@@ -78,11 +78,8 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { useRuntimeConfig } from '#app';
 import type { DiscoverList } from '@/composables/database/discoverLists';
 import Badge from './Badge.vue';
-import { useTheme } from '@/composables/useTheme';
-import { Theme } from '@/types/enums/Theme';
 import { useFlashlight } from '@/composables/useFlashlight';
 
 interface ExtendedDiscoverList extends DiscoverList {
@@ -96,7 +93,6 @@ interface Props {
 
 defineProps<Props>();
 const TMDB_IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w500';
-const { theme } = useTheme();
 
 const cardRef = ref<HTMLElement | null>(null);
 const { styles, isHovering } = useFlashlight(cardRef);

@@ -1,14 +1,12 @@
 import { createClient } from '@supabase/supabase-js';
-import { devLog, devError, devWarn, safeError } from '@/server/utils/logger';
+import { devError, devWarn, safeError } from '@/server/utils/logger';
 import { Recommendation, Provider } from '@/types/Recommendation';
 import { TITLE_STATUS } from '@/constants/domain/titleStatus';
 import { getUserIdFromEvent } from '@/server/utils/user-auth';
 import {
-  MOOD,
   type Mood,
 } from '@/constants/domain/mood';
 import {
-  ATTENTION,
   type Attention,
 } from '@/constants/domain/attention';
 import {
@@ -34,7 +32,6 @@ import {
 } from '@/constants/recommendations';
 import {
   calculateBoostFactors,
-  fetchWatchProviders,
   filterByProviders,
   getTitleData,
 } from '@/server/utils/recommendations';

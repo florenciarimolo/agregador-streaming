@@ -4,8 +4,6 @@ import { WatchProviderType } from '@/types/enums/WatchProviderType';
 import type { Mood } from '@/constants/domain/mood';
 import type { Attention } from '@/constants/domain/attention';
 import {
-  BOOST_WEIGHTS,
-  PROTECTION_FACTOR,
   ATTENTION_BOOSTS,
   MOOD_BOOSTS,
   ATTENUATION,
@@ -317,8 +315,7 @@ export async function filterByProviders(
   entries: Array<{ tmdb_id: number; type: string }>,
   includedProviders: number[],
   region: string,
-  tmdbConfig: { baseUrl: string; apiKey: string },
-  errorPrefix: string = '[Recommendations]'
+  tmdbConfig: { baseUrl: string; apiKey: string }
 ): Promise<Array<{ tmdb_id: number; type: string }>> {
   if (includedProviders.length === 0) {
     return entries;

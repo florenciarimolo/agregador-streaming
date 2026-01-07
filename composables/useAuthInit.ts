@@ -11,6 +11,7 @@
  * - Pinia is client-only, so this will only run on client
  */
 import { useUserStore } from '@/stores/user';
+import { STORAGE_KEYS } from '@/constants/storage/keys';
 import type { Session } from '@supabase/supabase-js';
 
 export const useAuthInit = () => {
@@ -37,15 +38,18 @@ export const useAuthInit = () => {
       return;
     }
 
+    // ⛔️ IGNORAR COMPLETAMENTE recovery flow
+    const isRecoveryFlow =
+      typeof window !== 'undefined' &&
+      localStorage.getItem(STORAGE_KEYS.AUTH_RECOVERY);
+
+    if (isRecoveryFlow) {
+      return;
+    }
+
     const userStore = useUserStore();
 
     try {
-      // Don't load profile if we're on reset-password page
-      // This prevents loading profile and triggering redirects during password recovery
-      // Use window.location instead of useRoute() to avoid middleware warnings
-      const isResetPasswordPage = typeof window !== 'undefined' && 
-                                   window.location.pathname.includes('/auth/reset-password');
-
       const result = await supabase.auth.getSession();
       const session = result.data?.session || null;
 
@@ -53,11 +57,13 @@ export const useAuthInit = () => {
         userStore.setUser(session.user);
       }
 
-      // Fetch profile if we have a user, but NOT on reset-password page
-      if (session?.user && !isResetPasswordPage) {
+      // Fetch profile if we have a user
+      if (session?.user) {
         try {
           await userStore.fetchProfile();
-          if (!userStore.authInitialized && userStore.profile !== null) {
+          // Mark as initialized after fetch completes, regardless of profile result
+          // Profile can be null if it doesn't exist, but auth is still initialized
+          if (!userStore.authInitialized) {
             userStore.setAuthInitialized(true);
           }
         } catch (error) {
@@ -73,7 +79,7 @@ export const useAuthInit = () => {
           }
         }
       } else {
-        // No user or reset-password page: mark as initialized immediately
+        // No user: mark as initialized immediately
         if (!userStore.authInitialized) {
           userStore.setAuthInitialized(true);
         }
@@ -99,30 +105,38 @@ export const useAuthInit = () => {
       return;
     }
 
+    // ⛔️ IGNORAR COMPLETAMENTE recovery flow
+    const isRecoveryFlow =
+      typeof window !== 'undefined' &&
+      localStorage.getItem(STORAGE_KEYS.AUTH_RECOVERY);
+
+    if (isRecoveryFlow) {
+      return;
+    }
+
     const userStore = useUserStore();
 
     supabase.auth.onAuthStateChange(
       async (_event: string, session: Session | null) => {
         try {
-          // Don't process auth state changes if we're on reset-password page
-          // Use window.location instead of useRoute() to avoid middleware warnings
-          const isResetPasswordPage = typeof window !== 'undefined' && 
-                                       window.location.pathname.includes('/auth/reset-password');
-          if (isResetPasswordPage) {
-            if (process.env.NODE_ENV === 'development') {
-              console.log(
-                '[useAuthInit] Skipping auth state change on reset-password page'
-              );
-            }
+          // ⛔️ IGNORAR COMPLETAMENTE recovery flow en cada evento
+          const isRecoveryFlow =
+            typeof window !== 'undefined' &&
+            localStorage.getItem(STORAGE_KEYS.AUTH_RECOVERY);
+
+          if (isRecoveryFlow) {
             return;
           }
 
           if (session?.user) {
             userStore.setUser(session.user);
             // Fetch profile - await to ensure it completes before navigation
+            // This is critical for SIGNED_IN events after login
             try {
               await userStore.fetchProfile();
-              if (!userStore.authInitialized && userStore.profile !== null) {
+              // Mark as initialized after fetch completes, regardless of profile result
+              // Profile can be null if it doesn't exist, but auth is still initialized
+              if (!userStore.authInitialized) {
                 userStore.setAuthInitialized(true);
               }
             } catch (error) {

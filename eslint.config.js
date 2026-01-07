@@ -10,6 +10,9 @@ export default tseslint.config(
   ...tseslint.configs.recommended,
   ...pluginVue.configs['flat/recommended'],
   {
+    ignores: ['.nuxt/**', 'node_modules/**', '.output/**', 'dist/**'],
+  },
+  {
     files: ['*.vue', '**/*.vue', '**/*.ts', '**/*.js'],
     plugins: {
       prettier: eslintPluginPrettier,

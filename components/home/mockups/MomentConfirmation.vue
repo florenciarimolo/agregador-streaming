@@ -28,8 +28,6 @@ import { computed } from 'vue';
 import Card from '@/components/ui/Card.vue';
 import IconRelax from '@/components/icons/IconRelax.vue';
 import IconBattery50 from '@/components/icons/IconBattery50.vue';
-import { MOOD } from '@/constants/domain/mood';
-import { ATTENTION } from '@/constants/domain/attention';
 
 const { t } = useI18n();
 

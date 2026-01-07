@@ -132,10 +132,6 @@ import IconHeart from '@/components/icons/IconHeart.vue';
 import IconX from '@/components/icons/IconX.vue';
 import IconClock from '@/components/icons/IconClock.vue';
 import type { Recommendation } from '@/types/Recommendation';
-import { MEDIA_TYPE } from '@/constants/domain/mediaType';
-import { useRouteWithLang } from '@/composables/useRouteWithLang';
-
-const { routeWithLang } = useRouteWithLang();
 
 // Mock title with tmdb_id 724097
 const mockTitle: Recommendation = {
@@ -158,10 +154,6 @@ const mockTitle: Recommendation = {
     },
   ],
 };
-
-const mediaType = computed(() =>
-  mockTitle.type === MEDIA_TYPE.MOVIE ? 'movie' : 'tv-show'
-);
 
 
 // Map explanation_code to user-friendly text

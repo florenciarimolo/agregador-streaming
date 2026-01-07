@@ -104,6 +104,8 @@ onMounted(async () => {
         : null);
     const lang = getLangFromRoute();
 
+    loading.value = false;
+
     if (recoveryFlag) {
       router.replace(`/${lang}/auth/reset-password`);
       return;

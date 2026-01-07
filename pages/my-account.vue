@@ -1,300 +1,311 @@
 <template>
   <AppShell>
     <PageContainer>
-    <div class="w-full pt-6 pb-6">
-    <div class="mb-8">
-      <h1 class="mb-2 text-3xl font-bold text-gray-800 dark:text-gray-300">
-        {{ $t('myAccount.title') }}
-      </h1>
-      <p class="text-gray-600 dark:text-gray-400">
-        {{ $t('myAccount.description') }}
-      </p>
-    </div>
-
-    <!-- Avatar Section -->
-    <section
-      class="p-6 mb-8 rounded-3xl border shadow-lg backdrop-blur-xl bg-white/60 dark:bg-gray-900/40 md:p-8 border-gray-300/50 dark:border-white/10"
-    >
-      <div class="mb-4">
-        <h2 class="mb-1 text-xl font-semibold text-gray-800 dark:text-gray-300">
-          {{ $t('myAccount.avatar.title') }}
-        </h2>
-        <p class="text-sm text-gray-600 dark:text-gray-400">
-          {{ $t('myAccount.avatar.description') }}
-        </p>
-      </div>
-      <div class="flex justify-center">
-        <AvatarUpload
-          :avatar-url="userProfile?.avatar_url"
-          :display-name="userProfile?.display_name"
-          :email="currentUser?.email"
-          :user-id="userId"
-          size="xl"
-          @uploaded="handleAvatarUploaded"
-          @error="handleAvatarError"
-        />
-      </div>
-    </section>
-
-    <!-- Display Name Section -->
-    <section
-      class="p-6 mb-8 rounded-3xl border shadow-lg backdrop-blur-xl bg-white/60 dark:bg-gray-900/40 md:p-8 border-gray-300/50 dark:border-white/10"
-    >
-      <div class="mb-4">
-        <h2 class="mb-1 text-xl font-semibold text-gray-800 dark:text-gray-300">
-          {{ $t('myAccount.displayName.title') }}
-        </h2>
-        <p class="text-sm text-gray-600 dark:text-gray-400">
-          {{ $t('myAccount.displayName.description') }}
-        </p>
-      </div>
-      <div class="space-y-4">
-        <Input
-          id="display-name"
-          v-model="displayName"
-          type="text"
-          :label="$t('myAccount.displayName.title')"
-          :placeholder="$t('myAccount.displayName.placeholder')"
-          :maxlength="50"
-          :error="displayNameError"
-        />
-        <div class="flex justify-end">
-          <Button
-            variant="primary"
-            size="small"
-            :disabled="
-              loadingDisplayName ||
-              displayName === (userProfile?.display_name || '')
-            "
-            @click="handleUpdateDisplayName"
-          >
-            {{ $t('common.save') }}
-          </Button>
+      <div class="w-full pt-6 pb-6">
+        <div class="mb-8">
+          <h1 class="mb-2 text-3xl font-bold text-gray-800 dark:text-gray-300">
+            {{ $t('myAccount.title') }}
+          </h1>
+          <p class="text-gray-600 dark:text-gray-400">
+            {{ $t('myAccount.description') }}
+          </p>
         </div>
-      </div>
-    </section>
 
-    <!-- Change Password Section -->
-    <section
-      class="p-6 mb-8 rounded-3xl border shadow-lg backdrop-blur-xl bg-white/60 dark:bg-gray-900/40 md:p-8 border-gray-300/50 dark:border-white/10"
-    >
-      <div class="mb-4">
-        <h2 class="mb-1 text-xl font-semibold text-gray-800 dark:text-gray-300">
-          {{ $t('myAccount.password.title') }}
-        </h2>
-        <p class="text-sm text-gray-600 dark:text-gray-400">
-          {{ $t('myAccount.password.description') }}
-        </p>
-      </div>
-      <form @submit.prevent="handleUpdatePassword" class="space-y-4">
-        <Input
-          id="current-password"
-          v-model="currentPassword"
-          :type="showCurrentPassword ? 'text' : 'password'"
-          :label="$t('myAccount.password.currentPassword')"
-          :placeholder="$t('auth.passwordPlaceholder')"
-          autocomplete="current-password"
-          custom-class="pr-10"
+        <!-- Avatar Section -->
+        <section
+          class="p-6 mb-8 rounded-3xl border shadow-lg backdrop-blur-xl bg-white/60 dark:bg-gray-900/40 md:p-8 border-gray-300/50 dark:border-white/10"
         >
-          <template #icon>
-            <IconButton
-              :icon="showCurrentPassword ? IconEye : IconEyeSlash"
-              :aria-label="
-                showCurrentPassword
-                  ? $t('auth.hidePassword')
-                  : $t('auth.showPassword')
-              "
-              size="medium"
-              variant="default"
-              custom-class="pointer-events-auto"
-              @click="showCurrentPassword = !showCurrentPassword"
-            />
-          </template>
-        </Input>
-        <Input
-          id="new-password"
-          v-model="newPassword"
-          :type="showNewPassword ? 'text' : 'password'"
-          :label="$t('myAccount.password.newPassword')"
-          :placeholder="$t('auth.passwordPlaceholder')"
-          autocomplete="new-password"
-          :error="
-            passwordValidation &&
-            !passwordValidation.isValid &&
-            newPassword.length > 0
-              ? $t('auth.passwordNotValid')
-              : passwordError
-          "
-          custom-class="pr-10"
-        >
-          <template #icon>
-            <IconButton
-              :icon="showNewPassword ? IconEye : IconEyeSlash"
-              :aria-label="
-                showNewPassword
-                  ? $t('auth.hidePassword')
-                  : $t('auth.showPassword')
-              "
-              size="medium"
-              variant="default"
-              custom-class="pointer-events-auto"
-              @click="showNewPassword = !showNewPassword"
-            />
-          </template>
-        </Input>
-        <!-- Helper text -->
-        <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
-          {{ getPasswordHelperText() }}
-        </p>
-        <!-- Real-time validation checklist -->
-        <div
-          v-if="showPasswordValidation && passwordValidation"
-          class="mt-2 space-y-1.5"
-        >
-          <div
-            v-for="check in [
-              {
-                key: 'minLength',
-                label: $t('auth.passwordMinChars'),
-              },
-              {
-                key: 'hasUppercase',
-                label: $t('auth.passwordUppercase'),
-              },
-              {
-                key: 'hasLowercase',
-                label: $t('auth.passwordLowercase'),
-              },
-              {
-                key: 'hasNumber',
-                label: $t('auth.passwordNumber'),
-              },
-              {
-                key: 'hasSpecialChar',
-                label: $t('auth.passwordSymbol'),
-              },
-            ]"
-            :key="check.key"
-            class="flex gap-2 items-center text-xs"
-          >
-            <IconCheck
-              v-if="
-                passwordValidation.checks[
-                  check.key as keyof typeof passwordValidation.checks
-                ]
-              "
-              icon-class="flex-shrink-0 w-4 h-4 text-green-500"
-            />
-            <IconX
-              v-else
-              icon-class="flex-shrink-0 w-4 h-4 text-gray-400 dark:text-gray-500"
-            />
-            <span
-              :class="[
-                passwordValidation.checks[
-                  check.key as keyof typeof passwordValidation.checks
-                ]
-                  ? 'text-green-600 dark:text-green-400'
-                  : 'text-gray-500 dark:text-gray-400',
-              ]"
+          <div class="mb-4">
+            <h2
+              class="mb-1 text-xl font-semibold text-gray-800 dark:text-gray-300"
             >
-              {{ check.label }}
-            </span>
+              {{ $t('myAccount.avatar.title') }}
+            </h2>
+            <p class="text-sm text-gray-600 dark:text-gray-400">
+              {{ $t('myAccount.avatar.description') }}
+            </p>
           </div>
-        </div>
-        <Input
-          id="confirm-password"
-          v-model="confirmPassword"
-          :type="showConfirmPassword ? 'text' : 'password'"
-          :label="$t('myAccount.password.confirmPassword')"
-          :placeholder="$t('auth.passwordPlaceholder')"
-          autocomplete="new-password"
-          custom-class="pr-10"
-        >
-          <template #icon>
-            <IconButton
-              :icon="showConfirmPassword ? IconEye : IconEyeSlash"
-              :aria-label="
-                showConfirmPassword
-                  ? $t('auth.hidePassword')
-                  : $t('auth.showPassword')
-              "
-              size="medium"
-              variant="default"
-              custom-class="pointer-events-auto"
-              @click="showConfirmPassword = !showConfirmPassword"
+          <div class="flex justify-center">
+            <AvatarUpload
+              :avatar-url="userProfile?.avatar_url"
+              :display-name="userProfile?.display_name"
+              :email="currentUser?.email"
+              :user-id="userId"
+              size="xl"
+              @uploaded="handleAvatarUploaded"
+              @error="handleAvatarError"
             />
-          </template>
-        </Input>
-        <div class="flex justify-end">
+          </div>
+        </section>
+
+        <!-- Display Name Section -->
+        <section
+          class="p-6 mb-8 rounded-3xl border shadow-lg backdrop-blur-xl bg-white/60 dark:bg-gray-900/40 md:p-8 border-gray-300/50 dark:border-white/10"
+        >
+          <div class="mb-4">
+            <h2
+              class="mb-1 text-xl font-semibold text-gray-800 dark:text-gray-300"
+            >
+              {{ $t('myAccount.displayName.title') }}
+            </h2>
+            <p class="text-sm text-gray-600 dark:text-gray-400">
+              {{ $t('myAccount.displayName.description') }}
+            </p>
+          </div>
+          <div class="space-y-4">
+            <Input
+              id="display-name"
+              v-model="displayName"
+              type="text"
+              :label="$t('myAccount.displayName.title')"
+              :placeholder="$t('myAccount.displayName.placeholder')"
+              :maxlength="50"
+              :error="displayNameError"
+            />
+            <div class="flex justify-end">
+              <Button
+                variant="primary"
+                size="small"
+                :disabled="
+                  loadingDisplayName ||
+                  displayName === (userProfile?.display_name || '')
+                "
+                @click="handleUpdateDisplayName"
+              >
+                {{ $t('common.save') }}
+              </Button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Change Password Section -->
+        <section
+          class="p-6 mb-8 rounded-3xl border shadow-lg backdrop-blur-xl bg-white/60 dark:bg-gray-900/40 md:p-8 border-gray-300/50 dark:border-white/10"
+        >
+          <div class="mb-4">
+            <h2
+              class="mb-1 text-xl font-semibold text-gray-800 dark:text-gray-300"
+            >
+              {{ $t('myAccount.password.title') }}
+            </h2>
+            <p class="text-sm text-gray-600 dark:text-gray-400">
+              {{ $t('myAccount.password.description') }}
+            </p>
+          </div>
+          <form class="space-y-4" @submit.prevent="handleUpdatePassword">
+            <Input
+              id="current-password"
+              v-model="currentPassword"
+              :type="showCurrentPassword ? 'text' : 'password'"
+              :label="$t('myAccount.password.currentPassword')"
+              :placeholder="$t('auth.passwordPlaceholder')"
+              autocomplete="current-password"
+              custom-class="pr-10"
+            >
+              <template #icon>
+                <IconButton
+                  :icon="showCurrentPassword ? IconEye : IconEyeSlash"
+                  :aria-label="
+                    showCurrentPassword
+                      ? $t('auth.hidePassword')
+                      : $t('auth.showPassword')
+                  "
+                  size="medium"
+                  variant="default"
+                  custom-class="pointer-events-auto"
+                  @click="showCurrentPassword = !showCurrentPassword"
+                />
+              </template>
+            </Input>
+            <Input
+              id="new-password"
+              v-model="newPassword"
+              :type="showNewPassword ? 'text' : 'password'"
+              :label="$t('myAccount.password.newPassword')"
+              :placeholder="$t('auth.passwordPlaceholder')"
+              autocomplete="new-password"
+              :error="
+                passwordValidation &&
+                !passwordValidation.isValid &&
+                newPassword.length > 0
+                  ? $t('auth.passwordNotValid')
+                  : passwordError
+              "
+              custom-class="pr-10"
+            >
+              <template #icon>
+                <IconButton
+                  :icon="showNewPassword ? IconEye : IconEyeSlash"
+                  :aria-label="
+                    showNewPassword
+                      ? $t('auth.hidePassword')
+                      : $t('auth.showPassword')
+                  "
+                  size="medium"
+                  variant="default"
+                  custom-class="pointer-events-auto"
+                  @click="showNewPassword = !showNewPassword"
+                />
+              </template>
+            </Input>
+            <!-- Helper text -->
+            <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+              {{ getPasswordHelperText() }}
+            </p>
+            <!-- Real-time validation checklist -->
+            <div
+              v-if="showPasswordValidation && passwordValidation"
+              class="mt-2 space-y-1.5"
+            >
+              <div
+                v-for="check in [
+                  {
+                    key: 'minLength',
+                    label: $t('auth.passwordMinChars'),
+                  },
+                  {
+                    key: 'hasUppercase',
+                    label: $t('auth.passwordUppercase'),
+                  },
+                  {
+                    key: 'hasLowercase',
+                    label: $t('auth.passwordLowercase'),
+                  },
+                  {
+                    key: 'hasNumber',
+                    label: $t('auth.passwordNumber'),
+                  },
+                  {
+                    key: 'hasSpecialChar',
+                    label: $t('auth.passwordSymbol'),
+                  },
+                ]"
+                :key="check.key"
+                class="flex gap-2 items-center text-xs"
+              >
+                <IconCheck
+                  v-if="
+                    passwordValidation.checks[
+                      check.key as keyof typeof passwordValidation.checks
+                    ]
+                  "
+                  icon-class="flex-shrink-0 w-4 h-4 text-green-500"
+                />
+                <IconX
+                  v-else
+                  icon-class="flex-shrink-0 w-4 h-4 text-gray-400 dark:text-gray-500"
+                />
+                <span
+                  :class="[
+                    passwordValidation.checks[
+                      check.key as keyof typeof passwordValidation.checks
+                    ]
+                      ? 'text-green-600 dark:text-green-400'
+                      : 'text-gray-500 dark:text-gray-400',
+                  ]"
+                >
+                  {{ check.label }}
+                </span>
+              </div>
+            </div>
+            <Input
+              id="confirm-password"
+              v-model="confirmPassword"
+              :type="showConfirmPassword ? 'text' : 'password'"
+              :label="$t('myAccount.password.confirmPassword')"
+              :placeholder="$t('auth.passwordPlaceholder')"
+              autocomplete="new-password"
+              :error="showPasswordMismatch ? $t('auth.passwordMismatch') : ''"
+              custom-class="pr-10"
+            >
+              <template #icon>
+                <IconButton
+                  :icon="showConfirmPassword ? IconEye : IconEyeSlash"
+                  :aria-label="
+                    showConfirmPassword
+                      ? $t('auth.hidePassword')
+                      : $t('auth.showPassword')
+                  "
+                  size="medium"
+                  variant="default"
+                  custom-class="pointer-events-auto"
+                  @click="showConfirmPassword = !showConfirmPassword"
+                />
+              </template>
+            </Input>
+            <div class="flex justify-end">
+              <Button
+                type="submit"
+                variant="primary"
+                size="small"
+                :disabled="loadingPassword || !canUpdatePassword"
+              >
+                {{ $t('myAccount.password.title') }}
+              </Button>
+            </div>
+          </form>
+        </section>
+
+        <!-- Delete Account Section -->
+        <section
+          class="p-6 rounded-3xl border shadow-lg backdrop-blur-xl bg-white/60 dark:bg-gray-900/40 md:p-8 border-red-300/50 dark:border-red-900/20"
+        >
+          <div class="mb-4">
+            <h2
+              class="mb-1 text-xl font-semibold text-red-600 dark:text-red-400"
+            >
+              {{ $t('myAccount.deleteAccount.title') }}
+            </h2>
+            <p class="text-sm text-gray-600 dark:text-gray-400">
+              {{ $t('myAccount.deleteAccount.description') }}
+            </p>
+          </div>
           <Button
-            type="submit"
-            variant="primary"
+            variant="danger"
             size="small"
-            :disabled="loadingPassword || !canUpdatePassword"
+            :disabled="loadingDeleteAccount"
+            @click="showDeleteAccountModal = true"
           >
-            {{ $t('myAccount.password.title') }}
+            {{ $t('myAccount.deleteAccount.button') }}
           </Button>
-        </div>
-      </form>
-    </section>
+        </section>
 
-    <!-- Delete Account Section -->
-    <section
-      class="p-6 rounded-3xl border shadow-lg backdrop-blur-xl bg-white/60 dark:bg-gray-900/40 md:p-8 border-red-300/50 dark:border-red-900/20"
-    >
-      <div class="mb-4">
-        <h2 class="mb-1 text-xl font-semibold text-red-600 dark:text-red-400">
-          {{ $t('myAccount.deleteAccount.title') }}
-        </h2>
-        <p class="text-sm text-gray-600 dark:text-gray-400">
-          {{ $t('myAccount.deleteAccount.description') }}
-        </p>
-      </div>
-      <Button
-        variant="danger"
-        size="small"
-        :disabled="loadingDeleteAccount"
-        @click="showDeleteAccountModal = true"
-      >
-        {{ $t('myAccount.deleteAccount.button') }}
-      </Button>
-    </section>
-
-    <!-- Delete Account Confirmation Modal -->
-    <Modal
-      :is-open="showDeleteAccountModal"
-      @close="showDeleteAccountModal = false"
-    >
-      <h3 class="mb-2 text-lg font-semibold text-gray-800 dark:text-gray-300">
-        {{ $t('myAccount.deleteAccount.confirmTitle') }}
-      </h3>
-      <p class="mb-4 text-gray-800 dark:text-gray-300">
-        {{ $t('myAccount.deleteAccount.confirmMessage') }}
-      </p>
-      <div class="flex gap-3 justify-end">
-        <Button
-          size="small"
-          variant="outline"
-          @click="showDeleteAccountModal = false"
+        <!-- Delete Account Confirmation Modal -->
+        <Modal
+          :is-open="showDeleteAccountModal"
+          @close="showDeleteAccountModal = false"
         >
-          {{ $t('common.cancel') }}
-        </Button>
-        <Button
-          size="small"
-          variant="danger"
-          :disabled="loadingDeleteAccount"
-          @click="handleDeleteAccount"
-        >
-          {{
-            loadingDeleteAccount
-              ? $t('myAccount.deleteAccount.deleting')
-              : $t('myAccount.deleteAccount.confirmButton')
-          }}
-        </Button>
+          <h3
+            class="mb-2 text-lg font-semibold text-gray-800 dark:text-gray-300"
+          >
+            {{ $t('myAccount.deleteAccount.confirmTitle') }}
+          </h3>
+          <p class="mb-4 text-gray-800 dark:text-gray-300">
+            {{ $t('myAccount.deleteAccount.confirmMessage') }}
+          </p>
+          <div class="flex gap-3 justify-end">
+            <Button
+              size="small"
+              variant="outline"
+              @click="showDeleteAccountModal = false"
+            >
+              {{ $t('common.cancel') }}
+            </Button>
+            <Button
+              size="small"
+              variant="danger"
+              :disabled="loadingDeleteAccount"
+              @click="handleDeleteAccount"
+            >
+              {{
+                loadingDeleteAccount
+                  ? $t('myAccount.deleteAccount.deleting')
+                  : $t('myAccount.deleteAccount.confirmButton')
+              }}
+            </Button>
+          </div>
+        </Modal>
       </div>
-    </Modal>
-    </div>
     </PageContainer>
   </AppShell>
 </template>
@@ -356,7 +367,7 @@ const userStore = computed(() => {
       fetchProfile: async () => {},
     };
   }
-  
+
   try {
     return useUserStore();
   } catch (error) {
@@ -409,6 +420,13 @@ const passwordValidation = computed(() => {
 
 const showPasswordValidation = computed(() => {
   return newPassword.value.length > 0;
+});
+
+const showPasswordMismatch = computed(() => {
+  return (
+    confirmPassword.value.length > 0 &&
+    newPassword.value !== confirmPassword.value
+  );
 });
 
 const canUpdatePassword = computed(() => {
@@ -506,7 +524,16 @@ const handleUpdateDisplayName = async () => {
 };
 
 const handleUpdatePassword = async () => {
-  if (!canUpdatePassword.value) return;
+  if (import.meta.dev) {
+    console.log('[my-account] handleUpdatePassword called');
+  }
+
+  if (!canUpdatePassword.value) {
+    if (import.meta.dev) {
+      console.log('[my-account] canUpdatePassword is false, returning');
+    }
+    return;
+  }
 
   loadingPassword.value = true;
   passwordError.value = '';
@@ -514,12 +541,18 @@ const handleUpdatePassword = async () => {
   // Validate password
   const validation = validatePassword(newPassword.value);
   if (!validation.isValid) {
+    if (import.meta.dev) {
+      console.log('[my-account] Password validation failed');
+    }
     passwordError.value = t('auth.passwordNotValid');
     loadingPassword.value = false;
     return;
   }
 
   if (newPassword.value !== confirmPassword.value) {
+    if (import.meta.dev) {
+      console.log('[my-account] Passwords do not match');
+    }
     passwordError.value = t('myAccount.password.passwordsMismatch');
     loadingPassword.value = false;
     return;
@@ -528,6 +561,10 @@ const handleUpdatePassword = async () => {
   try {
     const supabase = useSupabaseClient();
 
+    if (import.meta.dev) {
+      console.log('[my-account] Verifying current password...');
+    }
+
     // First, verify current password by attempting to sign in
     const { error: signInError } = await supabase.auth.signInWithPassword({
       email: currentUser.value?.email || '',
@@ -535,9 +572,21 @@ const handleUpdatePassword = async () => {
     });
 
     if (signInError) {
+      if (import.meta.dev) {
+        console.log(
+          '[my-account] Current password verification failed:',
+          signInError
+        );
+      }
       passwordError.value = t('auth.passwordNotValid');
       loadingPassword.value = false;
       return;
+    }
+
+    if (import.meta.dev) {
+      console.log(
+        '[my-account] Current password verified, updating password...'
+      );
     }
 
     // Update password
@@ -546,7 +595,14 @@ const handleUpdatePassword = async () => {
     });
 
     if (updateError) {
+      if (import.meta.dev) {
+        console.error('[my-account] Password update error:', updateError);
+      }
       throw updateError;
+    }
+
+    if (import.meta.dev) {
+      console.log('[my-account] Password updated successfully');
     }
 
     // Clear form
@@ -554,9 +610,27 @@ const handleUpdatePassword = async () => {
     newPassword.value = '';
     confirmPassword.value = '';
 
-    showToast(t('myAccount.password.updated'), null);
+    const successMessage = t('myAccount.password.updated');
+    if (import.meta.dev) {
+      console.log('[my-account] Showing success toast:', successMessage);
+    }
+    showToast(successMessage, null);
+
+    if (import.meta.dev) {
+      console.log(
+        '[my-account] showToast called, checking if toast was set...'
+      );
+      // Check toast state after a brief delay
+      setTimeout(() => {
+        const { toast: toastState } = useUndoToast();
+        console.log(
+          '[my-account] Toast state after showToast:',
+          toastState.value
+        );
+      }, 100);
+    }
   } catch (error) {
-    console.error('Error updating password:', error);
+    console.error('[my-account] Error updating password:', error);
     passwordError.value = t('myAccount.password.error');
     showToast(t('myAccount.password.error'), null);
   } finally {

@@ -9,7 +9,7 @@
   >
     <div
       v-if="shouldShow"
-      class="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-md md:bottom-6 md:w-full md:mx-4"
+      class="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-[100] w-[calc(100%-2rem)] max-w-md md:bottom-6 md:w-full md:mx-4"
     >
       <div
         :class="[
@@ -80,7 +80,16 @@ const shouldShow = computed(() => {
     return props.isVisible;
   }
   // Automatic control via composable
-  return props.useComposable && !!toast.value;
+  const visible = props.useComposable && !!toast.value;
+  if (import.meta.dev) {
+    console.log('[Toast] shouldShow computed:', {
+      useComposable: props.useComposable,
+      hasToast: !!toast.value,
+      toastValue: toast.value,
+      visible,
+    });
+  }
+  return visible;
 });
 
 const handleUndo = async () => {

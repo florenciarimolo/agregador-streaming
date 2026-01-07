@@ -223,7 +223,7 @@ export default defineEventHandler(async (event) => {
     }
 
     return videosForLang;
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Log the actual error for debugging
     console.error('[videos.get] Unexpected error:', {
       tmdbId,
