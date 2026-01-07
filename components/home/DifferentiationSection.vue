@@ -3,14 +3,15 @@
     <AppShell>
       <PageContainer>
         <Section>
-          <div class="home-section-title">
+          <div class="home-section-title home-animate">
             <SectionTitle>{{ $t('home.differentiation.title') }}</SectionTitle>
           </div>
           <div class="grid gap-8 md:gap-12 md:grid-cols-2">
             <!-- Other Platforms -->
             <Card
               padding="lg"
-              custom-class="hover:border-primary/50 dark:hover:border-purple-500/30 transition-colors"
+              custom-class="hover:border-primary-800 dark:hover:border-primary-600/50 transition-colors home-animate"
+              :enable-flashlight="true"
             >
               <h3
                 class="mb-4 text-h3 font-heading font-semibold text-gray-800 dark:text-gray-300 text-center"
@@ -48,7 +49,8 @@
             <!-- UpNext -->
             <Card
               padding="lg"
-              custom-class="border-primary/30 dark:border-primary/20 hover:border-primary/50 dark:hover:border-purple-500/30 transition-colors"
+              custom-class="border-primary/30 dark:border-primary/20 hover:border-primary-800 dark:hover:border-primary-600/50 transition-colors home-animate home-animate-delay-1"
+              :enable-flashlight="true"
             >
               <h3
                 class="mb-4 text-h3 font-heading font-semibold text-gray-800 dark:text-gray-300 text-center"

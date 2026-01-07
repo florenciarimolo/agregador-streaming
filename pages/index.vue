@@ -21,6 +21,7 @@ import ProductValueSection from '@/components/home/ProductValueSection.vue';
 import FaqSection from '@/components/home/FaqSection.vue';
 import FinalCtaSection from '@/components/home/FinalCtaSection.vue';
 import AnimatedBackground from '@/components/AnimatedBackground.vue';
+import { useScrollAnimation } from '@/composables/useScrollAnimation';
 
 // Middleware handles onboarding check - if user has session, onboarding is completed
 definePageMeta({
@@ -280,6 +281,9 @@ const handleSignupSuccess = () => {
 
 const showAuthForm = ref(false);
 
+// Setup scroll animations for home page (non-authenticated users)
+const { observeElements, reobserveAll } = useScrollAnimation();
+
 // Check if auth query param is present to show auth form
 onMounted(() => {
   // Redirect auth-related query params to auth/callback with language
@@ -302,6 +306,20 @@ onMounted(() => {
   }
   if (route.query.auth === 'login' && !user.value) {
     showAuthForm.value = true;
+  }
+
+  // Setup scroll animations for home sections when user is not logged in
+  if (showHero.value) {
+    // Wait a bit for all sections to render, then observe
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        observeElements('.home-animate');
+        // Also re-observe periodically in case new elements are added
+        setTimeout(() => {
+          reobserveAll();
+        }, 500);
+      }, 300);
+    });
   }
 });
 </script>

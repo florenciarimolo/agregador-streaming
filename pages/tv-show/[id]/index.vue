@@ -64,7 +64,7 @@
                 :show-content="true"
                 :show-type="false"
                 :hover-text="$t('media.viewEpisodes')"
-                custom-class="shadow-lg hover:border-gray-300/50 dark:hover:border-white/10"
+                custom-class="shadow-lg hover:border-primary-800 dark:hover:border-primary-600/50"
               >
                 <!-- RatingBadge - top right -->
                 <template #top-right-actions>

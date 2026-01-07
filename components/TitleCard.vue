@@ -3,7 +3,7 @@
     :class="[
       'overflow-visible relative rounded-3xl border backdrop-blur-xl transition-all duration-300',
       'dark:bg-gray-900/40 bg-gray-100/80 border-gray-300/50 dark:border-white/10',
-      'hover:border-gray-400/50 dark:hover:border-white/20 hover:shadow-lg hover:shadow-gray-900/20',
+      'hover:border-primary-800 dark:hover:border-primary-600/50 hover:shadow-lg hover:shadow-gray-900/20',
       customClass,
     ]"
     :aria-label="computedAriaLabel"

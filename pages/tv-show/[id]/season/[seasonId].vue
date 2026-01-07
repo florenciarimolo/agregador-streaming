@@ -45,7 +45,7 @@
               <article
                 v-for="episode in seasonWithProviders.episodes"
                 :key="episode.id"
-                class="overflow-hidden bg-white/60 dark:bg-gray-900/40 backdrop-blur-xl border border-gray-300/50 dark:border-white/10 rounded-3xl group hover:border-primary/50 dark:hover:border-purple-500/30 transition-colors shadow-lg"
+                class="overflow-hidden bg-white/60 dark:bg-gray-900/40 backdrop-blur-xl border border-gray-300/50 dark:border-white/10 rounded-3xl group hover:border-primary-800 dark:hover:border-primary-600/50 transition-colors shadow-lg"
               >
                 <div class="relative bg-gray-700 aspect-video">
                   <img

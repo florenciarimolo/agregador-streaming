@@ -5,7 +5,7 @@
         <Section>
           <div class="flex flex-col items-center text-center">
             <p
-              class="mb-8 text-h2 font-heading font-semibold text-transparent bg-clip-text bg-gradient-to-b from-gray-800 via-gray-800 to-gray-600 dark:from-white dark:via-white dark:to-gray-400"
+              class="mb-8 text-h2 font-heading font-semibold text-transparent bg-clip-text bg-gradient-to-b from-gray-800 via-gray-800 to-gray-600 dark:from-white dark:via-white dark:to-gray-400 home-animate"
               :style="{
                 fontSize: 'clamp(2.5rem, 5vw, 4rem)',
                 backgroundClip: 'text',
@@ -28,7 +28,10 @@
                 <span v-else>{{ part.text }}</span>
               </template>
             </p>
-            <nuxt-link :to="discoverRoute" class="inline-block">
+            <nuxt-link
+              :to="discoverRoute"
+              class="inline-block home-animate home-animate-delay-1"
+            >
               <Button size="medium" variant="primary">
                 {{ $t('home.finalCta.button') }}
               </Button>

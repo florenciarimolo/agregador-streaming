@@ -1,10 +1,12 @@
 <template>
   <nuxt-link
+    ref="cardRef"
     :to="`/discover/list/${list.slug}`"
-    class="block overflow-hidden rounded-2xl border backdrop-blur-xl transition-all duration-300 dark:bg-gray-900/40 bg-gray-100/80 border-gray-300/50 dark:border-white/10 hover:border-primary/50 dark:hover:border-purple-500/30 hover:shadow-lg hover:shadow-gray-900/20"
+    class="block h-full overflow-hidden rounded-2xl border backdrop-blur-xl transition-all duration-300 dark:bg-gray-900/40 bg-gray-100/80 border-gray-300/50 dark:border-white/10 hover:border-primary-800 dark:hover:border-primary-600/50 hover:shadow-lg hover:shadow-gray-900/20 flashlight-card flex flex-col"
     :aria-label="$t('discover.viewList', { title: list.title })"
+    :style="flashlightCardStyle"
   >
-    <div class="p-6">
+    <div class="p-6 relative z-10 flex flex-col flex-1">
       <div class="flex items-start justify-between gap-4 mb-3">
         <h3 class="text-xl font-semibold text-gray-800 dark:text-gray-300">
           {{ list.title }}
@@ -18,14 +20,14 @@
       </div>
       <p
         v-if="list.description"
-        class="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-4"
+        class="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-4 flex-shrink-0"
       >
         {{ list.description }}
       </p>
       <!-- Preview images fan -->
       <div
         v-if="list.previewPosters && list.previewPosters.length > 0"
-        class="flex items-center gap-2"
+        class="flex items-center gap-2 mt-auto"
       >
         <div class="flex -space-x-3">
           <div
@@ -75,12 +77,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { useRuntimeConfig } from '#app';
 import type { DiscoverList } from '@/composables/database/discoverLists';
 import Badge from './Badge.vue';
 import { useTheme } from '@/composables/useTheme';
 import { Theme } from '@/types/enums/Theme';
+import { useFlashlight } from '@/composables/useFlashlight';
 
 interface ExtendedDiscoverList extends DiscoverList {
   itemCount?: number;
@@ -97,6 +100,29 @@ const TMDB_IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w500';
 const { theme } = useTheme();
 const isDark = computed(() => theme.value === Theme.DARK);
 
+const cardRef = ref<HTMLElement | null>(null);
+const { styles, isHovering } = useFlashlight(cardRef);
+
+const flashlightCardStyle = computed(() => {
+  if (!isHovering.value) {
+    return {
+      '--flashlight-bg': 'transparent',
+      '--flashlight-border-top': 'transparent',
+      '--flashlight-border-right': 'transparent',
+      '--flashlight-border-bottom': 'transparent',
+      '--flashlight-border-left': 'transparent',
+    } as Record<string, string>;
+  }
+  
+  return {
+    '--flashlight-bg': styles.value.backgroundStyle,
+    '--flashlight-border-top': styles.value.borderTopStyle,
+    '--flashlight-border-right': styles.value.borderRightStyle,
+    '--flashlight-border-bottom': styles.value.borderBottomStyle,
+    '--flashlight-border-left': styles.value.borderLeftStyle,
+  } as Record<string, string>;
+});
+
 function getPosterUrl(posterPath: string | null): string {
   if (!posterPath) return '';
   if (posterPath.startsWith('http')) return posterPath;
@@ -108,4 +134,47 @@ function getShadowStyle(index: number, totalImages: number): string {
   return `1px 0 2px rgba(199, 210, 254, 0.4)`;
 }
 </script>
+
+<style scoped>
+.flashlight-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: var(--flashlight-bg, transparent);
+  opacity: var(--flashlight-opacity, 0);
+  transition: opacity 0.2s ease-out;
+  z-index: 1;
+}
+
+.flashlight-card::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  pointer-events: none;
+  background-image: 
+    var(--flashlight-border-top, transparent),
+    var(--flashlight-border-right, transparent),
+    var(--flashlight-border-bottom, transparent),
+    var(--flashlight-border-left, transparent);
+  background-size: 100% 1px, 1px 100%, 100% 1px, 1px 100%;
+  background-position: top, right, bottom, left;
+  background-repeat: no-repeat;
+  opacity: var(--flashlight-opacity, 0);
+  transition: opacity 0.2s ease-out;
+  z-index: 0;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  padding: 1px;
+}
+
+.flashlight-card:hover::before,
+.flashlight-card:hover::after {
+  --flashlight-opacity: 1;
+}
+</style>
 
