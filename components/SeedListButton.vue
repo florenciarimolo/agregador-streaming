@@ -1,19 +1,26 @@
 <template>
-  <div class="flex items-center gap-4">
-    <p class="text-sm text-gray-600 dark:text-gray-400 flex-1">
-      {{ $t('discover.seedDescription') }}
-    </p>
-    <Button
-      :variant="'primary'"
-      :loading="isLoading"
-      :disabled="isLoading"
-      @click="handleSeed"
-    >
-      <template #icon>
-        <IconSeed v-if="!isLoading" icon-class="w-4 h-4" />
-      </template>
-      {{ $t('discover.useAsSeed') }}
-    </Button>
+  <div class="flex flex-col md:flex-row md:items-center gap-4">
+    <div class="text-sm text-gray-600 dark:text-gray-400 md:flex-1">
+      <p class="font-semibold">
+        {{ $t('discover.seedDescriptionTitle') }}
+      </p>
+      <p>
+        {{ $t('discover.seedDescriptionText') }}
+      </p>
+    </div>
+    <div class="self-start md:self-auto">
+      <Button
+        :variant="'primary'"
+        :loading="isLoading"
+        :disabled="isLoading"
+        @click="handleSeed"
+      >
+        <template #icon>
+          <IconSeed v-if="!isLoading" icon-class="w-4 h-4" />
+        </template>
+        {{ $t('discover.useAsSeed') }}
+      </Button>
+    </div>
   </div>
 </template>
 
