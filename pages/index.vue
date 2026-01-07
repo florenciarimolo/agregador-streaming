@@ -531,11 +531,10 @@ const removeFilters = async () => {
   await navigateTo({ query }, { replace: true });
 };
 
-// Clear genre and provider filters
-const clearGenreProviderFilters = async () => {
+// Clear genre and provider filters (does not apply - user must click "Aplicar")
+const clearGenreProviderFilters = () => {
   selectedGenres.value = [];
   selectedProviders.value = [];
-  await saveFilters();
 };
 
 // Save filters to user_preferences
@@ -571,13 +570,10 @@ const saveFilters = async () => {
   }
 };
 
-// Watch for filter changes and save when filters are closed
-watch(showFilterCards, async (isOpen, wasOpen) => {
-  // Save when filters are closed (if they were open before)
-  if (!isOpen && wasOpen) {
-    await saveFilters();
-  }
-});
+// Apply filters handler (called when user clicks "Aplicar" button)
+const applyFilters = async () => {
+  await saveFilters();
+};
 
 // Check if there are active genre/provider filters
 // Handle auth success - redirect to home with language
@@ -744,6 +740,7 @@ onMounted(() => {
                     @update:selected-providers="selectedProviders = $event"
                     @update:selected-content-type="selectedContentType = $event"
                     @clear="clearGenreProviderFilters"
+                    @apply="applyFilters"
                   />
                 </div>
               </Section>

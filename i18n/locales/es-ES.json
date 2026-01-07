@@ -19,7 +19,8 @@
     "noImage": "Sin imagen",
     "optional": "Opcional",
     "lists": "Listas",
-    "clearFilters": "Limpiar filtros"
+    "clearFilters": "Limpiar filtros",
+    "applyFilters": "Aplicar"
   },
   "navbar": {
     "home": "Inicio",

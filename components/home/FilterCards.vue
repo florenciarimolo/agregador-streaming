@@ -127,9 +127,10 @@
       </div>
     </div>
 
-    <!-- Clear Filters Button -->
-    <div v-if="hasActiveFilters" class="flex justify-end">
+    <!-- Apply and Clear Filters Buttons -->
+    <div class="flex justify-end gap-2">
       <Button
+        v-if="hasActiveFilters"
         variant="secondary"
         size="small"
         icon-position="left"
@@ -139,6 +140,13 @@
           <IconX icon-class="w-4 h-4" />
         </template>
         {{ $t('common.clearFilters') }}
+      </Button>
+      <Button
+        variant="primary"
+        size="small"
+        @click="$emit('apply')"
+      >
+        {{ $t('common.applyFilters') }}
       </Button>
     </div>
   </div>
@@ -182,6 +190,7 @@ const emit = defineEmits<{
   'update:selectedProviders': [providers: Provider[]];
   'update:selectedContentType': [contentType: 'all' | 'movie' | 'tv'];
   clear: [];
+  apply: [];
 }>();
 
 // Selected genre/provider for selectors (temporary state)

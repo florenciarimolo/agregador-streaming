@@ -19,7 +19,8 @@
     "noImage": "Irudirik ez",
     "optional": "Aukerakoa",
     "lists": "Zerrendak",
-    "clearFilters": "Garbitu iragazkiak"
+    "clearFilters": "Garbitu iragazkiak",
+    "applyFilters": "Aplikatu"
   },
   "navbar": {
     "home": "Inicio",
