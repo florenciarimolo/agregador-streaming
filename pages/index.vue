@@ -563,8 +563,14 @@ const saveFilters = async () => {
       body: preferencesToSave,
     });
 
+    // Clear current recommendations to show skeleton while loading
+    allRecommendations.value = [];
+    recommendations.value = [];
+
     // Refresh recommendations to apply new filters
-    await fetchRecommendations();
+    const fetched = await fetchRecommendations();
+    allRecommendations.value = fetched;
+    filterRecommendationsByType();
   } catch (error) {
     console.error('Error saving filters:', error);
   }
@@ -746,12 +752,7 @@ onMounted(() => {
               </Section>
 
               <!-- Skeleton loading (also show while filters are loading) -->
-              <Section
-                v-if="
-                  (showSkeleton && loading && !hasAttemptedLoad) ||
-                  filtersLoading
-                "
-              >
+              <Section v-if="(showSkeleton && loading) || filtersLoading">
                 <div
                   class="grid grid-cols-2 gap-4 md:grid-cols-5 lg:grid-cols-6 overflow-visible"
                 >
