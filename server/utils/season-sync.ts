@@ -9,6 +9,7 @@ import { TABLES } from '@/constants/db/tables';
 import { SEASONS_COLUMNS } from '@/constants/db/columns';
 import { upsertSeason } from '@/services/seasons';
 import { $fetch } from 'ofetch';
+import type { MultiLanguageText } from '@/services/titles';
 
 /**
  * TMDB season structure from /tv/{id} response
@@ -93,18 +94,25 @@ export async function syncSeasonsFromTVShow(
   }
 
   // Prepare seasons for upsert
-  const seasonsToUpsert = seasonsToCreate.map((tmdbSeason) => ({
-    [SEASONS_COLUMNS.TV_TMDB_ID]: tvTmdbId,
-    [SEASONS_COLUMNS.SEASON_NUMBER]: tmdbSeason.season_number,
-    [SEASONS_COLUMNS.TMDB_SEASON_ID]: tmdbSeason.id,
-    [SEASONS_COLUMNS.NAME]: tmdbSeason.name || null,
-    [SEASONS_COLUMNS.AIR_DATE]: tmdbSeason.air_date || null,
-    [SEASONS_COLUMNS.POSTER_PATH]: tmdbSeason.poster_path || null,
-    [SEASONS_COLUMNS.VOTE_AVERAGE]: tmdbSeason.vote_average || null,
-    // overview and videos remain null (never fetched) until accessed on-demand
-    [SEASONS_COLUMNS.OVERVIEW]: null,
-    [SEASONS_COLUMNS.VIDEOS]: null,
-  }));
+  // Convert name to JSONB format with language from tmdbConfig
+  const seasonsToUpsert = seasonsToCreate.map((tmdbSeason) => {
+    const nameJsonb: MultiLanguageText | null = tmdbSeason.name && tmdbConfig?.language
+      ? { [tmdbConfig.language]: tmdbSeason.name }
+      : null;
+
+    return {
+      [SEASONS_COLUMNS.TV_TMDB_ID]: tvTmdbId,
+      [SEASONS_COLUMNS.SEASON_NUMBER]: tmdbSeason.season_number,
+      [SEASONS_COLUMNS.TMDB_SEASON_ID]: tmdbSeason.id,
+      [SEASONS_COLUMNS.NAME]: nameJsonb,
+      [SEASONS_COLUMNS.AIR_DATE]: tmdbSeason.air_date || null,
+      [SEASONS_COLUMNS.POSTER_PATH]: tmdbSeason.poster_path || null,
+      [SEASONS_COLUMNS.VOTE_AVERAGE]: tmdbSeason.vote_average || null,
+      // overview and videos remain null (never fetched) until accessed on-demand
+      [SEASONS_COLUMNS.OVERVIEW]: null,
+      [SEASONS_COLUMNS.VIDEOS]: null,
+    };
+  });
 
   // Upsert seasons (only creates new ones, doesn't overwrite existing overview/videos)
   const { error: upsertError } = await supabase
@@ -147,12 +155,14 @@ export async function syncSeasonsFromTVShow(
 
         // If we found episode_count, update the season in the database
         if (episodeCount !== null) {
+          // Keep existing name JSONB (don't overwrite)
+          const existingNameJsonb = existingSeason.name as MultiLanguageText | null;
           await upsertSeason(
             {
               tv_tmdb_id: tvTmdbId,
               season_number: existingSeason.season_number,
               tmdb_season_id: existingSeason.tmdb_season_id,
-              name: existingSeason.name || null,
+              name: existingNameJsonb,
               poster_path: existingSeason.poster_path || null,
               vote_average: existingSeason.vote_average || null,
               episode_count: episodeCount,
@@ -217,12 +227,16 @@ export async function syncSeasonsFromTVShow(
 
         // If we found a date or episode_count, update the season in the database
         if (finalAirDate || episodeCount !== null) {
+          // Convert name to JSONB format with language from tmdbConfig
+          const nameJsonb: MultiLanguageText | null = seasonResponse.name && tmdbConfig?.language
+            ? { [tmdbConfig.language]: seasonResponse.name }
+            : null;
           await upsertSeason(
             {
               tv_tmdb_id: tvTmdbId,
               season_number: season.season_number,
               tmdb_season_id: season.id,
-              name: season.name || null,
+              name: nameJsonb,
               air_date: finalAirDate || undefined,
               poster_path: season.poster_path || null,
               vote_average: season.vote_average || null,
@@ -291,12 +305,21 @@ export async function syncSeasonsFromTVShow(
 
         // If we found a date or episode_count, update the season in the database
         if (finalAirDate || episodeCount !== null) {
+          // Keep existing name JSONB and merge with new name from TMDB if available
+          const existingNameJsonb = existingSeason.name as MultiLanguageText | null;
+          let updatedNameJsonb = existingNameJsonb;
+          if (seasonResponse.name && tmdbConfig?.language) {
+            updatedNameJsonb = {
+              ...(existingNameJsonb || {}),
+              [tmdbConfig.language]: seasonResponse.name,
+            };
+          }
           await upsertSeason(
             {
               tv_tmdb_id: tvTmdbId,
               season_number: existingSeason.season_number,
               tmdb_season_id: existingSeason.tmdb_season_id,
-              name: existingSeason.name || null,
+              name: updatedNameJsonb,
               air_date: finalAirDate || undefined,
               poster_path: existingSeason.poster_path || null,
               vote_average: existingSeason.vote_average || null,

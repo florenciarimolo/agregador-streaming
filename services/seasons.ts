@@ -9,6 +9,9 @@ import { SEASONS_COLUMNS } from '@/constants/db/columns';
 import type { Season } from '@/types/TVShow';
 import type { MultiLanguageVideos } from '@/types/Video';
 import type { MultiLanguageText } from './titles';
+import { getTitleInLanguage } from './titles';
+import { getPrimaryLanguageForRegion } from '@/utils/language-detection';
+import { LanguageIsoCode } from '@/constants/languages';
 
 /**
  * Get season by TV TMDB ID and season number
@@ -16,7 +19,9 @@ import type { MultiLanguageText } from './titles';
 export async function getSeasonByTmdbIds(
   tvTmdbId: number,
   seasonNumber: number,
-  supabaseClient: SupabaseClient
+  supabaseClient: SupabaseClient,
+  language?: string,
+  userRegion?: string | null
 ): Promise<Season | null> {
   const { data, error } = await supabaseClient
     .from(TABLES.SEASONS)
@@ -34,10 +39,33 @@ export async function getSeasonByTmdbIds(
     return null;
   }
 
+  // Extract name from JSONB if language provided, otherwise use empty string
+  const nameJsonb = data.name as MultiLanguageText | null;
+  let name = '';
+  
+  if (language) {
+    // First try to get name in requested language
+    name = getTitleInLanguage(nameJsonb, language, userRegion);
+    
+    // If name is empty/null and requested language is not primary language of region,
+    // fallback to primary language of region
+    if (!name && userRegion) {
+      const primaryLanguage = getPrimaryLanguageForRegion(userRegion);
+      const primaryLanguageKey = `${primaryLanguage}-${userRegion.toUpperCase()}`;
+      const requestedLangCode = language.split('-')[0]?.toLowerCase() || '';
+      const primaryLangCode = primaryLanguage.split('-')[0]?.toLowerCase() || '';
+      
+      // Only use primary language fallback if requested language is not primary
+      if (requestedLangCode !== primaryLangCode) {
+        name = getTitleInLanguage(nameJsonb, primaryLanguageKey, userRegion);
+      }
+    }
+  }
+
   // Map database row to Season type
   return {
     id: data.tmdb_season_id,
-    name: data.name || '',
+    name,
     season_number: data.season_number,
     overview: '', // Will be extracted from JSONB by caller
     air_date: data.air_date || '',
@@ -55,7 +83,7 @@ export async function upsertSeason(
     tv_tmdb_id: number;
     season_number: number;
     tmdb_season_id: number;
-    name?: string | null;
+    name?: MultiLanguageText | null;
     air_date?: string | null;
     poster_path?: string | null;
     vote_average?: number | null;
@@ -71,7 +99,10 @@ export async function upsertSeason(
         [SEASONS_COLUMNS.TV_TMDB_ID]: seasonData.tv_tmdb_id,
         [SEASONS_COLUMNS.SEASON_NUMBER]: seasonData.season_number,
         [SEASONS_COLUMNS.TMDB_SEASON_ID]: seasonData.tmdb_season_id,
-        [SEASONS_COLUMNS.NAME]: seasonData.name || null,
+        [SEASONS_COLUMNS.NAME]:
+          seasonData.name && Object.keys(seasonData.name).length > 0
+            ? seasonData.name
+            : null,
         [SEASONS_COLUMNS.AIR_DATE]: seasonData.air_date || null,
         [SEASONS_COLUMNS.POSTER_PATH]: seasonData.poster_path || null,
         [SEASONS_COLUMNS.VOTE_AVERAGE]: seasonData.vote_average || null,
@@ -95,7 +126,7 @@ export async function upsertSeason(
 
   return {
     id: data.tmdb_season_id,
-    name: data.name || '',
+    name: '', // Will be extracted from JSONB by caller
     season_number: data.season_number,
     overview: '', // Will be extracted from JSONB by caller
     air_date: data.air_date || '',
@@ -110,7 +141,9 @@ export async function upsertSeason(
  */
 export async function getSeasonsByTvTmdbId(
   tvTmdbId: number,
-  supabaseClient: SupabaseClient
+  supabaseClient: SupabaseClient,
+  language?: string,
+  userRegion?: string | null
 ): Promise<Season[]> {
   const { data, error } = await supabaseClient
     .from(TABLES.SEASONS)
@@ -128,16 +161,41 @@ export async function getSeasonsByTvTmdbId(
   }
 
   // Map database rows to Season type
-  return data.map((row) => ({
-    id: row.tmdb_season_id,
-    name: row.name || '',
-    season_number: row.season_number,
-    overview: '', // Will be extracted from JSONB by caller if needed
-    air_date: row.air_date || '',
-    poster_path: row.poster_path || null,
-    vote_average: row.vote_average || 0,
-    episode_count: row.episode_count || undefined,
-  }));
+  return data.map((row) => {
+    // Extract name from JSONB if language provided, otherwise use empty string
+    const nameJsonb = row.name as MultiLanguageText | null;
+    let name = '';
+    
+    if (language) {
+      // First try to get name in requested language
+      name = getTitleInLanguage(nameJsonb, language, userRegion);
+      
+      // If name is empty/null and requested language is not primary language of region,
+      // fallback to primary language of region
+      if (!name && userRegion) {
+        const primaryLanguage = getPrimaryLanguageForRegion(userRegion);
+        const primaryLanguageKey = `${primaryLanguage}-${userRegion.toUpperCase()}`;
+        const requestedLangCode = language.split('-')[0]?.toLowerCase() || '';
+        const primaryLangCode = primaryLanguage.split('-')[0]?.toLowerCase() || '';
+        
+        // Only use primary language fallback if requested language is not primary
+        if (requestedLangCode !== primaryLangCode) {
+          name = getTitleInLanguage(nameJsonb, primaryLanguageKey, userRegion);
+        }
+      }
+    }
+
+    return {
+      id: row.tmdb_season_id,
+      name,
+      season_number: row.season_number,
+      overview: '', // Will be extracted from JSONB by caller if needed
+      air_date: row.air_date || '',
+      poster_path: row.poster_path || null,
+      vote_average: row.vote_average || 0,
+      episode_count: row.episode_count || undefined,
+    };
+  });
 }
 
 /**

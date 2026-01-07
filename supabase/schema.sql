@@ -50,7 +50,7 @@ CREATE TABLE IF NOT EXISTS public.seasons (
   tv_tmdb_id BIGINT NOT NULL,
   season_number INT NOT NULL,
   tmdb_season_id BIGINT NOT NULL,
-  name TEXT,
+  name JSONB, -- Multi-language in ISO format: {"es-ES": "...", "ca-ES": "...", "eu-ES": "...", "gl-ES": "...", "en-US": "..."}
   air_date DATE,
   poster_path TEXT,
   vote_average NUMERIC(3, 1),

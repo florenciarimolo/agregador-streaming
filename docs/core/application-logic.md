@@ -939,6 +939,45 @@ Stores movie and TV show information.
 - `idx_titles_tmdb_id` on `tmdb_id`
 - `idx_titles_type` on `type`
 
+### Table: `seasons`
+
+Stores TV show season information.
+
+**Fields:**
+
+- `id`: UUID PRIMARY KEY - Internal ID (auto-generated)
+- `tv_tmdb_id`: BIGINT NOT NULL - TMDB ID of the TV show
+- `season_number`: INT NOT NULL - Season number (0 for specials)
+- `tmdb_season_id`: BIGINT NOT NULL - TMDB season ID
+- `name`: JSONB - Multi-language season name in ISO format: `{"es-ES": "...", "ca-ES": "...", "eu-ES": "...", "gl-ES": "...", "en-US": "..."}`
+- `air_date`: DATE - First air date of the season
+- `poster_path`: TEXT - Poster image path
+- `vote_average`: NUMERIC(3, 1) - Average rating
+- `overview`: JSONB - Multi-language overview in ISO format (same structure as name)
+- `videos`: JSONB - Multi-language videos: `{[lang: string]: Array<{key, site, type, published_at, official}>}`
+- `videos_updated_at`: TIMESTAMP WITH TIME ZONE - Last time videos were updated
+- `episode_count`: INTEGER - Number of episodes in the season (calculated from TMDB)
+- `created_at`: TIMESTAMP WITH TIME ZONE - Creation timestamp (auto-set)
+- `updated_at`: TIMESTAMP WITH TIME ZONE - Last update timestamp (auto-updated via trigger)
+
+**Important characteristics:**
+
+- `name` and `overview` are **multi-language JSONB in ISO format** (`xx-XX`)
+- Legacy format (`xx`) is supported for backward compatibility during reads, but all new writes use ISO format
+- `name` follows the same language fallback logic as `titles.title`: if the requested language is not the primary language of the region and the name is not available, it falls back to the primary language of the region
+- `videos` are fetched on-demand and stored per language
+- `overview` is fetched on-demand when accessing a specific season page
+
+**Constraints:**
+
+- `UNIQUE(tv_tmdb_id, season_number)`: One season per number per TV show
+- `UNIQUE(tmdb_season_id)`: Unique TMDB season ID
+
+**Indexes:**
+
+- `idx_seasons_tv_tmdb_id` on `tv_tmdb_id`
+- `idx_seasons_tmdb_season_id` on `tmdb_season_id`
+
 ### Table: `user_title_status`
 
 Stores title states for each user.

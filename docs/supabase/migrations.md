@@ -175,6 +175,13 @@ Where:
 - RLS Policies: For row-level security
 - Indexes: For query optimization
 
+### Season Name Multi-Language Support
+
+`20260107183345_change_season_name_to_jsonb.sql` changes the `seasons.name` field from TEXT to JSONB to support multi-language season names:
+- Migrates existing TEXT values to JSONB format with 'es-ES' as default language
+- Enables multi-language support following the same pattern as `titles.title`
+- Supports ISO format (`xx-XX`) for language keys
+
 ## Initial Migration with Existing Schema
 
 If your Supabase database already has the schema applied (for example, you applied it manually from `schema.sql`), you have two safe options:
