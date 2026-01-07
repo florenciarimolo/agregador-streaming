@@ -72,27 +72,69 @@ import IconBattery100 from './icons/IconBattery100.vue';
 
 const { t } = useI18n();
 
-withDefaults(
+type MoodValue = Mood | null;
+type AttentionValue = Attention | null;
+
+const props = withDefaults(
   defineProps<{
     noContainer?: boolean;
+    // Controlled mode: if provided, component doesn't update query params
+    modelValueMood?: MoodValue;
+    modelValueAttention?: AttentionValue;
   }>(),
   {
     noContainer: false,
+    modelValueMood: undefined,
+    modelValueAttention: undefined,
   }
 );
 
-type MoodValue = Mood | null;
-type AttentionValue = Attention | null;
+const emit = defineEmits<{
+  'update:mood': [value: MoodValue];
+  'update:attention': [value: AttentionValue];
+}>();
 
 const route = useRoute();
 const router = useRouter();
 
 import { QUERY_PARAMS } from '@/constants/api/queryParams';
 
-// Initialize from query params
-const mood = ref<MoodValue>((route.query[QUERY_PARAMS.MOOD] as Mood) || null);
+// Check if in controlled mode
+const isControlled = computed(
+  () =>
+    props.modelValueMood !== undefined ||
+    props.modelValueAttention !== undefined
+);
+
+// Initialize from props (controlled) or query params (uncontrolled)
+const mood = ref<MoodValue>(
+  isControlled.value
+    ? (props.modelValueMood ?? null)
+    : (route.query[QUERY_PARAMS.MOOD] as Mood) || null
+);
 const attention = ref<AttentionValue>(
-  (route.query[QUERY_PARAMS.ATTENTION] as Attention) || null
+  isControlled.value
+    ? (props.modelValueAttention ?? null)
+    : (route.query[QUERY_PARAMS.ATTENTION] as Attention) || null
+);
+
+// Watch props in controlled mode
+watch(
+  () => props.modelValueMood,
+  (newMood) => {
+    if (isControlled.value) {
+      mood.value = newMood ?? null;
+    }
+  }
+);
+
+watch(
+  () => props.modelValueAttention,
+  (newAttention) => {
+    if (isControlled.value) {
+      attention.value = newAttention ?? null;
+    }
+  }
 );
 
 const moodOptions = computed(() => [
@@ -126,13 +168,29 @@ const attentionOptions = computed(() => [
 ]);
 
 const selectMood = (value: MoodValue) => {
-  mood.value = mood.value === value ? null : value;
-  updateQuery();
+  const newValue = mood.value === value ? null : value;
+  mood.value = newValue;
+
+  if (isControlled.value) {
+    // In controlled mode, emit the change
+    emit('update:mood', newValue);
+  } else {
+    // In uncontrolled mode, update query params immediately
+    updateQuery();
+  }
 };
 
 const selectAttention = (value: AttentionValue) => {
-  attention.value = attention.value === value ? null : value;
-  updateQuery();
+  const newValue = attention.value === value ? null : value;
+  attention.value = newValue;
+
+  if (isControlled.value) {
+    // In controlled mode, emit the change
+    emit('update:attention', newValue);
+  } else {
+    // In uncontrolled mode, update query params immediately
+    updateQuery();
+  }
 };
 
 const updateQuery = () => {
@@ -166,18 +224,20 @@ const updateQuery = () => {
   router.replace({ query });
 };
 
-// Watch for external query changes
-watch(
-  () => route.query[QUERY_PARAMS.MOOD],
-  (newMood) => {
-    mood.value = (newMood as Mood) || null;
-  }
-);
+// Watch for external query changes (only in uncontrolled mode)
+if (!isControlled.value) {
+  watch(
+    () => route.query[QUERY_PARAMS.MOOD],
+    (newMood) => {
+      mood.value = (newMood as Mood) || null;
+    }
+  );
 
-watch(
-  () => route.query[QUERY_PARAMS.ATTENTION],
-  (newAttention) => {
-    attention.value = (newAttention as Attention) || null;
-  }
-);
+  watch(
+    () => route.query[QUERY_PARAMS.ATTENTION],
+    (newAttention) => {
+      attention.value = (newAttention as Attention) || null;
+    }
+  );
+}
 </script>

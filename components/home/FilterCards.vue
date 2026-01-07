@@ -4,7 +4,13 @@
     class="space-y-6 p-6 rounded-3xl border backdrop-blur-xl bg-white/60 dark:bg-gray-900/40 border-gray-300/50 dark:border-white/10 md:p-8"
   >
     <!-- Mood and Attention Selector -->
-    <MoodSelector :no-container="true" />
+    <MoodSelector
+      :no-container="true"
+      :model-value-mood="selectedMood"
+      :model-value-attention="selectedAttention"
+      @update:mood="$emit('update:selectedMood', $event)"
+      @update:attention="$emit('update:selectedAttention', $event)"
+    />
 
     <!-- Content Type Filter -->
     <div class="flex flex-col gap-2">
@@ -155,6 +161,8 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
 import { MEDIA_TYPE } from '@/constants/domain/mediaType';
+import type { Mood } from '@/constants/domain/mood';
+import type { Attention } from '@/constants/domain/attention';
 import Button from '@/components/ui/Button.vue';
 import GenreSelector from '@/components/GenreSelector.vue';
 import ProviderSelector from '@/components/ProviderSelector.vue';
@@ -181,6 +189,8 @@ interface Props {
   selectedGenres: Genre[];
   selectedProviders: Provider[];
   selectedContentType: 'all' | 'movie' | 'tv';
+  selectedMood?: Mood | null;
+  selectedAttention?: Attention | null;
 }
 
 const props = defineProps<Props>();
@@ -189,6 +199,8 @@ const emit = defineEmits<{
   'update:selectedGenres': [genres: Genre[]];
   'update:selectedProviders': [providers: Provider[]];
   'update:selectedContentType': [contentType: 'all' | 'movie' | 'tv'];
+  'update:selectedMood': [mood: Mood | null];
+  'update:selectedAttention': [attention: Attention | null];
   clear: [];
   apply: [];
 }>();
@@ -256,7 +268,13 @@ const removeProvider = (providerId: number) => {
 
 // Check if there are active filters
 const hasActiveFilters = computed(() => {
-  return selectedGenres.value.length > 0 || selectedProviders.value.length > 0;
+  return (
+    selectedGenres.value.length > 0 ||
+    selectedProviders.value.length > 0 ||
+    props.selectedMood !== null ||
+    props.selectedAttention !== null ||
+    props.selectedContentType !== 'all'
+  );
 });
 </script>
 

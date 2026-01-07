@@ -6,6 +6,8 @@ import { useRecommendations } from '@/composables/useRecommendations';
 import { useTitleActions } from '@/composables/useTitleActions';
 import { TITLE_STATUS } from '@/constants/domain/titleStatus';
 import { QUERY_PARAMS } from '@/constants/api/queryParams';
+import type { Mood } from '@/constants/domain/mood';
+import type { Attention } from '@/constants/domain/attention';
 import { useHreflang } from '@/composables/useHreflang';
 import { useCanonical } from '@/composables/useCanonical';
 import AppShell from '@/components/layout/AppShell.vue';
@@ -139,6 +141,10 @@ const {
   filterRecommendationsByType,
 } = useRecommendations();
 
+// Local pending content type (not applied until "Aplicar" is clicked)
+// Initialize to 'all' - content type is not stored in query params, so always start fresh
+const pendingContentType = ref<'all' | 'movie' | 'tv'>('all');
+
 // Use title actions composable
 const {
   loadingTitles,
@@ -168,6 +174,13 @@ const selectedProviders = ref<
   }>
 >([]);
 const filtersLoading = ref(false);
+// Local state for mood and attention (not applied until "Aplicar" is clicked)
+const selectedMood = ref<Mood | null>(
+  (route.query[QUERY_PARAMS.MOOD] as Mood) || null
+);
+const selectedAttention = ref<Attention | null>(
+  (route.query[QUERY_PARAMS.ATTENTION] as Attention) || null
+);
 
 // Preload genres using useAsyncData
 const { data: genresData } = useAsyncData(
@@ -535,6 +548,9 @@ const removeFilters = async () => {
 const clearGenreProviderFilters = () => {
   selectedGenres.value = [];
   selectedProviders.value = [];
+  selectedMood.value = null;
+  selectedAttention.value = null;
+  pendingContentType.value = 'all';
 };
 
 // Save filters to user_preferences
@@ -562,6 +578,66 @@ const saveFilters = async () => {
       },
       body: preferencesToSave,
     });
+  } catch (error) {
+    console.error('Error saving filters:', error);
+  }
+};
+
+// Apply filters handler (called when user clicks "Aplicar" button)
+const applyFilters = async () => {
+  if (!user.value) return;
+
+  filtersLoading.value = true;
+
+  try {
+    // Save genre and provider preferences
+    await saveFilters();
+
+    // Update query params with mood and attention (this will trigger refetch)
+    const query: Record<string, string> = {};
+
+    // Copy existing query params (excluding mood, attention, and type)
+    Object.keys(route.query).forEach((key) => {
+      if (
+        key !== QUERY_PARAMS.MOOD &&
+        key !== QUERY_PARAMS.ATTENTION &&
+        key !== QUERY_PARAMS.TYPE
+      ) {
+        const value = route.query[key];
+        if (value !== null && value !== undefined) {
+          const strValue = Array.isArray(value) ? value[0] : value;
+          if (strValue !== null) {
+            query[key] = strValue;
+          }
+        }
+      }
+    });
+
+    // Add mood and attention to query params
+    if (selectedMood.value) {
+      query[QUERY_PARAMS.MOOD] = selectedMood.value;
+    } else {
+      delete query[QUERY_PARAMS.MOOD];
+    }
+
+    if (selectedAttention.value) {
+      query[QUERY_PARAMS.ATTENTION] = selectedAttention.value;
+    } else {
+      delete query[QUERY_PARAMS.ATTENTION];
+    }
+
+    // Add content type to query params if not 'all'
+    if (pendingContentType.value !== 'all') {
+      query[QUERY_PARAMS.TYPE] = pendingContentType.value;
+    } else {
+      delete query[QUERY_PARAMS.TYPE];
+    }
+
+    // Update content type in useRecommendations (this will trigger filtering)
+    selectedContentType.value = pendingContentType.value;
+
+    // Update route query params (this will trigger the watcher in useRecommendations)
+    await router.replace({ query });
 
     // Clear current recommendations to show skeleton while loading
     allRecommendations.value = [];
@@ -572,13 +648,10 @@ const saveFilters = async () => {
     allRecommendations.value = fetched;
     filterRecommendationsByType();
   } catch (error) {
-    console.error('Error saving filters:', error);
+    console.error('Error applying filters:', error);
+  } finally {
+    filtersLoading.value = false;
   }
-};
-
-// Apply filters handler (called when user clicks "Aplicar" button)
-const applyFilters = async () => {
-  await saveFilters();
 };
 
 // Check if there are active genre/provider filters
@@ -741,10 +814,14 @@ onMounted(() => {
                     :available-providers="availableProviders"
                     :selected-genres="selectedGenres"
                     :selected-providers="selectedProviders"
-                    :selected-content-type="selectedContentType"
+                    :selected-content-type="pendingContentType"
+                    :selected-mood="selectedMood"
+                    :selected-attention="selectedAttention"
                     @update:selected-genres="selectedGenres = $event"
                     @update:selected-providers="selectedProviders = $event"
-                    @update:selected-content-type="selectedContentType = $event"
+                    @update:selected-content-type="pendingContentType = $event"
+                    @update:selected-mood="selectedMood = $event"
+                    @update:selected-attention="selectedAttention = $event"
                     @clear="clearGenreProviderFilters"
                     @apply="applyFilters"
                   />
