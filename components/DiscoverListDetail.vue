@@ -41,12 +41,12 @@
     </div>
 
     <!-- Auth Form Modal -->
-    <Modal :is-open="showAuthForm" custom-class="max-w-md p-0" @close="showAuthForm = false">
-      <AuthForm
-        in-modal
-        @success="showAuthForm = false"
-        @signup="showAuthForm = false"
-      />
+    <Modal
+      :is-open="showAuthForm"
+      custom-class="max-w-md p-0"
+      @close="showAuthForm = false"
+    >
+      <AuthForm in-modal @success="showAuthForm = false" @signup="() => {}" />
     </Modal>
 
     <!-- Titles Grid -->
@@ -59,16 +59,30 @@
         :key="item.id"
         :title="item.title || ''"
         :poster-path="item.poster_path"
-        :link-to="routeWithLang(`/${item.type === MEDIA_TYPE.MOVIE ? 'movie' : 'tv-show'}/${item.tmdb_id}`)"
+        :link-to="
+          routeWithLang(
+            `/${item.type === MEDIA_TYPE.MOVIE ? 'movie' : 'tv-show'}/${item.tmdb_id}`
+          )
+        "
         :link-aria-label="$t('media.viewDetailsOf', { title: item.title })"
         :image-alt="$t('media.posterOf', { title: item.title })"
-        :no-image-aria-label="$t('media.noPosterAvailableFor', { title: item.title })"
+        :no-image-aria-label="
+          $t('media.noPosterAvailableFor', { title: item.title })
+        "
         :type="item.type"
         :aria-label="$t('media.titleCardLabel', { title: item.title })"
         :is-liked="titleStatuses.get(item.tmdb_id)?.liked || false"
-        :is-seen="titleStatuses.get(item.tmdb_id)?.status === TITLE_STATUS.SEEN || false"
-        :is-not-interested="titleStatuses.get(item.tmdb_id)?.status === TITLE_STATUS.NOT_INTERESTED || false"
-        :is-in-watchlist="titleStatuses.get(item.tmdb_id)?.status === TITLE_STATUS.WATCHLIST || false"
+        :is-seen="
+          titleStatuses.get(item.tmdb_id)?.status === TITLE_STATUS.SEEN || false
+        "
+        :is-not-interested="
+          titleStatuses.get(item.tmdb_id)?.status ===
+            TITLE_STATUS.NOT_INTERESTED || false
+        "
+        :is-in-watchlist="
+          titleStatuses.get(item.tmdb_id)?.status === TITLE_STATUS.WATCHLIST ||
+          false
+        "
       >
         <!-- Actions for logged users only -->
         <template v-if="isLoggedIn" #top-right-actions>
@@ -96,7 +110,10 @@ import { useSupabaseUser } from '#imports';
 import { useRouter } from 'vue-router';
 import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 import { TITLE_STATUS } from '@/constants/domain/titleStatus';
-import type { DiscoverList, DiscoverListItem } from '@/composables/database/discoverLists';
+import type {
+  DiscoverList,
+  DiscoverListItem,
+} from '@/composables/database/discoverLists';
 import TitleCard from './TitleCard.vue';
 import SeedListButton from './SeedListButton.vue';
 import DiscoverListItemActions from './DiscoverListItemActions.vue';
@@ -124,7 +141,9 @@ const user = useSupabaseUser();
 const isLoggedIn = computed(() => !!user.value);
 const { executeAction, executeLikedAction } = useTitleStatusAction();
 const loadingTitles = ref<Set<number>>(new Set());
-const titleStatuses = ref<Map<number, { liked: boolean; status: string | null }>>(new Map());
+const titleStatuses = ref<
+  Map<number, { liked: boolean; status: string | null }>
+>(new Map());
 const showAuthForm = ref(false);
 
 // Handle back navigation
@@ -158,8 +177,14 @@ const loadTitleStatuses = async () => {
       if (!item.tmdb_id) return null;
 
       try {
-        const { data: titleStatus } = await getTitleStatus(userId, item.tmdb_id);
-        const { data: likedTitle } = await getUserLikedTitle(userId, item.tmdb_id);
+        const { data: titleStatus } = await getTitleStatus(
+          userId,
+          item.tmdb_id
+        );
+        const { data: likedTitle } = await getUserLikedTitle(
+          userId,
+          item.tmdb_id
+        );
 
         return {
           tmdbId: item.tmdb_id,
@@ -167,7 +192,10 @@ const loadTitleStatuses = async () => {
           liked: !!likedTitle,
         };
       } catch (error) {
-        console.error(`[DiscoverListDetail] Error loading status for ${item.tmdb_id}:`, error);
+        console.error(
+          `[DiscoverListDetail] Error loading status for ${item.tmdb_id}:`,
+          error
+        );
         return null;
       }
     });
@@ -226,10 +254,7 @@ function getItemStatus(tmdbId: number) {
   };
 }
 
-async function handleAction(
-  item: DiscoverListItem,
-  action: string
-) {
+async function handleAction(item: DiscoverListItem, action: string) {
   if (!item.title || !item.tmdb_id) return;
   if (loadingTitles.value.has(item.tmdb_id)) return;
 
@@ -350,4 +375,3 @@ async function handleAction(
   }
 }
 </script>
-

@@ -49,7 +49,7 @@
         <AuthForm
           in-modal
           @success="showAuthForm = false"
-          @signup="showAuthForm = false"
+          @signup="() => {}"
         />
       </Modal>
     </PageContainer>

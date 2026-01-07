@@ -627,8 +627,9 @@ const handleAuthSuccess = () => {
 };
 
 // Handle signup success
+// Don't close the modal - let the user see the success message
 const handleSignupSuccess = () => {
-  showAuthForm.value = false;
+  // Modal stays open so user can see the "check your email" message
 };
 
 // Scroll to top state
