@@ -78,7 +78,7 @@ const userStore = computed(() => {
       fetchProfile: async () => {},
     };
   }
-  
+
   try {
     return useUserStore();
   } catch (error) {
@@ -737,7 +737,10 @@ const saveSelections = async () => {
 
           <!-- Provider Search -->
           <!-- IMPORTANT: Providers depend on region - only show if region is selected -->
-          <div v-if="!selectedRegion" class="text-sm text-gray-600 dark:text-gray-400 italic">
+          <div
+            v-if="!selectedRegion"
+            class="text-sm text-gray-600 dark:text-gray-400 italic"
+          >
             {{ $t('preferences.content.includedProviders.regionRequired') }}
           </div>
           <ProviderSelector
@@ -999,6 +1002,9 @@ const saveSelections = async () => {
                 : $t('home.generatingRecommendations')
             }}
           </h2>
+          <p v-if="saving" class="text-gray-700 dark:text-gray-300">
+            {{ $t('home.generatingRecommendationsDescription') }}
+          </p>
         </div>
       </Modal>
     </div>
