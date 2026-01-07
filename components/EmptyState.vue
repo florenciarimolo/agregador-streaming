@@ -1,6 +1,6 @@
 <template>
   <div
-    class="text-center py-12 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-3xl"
+    class="text-center p-6 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-3xl"
   >
     <component
       :is="iconComponent"
