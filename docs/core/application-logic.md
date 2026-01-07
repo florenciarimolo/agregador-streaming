@@ -1708,3 +1708,4 @@ onMounted(() => {
 - `server/api/users/title-status.delete.ts`: Delete logic
 - `supabase/schema.sql`: Database schema
 - `composables/useAuth.ts`: Password recovery flag management
+

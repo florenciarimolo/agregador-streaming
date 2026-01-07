@@ -1,0 +1,95 @@
+agregador-streaming/
+│
+├── assets/
+│   └── css/
+│
+├── components/
+│   ├── home/
+│   │   └── mockups/
+│   ├── icons/
+│   ├── layout/
+│   ├── typography/
+│   └── ui/
+│
+├── composables/
+│   └── database/
+│
+├── config/
+│
+├── constants/
+│   ├── api/
+│   ├── db/
+│   ├── domain/
+│   └── storage/
+│
+├── docs/
+│
+├── i18n/
+│   └── locales/
+│
+├── layouts/
+│
+├── middleware/
+│
+├── pages/
+│   ├── auth/
+│   ├── discover/
+│   │   └── list/
+│   ├── movie/
+│   └── tv-show/
+│       └── [id]/
+│           └── season/
+│
+├── plugins/
+│
+├── public/
+│   ├── fonts/
+│   ├── icons/
+│   │   └── flags/
+│   └── mockups/
+│
+├── scripts/
+│
+├── server/
+│   ├── api/
+│   │   ├── admin/
+│   │   ├── discover/
+│   │   │   └── list/
+│   │   │       └── [slug]/
+│   │   ├── imdb/
+│   │   │   ├── movies/
+│   │   │   └── tvshows/
+│   │   ├── recommendations/
+│   │   ├── seasons/
+│   │   │   └── [tvTmdbId]/
+│   │   │       └── [seasonNumber]/
+│   │   ├── titles/
+│   │   │   └── [tmdbId]/
+│   │   ├── tmdb/
+│   │   │   ├── movies/
+│   │   │   │   └── [id]/
+│   │   │   ├── search/
+│   │   │   └── tvshows/
+│   │   │       └── [id]/
+│   │   │           └── seasons/
+│   │   │               └── [season_id]/
+│   │   └── users/
+│   │       └── title-status/
+│   ├── middleware/
+│   ├── plugins/
+│   ├── routes/
+│   └── utils/
+│
+├── services/
+│
+├── stores/
+│
+├── supabase/
+│   └── migrations/
+│
+├── types/
+│   ├── enums/
+│   └── tmdb/
+│
+└── utils/
+

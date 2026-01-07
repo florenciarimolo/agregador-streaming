@@ -669,3 +669,5 @@ If a refactor:
   - Language is derived from URL for SEO, not from cookies
 - `components/LanguageSelector.vue`: Content language selector with flags
 - `components/RegionSelector.vue`: Region selector with flags
+- [Typography System](./typography.md): Typography system (referenced, not duplicated)
+

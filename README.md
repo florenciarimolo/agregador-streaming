@@ -103,6 +103,17 @@ The application will be available at `http://localhost:3000`
 - `npm run lint` - Run linter to verify code
 - `npm run typecheck` - Verify TypeScript types
 
+## 📚 Documentation
+
+This project has strict product and architectural rules.
+
+- `/docs` → Product, architecture, and technical documentation (source of truth)
+- `AGENTS.md` → Rules and constraints for contributors and AI agents
+
+Before making changes, read the documentation.
+
+---
+
 ## 📁 Project Structure
 
 ```

@@ -1,361 +1,389 @@
 # AGENTS.md
 
+This document defines non-negotiable rules for humans and AI agents working on this project.
+
+Failure to follow these rules results in architectural drift, broken assumptions, and unstable behavior.
+These rules exist to protect stability, not to optimize for speed or cleverness.
+
+---
+
 ## Global Conventions
 
-- **npm is mandatory** for all operations.
-- **Do not** use pnpm or yarn under any circumstances.
-- **TypeScript is required**.
-- **Tailwind CSS is the only styling solution**.
-- Icons must come from **tabler-icons**:
+- npm is mandatory for all operations
+- Do not use pnpm or yarn under any circumstances
+- TypeScript is required
+- Tailwind CSS is the only styling solution
+- Icons must come from tabler-icons
   - Explicit imports only
   - Never use barrel imports
-- Prefer **ESM** and modern browser syntax at all times.
-- The framework used in this project is **Nuxt 3**.
+- Prefer ESM and modern browser syntax
+- The framework used in this project is Nuxt 3
+
+
+---
+
+## Project Structure (Canonical)
+
+This project has a strict, intentional, and non-negotiable folder structure.
+
+The following tree is the canonical project structure.
+Agents must treat it as a contract, not a suggestion.
+
+No new folders, subfolders, or structural changes may be introduced unless explicitly requested.
+
+```text
+/components
+/layout -> Layout primitives (AppShell, Section, PageContainer)
+/ui -> Reusable UI components with behavior
+/features -> Domain-specific components (only if justified)
+/typography -> Typography primitives (labels, titles, body text)
+
+/composables -> Shared client-side logic
+/layouts -> Nuxt layouts (must remain simple)
+/pages -> Route-based pages only
+/middleware -> Route guards and access control
+/plugins -> Nuxt plugins (configuration only)
+/server -> Server-only logic and API routes
+/stores -> Pinia stores (client-only)
+/utils -> Pure helper functions (no side effects)
+/constants -> Domain, DB, API, and storage constants
+/docs -> Project documentation (SOURCE OF TRUTH)
+
+README.md -> Project overview and onboarding
+AGENTS.md -> Contribution and agent rules
+```
+
+
+This structure is NOT negotiable.
+
+---
+
+## Forbidden Structural Changes (Hard Rule)
+
+Unless explicitly requested, an agent must NOT:
+
+- Create new top-level folders
+- Introduce new subfolder categories
+  - Examples: services, hooks, shared, repositories, core
+- Restructure existing folders
+- Rename folders
+- Move files for clarity or organization
+- Split files purely to reduce size
+
+If a task requires altering the folder structure:
+
+- STOP
+- Explain why
+- Ask for confirmation
+- Do NOTHING until approved
+
+---
+
+## Folder Ownership Rules
+
+Each folder has a single, clear responsibility.
+
+Agents must NOT move logic between folders unless explicitly instructed.
+
+### components
+
+- UI and visual behavior only
+- No business rules
+- No hidden side effects
+- No recommendation logic
+- Data fetching only if trivial and UI-driven
+
+### composables
+
+- Shared client-side logic
+- Orchestrates flows
+- May depend on route, locale, UI state
+- Must NOT hide product or business rules
+
+### pages
+
+- Page orchestration only
+- May compose multiple composables
+- Can be long if readability is preserved
+- Pages express flows, not abstractions
+
+### server
+
+- Server-only logic
+- API routes and database access
+- No UI logic
+- No assumptions about client behavior
+
+### stores
+
+- Pinia stores (client-only)
+- No server usage
+- No initialization in plugins
+
+### utils
+
+- Pure functions only
+- No side effects
+- No framework dependencies
+- No API calls
+
+### constants
+
+- Domain, database, API, and storage constants
+- No logic
+- No runtime behavior
+
+If logic does not clearly belong to a folder:
+
+- STOP
+- Ask for confirmation
 
 ---
 
 ## Nuxt-Specific Rules
 
-- This project follows **Nuxt 3 conventions strictly**.
-- Do not fight the framework.
-- Do not reimplement features Nuxt already provides.
+- Follow Nuxt 3 conventions strictly
+- Do NOT fight the framework
+- Do NOT reimplement Nuxt features
 
 ### Auto-imports
 
-- Use Nuxt auto-imports where appropriate:
-  - `useRoute`
-  - `useRouter`
-  - `useFetch`
-  - `useAsyncData`
-  - `useState`
-  - `ref`
-  - `computed`
-- Do **not** manually import auto-imported utilities unless strictly required.
-- Do **not** disable auto-imports to satisfy personal preferences.
+Use Nuxt auto-imports where appropriate:
 
-### Composables
+- useRoute
+- useRouter
+- useFetch
+- useAsyncData
+- useState
+- ref
+- computed
 
-- Shared logic must live in `composables/`.
-- Composables must:
-  - Be focused and explicit
-  - Avoid hiding business rules
-  - Avoid side effects unless explicitly documented
-- Do not create composables prematurely.
-- Logic used only once must remain local.
+Rules:
 
-### Server & API Routes
-
-- Server logic must live under `server/`.
-- Respect the separation between:
-  - Server-only logic
-  - Client/UI logic
-- Do not access server routes from SEO or editorial pages unless explicitly documented.
-- Never assume API behavior.
-- Validate against `/docs` before changing endpoints.
-
-### Data Fetching
-
-- Prefer `useFetch` and `useAsyncData`.
-- Do not introduce custom fetch wrappers without documentation.
-- Do not add caching, revalidation, or deduplication strategies unless documented.
-- No personalization or dynamic behavior on SEO or public pages unless explicitly allowed.
-
-### Pages & Routing
-
-- Routing is file-based.
-- Do not introduce dynamic routes (`[slug]`, `[...catchAll]`) without documentation support.
-- URLs, slugs, ordering, and stability rules must match `/docs`.
-- Do not alter routing structure unless explicitly requested.
-
-### Layouts
-
-- Layouts must remain simple and stable.
-- Do not inject business or recommendation logic into layouts.
-- Layout changes affecting SEO or editorial structure require documentation validation.
-
-### State Management
-
-- Prefer Nuxt primitives (`useState`).
-- Do not introduce global state casually.
-- Avoid hidden coupling between state and recommendation logic.
-
-### Middleware
-
-- Use middleware sparingly.
-- Middleware must be explicit and easy to reason about.
-- Do not add middleware that alters SEO, routing, or content visibility unless documented.
+- Do NOT manually import auto-imported utilities
+- Do NOT disable auto-imports for stylistic reasons
 
 ---
 
-## Code Organization
+## Composables Rules
 
-- Build small components with a single responsibility.
-- Prefer composition over complex configuration.
-- Avoid premature abstractions.
-- Shared code must live in clearly named folders:
-  - `components`
-  - `layouts`
-  - `lib`
-  - `utils`
+- Shared logic must live in composables
+- Composables must:
+  - Be focused and explicit
+  - Avoid hiding business rules
+  - Avoid side effects unless documented
+- Do NOT create composables prematurely
+- Logic used only once must remain local
+
+---
+
+## Server & API Rules
+
+- Server logic lives under server
+- Respect separation between:
+  - Server-only logic
+  - Client or UI logic
+- Never assume API behavior
+- Validate against docs before changing endpoints
+- Do NOT access server routes from SEO or editorial pages unless documented
+
+---
+
+## Data Fetching Rules
+
+- Prefer useFetch and useAsyncData
+- No custom fetch wrappers without documentation
+- No caching, deduplication, or revalidation unless documented
+- No personalization on SEO or public pages unless explicitly allowed
+
+---
+
+## Routing & Pages
+
+- Routing is file-based
+- No dynamic routes without documentation support
+- URLs, slugs, and ordering must match docs
+- Do NOT alter routing structure without approval
+
+---
+
+## Layouts
+
+- Layouts must remain simple and stable
+- Do NOT inject business or recommendation logic into layouts
+- Layout changes affecting SEO require documentation validation
+
+---
+
+## State Management
+
+- Prefer Nuxt primitives such as useState
+- Do NOT introduce global state casually
+- Avoid coupling UI state with recommendation logic
+
+---
+
+## Middleware
+
+- Use middleware sparingly
+- Middleware must be explicit and predictable
+- Do NOT alter SEO, routing, or visibility unless documented
 
 ---
 
 ## TypeScript Rules
 
-- Avoid `any` and `unknown`.
-- Prefer type inference whenever possible.
+- Avoid any and unknown
+- Prefer inference when possible
 - If types are unclear:
-  - Stop
+  - STOP
   - Ask for clarification
   - Continue only after confirmation
 
 ---
 
-## UI & Styling
+## UI & Styling Rules
 
-- Tailwind CSS is the only styling approach.
-- Do not duplicate class lists if a component can be extracted.
-- Prioritize readability over visual micro-optimizations.
+- Tailwind CSS is mandatory
+- No inline styles
+- No CSS files
+- Do not duplicate class lists if a component can be extracted
 - Accessibility is not optional:
   - Use semantic HTML
-  - Apply ARIA roles when appropriate
+  - Apply ARIA where appropriate
   - Manage focus correctly
 
 ---
 
 ## Internationalization & Language Rules
 
-- This application is **fully multilingual**.
-- **Hardcoded user-facing text is forbidden**.
+This application is fully multilingual.
 
-### Translation Keys
+### Translation Keys (Strict)
 
-- All user-visible text **must** use i18n translation keys.
+- Hardcoded user-facing text is forbidden
 - When adding a new text:
-  - Always generate the translation key
-  - Always add it to **all supported languages**
-- Adding a key in a single language is **not acceptable**.
-- If the full list of languages is unclear:
-  - Stop
-  - Ask for clarification
-  - Do not guess
+  - Generate a translation key
+  - Add it to ALL supported languages
+- Adding a key in a single language is NOT acceptable
 
-### Language Consistency
+If the list of supported languages is unclear:
 
-- All documentation must be written in **English**.
-- Do **not** write documentation in Spanish or mix languages.
-- If existing documentation is in Spanish and needs to be updated:
-  - Rewrite it in English unless explicitly told otherwise
+- STOP
+- Ask for clarification
 
-### Code Comments
+### Documentation & Comments Language
 
-- All code comments must be written in **English**.
-- Do not introduce comments in Spanish.
+- All documentation must be written in English
+- Do NOT write documentation in Spanish
+- All code comments must be written in English
 
 ---
 
 ## Testing & Quality
 
-- Review CI workflows in `.github/workflows`.
+- Review CI workflows in .github/workflows
+- Code with type errors, lint errors, or failing tests is NOT acceptable
 
-- Run tests using:
-  ```bash
-  npm test
-  ```
+Commands:
 
-- Or:
-  ```bash
-  npm run turbo:test -- --filter <project_name>
-  ```
+```bash
+npm run lint
+npm test
+```
 
-- For Vitest:
-  ```bash
-  npm run vitest -- run -t "<test_name>"
-  ```
 
-- After moving files or changing imports, always run:
-  ```bash
-  npm run lint
-  ```
-
-- Code with type errors, lint errors, or failing tests is not acceptable.
-- Add or update tests whenever behavior changes, even if not explicitly requested.
+Add or update tests whenever behavior changes.
 
 ---
 
-## Performance & Technical Decisions
+## Performance Rules
 
-- Do not guess performance, bundle size, or load times.
-- Always measure first.
-- If something feels slow:
-  - Add instrumentation before optimizing
-- Validate changes on a small scale before rolling them out globally.
+- Do NOT guess performance
+- Always measure first
+- No optimizations without evidence
+- No caching or memoization unless explicitly documented
 
 ---
 
 ## Commits & Pull Requests
 
-- PR title format:
-  ```text
-  [<project_name>] Clear and concise description
-  ```
-- Keep PRs small and focused.
-- Before committing, always run:
-  ```bash
-  npm run lint
-  npm test
-  ```
-- Clearly explain:
+### Pull Request Title Format
+
+```text
+[<project_name>] Clear and concise description
+```
+
+### Rules
+
+- Keep PRs small and focused
+- Each PR must clearly explain:
   - What changed
   - Why it changed
   - How it was verified
-- If you introduce a new rule, document it in this file.
-
----
-
-## Agent Behavior
-
-- If a request is unclear, ask specific questions before acting.
-- Simple, well-defined tasks may be executed directly.
-- Complex changes require confirmation before execution:
-  - Refactors
-  - New features
-  - Architectural decisions
-- Do not assume implicit requirements.
-- Missing information must be requested.
-- Do not add `console.log`, `console.debug`, or similar statements
-  unless explicitly requested for debugging purposes.
-
-- Before considering a task finished, always:
-  - Check for linting errors
-  - Check for linting warnings
-  - Fix them unless explicitly told not to
 
 ---
 
 ## Documentation Is the Source of Truth
 
-- **alwaysApply: true**
-- This project has strict architectural and product rules documented in `/docs`.
+alwaysApply: true
 
-Before implementing, refactoring, or suggesting any solution:
+Before implementing, refactoring, or suggesting anything:
 
-- Read all documentation files in `/docs`.
-- Treat documentation as the single source of truth:
-  - Do not invent logic or patterns
-  - Do not improve behavior unless requested
-  - Ask if something is unclear
-- Follow documented principles strictly:
-  - Editorial vs recommendation separation
-  - No personalization on SEO/public pages
-  - No forbidden recommendation pools
-  - Respect `source` vs `explanation_code`
-  - Respect SEO stability rules
-- If a request conflicts with documentation:
-  - Stop
-  - Explain the conflict
-  - Propose options
+- Read ALL files in docs
+- Follow the priority order:
+  - Documentation > Code > Intuition
+- Do NOT invent logic
+- Do NOT improve behavior unless explicitly requested
 
----
+If code conflicts with documentation:
 
-## Forbidden Patterns in Nuxt (Hard Rules)
-
-- If any of the following are required, stop and ask for confirmation.
-
-### Architecture & Framework Abuse
-
-- Reimplement Nuxt features (routing, SSR, data fetching, state).
-- Introduce custom frameworks or meta-architectures.
-- Add global plugins or injections without documentation.
-- Disable Nuxt defaults for stylistic reasons.
-
-### Over-engineering
-
-- Introduce service layers, repositories, use cases, or clean architecture patterns.
-- Abstract logic used only once.
-- Create generic utilities for future use.
-
-### Data & Product Logic
-
-- Infer business logic from code.
-- Change recommendation behavior intuitively.
-- Share logic between editorial/SEO and recommendations unless documented.
-- Add personalization where it does not explicitly exist.
-
-### SEO & Public Pages
-
-- Make SEO, Discover, or editorial pages dynamic or personalized.
-- Add client-side fetching where static or SSR is expected.
-- Change slugs, URLs, ordering, or structure without documentation.
-
-### State & Side Effects
-
-- Introduce global state casually.
-- Hide side effects inside composables.
-- Couple UI state with recommendation logic.
-- Persist state implicitly unless documented.
-
-### Performance Guessing
-
-- Optimize without measurements.
-- Change caching or revalidation strategies arbitrarily.
-- Add memoization or throttling preemptively.
+- STOP
+- Explain the conflict
+- Propose options
+- Do NOT proceed without confirmation
 
 ---
 
 ## AI Agent Operating Mode (Strict)
 
-- This section applies specifically to AI agents.
+This section applies exclusively to AI agents.
 
-### Operating Principles
+### Core Principles
 
-- Documentation > Code > Intuition
-- If it is not written in `/docs`, it is not safe to assume.
-- Stability is a feature, not a limitation.
+- Stability > Cleverness
+- Explicit > Abstract
+- Duplication > Indirection
+- Documentation > Assumptions
 
 ### Execution Rules
 
-- Execute immediately only if:
-  - The task is small
-  - The scope is explicit
-  - The behavior is documented
-- Do not execute if:
-  - Product behavior may change
-  - Architecture may be affected
-  - SEO, Discover, or recommendations are involved
+An AI agent may execute immediately ONLY IF:
 
-In those cases:
+- The task is small
+- The scope is explicit
+- The behavior is documented
 
-- Stop
-- Summarize understanding
+Otherwise, the agent MUST:
+
+- STOP
+- Summarize its understanding
 - Ask for confirmation
-
-### Communication Requirements
-
-- Before complex changes, explicitly state:
-  - Files that will change
-  - Behavior that will change
-  - Behavior that will not change
-- No silent refactors.
-- No drive-by improvements.
-
-### Decision Constraints
-
-- An AI agent must never:
-  - Guess product intent
-  - Fill gaps creatively
-  - Infer rules from patterns
-  - Fix things that are not broken
-
-If a decision is ambiguous:
-
-- Ask
 - Wait
-- Do nothing
+
+### Absolute Prohibitions
+
+An AI agent must NEVER:
+
+- Guess product intent
+- Invent structure
+- Fill gaps creatively
+- Infer business rules from code
+- Fix things that are not broken
 
 ### Default Safe Mode
 
-- When in doubt, choose:
-  - Explicit code over abstraction
-  - Duplication over indirection
-  - Stability over cleverness
+When in doubt:
+
+- Do nothing
+- Ask
