@@ -171,7 +171,7 @@
   </header>
 
   <!-- Mobile Navbar -->
-  <header class="w-full pt-4 md:hidden">
+  <header class="w-full md:hidden">
     <AppShell>
       <nav>
         <div class="flex justify-between items-center py-3">
