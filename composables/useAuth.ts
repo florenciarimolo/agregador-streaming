@@ -1,3 +1,4 @@
+import { readonly } from 'vue';
 import { validatePassword } from '@/utils/passwordValidation';
 import { STORAGE_KEYS } from '@/constants/storage/keys';
 import { DEFAULT_LANGUAGE_URL_CODE } from '@/constants/urlLanguageCodes';
@@ -262,7 +263,10 @@ export const useAuth = () => {
         } catch (storeError) {
           // Store might not be available, but that's okay - the listener will handle it
           if (process.env.NODE_ENV === 'development') {
-            console.warn('[useAuth] Could not reset store during signOut:', storeError);
+            console.warn(
+              '[useAuth] Could not reset store during signOut:',
+              storeError
+            );
           }
         }
       }

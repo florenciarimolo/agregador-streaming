@@ -22,6 +22,8 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
+  type: undefined,
+  label: undefined,
   size: 'xs',
 });
 
