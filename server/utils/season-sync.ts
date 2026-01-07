@@ -7,7 +7,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { TABLES } from '@/constants/db/tables';
 import { SEASONS_COLUMNS } from '@/constants/db/columns';
-import type { Season } from '@/types/TVShow';
 import { upsertSeason } from '@/services/seasons';
 import { $fetch } from 'ofetch';
 

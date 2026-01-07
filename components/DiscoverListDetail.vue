@@ -111,7 +111,6 @@ import { getUserLikedTitle, getTitleStatus } from '@/services/userTitleStatus';
 import { useTitleStatusAction } from '@/composables/useTitleStatusAction';
 import { useRouteWithLang } from '@/composables/useRouteWithLang';
 
-const { t } = useI18n();
 const router = useRouter();
 
 interface Props {

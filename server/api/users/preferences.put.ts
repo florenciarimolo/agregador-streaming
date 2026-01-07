@@ -1,59 +1,17 @@
-import { serverSupabaseUser } from '#supabase/server';
 import { createClient } from '@supabase/supabase-js';
 import type { UserPreferences } from '@/services/preferences';
-import { MEDIA_TYPE } from '@/constants/domain/mediaType';
-import {
-  EXPLORATION_MODE,
-} from '@/constants/domain/explorationMode';
-import {
-  PRIORITIZE_CONTENT,
-} from '@/constants/domain/prioritizeContent';
+import { EXPLORATION_MODE } from '@/constants/domain/explorationMode';
+import { PRIORITIZE_CONTENT } from '@/constants/domain/prioritizeContent';
 import { TABLES } from '@/constants/db/tables';
 import { USER_PREFERENCES_COLUMNS } from '@/constants/db/columns';
-import {
-  LanguageCode,
-  DEFAULT_LANGUAGE,
-  toTMDBLanguageCode,
-} from '@/constants/languages';
+import { getUserIdFromEvent } from '@/server/utils/user-preferences';
 
 export default defineEventHandler(async (event) => {
   try {
     const config = useRuntimeConfig();
-    let userId: string | null = null;
 
-    // Try to get user from cookies first
-    const userFromCookies = await serverSupabaseUser(event);
-
-    if (userFromCookies) {
-      userId =
-        userFromCookies.id || (userFromCookies as { sub?: string }).sub || null;
-    } else {
-      // Try Authorization header
-      const authHeader = event.node.req.headers.authorization;
-
-      if (authHeader && authHeader.startsWith('Bearer ')) {
-        const token = authHeader.substring(7);
-
-        try {
-          const parts = token.split('.');
-          if (parts.length === 3) {
-            const payload = JSON.parse(
-              Buffer.from(
-                parts[1].replace(/-/g, '+').replace(/_/g, '/'),
-                'base64'
-              ).toString()
-            );
-
-            userId = payload.sub;
-          }
-        } catch (err) {
-          // Error decoding token
-          if (import.meta.dev) {
-            console.error('Error decoding token:', err);
-          }
-        }
-      }
-    }
+    // Use centralized function to get userId
+    const userId = await getUserIdFromEvent(event);
 
     if (!userId) {
       throw createError({
@@ -86,10 +44,20 @@ export default defineEventHandler(async (event) => {
       );
     }
 
-    if (body.region === null || body.region === undefined) {
-      preferences.region = null;
-    } else if (typeof body.region === 'string' && body.region.length === 2) {
-      preferences.region = body.region.toUpperCase();
+    // Only update region if it's explicitly provided in the body with a valid value
+    // NEVER save null - region is mandatory and can only be changed, not cleared
+    if ('region' in body) {
+      if (
+        body.region === null ||
+        body.region === undefined ||
+        body.region === ''
+      ) {
+        // Ignore null/undefined/empty - don't update region field
+        // This preserves existing region value
+      } else if (typeof body.region === 'string' && body.region.length === 2) {
+        // Only update if it's a valid 2-character region code
+        preferences.region = body.region.toUpperCase();
+      }
     }
 
     if (

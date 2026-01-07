@@ -1,7 +1,7 @@
 // useSupabaseClient is auto-imported by Nuxt
 import { TABLES } from '@/constants/db/tables';
 import { USER_TITLE_STATUS_COLUMNS } from '@/constants/db/columns';
-import { TITLE_STATUS, type TitleStatusType } from '@/constants/domain/titleStatus';
+import type { TitleStatusType } from '@/constants/domain/titleStatus';
 
 /**
  * Service: User title status operations

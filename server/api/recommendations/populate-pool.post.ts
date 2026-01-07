@@ -1,7 +1,6 @@
-import { serverSupabaseUser } from '#supabase/server';
 import { createClient } from '@supabase/supabase-js';
 import { getTMDBConfig } from '@/server/utils/config';
-import { getUserTMDBParams } from '@/server/utils/user-preferences';
+import { getUserTMDBParams, getUserIdFromEvent } from '@/server/utils/user-preferences';
 import { devLog, devError, safeError } from '@/server/utils/logger';
 import {
   getPoolCount,
@@ -17,11 +16,9 @@ import { DEFAULT_LANGUAGE_ISO } from '@/constants/languages';
 import type {
   TMDBResponse,
   TMDBTitleDetails,
-  TMDBWatchProvidersResponse,
 } from '@/types/tmdb/Responses';
 import { TABLES } from '@/constants/db/tables';
-import { PROFILES_COLUMNS, USER_PREFERENCES_COLUMNS, TITLES_COLUMNS, USER_TITLE_STATUS_COLUMNS } from '@/constants/db/columns';
-import { SCORE_WEIGHTS } from '@/constants/domain/scoring';
+import { TITLES_COLUMNS, USER_TITLE_STATUS_COLUMNS } from '@/constants/db/columns';
 import {
   getTitleInLanguage,
   type MultiLanguageText,
@@ -43,23 +40,10 @@ const TARGET_POOL_SIZE = 150; // Target size before cleanup
  */
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig();
-  let user = null;
-  let userId: string | null = null;
+  // Use centralized function to get userId
+  const userId = await getUserIdFromEvent(event);
 
-  // Get user from cookies
-  const userFromCookies = await serverSupabaseUser(event);
-
-  if (userFromCookies) {
-    userId =
-      userFromCookies.id || (userFromCookies as { sub?: string }).sub || null;
-
-    if (userId) {
-      user = { id: userId, sub: userId };
-      devLog('[PopulatePool] User from cookies');
-    }
-  }
-
-  if (!user || !userId) {
+  if (!userId) {
     devError('[PopulatePool] Unauthorized - no user found');
     throw createError({
       statusCode: 401,
@@ -87,32 +71,21 @@ export default defineEventHandler(async (event) => {
     const tmdbConfig = getTMDBConfig(language, region);
     devLog('[PopulatePool] Using language:', language, 'region:', region);
 
-    // Get user preferences for genres and providers
-    const { data: userPreferences } = await supabase
-      .from(TABLES.USER_PREFERENCES)
-      .select(
-        `${USER_PREFERENCES_COLUMNS.FAVORITE_GENRES}, ${USER_PREFERENCES_COLUMNS.INCLUDED_PROVIDERS}`
-      )
-      .eq(USER_PREFERENCES_COLUMNS.USER_ID, userId)
-      .maybeSingle();
-
-    const favoriteGenres =
-      (userPreferences?.[
-        USER_PREFERENCES_COLUMNS.FAVORITE_GENRES
-      ] as number[]) || [];
-    const includedProviders =
-      (userPreferences?.[
-        USER_PREFERENCES_COLUMNS.INCLUDED_PROVIDERS
-      ] as number[]) || [];
-
-    devLog(
-      '[PopulatePool] User preferences - genres:',
-      favoriteGenres,
-      'providers:',
-      includedProviders
-    );
-
-    // Check if we should clear the entire pool (e.g., when preferences change)
+    /**
+     * clearPool=true debe usarse SOLO cuando:
+     * - El usuario cambia su región (define nuevo universo TMDB)
+     * - Onboarding inicial cuando no existe pool
+     * 
+     * NO usar para:
+     * - Cambio de idioma (solo cambia lectura de JSONB)
+     * - Cambios de géneros o plataformas (solo filtran en runtime)
+     * - Likes/dislikes (solo ajustan preference_score incrementalmente)
+     * 
+     * IMPORTANTE: populate-pool define el UNIVERSO de contenido disponible.
+     * NUNCA filtra por preferencias de usuario (géneros/providers).
+     * Los filtros se aplican SOLO en runtime en recommendations/index.get.ts
+     */
+    // Check if we should clear the entire pool (e.g., when region changes)
     const query = getQuery(event);
     const clearPool = query.clearPool === 'true' || query.clearPool === true;
 
@@ -217,12 +190,6 @@ export default defineEventHandler(async (event) => {
           region,
           false
         );
-        const extractedPosterPath = getTitleInLanguage(
-          posterPathJsonb,
-          language,
-          region,
-          true
-        );
 
         // Check if we need to fetch from TMDB (missing in language or no DB entry)
         // IMPORTANT: Only use DB data if we have the exact language (ISO format), no fallbacks
@@ -284,7 +251,6 @@ export default defineEventHandler(async (event) => {
         // Only use extracted from DB if it's in the exact ISO format (no fallbacks)
         const finalTitle = titleText; // Always use TMDB title when we fetch (ISO format)
         let finalOverview = fullResponse.overview || '';
-        const finalPosterPath = fullResponse.poster_path || null;
 
         // Determine primary language for region
         const primaryLanguage = region
@@ -405,67 +371,6 @@ export default defineEventHandler(async (event) => {
       }
     };
 
-    // Helper to fetch watch providers for a title
-    const fetchWatchProviders = async (
-      tmdbId: number,
-      type: typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV
-    ): Promise<number[]> => {
-      try {
-        const endpoint =
-          type === MEDIA_TYPE.MOVIE
-            ? `/movie/${tmdbId}/watch/providers`
-            : `/tv/${tmdbId}/watch/providers`;
-        const response = await $fetch<TMDBWatchProvidersResponse>(
-          `${tmdbConfig.baseUrl}${endpoint}`,
-          {
-            query: {
-              api_key: tmdbConfig.apiKey,
-            },
-          }
-        );
-
-        if (!response) return [];
-
-        // Get providers from the region (flatrate, buy, rent)
-        // Try both uppercase and lowercase region codes
-        const regionLower = tmdbConfig.region.toLowerCase();
-        const regionUpper = tmdbConfig.region.toUpperCase();
-        const regionData =
-          response.results?.[regionLower] ||
-          response.results?.[regionUpper] ||
-          {};
-        const providers: number[] = [];
-
-        // Combine all provider types
-        if (regionData.flatrate) {
-          providers.push(
-            ...regionData.flatrate.map(
-              (p: { provider_id: number }) => p.provider_id
-            )
-          );
-        }
-        if (regionData.buy) {
-          providers.push(
-            ...regionData.buy.map((p: { provider_id: number }) => p.provider_id)
-          );
-        }
-        if (regionData.rent) {
-          providers.push(
-            ...regionData.rent.map(
-              (p: { provider_id: number }) => p.provider_id
-            )
-          );
-        }
-
-        return providers;
-      } catch (error) {
-        safeError(
-          `[PopulatePool] Error fetching providers for ${tmdbId}`,
-          error
-        );
-        return [];
-      }
-    };
 
     // Helper to fetch and process TMDB results
     const fetchAndProcess = async (
@@ -494,7 +399,9 @@ export default defineEventHandler(async (event) => {
           if (!response.results || response.results.length === 0) break;
 
           // Filter by minimum quality (less strict)
-          let filtered = response.results.filter((result) => {
+          // IMPORTANT: NO filtrar por géneros ni providers aquí
+          // populate-pool define el UNIVERSO, los filtros se aplican en runtime
+          const filtered = response.results.filter((result) => {
             if (processed.has(result.id)) return false;
             if (excludedTmdbIds.has(result.id)) return false;
             if (likedTmdbIds.has(result.id)) return false;
@@ -508,16 +415,6 @@ export default defineEventHandler(async (event) => {
             return meetsQuality;
           });
 
-          // Filter by favorite genres if user has preferences
-          if (favoriteGenres.length > 0) {
-            filtered = filtered.filter((result) => {
-              // Check if any of the result's genres match user's favorite genres
-              return result.genre_ids.some((genreId: number) =>
-                favoriteGenres.includes(genreId)
-              );
-            });
-          }
-
           // Process filtered results
           for (const result of filtered) {
             if (entriesToInsert.length >= MAX_POOL_SIZE) break;
@@ -525,35 +422,23 @@ export default defineEventHandler(async (event) => {
 
             processed.add(result.id);
 
-            // Filter by providers if user has preferences
-            if (includedProviders.length > 0) {
-              const titleProviders = await fetchWatchProviders(result.id, type);
-              // Check if any of the title's providers match user's included providers
-              const hasMatchingProvider = titleProviders.some((providerId) =>
-                includedProviders.includes(providerId)
-              );
-
-              if (!hasMatchingProvider) {
-                // Skip this title if it doesn't have any of the user's preferred providers
-                devLog(
-                  `[PopulatePool] Skipping ${result.id} (${type}) - no matching providers. Title has: [${titleProviders.join(', ')}], User wants: [${includedProviders.join(', ')}]`
-                );
-                continue;
-              }
-              devLog(
-                `[PopulatePool] Including ${result.id} (${type}) - has matching provider`
-              );
-            }
-
             // Fetch full title details to ensure they're in titles table
             // (title_data removed from pool, data comes from titles table)
             await fetchTitleDetails(result.id, type);
+
+            // Calculate base_score from popularity/rating
+            // Normalize vote_average (0-10) to a score (0-50)
+            const baseScore = result.vote_average
+              ? (result.vote_average / 10) * 50
+              : 25; // Default if no rating
 
             entriesToInsert.push({
               tmdb_id: result.id,
               type,
               source,
-              score: 0, // Initial score
+              base_score: baseScore,
+              preference_score: 0,
+              score: baseScore, // base_score + preference_score (0)
               explanation_code: explanationCode,
             });
           }
@@ -623,22 +508,19 @@ export default defineEventHandler(async (event) => {
       3
     );
 
-    // 3. Fetch discover by genres (discover)
-    // Use user's favorite genres if available, otherwise use top genres from liked titles
+    // 3. Fetch discover by popular genres (discover)
+    // IMPORTANT: NO usar géneros del usuario aquí
+    // Usar géneros populares para diversidad, o géneros de títulos liked si existen
     let genresToUse: number[] = [];
 
-    if (favoriteGenres.length > 0) {
-      // Use user's favorite genres
-      genresToUse = favoriteGenres.slice(0, 3);
-      devLog('[PopulatePool] Using user favorite genres:', genresToUse);
-    } else {
-      // Fallback: Get user's top genres from liked titles
+    // Get user's top genres from liked titles for diversity
+    if (userLikedStatuses && userLikedStatuses.length > 0) {
       const { data: likedTitlesForGenres } = await supabase
         .from(TABLES.TITLES)
         .select(TITLES_COLUMNS.GENRES)
         .in(
           TITLES_COLUMNS.TMDB_ID,
-          userLikedStatuses?.map((s) => s.tmdb_id) || []
+          userLikedStatuses.map((s) => s.tmdb_id)
         )
         .not(TITLES_COLUMNS.GENRES, 'is', null);
 
@@ -664,7 +546,14 @@ export default defineEventHandler(async (event) => {
         .slice(0, 3)
         .map(([genreId]) => genreId);
 
-      devLog('[PopulatePool] Using top genres from liked titles:', genresToUse);
+      devLog('[PopulatePool] Using top genres from liked titles for diversity:', genresToUse);
+    }
+
+    // If no liked titles, use popular genres for diversity
+    if (genresToUse.length === 0) {
+      // Popular genres: Action, Drama, Comedy
+      genresToUse = [28, 18, 35];
+      devLog('[PopulatePool] Using default popular genres for diversity:', genresToUse);
     }
 
     if (genresToUse.length > 0) {
@@ -696,12 +585,8 @@ export default defineEventHandler(async (event) => {
     }
 
     // 4. Fetch easy to watch (comedy/animation) (easy)
-    // Only if user doesn't have favorite genres, or if comedy/animation are in favorites
-    const shouldFetchEasy =
-      favoriteGenres.length === 0 ||
-      favoriteGenres.some((g) => g === 35 || g === 16); // Comedy or Animation
-
-    if (shouldFetchEasy) {
+    // Always fetch for diversity, regardless of user preferences
+    {
       await fetchAndProcess(
         `${tmdbConfig.baseUrl}/discover/movie`,
         {
@@ -728,6 +613,8 @@ export default defineEventHandler(async (event) => {
     }
 
     // Insert entries into pool
+    // IMPORTANT: base_score and preference_score are set above
+    // score = base_score + preference_score (where preference_score = 0 initially)
     if (entriesToInsert.length > 0) {
       devLog('[PopulatePool] Inserting entries:', entriesToInsert.length);
       const inserted = await insertPoolEntries(

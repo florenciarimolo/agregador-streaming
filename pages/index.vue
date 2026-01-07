@@ -4,7 +4,6 @@ import { useRoute, useRouter } from 'vue-router';
 import { useUserStore } from '@/stores/user';
 import { useRecommendations } from '@/composables/useRecommendations';
 import { useTitleActions } from '@/composables/useTitleActions';
-import { useUserRegion } from '@/composables/useUserRegion';
 import { TITLE_STATUS } from '@/constants/domain/titleStatus';
 import { QUERY_PARAMS } from '@/constants/api/queryParams';
 import { useHreflang } from '@/composables/useHreflang';
@@ -12,7 +11,10 @@ import { useCanonical } from '@/composables/useCanonical';
 import AppShell from '@/components/layout/AppShell.vue';
 import PageContainer from '@/components/layout/PageContainer.vue';
 import Section from '@/components/layout/Section.vue';
+import SectionTitle from '@/components/layout/SectionTitle.vue';
 import Button from '@/components/ui/Button.vue';
+import IconFilter from '@/components/icons/IconFilter.vue';
+import FilterCards from '@/components/home/FilterCards.vue';
 import ProblemSection from '@/components/home/ProblemSection.vue';
 import ProductFlowSection from '@/components/home/ProductFlowSection.vue';
 import DifferentiationSection from '@/components/home/DifferentiationSection.vue';
@@ -22,6 +24,8 @@ import FaqSection from '@/components/home/FaqSection.vue';
 import FinalCtaSection from '@/components/home/FinalCtaSection.vue';
 import AnimatedBackground from '@/components/AnimatedBackground.vue';
 import { useScrollAnimation } from '@/composables/useScrollAnimation';
+import { getSession } from '@/services/auth';
+import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 
 // Middleware handles onboarding check - if user has session, onboarding is completed
 definePageMeta({
@@ -145,33 +149,289 @@ const {
 } = useTitleActions(
   recommendations,
   allRecommendations,
-  filterRecommendationsByType,
-  fetchRecommendations
+  filterRecommendationsByType
 );
 
-// Use composable for user region (has cache, avoids duplicate API calls)
-const { getUserRegion } = useUserRegion();
+// User region (will be set from preferences)
 const userRegion = ref<string | null>(null);
 const preferencesPending = ref(false);
+const regionLoadAttempted = ref(false);
 
-// Fetch user region once when user is available
+// Filter state
+const showFilterCards = ref(false);
+const selectedGenres = ref<Array<{ id: number; name: string }>>([]);
+const selectedProviders = ref<
+  Array<{
+    provider_id: number;
+    provider_name: string;
+    logo_path: string | null;
+  }>
+>([]);
+const filtersLoading = ref(false);
+
+// Preload genres using useAsyncData
+const { data: genresData } = useAsyncData(
+  'home-genres',
+  async () => {
+    const [movieResponse, tvResponse] = await Promise.all([
+      $fetch<{ genres: Array<{ id: number; name: string }> }>(
+        `/api/tmdb/genres?type=${MEDIA_TYPE.MOVIE}`
+      ),
+      $fetch<{ genres: Array<{ id: number; name: string }> }>(
+        `/api/tmdb/genres?type=${MEDIA_TYPE.TV}`
+      ),
+    ]);
+    return { movie: movieResponse, tv: tvResponse };
+  },
+  {
+    server: false,
+    default: () => ({ movie: { genres: [] }, tv: { genres: [] } }),
+  }
+);
+
+const availableGenres = computed(() => {
+  if (!genresData.value) return [];
+  const allGenres: Array<{
+    id: number;
+    name: string;
+    type?: typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV;
+  }> = [];
+  const movieGenres = genresData.value.movie?.genres || [];
+  movieGenres.forEach((g: { id: number; name: string }) => {
+    if (g.name) {
+      allGenres.push({ id: g.id, name: g.name, type: MEDIA_TYPE.MOVIE });
+    }
+  });
+  const tvGenres = genresData.value.tv?.genres || [];
+  tvGenres.forEach((g: { id: number; name: string }) => {
+    if (g.name) {
+      allGenres.push({ id: g.id, name: g.name, type: MEDIA_TYPE.TV });
+    }
+  });
+  return allGenres
+    .filter((genre) => genre.name)
+    .sort((a, b) => {
+      if (a.type !== b.type) {
+        return a.type === MEDIA_TYPE.MOVIE ? -1 : 1;
+      }
+      return (a.name || '').localeCompare(b.name || '');
+    });
+});
+
+// Load providers based on user region
+const providersData = ref<{
+  results: Array<{
+    provider_id: number;
+    provider_name: string;
+    logo_path: string | null;
+  }>;
+} | null>(null);
+
+const loadProvidersForRegion = async (region: string) => {
+  try {
+    const response = await $fetch<{
+      results: Array<{
+        provider_id: number;
+        provider_name: string;
+        logo_path: string | null;
+      }>;
+    }>('/api/tmdb/watch-providers', {
+      query: { region },
+    });
+    providersData.value = response;
+  } catch (error) {
+    console.error('Error loading providers for region:', error);
+    providersData.value = { results: [] };
+  }
+};
+
+const availableProviders = computed(() => {
+  if (!providersData.value) return [];
+  if (!providersData.value.results) return [];
+  if (!Array.isArray(providersData.value.results)) return [];
+  return providersData.value.results.map((p) => ({
+    provider_id: p.provider_id,
+    provider_name: p.provider_name,
+    logo_path: p.logo_path,
+  }));
+});
+
+// Store preferences data to map genres/providers when they become available
+const userPreferencesData = ref<{
+  favorite_genres?: number[];
+  included_providers?: number[];
+  region?: string | null;
+} | null>(null);
+
+// Fetch user preferences (genres and providers) - only called once when user is available
+const fetchUserPreferences = async () => {
+  if (!user.value) return;
+
+  filtersLoading.value = true;
+  try {
+    const {
+      data: { session },
+    } = await getSession();
+
+    if (!session?.access_token) {
+      return;
+    }
+
+    const response = await $fetch<{
+      success: boolean;
+      preferences: {
+        favorite_genres?: number[];
+        included_providers?: number[];
+        region?: string | null;
+      } | null;
+    }>('/api/users/preferences', {
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+    });
+
+    if (import.meta.dev) {
+      console.log('[pages/index.vue] Raw API response:', {
+        success: response.success,
+        hasPreferences: !!response.preferences,
+        region: response.preferences?.region,
+        regionType: typeof response.preferences?.region,
+        regionIsNull: response.preferences?.region === null,
+        regionIsUndefined: response.preferences?.region === undefined,
+        fullResponse: JSON.stringify(response, null, 2),
+      });
+    }
+
+    if (response.success && response.preferences) {
+      // Store preferences data for reactive mapping
+      userPreferencesData.value = response.preferences;
+
+      // Set userRegion from preferences (single source of truth)
+      // Check for null explicitly since it can come from database
+      const regionValue = response.preferences.region;
+      if (
+        regionValue !== null &&
+        regionValue !== undefined &&
+        typeof regionValue === 'string' &&
+        regionValue.length > 0
+      ) {
+        if (userRegion.value !== regionValue) {
+          if (import.meta.dev) {
+            console.log(
+              '[pages/index.vue] Setting userRegion from preferences:',
+              regionValue
+            );
+          }
+          userRegion.value = regionValue;
+        }
+      } else {
+        // Explicitly set to null if region is not available
+        if (userRegion.value !== null) {
+          if (import.meta.dev) {
+            console.warn(
+              '[pages/index.vue] Region is null/undefined/empty in preferences, clearing userRegion. Value:',
+              regionValue,
+              'Type:',
+              typeof regionValue
+            );
+          }
+          userRegion.value = null;
+        }
+      }
+
+      // Load providers for region if region is available
+      if (response.preferences.region) {
+        await loadProvidersForRegion(response.preferences.region);
+      }
+
+      // Map genres and providers immediately if available
+      mapPreferencesToSelections();
+    }
+  } catch (error) {
+    console.error('Error fetching user preferences:', error);
+  } finally {
+    filtersLoading.value = false;
+  }
+};
+
+// Map preferences to selected genres/providers (called reactively when data becomes available)
+const mapPreferencesToSelections = () => {
+  if (!userPreferencesData.value) return;
+
+  // Map genres
+  if (
+    userPreferencesData.value.favorite_genres &&
+    userPreferencesData.value.favorite_genres.length > 0
+  ) {
+    if (availableGenres.value.length > 0) {
+      selectedGenres.value = availableGenres.value.filter((g) =>
+        userPreferencesData.value?.favorite_genres?.includes(g.id)
+      );
+    }
+  } else {
+    selectedGenres.value = [];
+  }
+
+  // Map providers
+  if (
+    userPreferencesData.value.included_providers &&
+    userPreferencesData.value.included_providers.length > 0
+  ) {
+    if (availableProviders.value.length > 0) {
+      selectedProviders.value = availableProviders.value.filter((p) =>
+        userPreferencesData.value?.included_providers?.includes(p.provider_id)
+      );
+    }
+  } else {
+    selectedProviders.value = [];
+  }
+};
+
+// Watch for genres/providers to become available and map preferences reactively
+// This avoids duplicate API calls - we fetch preferences once, then map when data is ready
+watch(
+  [availableGenres, availableProviders],
+  () => {
+    if (userPreferencesData.value) {
+      mapPreferencesToSelections();
+    }
+  },
+  { immediate: false }
+);
+
+// Fetch user preferences (including region) once when user is available
 watch(
   user,
   async (newUser) => {
     if (!newUser) {
       userRegion.value = null;
       preferencesPending.value = false;
+      regionLoadAttempted.value = false;
+      userPreferencesData.value = null;
       return;
     }
 
     preferencesPending.value = true;
+    regionLoadAttempted.value = false;
     try {
-      userRegion.value = await getUserRegion();
+      // Fetch all preferences in a single call (includes region, genres, providers)
+      await fetchUserPreferences();
+      if (import.meta.dev) {
+        console.log(
+          '[pages/index.vue] User preferences loaded, region:',
+          userRegion.value
+        );
+      }
+      // Load providers for region (already done in fetchUserPreferences if region exists)
+      if (userRegion.value && availableProviders.value.length === 0) {
+        await loadProvidersForRegion(userRegion.value);
+      }
     } catch (error) {
-      console.error('Error fetching user region:', error);
+      console.error('Error fetching user preferences:', error);
       userRegion.value = null;
     } finally {
       preferencesPending.value = false;
+      regionLoadAttempted.value = true;
     }
   },
   { immediate: true }
@@ -200,8 +460,9 @@ const isProfileReady = computed(() => {
 const isPreferencesReady = computed(() => {
   // If no user, preferences are ready (no preferences needed)
   if (!user.value) return true;
-  // If user exists, preferences must be loaded (not pending)
-  return !preferencesPending.value;
+  // If user exists, we must have attempted to load region and finished loading
+  // This ensures we don't show empty states prematurely during hydration
+  return regionLoadAttempted.value && !preferencesPending.value;
 });
 
 // Computed: Check if all state is ready
@@ -253,7 +514,7 @@ const showRecommendationsList = computed(
     recommendations.value.length > 0
 );
 
-// Remove filters
+// Remove filters (mood/attention query params)
 const removeFilters = async () => {
   const query: Record<string, string> = {};
   Object.keys(route.query).forEach((key) => {
@@ -270,6 +531,55 @@ const removeFilters = async () => {
   await navigateTo({ query }, { replace: true });
 };
 
+// Clear genre and provider filters
+const clearGenreProviderFilters = async () => {
+  selectedGenres.value = [];
+  selectedProviders.value = [];
+  await saveFilters();
+};
+
+// Save filters to user_preferences
+const saveFilters = async () => {
+  if (!user.value) return;
+
+  try {
+    const {
+      data: { session },
+    } = await getSession();
+
+    if (!session?.access_token) {
+      return;
+    }
+
+    const preferencesToSave = {
+      favorite_genres: selectedGenres.value.map((g) => g.id),
+      included_providers: selectedProviders.value.map((p) => p.provider_id),
+    };
+
+    await $fetch('/api/users/preferences', {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: preferencesToSave,
+    });
+
+    // Refresh recommendations to apply new filters
+    await fetchRecommendations();
+  } catch (error) {
+    console.error('Error saving filters:', error);
+  }
+};
+
+// Watch for filter changes and save when filters are closed
+watch(showFilterCards, async (isOpen, wasOpen) => {
+  // Save when filters are closed (if they were open before)
+  if (!isOpen && wasOpen) {
+    await saveFilters();
+  }
+});
+
+// Check if there are active genre/provider filters
 // Handle auth success - redirect to home with language
 const handleAuthSuccess = async () => {
   await navigateTo(routeWithLang('/'), { replace: true });
@@ -394,55 +704,57 @@ onMounted(() => {
         <section>
           <AppShell>
             <PageContainer>
-              <!-- Filters Section -->
-              <Section v-if="canShowContent">
-                <div class="flex flex-col gap-4">
-                  <MoodSelector />
+              <!-- Recommendations Title and Description -->
+              <Section v-if="canShowContent && showRecommendationsList">
+                <SectionTitle
+                  :description="$t('home.recommendationsDescription')"
+                >
+                  {{ $t('home.recommendationsTitle') }}
+                </SectionTitle>
+              </Section>
 
-                  <!-- Content Type Filter -->
-                  <div
-                    class="p-6 rounded-3xl border backdrop-blur-xl bg-white/60 dark:bg-gray-900/40 border-gray-300/50 dark:border-white/10 md:p-8"
-                  >
-                    <div class="flex flex-col gap-2">
-                      <label
-                        class="text-label uppercase tracking-overline font-label text-gray-800 dark:text-gray-300"
-                      >
-                        {{ $t('home.contentTypeFilter') }}
-                      </label>
-                      <div class="flex flex-wrap gap-2">
-                        <button
-                          v-for="typeOption in [
-                            { value: 'all', label: $t('home.contentTypeAll') },
-                            {
-                              value: 'movie',
-                              label: $t('home.contentTypeMovie'),
-                            },
-                            { value: 'tv', label: $t('home.contentTypeTv') },
-                          ]"
-                          :key="typeOption.value"
-                          :class="[
-                            'px-3 py-1.5 rounded-full font-medium transition-all text-xs',
-                            selectedContentType === typeOption.value
-                              ? 'bg-primary-800 text-white border border-gray-700/50 dark:border-gray-600/50'
-                              : 'bg-gray-100/50 dark:bg-gray-800/50 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700/50 hover:bg-gray-200 dark:hover:bg-gray-700/50 hover:border-primary/50 dark:hover:border-purple-500/30',
-                          ]"
-                          @click="
-                            selectedContentType = typeOption.value as
-                              | 'all'
-                              | 'movie'
-                              | 'tv'
-                          "
-                        >
-                          {{ typeOption.label }}
-                        </button>
-                      </div>
-                    </div>
+              <!-- Filters Section -->
+              <Section v-if="canShowContent && hasRegion">
+                <div class="flex flex-col gap-4">
+                  <!-- Filter Toggle Button -->
+                  <div class="flex justify-start">
+                    <Button
+                      variant="primary"
+                      size="small"
+                      icon-position="left"
+                      custom-class="cursor-pointer"
+                      @click="showFilterCards = !showFilterCards"
+                    >
+                      <template #icon>
+                        <IconFilter icon-class="w-4 h-4" />
+                      </template>
+                      {{ $t('home.filters') }}
+                    </Button>
                   </div>
+
+                  <!-- Filter Cards (Mood, Attention, Content Type, Genre and Provider Filters) -->
+                  <FilterCards
+                    :is-open="showFilterCards"
+                    :available-genres="availableGenres"
+                    :available-providers="availableProviders"
+                    :selected-genres="selectedGenres"
+                    :selected-providers="selectedProviders"
+                    :selected-content-type="selectedContentType"
+                    @update:selected-genres="selectedGenres = $event"
+                    @update:selected-providers="selectedProviders = $event"
+                    @update:selected-content-type="selectedContentType = $event"
+                    @clear="clearGenreProviderFilters"
+                  />
                 </div>
               </Section>
 
-              <!-- Skeleton loading -->
-              <Section v-if="showSkeleton && loading && !hasAttemptedLoad">
+              <!-- Skeleton loading (also show while filters are loading) -->
+              <Section
+                v-if="
+                  (showSkeleton && loading && !hasAttemptedLoad) ||
+                  filtersLoading
+                "
+              >
                 <div
                   class="grid grid-cols-2 gap-4 md:grid-cols-5 lg:grid-cols-6 overflow-visible"
                 >
@@ -560,8 +872,7 @@ onMounted(() => {
               <Section v-else-if="showRecommendationsList">
                 <RecommendationSection
                   :key="`rec-${recommendations.length}`"
-                  :title="$t('home.recommendationsTitle')"
-                  :description="$t('home.recommendationsDescription')"
+                  :title="''"
                   :recommendations="recommendations"
                   :loading-titles="loadingTitles"
                   :is-loading="fetchingReplacement"

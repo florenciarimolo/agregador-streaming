@@ -94,11 +94,9 @@ interface Props {
   list: ExtendedDiscoverList;
 }
 
-const props = defineProps<Props>();
-const config = useRuntimeConfig();
+defineProps<Props>();
 const TMDB_IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w500';
 const { theme } = useTheme();
-const isDark = computed(() => theme.value === Theme.DARK);
 
 const cardRef = ref<HTMLElement | null>(null);
 const { styles, isHovering } = useFlashlight(cardRef);
@@ -129,7 +127,7 @@ function getPosterUrl(posterPath: string | null): string {
   return `${TMDB_IMAGE_BASE_URL}${posterPath}`;
 }
 
-function getShadowStyle(index: number, totalImages: number): string {
+function getShadowStyle(): string {
   // Add right shadow to all images using a light tone of primary color (#c7d2fe = primary-200)
   return `1px 0 2px rgba(199, 210, 254, 0.4)`;
 }

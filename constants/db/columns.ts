@@ -79,6 +79,8 @@ export const RECOMMENDATION_POOL_COLUMNS = {
   TYPE: 'type',
   SOURCE: 'source',
   SCORE: 'score',
+  BASE_SCORE: 'base_score',
+  PREFERENCE_SCORE: 'preference_score',
   EXPLANATION_CODE: 'explanation_code',
   CREATED_AT: 'created_at',
   LAST_SHOWN_AT: 'last_shown_at',

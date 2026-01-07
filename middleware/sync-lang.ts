@@ -22,7 +22,6 @@ export default defineNuxtRouteMiddleware(async (to) => {
 
   try {
     const route = to;
-    const nuxtApp = useNuxtApp();
     const { locale, setLocale } = useI18n();
 
     // Get language from URL (source of truth)

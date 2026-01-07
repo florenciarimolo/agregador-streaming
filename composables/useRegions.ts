@@ -30,7 +30,7 @@ export const useRegions = () => {
       const i18n = useI18n();
       i18nLocaleRef = i18n.locale;
     }
-  } catch (error) {
+  } catch {
     // If error (e.g., called outside setup context from plugin), we'll use DEFAULT_LANGUAGE
     // This is expected when called from plugins before Vue setup
     if (import.meta.dev) {
@@ -54,7 +54,7 @@ export const useRegions = () => {
         const { locale } = useI18n();
         return locale.value || DEFAULT_LANGUAGE;
       }
-    } catch (error) {
+    } catch {
       // If error, fall back to default
       // This is expected when called from plugins before Vue setup
     }

@@ -33,6 +33,8 @@ export type RecommendationPoolEntry = {
   type: 'movie' | 'tv';
   source: RecommendationPoolSource;
   score: number;
+  base_score: number;
+  preference_score: number;
   explanation_code: string | null;
   created_at: string;
   last_shown_at: string | null;
@@ -116,6 +118,8 @@ export async function insertPoolEntries(
     type: 'movie' | 'tv';
     source: RecommendationPoolSource;
     score?: number;
+    base_score?: number;
+    preference_score?: number;
     explanation_code?: string | null;
   }>,
   supabaseClient?: SupabaseClient
@@ -128,6 +132,8 @@ export async function insertPoolEntries(
     type: entry.type,
     source: entry.source,
     score: entry.score ?? 0,
+    base_score: entry.base_score ?? 0,
+    preference_score: entry.preference_score ?? 0,
     explanation_code: entry.explanation_code ?? null,
   }));
 
@@ -155,6 +161,8 @@ export async function insertPoolEntries(
 /**
  * Update the score of a pool entry
  * Clamps score to -100 to 100 range
+ * 
+ * @deprecated Use updatePreferenceScore instead for new scoring model
  */
 export async function updatePoolScore(
   userId: string,
@@ -164,10 +172,12 @@ export async function updatePoolScore(
 ): Promise<void> {
   const supabase = supabaseClient || useSupabaseClient();
 
-  // First get current score
+  // First get current entry
   const { data: currentEntry, error: selectError } = await supabase
     .from(TABLES.RECOMMENDATION_POOL)
-    .select(RECOMMENDATION_POOL_COLUMNS.SCORE)
+    .select(
+      `${RECOMMENDATION_POOL_COLUMNS.SCORE}, ${RECOMMENDATION_POOL_COLUMNS.BASE_SCORE}, ${RECOMMENDATION_POOL_COLUMNS.PREFERENCE_SCORE}`
+    )
     .eq(RECOMMENDATION_POOL_COLUMNS.USER_ID, userId)
     .eq(RECOMMENDATION_POOL_COLUMNS.TMDB_ID, tmdbId)
     .single();
@@ -177,10 +187,102 @@ export async function updatePoolScore(
     return;
   }
 
-  const newScore = Math.max(
+  // For backward compatibility, update preference_score if base_score exists
+  const baseScore = currentEntry.base_score ?? 0;
+  const currentPreferenceScore = currentEntry.preference_score ?? 0;
+  const newPreferenceScore = Math.max(
     -100,
-    Math.min(100, (currentEntry.score || 0) + delta)
+    Math.min(100, currentPreferenceScore + delta)
   );
+  const newScore = baseScore + newPreferenceScore;
+
+  const { error: updateError } = await supabase
+    .from(TABLES.RECOMMENDATION_POOL)
+    .update({
+      [RECOMMENDATION_POOL_COLUMNS.PREFERENCE_SCORE]: newPreferenceScore,
+      [RECOMMENDATION_POOL_COLUMNS.SCORE]: newScore,
+    })
+    .eq(RECOMMENDATION_POOL_COLUMNS.USER_ID, userId)
+    .eq(RECOMMENDATION_POOL_COLUMNS.TMDB_ID, tmdbId);
+
+  if (updateError) {
+    console.error('[RecommendationPool] Error updating score:', updateError);
+    throw updateError;
+  }
+}
+
+/**
+ * Update preference_score and recalculate score
+ * score = base_score + preference_score
+ */
+export async function updatePreferenceScore(
+  userId: string,
+  tmdbId: number,
+  newPreferenceScore: number,
+  supabaseClient?: SupabaseClient
+): Promise<void> {
+  const supabase = supabaseClient || useSupabaseClient();
+
+  // First get current entry to get base_score
+  const { data: currentEntry, error: selectError } = await supabase
+    .from(TABLES.RECOMMENDATION_POOL)
+    .select(
+      `${RECOMMENDATION_POOL_COLUMNS.BASE_SCORE}, ${RECOMMENDATION_POOL_COLUMNS.PREFERENCE_SCORE}`
+    )
+    .eq(RECOMMENDATION_POOL_COLUMNS.USER_ID, userId)
+    .eq(RECOMMENDATION_POOL_COLUMNS.TMDB_ID, tmdbId)
+    .single();
+
+  if (selectError || !currentEntry) {
+    // Entry doesn't exist in pool, nothing to update
+    return;
+  }
+
+  const baseScore = currentEntry.base_score ?? 0;
+  const newScore = baseScore + newPreferenceScore;
+
+  const { error: updateError } = await supabase
+    .from(TABLES.RECOMMENDATION_POOL)
+    .update({
+      [RECOMMENDATION_POOL_COLUMNS.PREFERENCE_SCORE]: newPreferenceScore,
+      [RECOMMENDATION_POOL_COLUMNS.SCORE]: newScore,
+    })
+    .eq(RECOMMENDATION_POOL_COLUMNS.USER_ID, userId)
+    .eq(RECOMMENDATION_POOL_COLUMNS.TMDB_ID, tmdbId);
+
+  if (updateError) {
+    console.error('[RecommendationPool] Error updating preference_score:', updateError);
+    throw updateError;
+  }
+}
+
+/**
+ * Recalculate score from base_score + preference_score
+ * Useful after bulk updates
+ */
+export async function recalculateScore(
+  userId: string,
+  tmdbId: number,
+  supabaseClient?: SupabaseClient
+): Promise<void> {
+  const supabase = supabaseClient || useSupabaseClient();
+
+  const { data: currentEntry, error: selectError } = await supabase
+    .from(TABLES.RECOMMENDATION_POOL)
+    .select(
+      `${RECOMMENDATION_POOL_COLUMNS.BASE_SCORE}, ${RECOMMENDATION_POOL_COLUMNS.PREFERENCE_SCORE}`
+    )
+    .eq(RECOMMENDATION_POOL_COLUMNS.USER_ID, userId)
+    .eq(RECOMMENDATION_POOL_COLUMNS.TMDB_ID, tmdbId)
+    .single();
+
+  if (selectError || !currentEntry) {
+    return;
+  }
+
+  const baseScore = currentEntry.base_score ?? 0;
+  const preferenceScore = currentEntry.preference_score ?? 0;
+  const newScore = baseScore + preferenceScore;
 
   const { error: updateError } = await supabase
     .from(TABLES.RECOMMENDATION_POOL)
@@ -189,7 +291,7 @@ export async function updatePoolScore(
     .eq(RECOMMENDATION_POOL_COLUMNS.TMDB_ID, tmdbId);
 
   if (updateError) {
-    console.error('[RecommendationPool] Error updating score:', updateError);
+    console.error('[RecommendationPool] Error recalculating score:', updateError);
     throw updateError;
   }
 }
@@ -271,6 +373,8 @@ export async function updateLastShownAt(
 
 /**
  * Get pool entries for a user, ordered by score
+ * IMPORTANT: score is base_score + preference_score (persisted)
+ * For ordering in recommendations, use final_score calculated in runtime
  */
 export async function getPoolEntries(
   userId: string,
@@ -304,11 +408,7 @@ export async function getPoolEntries(
  * @deprecated This function is no longer needed as title_data has been removed from recommendation_pool.
  * Title data is now fetched from the titles table when needed.
  */
-export async function updateTitleDataLanguage(
-  userId: string,
-  _newLanguage: string,
-  supabaseClient?: SupabaseClient
-): Promise<void> {
+export async function updateTitleDataLanguage(): Promise<void> {
   // No-op: title_data has been removed from recommendation_pool
   // Title data is now fetched from titles table when needed
 }

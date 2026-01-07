@@ -1,10 +1,10 @@
-import { serverSupabaseUser } from '#supabase/server';
 import { createClient } from '@supabase/supabase-js';
 import { TITLE_STATUS } from '@/constants/domain/titleStatus';
 import { TABLES } from '@/constants/db/tables';
 import { USER_TITLE_STATUS_COLUMNS } from '@/constants/db/columns';
 import { SCORE_WEIGHTS } from '@/constants/domain/scoring';
 import { updatePoolScore } from '@/services/recommendationPool';
+import { getUserIdFromEvent } from '@/server/utils/user-preferences';
 
 /**
  * Delete user title status (remove from seen or not_interested)
@@ -22,52 +22,11 @@ import { updatePoolScore } from '@/services/recommendationPool';
  */
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig();
-  let user = null;
-  let userId: string | null = null;
 
-  // Try to get user from cookies first
-  const userFromCookies = await serverSupabaseUser(event);
+  // Use centralized function to get userId
+  const userId = await getUserIdFromEvent(event);
 
-  if (userFromCookies) {
-    userId =
-      userFromCookies.id || (userFromCookies as { sub?: string }).sub || null;
-
-    if (userId) {
-      user = { id: userId, sub: userId };
-    }
-  } else {
-    // Try Authorization header
-    const authHeader = event.node.req.headers.authorization;
-
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      const token = authHeader.substring(7);
-
-      try {
-        const parts = token.split('.');
-        if (parts.length === 3) {
-          const payload = JSON.parse(
-            Buffer.from(
-              parts[1].replace(/-/g, '+').replace(/_/g, '/'),
-              'base64'
-            ).toString()
-          );
-
-          userId = payload.sub;
-
-          if (userId) {
-            user = { id: userId, sub: userId };
-          }
-        }
-      } catch (err) {
-        // Error decoding token - only log in development
-        if (process.env.NODE_ENV === 'development') {
-          console.error('Error decoding token:', err);
-        }
-      }
-    }
-  }
-
-  if (!user || !userId) {
+  if (!userId) {
     throw createError({
       statusCode: 401,
       message: 'Unauthorized',

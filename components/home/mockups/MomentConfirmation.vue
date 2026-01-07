@@ -33,9 +33,6 @@ import { ATTENTION } from '@/constants/domain/attention';
 
 const { t } = useI18n();
 
-// Mock selected values for demonstration
-const selectedMood = MOOD.RELAX;
-const selectedAttention = ATTENTION.MEDIUM;
 
 const selectedMoodIcon = IconRelax;
 const selectedMoodLabel = computed(() => t('mood.relaxed'));

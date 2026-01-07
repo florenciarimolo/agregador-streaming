@@ -1,11 +1,9 @@
-import { serverSupabaseUser } from '#supabase/server';
 import { createClient } from '@supabase/supabase-js';
-import { getUserTMDBParams } from '@/server/utils/user-preferences';
+import { getUserTMDBParams, getUserIdFromEvent } from '@/server/utils/user-preferences';
 import { devLog, devError, devWarn, safeError } from '@/server/utils/logger';
 import { TITLE_STATUS } from '@/constants/domain/titleStatus';
 import { TABLES } from '@/constants/db/tables';
 import { USER_TITLE_STATUS_COLUMNS, TITLES_COLUMNS } from '@/constants/db/columns';
-import { SCORE_WEIGHTS } from '@/constants/domain/scoring';
 import {
   getTitleInLanguage,
   type MultiLanguageText,
@@ -19,55 +17,11 @@ import { MEDIA_TYPE } from '@/constants/domain/mediaType';
  */
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig();
-  let user = null;
-  let userId: string | null = null;
 
-  // Try to get user from cookies first
-  const userFromCookies = await serverSupabaseUser(event);
+  // Use centralized function to get userId
+  const userId = await getUserIdFromEvent(event);
 
-  if (userFromCookies) {
-    userId =
-      userFromCookies.id || (userFromCookies as { sub?: string }).sub || null;
-
-    if (userId) {
-      user = { id: userId, sub: userId };
-      devLog('[User Watchlist] User from cookies');
-    }
-  } else {
-    // Try Authorization header
-    const authHeader = event.node.req.headers.authorization;
-
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      const token = authHeader.substring(7);
-
-      try {
-        const parts = token.split('.');
-        if (parts.length === 3) {
-          const payload = JSON.parse(
-            Buffer.from(
-              parts[1].replace(/-/g, '+').replace(/_/g, '/'),
-              'base64'
-            ).toString()
-          );
-
-          userId = payload.sub;
-
-          if (userId) {
-            user = { id: userId, sub: userId };
-            devLog('[User Watchlist] User from Authorization header');
-          }
-        }
-      } catch (err) {
-        safeError('[User Watchlist] Error decoding token', err);
-      }
-    } else {
-      devWarn(
-        '[User Watchlist] No user from cookies and no Authorization header'
-      );
-    }
-  }
-
-  if (!user || !userId) {
+  if (!userId) {
     devError('[User Watchlist] Unauthorized - no user found');
     throw createError({
       statusCode: 401,

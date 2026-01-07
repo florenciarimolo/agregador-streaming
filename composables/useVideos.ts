@@ -58,7 +58,7 @@ export async function getVideosForTitle(
     // Try each language in fallback order
     // We need to check if there are videos of type Trailer or Recap after filtering
     let allVideos: Video[] = [];
-    let triedLanguages: string[] = [];
+    const triedLanguages: string[] = [];
 
     for (const langCode of fallbackLanguages) {
       try {

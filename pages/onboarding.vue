@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted } from 'vue';
+import { onMounted, watch } from 'vue';
 import { TITLE_STATUS } from '@/constants/domain/titleStatus';
 import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 import { getTitleByTmdbId } from '@/services/titles';
@@ -295,10 +295,18 @@ const availableGenres = computed(() => {
     });
 });
 
-// Preload providers using useAsyncData
-const { data: providersData } = useAsyncData(
-  'onboarding-providers',
-  async () => {
+// Load providers based on selected region
+// IMPORTANT: Providers depend on region - cannot be selected without region
+const providersData = ref<{
+  results: Array<{
+    provider_id: number;
+    provider_name: string;
+    logo_path: string | null;
+  }>;
+} | null>(null);
+
+const loadProvidersForRegion = async (region: string) => {
+  try {
     const response = await $fetch<{
       results: Array<{
         provider_id: number;
@@ -306,16 +314,25 @@ const { data: providersData } = useAsyncData(
         logo_path: string | null;
       }>;
     }>('/api/tmdb/watch-providers', {
-      credentials: 'include',
+      query: { region },
     });
 
-    return response;
-  },
-  {
-    server: false, // Only fetch on client
-    default: () => ({ results: [] }),
+    providersData.value = response;
+  } catch (error) {
+    console.error('Error loading providers for region:', error);
+    providersData.value = { results: [] };
   }
-);
+};
+
+// Watch for region changes and reload providers
+watch(selectedRegion, (newRegion, oldRegion) => {
+  if (newRegion && newRegion !== oldRegion) {
+    // Clear selected providers when region changes
+    selectedProviders.value = [];
+    // Reload providers for new region
+    loadProvidersForRegion(newRegion);
+  }
+});
 
 const availableProviders = computed(() => {
   if (!providersData.value) {
@@ -382,9 +399,17 @@ const removeProvider = (providerId: number) => {
 };
 
 // Save preferences (region) first
+// IMPORTANT: Region is mandatory, genres and providers are optional
 const savePreferences = async () => {
   savingPreferences.value = true;
   error.value = null;
+
+  // Validate that region is selected (mandatory)
+  if (!selectedRegion.value) {
+    error.value = t('onboarding.regionRequired');
+    savingPreferences.value = false;
+    return;
+  }
 
   try {
     const currentUser = userStore.value.user || user.value;
@@ -412,9 +437,11 @@ const savePreferences = async () => {
       return;
     }
 
-    // Save preferences with region and optional genres and providers
+    // Save preferences with region (mandatory) and optional genres and providers
+    // IMPORTANT: Genres and providers are saved but NOT used to generate the pool
+    // populate-pool will be called at the end of onboarding with clearPool=true
     const preferencesToSave = {
-      region: selectedRegion.value || null,
+      region: selectedRegion.value,
       favorite_genres: selectedGenres.value.map((g) => g.id),
       included_providers: selectedProviders.value.map((p) => p.provider_id),
     };
@@ -540,6 +567,8 @@ const saveSelections = async () => {
     await userStore.value.fetchProfile();
 
     // Populate recommendation pool after onboarding completion
+    // IMPORTANT: This is called UNA SOLA VEZ at the end of onboarding
+    // populate-pool will use region but NOT use genres/providers (they are only filters)
     try {
       const {
         data: { session },
@@ -547,10 +576,12 @@ const saveSelections = async () => {
       if (session?.access_token) {
         await $fetch('/api/recommendations/populate-pool', {
           method: 'POST',
+          query: {
+            clearPool: 'true', // Clear pool and regenerate with new region
+          },
           headers: {
             Authorization: `Bearer ${session.access_token}`,
           },
-          credentials: 'include',
         });
       }
     } catch (poolError) {
@@ -705,7 +736,12 @@ const saveSelections = async () => {
           </p>
 
           <!-- Provider Search -->
+          <!-- IMPORTANT: Providers depend on region - only show if region is selected -->
+          <div v-if="!selectedRegion" class="text-sm text-gray-600 dark:text-gray-400 italic">
+            {{ $t('preferences.content.includedProviders.regionRequired') }}
+          </div>
           <ProviderSelector
+            v-else
             v-model="selectedProviderForSelector"
             :available-providers="availableProviders"
             :selected-providers="selectedProviders"

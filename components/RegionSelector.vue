@@ -203,11 +203,6 @@ const getTargetLanguage = (): string => {
   return getAppLanguage();
 };
 
-// Get initial region object
-const getInitialRegion = (): Region | null => {
-  if (!props.modelValue) return null;
-  return regions.value.find((r) => r.code === props.modelValue) || null;
-};
 
 // Selected region for Combobox (must be the Region object, not just the code)
 const selectedRegionObj = computed({
@@ -216,11 +211,12 @@ const selectedRegionObj = computed({
     return regions.value.find((r) => r.code === props.modelValue) || null;
   },
   set: (region: Region | null) => {
+    // Never allow null - region is mandatory
+    // If region is null, keep the current value
     if (region) {
       emit('update:modelValue', region.code);
-    } else {
-      emit('update:modelValue', null);
     }
+    // Do nothing if region is null - prevents clearing the selection
   },
 });
 
@@ -259,10 +255,6 @@ const updateSelectedRegionName = async () => {
   selectedRegionName.value = name || t('preferences.content.region.default');
 };
 
-// Initialize filtered regions from cached regions
-const initializeFilteredRegions = () => {
-  // Filtered regions are computed, no need to initialize
-};
 
 // Load regions for the target language
 const loadRegionsForLanguage = async (language?: string) => {
@@ -290,7 +282,6 @@ watch(
   () => locale.value,
   async (newLocale) => {
     if (newLocale) {
-      const currentRegionCode = props.modelValue;
       await loadRegionsForLanguage();
       await updateSelectedRegionName();
     }

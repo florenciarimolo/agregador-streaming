@@ -11,7 +11,6 @@ import {
   LEGACY_LANGUAGE_TO_TMDB,
 } from '@/constants/languages';
 import { LanguageCode } from '@/types/enums/LanguageCode';
-import { getI18nCodeFromUrlCode } from '@/composables/useLangFromUrl';
 
 /**
  * Map browser language code to i18n locale code

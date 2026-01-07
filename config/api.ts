@@ -11,7 +11,7 @@ export const tmdbConfig = {
 
 export async function tmdbFetch<T>(
   endpoint: string,
-  params: Record<string, any> = {}
+  params: Record<string, string | number | boolean> = {}
 ): Promise<T> {
   const searchParams = new URLSearchParams({
     api_key: tmdbConfig.apiKey,

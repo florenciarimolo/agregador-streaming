@@ -18,10 +18,9 @@ import {
 } from '@/server/utils/tmdb-videos';
 import { normalizeVideosForStorage } from '@/server/utils/video-normalization';
 import { updateTitleVideos } from '@/services/titles';
-import { getTitleInLanguage } from '@/services/titles';
 import { VIDEO_REFRESH_THRESHOLD_HOURS } from '@/constants/domain/videos';
 import { getUserTMDBParams } from '@/server/utils/user-preferences';
-import type { MultiLanguageVideos, Video } from '@/types/Video';
+import type { MultiLanguageVideos } from '@/types/Video';
 
 export default defineEventHandler(async (event) => {
   try {
@@ -175,7 +174,7 @@ export default defineEventHandler(async (event) => {
           [];
 
         return videosForLang;
-      } catch (fetchError: any) {
+      } catch (fetchError: unknown) {
         // Log the actual error for debugging
         console.error('[videos.get] Error fetching videos from TMDB:', {
           tmdbId: tmdbIdNum,

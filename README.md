@@ -133,7 +133,6 @@ agregador-streaming/
 ├── server/             # API routes and server utilities
 │   └── api/            # API endpoints
 │       ├── recommendations.get.ts  # Personalized recommendations
-│       ├── user-history.get.ts     # User history
 │       └── tmdb/       # TMDB integration
 ├── stores/             # Pinia stores
 │   └── user.ts         # User state
@@ -146,9 +145,8 @@ agregador-streaming/
 ### Recommendations
 - `/api/recommendations` - Personalized recommendations based on user tastes
 
-### User History
-- `/api/user-history` - Gets history of watched and not interested titles
-- `/api/user-title-status` - Marks titles as watched or not interested
+### User Title Status
+- `/api/users/title-status` - Marks titles as watched or not interested
 
 ### TMDB Integration
 - `/api/tmdb/search/multi` - Multi-type search (movies and series)

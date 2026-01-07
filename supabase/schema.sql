@@ -28,6 +28,8 @@ CREATE TABLE IF NOT EXISTS public.titles (
   backdrop_path TEXT,
   overview JSONB, -- Multi-language in ISO format: {"es-ES": "...", "ca-ES": "...", "eu-ES": "...", "gl-ES": "...", "en-US": "..."}
   tagline JSONB, -- Multi-language in ISO format: {"es-ES": "...", "ca-ES": "...", "eu-ES": "...", "gl-ES": "...", "en-US": "..."}
+  videos JSONB, -- Multi-language videos: {[lang: string]: Array<{key, site, type, published_at, official}>}
+  videos_updated_at TIMESTAMP WITH TIME ZONE,
   release_date DATE, -- For movies
   first_air_date DATE, -- For TV shows
   genres JSONB, -- Array of genre objects from TMDB: [{"id": 28, "name": "Action"}, ...]
@@ -41,6 +43,30 @@ CREATE TABLE IF NOT EXISTS public.titles (
 -- Index for faster lookups
 CREATE INDEX IF NOT EXISTS idx_titles_tmdb_id ON public.titles(tmdb_id);
 CREATE INDEX IF NOT EXISTS idx_titles_type ON public.titles(type);
+
+-- Seasons table (first-class entities for TV show seasons)
+CREATE TABLE IF NOT EXISTS public.seasons (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  tv_tmdb_id BIGINT NOT NULL,
+  season_number INT NOT NULL,
+  tmdb_season_id BIGINT NOT NULL,
+  name TEXT,
+  air_date DATE,
+  poster_path TEXT,
+  vote_average NUMERIC(3, 1),
+  overview JSONB, -- Multi-language in ISO format: {"es-ES": "...", "ca-ES": "...", "eu-ES": "...", "gl-ES": "...", "en-US": "..."}
+  videos JSONB, -- Multi-language videos: {[lang: string]: Array<{key, site, type, published_at, official}>}
+  videos_updated_at TIMESTAMP WITH TIME ZONE,
+  episode_count INTEGER, -- Calculated from the size of the episodes array from TMDB (nullable)
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL,
+  UNIQUE(tv_tmdb_id, season_number),
+  UNIQUE(tmdb_season_id)
+);
+
+-- Indexes for seasons
+CREATE INDEX IF NOT EXISTS idx_seasons_tv_tmdb_id ON public.seasons(tv_tmdb_id);
+CREATE INDEX IF NOT EXISTS idx_seasons_tmdb_season_id ON public.seasons(tmdb_season_id);
 
 -- User title status table (tracks seen/not_interested/watchlist titles)
 CREATE TABLE IF NOT EXISTS public.user_title_status (
@@ -63,18 +89,39 @@ CREATE INDEX IF NOT EXISTS idx_user_title_status_tmdb_id ON public.user_title_st
 -- Enable RLS on all tables
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.titles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.seasons ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_title_status ENABLE ROW LEVEL SECURITY;
 
 -- Profiles policies
 -- Users can read their own profile
-CREATE POLICY "Users can view own profile"
-  ON public.profiles FOR SELECT
-  USING (auth.uid() = id);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE schemaname = 'public' 
+    AND tablename = 'profiles' 
+    AND policyname = 'Users can view own profile'
+  ) THEN
+    CREATE POLICY "Users can view own profile"
+      ON public.profiles FOR SELECT
+      USING (auth.uid() = id);
+  END IF;
+END $$;
 
 -- Users can update their own profile
-CREATE POLICY "Users can update own profile"
-  ON public.profiles FOR UPDATE
-  USING (auth.uid() = id);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE schemaname = 'public' 
+    AND tablename = 'profiles' 
+    AND policyname = 'Users can update own profile'
+  ) THEN
+    CREATE POLICY "Users can update own profile"
+      ON public.profiles FOR UPDATE
+      USING (auth.uid() = id);
+  END IF;
+END $$;
 
 -- Auto-create profile on user signup
 CREATE OR REPLACE FUNCTION public.handle_new_user()
@@ -91,41 +138,118 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
 -- Titles policies
 -- Everyone can read titles (public data)
-CREATE POLICY "Titles are viewable by everyone"
-  ON public.titles FOR SELECT
-  USING (true);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE schemaname = 'public' 
+    AND tablename = 'titles' 
+    AND policyname = 'Titles are viewable by everyone'
+  ) THEN
+    CREATE POLICY "Titles are viewable by everyone"
+      ON public.titles FOR SELECT
+      USING (true);
+  END IF;
+END $$;
 
 -- Only authenticated users can insert titles (via API)
-CREATE POLICY "Authenticated users can insert titles"
-  ON public.titles FOR INSERT
-  WITH CHECK (auth.role() = 'authenticated');
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE schemaname = 'public' 
+    AND tablename = 'titles' 
+    AND policyname = 'Authenticated users can insert titles'
+  ) THEN
+    CREATE POLICY "Authenticated users can insert titles"
+      ON public.titles FOR INSERT
+      WITH CHECK (auth.role() = 'authenticated');
+  END IF;
+END $$;
+
+-- Seasons policies
+-- Everyone can read seasons (public data)
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE schemaname = 'public' 
+    AND tablename = 'seasons' 
+    AND policyname = 'Seasons are publicly readable'
+  ) THEN
+    CREATE POLICY "Seasons are publicly readable"
+      ON public.seasons FOR SELECT
+      USING (true);
+  END IF;
+END $$;
 
 -- User title status policies
 -- Users can view their own title statuses
-CREATE POLICY "Users can view own title statuses"
-  ON public.user_title_status FOR SELECT
-  USING (auth.uid() = user_id);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE schemaname = 'public' 
+    AND tablename = 'user_title_status' 
+    AND policyname = 'Users can view own title statuses'
+  ) THEN
+    CREATE POLICY "Users can view own title statuses"
+      ON public.user_title_status FOR SELECT
+      USING (auth.uid() = user_id);
+  END IF;
+END $$;
 
 -- Users can insert their own title statuses
-CREATE POLICY "Users can insert own title statuses"
-  ON public.user_title_status FOR INSERT
-  WITH CHECK (auth.uid() = user_id);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE schemaname = 'public' 
+    AND tablename = 'user_title_status' 
+    AND policyname = 'Users can insert own title statuses'
+  ) THEN
+    CREATE POLICY "Users can insert own title statuses"
+      ON public.user_title_status FOR INSERT
+      WITH CHECK (auth.uid() = user_id);
+  END IF;
+END $$;
 
 -- Users can update their own title statuses
-CREATE POLICY "Users can update own title statuses"
-  ON public.user_title_status FOR UPDATE
-  USING (auth.uid() = user_id);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE schemaname = 'public' 
+    AND tablename = 'user_title_status' 
+    AND policyname = 'Users can update own title statuses'
+  ) THEN
+    CREATE POLICY "Users can update own title statuses"
+      ON public.user_title_status FOR UPDATE
+      USING (auth.uid() = user_id);
+  END IF;
+END $$;
 
 -- Users can delete their own title statuses
-CREATE POLICY "Users can delete own title statuses"
-  ON public.user_title_status FOR DELETE
-  USING (auth.uid() = user_id);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE schemaname = 'public' 
+    AND tablename = 'user_title_status' 
+    AND policyname = 'Users can delete own title statuses'
+  ) THEN
+    CREATE POLICY "Users can delete own title statuses"
+      ON public.user_title_status FOR DELETE
+      USING (auth.uid() = user_id);
+  END IF;
+END $$;
 
 -- Function to change password
 CREATE OR REPLACE FUNCTION public.changepassword(current_plain_password TEXT, new_plain_password TEXT, current_id UUID)
@@ -161,13 +285,21 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Triggers for updated_at
+DROP TRIGGER IF EXISTS update_profiles_updated_at ON public.profiles;
 CREATE TRIGGER update_profiles_updated_at
   BEFORE UPDATE ON public.profiles
   FOR EACH ROW
   EXECUTE FUNCTION public.handle_updated_at();
 
+DROP TRIGGER IF EXISTS update_titles_updated_at ON public.titles;
 CREATE TRIGGER update_titles_updated_at
   BEFORE UPDATE ON public.titles
+  FOR EACH ROW
+  EXECUTE FUNCTION public.handle_updated_at();
+
+DROP TRIGGER IF EXISTS update_seasons_updated_at ON public.seasons;
+CREATE TRIGGER update_seasons_updated_at
+  BEFORE UPDATE ON public.seasons
   FOR EACH ROW
   EXECUTE FUNCTION public.handle_updated_at();
 
@@ -179,11 +311,18 @@ CREATE TABLE IF NOT EXISTS public.recommendation_pool (
   type TEXT NOT NULL CHECK (type IN ('movie', 'tv')),
   source TEXT NOT NULL CHECK (source IN ('based_on_like', 'trending', 'discover', 'easy', 'mood')),
   score DOUBLE PRECISION DEFAULT 0 CHECK (score >= -100 AND score <= 100),
+  base_score DOUBLE PRECISION DEFAULT 0, -- Base score based on popularity/quality/source. Set during populate/refresh. Never changes after initial population.
+  preference_score DOUBLE PRECISION DEFAULT 0, -- Preference score based on user likes/dislikes and similarity propagation. Updated incrementally via title-status endpoint.
   explanation_code TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL,
   last_shown_at TIMESTAMP WITH TIME ZONE,
   UNIQUE(user_id, tmdb_id)
 );
+
+-- Comments explaining the scoring model
+COMMENT ON COLUMN public.recommendation_pool.base_score IS 'Base score based on popularity/quality/source. Set during populate/refresh. Never changes after initial population.';
+COMMENT ON COLUMN public.recommendation_pool.preference_score IS 'Preference score based on user likes/dislikes and similarity propagation. Updated incrementally via title-status endpoint.';
+COMMENT ON COLUMN public.recommendation_pool.score IS 'Persisted score = base_score + preference_score. Used as base for runtime final_score calculation, NOT for direct ordering.';
 
 -- Indexes for recommendation_pool
 CREATE INDEX IF NOT EXISTS idx_recommendation_pool_user_id ON public.recommendation_pool(user_id);
@@ -193,21 +332,61 @@ CREATE INDEX IF NOT EXISTS idx_recommendation_pool_tmdb_id ON public.recommendat
 -- RLS Policies for recommendation_pool
 ALTER TABLE public.recommendation_pool ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Users can view own recommendation pool"
-  ON public.recommendation_pool FOR SELECT
-  USING (auth.uid() = user_id);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE schemaname = 'public' 
+    AND tablename = 'recommendation_pool' 
+    AND policyname = 'Users can view own recommendation pool'
+  ) THEN
+    CREATE POLICY "Users can view own recommendation pool"
+      ON public.recommendation_pool FOR SELECT
+      USING (auth.uid() = user_id);
+  END IF;
+END $$;
 
-CREATE POLICY "Users can insert own recommendation pool"
-  ON public.recommendation_pool FOR INSERT
-  WITH CHECK (auth.uid() = user_id);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE schemaname = 'public' 
+    AND tablename = 'recommendation_pool' 
+    AND policyname = 'Users can insert own recommendation pool'
+  ) THEN
+    CREATE POLICY "Users can insert own recommendation pool"
+      ON public.recommendation_pool FOR INSERT
+      WITH CHECK (auth.uid() = user_id);
+  END IF;
+END $$;
 
-CREATE POLICY "Users can update own recommendation pool"
-  ON public.recommendation_pool FOR UPDATE
-  USING (auth.uid() = user_id);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE schemaname = 'public' 
+    AND tablename = 'recommendation_pool' 
+    AND policyname = 'Users can update own recommendation pool'
+  ) THEN
+    CREATE POLICY "Users can update own recommendation pool"
+      ON public.recommendation_pool FOR UPDATE
+      USING (auth.uid() = user_id);
+  END IF;
+END $$;
 
-CREATE POLICY "Users can delete own recommendation pool"
-  ON public.recommendation_pool FOR DELETE
-  USING (auth.uid() = user_id);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE schemaname = 'public' 
+    AND tablename = 'recommendation_pool' 
+    AND policyname = 'Users can delete own recommendation pool'
+  ) THEN
+    CREATE POLICY "Users can delete own recommendation pool"
+      ON public.recommendation_pool FOR DELETE
+      USING (auth.uid() = user_id);
+  END IF;
+END $$;
 
 -- Phase 1: Profile & Personalization - Storage bucket for avatars
 -- Note: Storage buckets must be created via Supabase Dashboard or API
@@ -253,19 +432,50 @@ CREATE INDEX IF NOT EXISTS idx_user_preferences_user_id ON public.user_preferenc
 -- RLS Policies for user_preferences
 ALTER TABLE public.user_preferences ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Users can view own preferences"
-  ON public.user_preferences FOR SELECT
-  USING (auth.uid() = user_id);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE schemaname = 'public' 
+    AND tablename = 'user_preferences' 
+    AND policyname = 'Users can view own preferences'
+  ) THEN
+    CREATE POLICY "Users can view own preferences"
+      ON public.user_preferences FOR SELECT
+      USING (auth.uid() = user_id);
+  END IF;
+END $$;
 
-CREATE POLICY "Users can insert own preferences"
-  ON public.user_preferences FOR INSERT
-  WITH CHECK (auth.uid() = user_id);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE schemaname = 'public' 
+    AND tablename = 'user_preferences' 
+    AND policyname = 'Users can insert own preferences'
+  ) THEN
+    CREATE POLICY "Users can insert own preferences"
+      ON public.user_preferences FOR INSERT
+      WITH CHECK (auth.uid() = user_id);
+  END IF;
+END $$;
 
-CREATE POLICY "Users can update own preferences"
-  ON public.user_preferences FOR UPDATE
-  USING (auth.uid() = user_id);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE schemaname = 'public' 
+    AND tablename = 'user_preferences' 
+    AND policyname = 'Users can update own preferences'
+  ) THEN
+    CREATE POLICY "Users can update own preferences"
+      ON public.user_preferences FOR UPDATE
+      USING (auth.uid() = user_id);
+  END IF;
+END $$;
 
 -- Trigger for updated_at on user_preferences
+DROP TRIGGER IF EXISTS update_user_preferences_updated_at ON public.user_preferences;
 CREATE TRIGGER update_user_preferences_updated_at
   BEFORE UPDATE ON public.user_preferences
   FOR EACH ROW
@@ -288,13 +498,33 @@ CREATE INDEX IF NOT EXISTS idx_user_activity_created_at ON public.user_activity(
 -- RLS Policies for user_activity
 ALTER TABLE public.user_activity ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Users can view own activity"
-  ON public.user_activity FOR SELECT
-  USING (auth.uid() = user_id);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE schemaname = 'public' 
+    AND tablename = 'user_activity' 
+    AND policyname = 'Users can view own activity'
+  ) THEN
+    CREATE POLICY "Users can view own activity"
+      ON public.user_activity FOR SELECT
+      USING (auth.uid() = user_id);
+  END IF;
+END $$;
 
-CREATE POLICY "Users can insert own activity"
-  ON public.user_activity FOR INSERT
-  WITH CHECK (auth.uid() = user_id);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE schemaname = 'public' 
+    AND tablename = 'user_activity' 
+    AND policyname = 'Users can insert own activity'
+  ) THEN
+    CREATE POLICY "Users can insert own activity"
+      ON public.user_activity FOR INSERT
+      WITH CHECK (auth.uid() = user_id);
+  END IF;
+END $$;
 
 -- Phase 6: Discover Editorial Lists (SEO)
 -- Discover lists table (public, SEO-oriented, manually curated)
@@ -334,25 +564,46 @@ CREATE INDEX IF NOT EXISTS idx_discover_list_items_list_position ON public.disco
 ALTER TABLE public.discover_lists ENABLE ROW LEVEL SECURITY;
 
 -- Everyone can read public discover lists
-CREATE POLICY "Discover lists are viewable by everyone if public"
-  ON public.discover_lists FOR SELECT
-  USING (is_public = true);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE schemaname = 'public' 
+    AND tablename = 'discover_lists' 
+    AND policyname = 'Discover lists are viewable by everyone if public'
+  ) THEN
+    CREATE POLICY "Discover lists are viewable by everyone if public"
+      ON public.discover_lists FOR SELECT
+      USING (is_public = true);
+  END IF;
+END $$;
 
 -- RLS Policies for discover_list_items
 ALTER TABLE public.discover_list_items ENABLE ROW LEVEL SECURITY;
 
 -- Everyone can read discover list items for public lists
-CREATE POLICY "Discover list items are viewable by everyone for public lists"
-  ON public.discover_list_items FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.discover_lists
-      WHERE discover_lists.id = discover_list_items.discover_list_id
-      AND discover_lists.is_public = true
-    )
-  );
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE schemaname = 'public' 
+    AND tablename = 'discover_list_items' 
+    AND policyname = 'Discover list items are viewable by everyone for public lists'
+  ) THEN
+    CREATE POLICY "Discover list items are viewable by everyone for public lists"
+      ON public.discover_list_items FOR SELECT
+      USING (
+        EXISTS (
+          SELECT 1 FROM public.discover_lists
+          WHERE discover_lists.id = discover_list_items.discover_list_id
+          AND discover_lists.is_public = true
+        )
+      );
+  END IF;
+END $$;
 
 -- Trigger for updated_at on discover_lists
+DROP TRIGGER IF EXISTS update_discover_lists_updated_at ON public.discover_lists;
 CREATE TRIGGER update_discover_lists_updated_at
   BEFORE UPDATE ON public.discover_lists
   FOR EACH ROW

@@ -1,14 +1,22 @@
-import { serverSupabaseUser } from '#supabase/server';
 import { createClient } from '@supabase/supabase-js';
 import { TITLE_STATUS, type TitleStatusType } from '@/constants/domain/titleStatus';
 import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 import { TABLES } from '@/constants/db/tables';
 import { USER_TITLE_STATUS_COLUMNS } from '@/constants/db/columns';
-import { SCORE_WEIGHTS } from '@/constants/domain/scoring';
+import { getUserIdFromEvent } from '@/server/utils/user-preferences';
 import {
-  updatePoolScore,
+  updatePreferenceScore,
   removeFromPool,
 } from '@/services/recommendationPool';
+import {
+  propagateLikeInfluence,
+  propagateDislikeInfluence,
+  propagateRemoveLikeInfluence,
+} from '@/services/similarityPropagation';
+import {
+  detectExtremeBehavior,
+  performSoftReset,
+} from '@/services/poolSoftReset';
 import { DEFAULT_LANGUAGE } from '@/constants/languages';
 
 /**
@@ -28,52 +36,10 @@ import { DEFAULT_LANGUAGE } from '@/constants/languages';
  */
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig();
-  let user = null;
-  let userId: string | null = null;
+  // Use centralized function to get userId
+  const userId = await getUserIdFromEvent(event);
 
-  // Try to get user from cookies first
-  const userFromCookies = await serverSupabaseUser(event);
-
-  if (userFromCookies) {
-    userId =
-      userFromCookies.id || (userFromCookies as { sub?: string }).sub || null;
-
-    if (userId) {
-      user = { id: userId, sub: userId };
-    }
-  } else {
-    // Try Authorization header
-    const authHeader = event.node.req.headers.authorization;
-
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      const token = authHeader.substring(7);
-
-      try {
-        const parts = token.split('.');
-        if (parts.length === 3) {
-          const payload = JSON.parse(
-            Buffer.from(
-              parts[1].replace(/-/g, '+').replace(/_/g, '/'),
-              'base64'
-            ).toString()
-          );
-
-          userId = payload.sub;
-
-          if (userId) {
-            user = { id: userId, sub: userId };
-          }
-        }
-      } catch (err) {
-        // Error decoding token - only log in development
-        if (process.env.NODE_ENV === 'development') {
-          console.error('Error decoding token:', err);
-        }
-      }
-    }
-  }
-
-  if (!user || !userId) {
+  if (!userId) {
     throw createError({
       statusCode: 401,
       message: 'Unauthorized',
@@ -199,64 +165,63 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    // Update recommendation pool score based on status changes
-    // Official scoring logic: each signal is applied independently and reversibly
+    // Update recommendation pool preference_score based on status changes
+    // New scoring model: preference_score is updated incrementally, score = base_score + preference_score
     try {
-      const previousStatusValue = previousStatus?.status as
-        | TitleStatusType
-        | undefined;
       const previousLiked = previousStatus?.liked ?? false;
       // Only consider liked change if it was explicitly provided in the request
       const likedWasProvided = typeof liked === 'boolean';
       const newLiked = likedWasProvided ? liked : previousLiked;
 
-      // 1. Revert previous status impact (if status changed)
-      if (
-        previousStatusValue &&
-        previousStatusValue !== status &&
-        previousStatusValue !== TITLE_STATUS.WATCHLIST
-      ) {
-        // Revert: score -= SCORE_WEIGHTS[previousStatus]
-        const previousWeight = SCORE_WEIGHTS[
-          previousStatusValue as keyof typeof SCORE_WEIGHTS
-        ];
-        if (previousWeight !== 0) {
-          await updatePoolScore(userId, tmdb_id, -previousWeight, supabase);
-        }
-      }
+      // Get current preference_score
+      const { data: currentPoolEntry } = await supabase
+        .from(TABLES.RECOMMENDATION_POOL)
+        .select('preference_score')
+        .eq('user_id', userId)
+        .eq('tmdb_id', tmdb_id)
+        .maybeSingle();
 
-      // 2. Revert previous liked impact (if liked changed from true to false)
-      if (likedWasProvided && previousLiked === true && newLiked === false) {
-        // Revert: score -= SCORE_WEIGHTS.liked
-        await updatePoolScore(
-          userId,
-          tmdb_id,
-          -SCORE_WEIGHTS.liked,
-          supabase
-        );
-      }
+      const currentPreferenceScore = currentPoolEntry?.preference_score ?? 0;
 
-      // 3. Apply new status impact (if status changed and not watchlist)
-      if (
-        previousStatusValue !== status &&
-        status !== TITLE_STATUS.WATCHLIST
-      ) {
-        const newWeight =
-          SCORE_WEIGHTS[status as keyof typeof SCORE_WEIGHTS];
-        if (newWeight !== 0) {
-          await updatePoolScore(userId, tmdb_id, newWeight, supabase);
-        }
-      }
-
-      // 4. Apply new liked impact (if liked changed from false to true)
+      // Handle LIKE (liked changed from false to true)
       if (likedWasProvided && previousLiked === false && newLiked === true) {
-        // Apply: score += SCORE_WEIGHTS.liked
-        await updatePoolScore(userId, tmdb_id, SCORE_WEIGHTS.liked, supabase);
+        // Increment preference_score
+        const increment = 10; // Base increment for like
+        const newPreferenceScore = Math.min(100, currentPreferenceScore + increment);
+        await updatePreferenceScore(userId, tmdb_id, newPreferenceScore, supabase);
+
+        // Propagate influence to similar titles
+        await propagateLikeInfluence(userId, tmdb_id, type, supabase, increment);
       }
 
-      // 5. Handle not_interested: remove from pool after score update
+      // Handle REMOVE LIKE (liked changed from true to false)
+      if (likedWasProvided && previousLiked === true && newLiked === false) {
+        // Apply soft decay (*0.7)
+        const newPreferenceScore = currentPreferenceScore * 0.7;
+        await updatePreferenceScore(userId, tmdb_id, newPreferenceScore, supabase);
+
+        // Propagate decay to similar titles
+        await propagateRemoveLikeInfluence(userId, tmdb_id, type, supabase, 0.7);
+      }
+
+      // Handle DISLIKE (not_interested)
       if (status === TITLE_STATUS.NOT_INTERESTED) {
+        // Strong penalty
+        const penalty = -15;
+        const newPreferenceScore = Math.max(-100, currentPreferenceScore + penalty);
+        await updatePreferenceScore(userId, tmdb_id, newPreferenceScore, supabase);
+
+        // Propagate penalty to similar titles
+        await propagateDislikeInfluence(userId, tmdb_id, type, supabase, penalty);
+
+        // Remove from pool
         await removeFromPool(userId, tmdb_id, supabase);
+      }
+
+      // Check for extreme behavior and perform soft reset if needed
+      const shouldSoftReset = await detectExtremeBehavior(userId, supabase);
+      if (shouldSoftReset) {
+        await performSoftReset(userId, supabase, 0.5);
       }
     } catch (poolError) {
       // Don't fail the request if pool update fails

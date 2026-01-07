@@ -9,13 +9,8 @@
 import { getTitleInLanguage, type MultiLanguageText } from '@/services/titles';
 import { getTMDBConfig } from './config';
 import { MEDIA_TYPE } from '@/constants/domain/mediaType';
-import {
-  PROFILES_COLUMNS,
-  USER_PREFERENCES_COLUMNS,
-  TITLES_COLUMNS,
-} from '@/constants/db/columns';
+import { TITLES_COLUMNS } from '@/constants/db/columns';
 import { TABLES } from '@/constants/db/tables';
-import { SCORE_WEIGHTS } from '@/constants/domain/scoring';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 export interface ExtractedTitleData {
@@ -187,7 +182,7 @@ export async function fetchOverviewWithPrimaryLanguageFallback(
 export async function extractTitleDataWithFallback(
   options: TitleExtractionOptions
 ): Promise<ExtractedTitleData> {
-  const { tmdbId, type, language, region, supabase, config } = options;
+  const { tmdbId, type, language, region, supabase } = options;
 
   // Get title from database
   const { data: titleFromDb, error: dbError } = await supabase

@@ -3,7 +3,6 @@
  * Fetches videos from TMDB API for movies, TV shows, and seasons
  */
 
-import { getTMDBConfig } from './config';
 import type { TMDBVideoResponse } from '@/types/Video';
 
 /**

@@ -1,4 +1,4 @@
-import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue';
+import { ref, onMounted, onUnmounted, nextTick } from 'vue';
 
 /**
  * Composable for scroll-based animations using Intersection Observer

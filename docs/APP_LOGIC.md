@@ -330,34 +330,112 @@ This is a product decision to maintain data consistency and avoid orphaned state
 
 ### Principle
 
-The score represents **real affinity**, not future intention.
+The score represents **real affinity**, not future intention. The system uses an **incremental scoring model** that separates base popularity from user preferences, allowing progressive adjustments without full pool regeneration.
 
-### Score Weights
+### Incremental Scoring Model
 
-Defined in `/constants/domain/scoring.ts`:
+The recommendation pool uses a multi-component scoring system:
 
-```typescript
-export const SCORE_WEIGHTS = {
-  liked: 30, // +30 points
-  seen: -50, // -50 points
-  not_interested: -100, // -100 points
-  watchlist: 0, // 0 points (no effect)
-} as const;
+#### Schema
+
+```sql
+CREATE TABLE recommendation_pool (
+  id UUID PRIMARY KEY,
+  user_id UUID NOT NULL,
+  tmdb_id INTEGER NOT NULL,
+  type TEXT NOT NULL,
+  source TEXT NOT NULL,
+  score DOUBLE PRECISION, -- Persisted: base_score + preference_score
+  base_score DOUBLE PRECISION, -- Initial score from popularity/quality (never changes after population)
+  preference_score DOUBLE PRECISION, -- Score from likes/dislikes and similarity propagation
+  explanation_code TEXT,
+  created_at TIMESTAMP,
+  last_shown_at TIMESTAMP, -- Used for recency_weight calculation
+  UNIQUE(user_id, tmdb_id)
+);
 ```
 
-### Application Rules
+#### Score Components
 
-1. **Each signal is applied independently**
-   - `liked` and `seen` are applied separately
-   - If a title has `seen: true` and `liked: true`, both weights are applied
+1. **`base_score`**: Initial score based on popularity/rating, set during pool population
+   - Normalized from `vote_average` (0-10) to score range (0-50)
+   - Never changes after initial population
+   - Represents inherent quality/popularity
 
-2. **All signals must be reversible**
-   - When removing a state, its impact is exactly reversed
-   - Reversal formula: `score -= SCORE_WEIGHTS[state]`
+2. **`preference_score`**: Score component derived from user interactions
+   - Starts at 0
+   - Updated incrementally via likes/dislikes
+   - Propagates to similar titles (by shared genres)
+   - Can be reduced via soft reset in extreme behavior scenarios
 
-3. **`watchlist` never modifies the score**
-   - Neither when adding nor removing
-   - Weight = 0
+3. **`score` (persisted)**: Sum of `base_score` + `preference_score`
+   - Used as base for runtime calculations
+   - **NOT used for direct ordering** (see `final_score` below)
+
+4. **`recency_weight`** (runtime): Decay factor based on `last_shown_at`
+   - Exponential decay: `e^(-days_since_shown * decay_rate)`
+   - Normalized to range 0.5 - 1.0
+   - Calculated only at runtime, never persisted
+
+5. **`animation_bias`** (runtime): Dynamic multiplier for animated content (0.7-1.0)
+   - Reduces over-representation of animation without excluding it
+   - Adjusts based on user affinity, explicit dislikes, adult animation detection
+   - Calculated only at runtime, never persisted
+
+#### Final Score Calculation
+
+**IMPORTANT**: The persisted `score` is **NOT** the final ordering criterion.
+
+The final ordering uses `final_score`, calculated at runtime:
+
+```
+final_score = (base_score * 0.4 + preference_score * 0.4 + recency_weight * 0.2) * animation_bias
+```
+
+After calculating `final_score`:
+- Apply mood/attention boosts as runtime multiplicative adjustments
+- Apply controlled randomization (±5%)
+- **Order by `final_score` DESC** (NOT by `score`)
+
+### User Interaction Scoring
+
+#### LIKE Action
+
+- Increment `preference_score` by base increment (e.g., +10)
+- Propagate influence to similar titles (by shared genres):
+  - ≥2 shared genres: +15 (strong influence)
+  - 1 shared genre: +7 (moderate influence)
+- Recalculate `score = base_score + preference_score`
+
+#### REMOVE LIKE Action
+
+- Apply soft decay: `preference_score *= 0.7`
+- Propagate decay to similar titles
+- Recalculate `score = base_score + preference_score`
+
+#### DISLIKE Action
+
+- Apply strong penalty to `preference_score` (e.g., -15)
+- Propagate penalty to similar titles
+- Remove from pool
+- Recalculate `score = base_score + preference_score`
+
+### Similarity Propagation
+
+When a user likes/dislikes a title, the system propagates influence to similar titles based on shared genres:
+
+- **Strong influence**: Titles with ≥2 shared genres receive 1.5x the base increment/penalty
+- **Moderate influence**: Titles with 1 shared genre receive 0.7x the base increment/penalty
+- This creates progressive, contextual adjustments without full pool regeneration
+
+### Soft Reset
+
+In extreme user behavior scenarios (e.g., removing >60% of likes in a short window), the system performs a **soft reset**:
+
+- Reduces historical `preference_score` by decay factor (default: *0.5)
+- Maintains `base_score` unchanged
+- Does NOT clear the pool
+- Allows the system to adapt to changing user preferences gradually
 
 ### Recommendation Filtering and Boosting
 
@@ -548,14 +626,17 @@ CREATE TABLE recommendation_pool (
   tmdb_id INTEGER NOT NULL,
   type TEXT NOT NULL, -- 'movie' or 'tv'
   source TEXT NOT NULL, -- 'based_on_like', 'trending', 'discover', 'easy', 'mood'
-  score DOUBLE PRECISION,
+  score DOUBLE PRECISION, -- Persisted: base_score + preference_score
+  base_score DOUBLE PRECISION, -- Initial score from popularity/quality
+  preference_score DOUBLE PRECISION, -- Score from user interactions
   explanation_code TEXT,
-  title_data JSONB,
   created_at TIMESTAMP,
-  last_shown_at TIMESTAMP,
+  last_shown_at TIMESTAMP, -- Used for recency_weight calculation
   UNIQUE(user_id, tmdb_id)
 );
 ```
+
+**IMPORTANT**: The `titles` table stores multi-language metadata (title, overview, poster_path) as JSONB. The `recommendation_pool` does NOT store language data. Metadata is read from `titles` JSONB based on the current language at runtime.
 
 ### Recommendation Sources
 
@@ -567,62 +648,89 @@ CREATE TABLE recommendation_pool (
 
 ### Pool Regeneration
 
-**IMPORTANT: Pool regeneration only occurs when structural preferences change**
+**IMPORTANT: Pool regeneration only occurs when the content universe changes**
 
-The pool should **only** be regenerated when the user's structural preferences change, as these define the universe of available content.
+The pool should **only** be regenerated when the user's **region** changes, as this defines a new universe of available content from TMDB.
 
 #### Changes that trigger pool regeneration:
 
-- **Region** (`region`)
-- **Favorite genres** (`favorite_genres`)
-- **Included providers** (`included_providers`)
-
-#### Changes that update pool without regeneration:
-
-- **App language** (`language` in user settings): When the app language changes, the system updates the `title_data` field in all pool entries with the title and overview in the new language. This is done by:
-  1. First checking the `titles` table for existing title data in the new language
-  2. If missing, fetching from TMDB
-  3. Updating the `title_data` JSONB field in the pool entry
-  4. The pool entries themselves (scores, sources, etc.) remain unchanged
-
-**Note:** When the pool is regenerated, the system first checks the `titles` table for existing title data, and only fetches from TMDB if the information is missing or incomplete in the requested language. This ensures efficient caching and reduces API calls.
-
-When preferences change:
-
-1. The previous pool is discarded
-2. A new pool is generated
-3. Rankings and diversity are recalculated
+- **Region** (`region`): Changing region defines a new content universe
+  - TMDB returns different universes per region (trending, discover, recommendations, provider availability)
+  - Pool is completely regenerated with `clearPool=true`
+  - All TMDB calls use the new region parameter
 
 #### Changes that do NOT trigger pool regeneration:
 
-- Marking/unmarking titles as `liked`
-- Marking/unmarking titles as `seen`
-- Marking/unmarking titles as `not_interested`
-- Adding/removing titles from `watchlist`
+- **App language** (`language`): Only affects metadata display
+  - Reads from `titles` JSONB based on current language
+  - If metadata is missing for the language, fetches from TMDB conditionally
+  - Pool entries (scores, sources) remain unchanged
 
-These actions:
+- **Favorite genres** (`favorite_genres`): Only used for runtime filtering
+  - Saved to `user_preferences` but NOT used during pool population
+  - Applied as filters in `recommendations/index.get.ts` at runtime
+  - Changing genres does NOT regenerate the pool
 
-- Adjust the score (weight/relevance)
-- Affect the order of titles
-- Affect similar titles
-- May exclude or rehabilitate titles
-- **Do NOT invalidate the pool**
+- **Included providers** (`included_providers`): Only used for runtime filtering
+  - Saved to `user_preferences` but NOT used during pool population
+  - Applied as best-effort filters in `recommendations/index.get.ts` at runtime
+  - If a title lacks provider data, it's included anyway (best-effort)
+  - Changing providers does NOT regenerate the pool
+
+- **Likes/dislikes**: Only update `preference_score` incrementally
+  - Adjust scores and propagate to similar titles
+  - Do NOT invalidate the pool
+
+#### Multi-language Metadata
+
+The `titles` table stores multi-language metadata as JSONB:
+
+```sql
+CREATE TABLE titles (
+  tmdb_id INTEGER PRIMARY KEY,
+  type TEXT NOT NULL,
+  title JSONB, -- { "en": "Title", "es": "Título", ... }
+  overview JSONB, -- { "en": "Overview", "es": "Resumen", ... }
+  poster_path JSONB, -- { "en": "/path.jpg", "es": "/path.jpg", ... }
+  genres JSONB,
+  ...
+);
+```
+
+**Rules:**
+- `populate-pool` and `refresh-pool` check if metadata exists in JSONB before fetching from TMDB
+- Only fetches from TMDB if metadata is missing for the current language
+- `recommendations/index.get.ts` and `replacement.get.ts` read from JSONB based on current language
+- **Never** call TMDB from recommendation endpoints (only from populate/refresh)
+
+#### Region vs Language
+
+**Critical distinction:**
+
+- **Region**: Defines the content universe → Regenerates pool
+- **Language**: Only affects metadata display → Does NOT regenerate pool
+
+This separation ensures:
+- Pool stability when users change language
+- Efficient metadata caching across languages
+- Correct content universe per region
 
 ### Score Update
 
-The score is updated when the user:
+The `preference_score` is updated when the user:
 
-- Marks a title as `liked`, `seen`, or `not_interested`
-- Removes a state from a title
+- Marks a title as `liked` → Increment `preference_score`, propagate to similar titles
+- Removes a like → Apply decay (`preference_score *= 0.7`), propagate decay
+- Marks a title as `not_interested` → Apply penalty, propagate, remove from pool
 
 **Process:**
 
-1. Get the previous state of the title
-2. Revert the impact of the previous state (if applicable)
-3. Apply the impact of the new state (if applicable)
+1. Update `preference_score` based on action
+2. Propagate influence to similar titles (by shared genres)
+3. Recalculate `score = base_score + preference_score`
 4. If `not_interested`, remove from pool (but don't regenerate pool)
 
-**Key principle**: Changing the score does not invalidate the pool. Only changing structural preferences invalidates the pool.
+**Key principle**: Changing `preference_score` does not invalidate the pool. Only changing region invalidates the pool.
 
 ### Pool Removal
 
@@ -697,6 +805,14 @@ The recommendation list must always maintain exactly 20 visible recommendations.
    - If a TV show is removed → replace with another TV show
    - This ensures the balance is maintained even after removals
 
+4. **Replacement scoring:**
+   - Uses existing ranking (`score = base_score + preference_score`) as base
+   - Calculates `final_score` with `recency_weight` (NO `animation_bias` in replacement)
+   - Applies mood/attention boosts as runtime multiplicative adjustments
+   - Applies genre/provider filters (best-effort)
+   - **Orders by `final_score` DESC** (NOT by `score`)
+   - **Never persists changes** to database
+
 4. **Replacement logic - Filters active:**
    - **Mode**: Intention mode
    - **Strategy**: Replace with next most relevant title that matches filters
@@ -714,7 +830,12 @@ The recommendation list must always maintain exactly 20 visible recommendations.
      - `attention`: Current attention filter (if any)
   3. The replacement endpoint:
      - Excludes the removed title and all other excluded titles (seen, not_interested, watchlist)
-     - Applies mood/attention boosts using multiplicative factors if filters are active
+     - Uses existing ranking (`score = base_score + preference_score`) as base
+     - Calculates `final_score` with `recency_weight` (NO `animation_bias` in replacement)
+     - Applies genre/provider filters (best-effort)
+     - Applies mood/attention boosts as runtime multiplicative adjustments
+     - **Orders by `final_score` DESC** (NOT by `score`)
+     - **Never persists changes** to database
      - Returns a replacement title:
        - Same type if no filters (to maintain balance)
        - Most relevant if filters active (any type, respecting content type filter if set)
@@ -930,6 +1051,47 @@ Stores user activity tracking for analytics and debugging.
 
 - Users must complete onboarding before accessing recommendations
 - During onboarding, they select up to 10 titles they like
+
+#### Onboarding Flow
+
+**Steps:**
+
+1. **Region Selection** (mandatory)
+   - User must select a region before continuing
+   - Region defines the content universe
+
+2. **Genre Selection** (optional)
+   - User can select favorite genres
+   - Saved to `user_preferences.favorite_genres`
+   - **NOT used during pool population** (only for runtime filtering)
+
+3. **Provider Selection** (optional)
+   - User can select included providers
+   - **Depends on region**: Providers are loaded based on selected region
+   - If region changes, providers are cleared and reloaded
+   - Saved to `user_preferences.included_providers`
+   - **NOT used during pool population** (only for runtime filtering)
+
+4. **Title Selection** (optional)
+   - User can select up to 10 titles they like
+   - These are saved as `liked = true` in `user_title_status`
+
+**Pool Generation:**
+
+- `populate-pool` is called **UNA SOLA VEZ** at the end of onboarding
+- Called with `clearPool=true` to generate initial pool
+- Uses **region** to define the universe
+- **Does NOT use genres or providers** (they are only filters)
+- Genres and providers selected during onboarding are saved but do not influence initial pool generation
+
+**Key Principle:**
+
+- Genres and providers in onboarding are **UX only**
+- They do NOT influence:
+  - Pool initial population
+  - Base popularity
+  - `base_score` calculation
+- They are only used for runtime filtering after pool is generated
 - These titles are saved as `status: 'seen'` and `liked: true`
 
 ### 2. "Liked" Limit
@@ -963,10 +1125,13 @@ Stores user activity tracking for analytics and debugging.
 ### 5. Pool Regeneration
 
 - The pool is automatically regenerated when:
-  - The user changes their structural preferences (language, region, genres, providers)
-- It can also be manually regenerated
+  - The user changes their **region** (defines new content universe)
+- It can also be manually regenerated (onboarding, manual trigger)
 
-**IMPORTANT**: Marking/unmarking titles as "liked" does NOT regenerate the pool. Only the score is adjusted.
+**IMPORTANT**: 
+- Marking/unmarking titles as "liked" does NOT regenerate the pool. Only `preference_score` is adjusted.
+- Changing **language** does NOT regenerate the pool. Only affects metadata display.
+- Changing **genres** or **providers** does NOT regenerate the pool. They are only runtime filters.
 
 ### 6. Security (RLS)
 

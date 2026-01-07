@@ -5,7 +5,8 @@
  */
 
 import { getRouterParams } from 'h3';
-import { serverSupabaseUser, serverSupabaseClient } from '#supabase/server';
+import { serverSupabaseClient } from '#supabase/server';
+import { getUserIdFromEvent } from '@/server/utils/user-preferences';
 import {
   getDiscoverListBySlug,
   insertDiscoverListIntoPool,
@@ -13,16 +14,9 @@ import {
 
 export default defineEventHandler(async (event) => {
   try {
-    const user = await serverSupabaseUser(event);
+    // Use centralized function to get userId
+    const userId = await getUserIdFromEvent(event);
 
-    if (!user) {
-      throw createError({
-        statusCode: 401,
-        statusMessage: 'Unauthorized',
-      });
-    }
-
-    const userId = user.id || (user as { sub?: string }).sub;
     if (!userId) {
       throw createError({
         statusCode: 401,

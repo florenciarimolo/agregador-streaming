@@ -1,8 +1,8 @@
-import { serverSupabaseUser } from '#supabase/server';
 import { createClient } from '@supabase/supabase-js';
 import { devLog, devError, devWarn, safeError } from '@/server/utils/logger';
 import { Recommendation, Provider } from '@/types/Recommendation';
 import { TITLE_STATUS } from '@/constants/domain/titleStatus';
+import { getUserIdFromEvent } from '@/server/utils/user-preferences';
 import {
   MOOD,
   type Mood,
@@ -19,9 +19,9 @@ import {
 import { RECOMMENDATION_POOL_COLUMNS } from '@/constants/db/columns';
 import { updateLastShownAt } from '@/services/recommendationPool';
 import { TABLES } from '@/constants/db/tables';
-import { PROFILES_COLUMNS, USER_PREFERENCES_COLUMNS, TITLES_COLUMNS, USER_TITLE_STATUS_COLUMNS } from '@/constants/db/columns';
-import { SCORE_WEIGHTS } from '@/constants/domain/scoring';
-import type { MultiLanguageText } from '@/services/titles';
+import { USER_PREFERENCES_COLUMNS, TITLES_COLUMNS, USER_TITLE_STATUS_COLUMNS } from '@/constants/db/columns';
+import { getTitleInLanguage, type MultiLanguageText } from '@/services/titles';
+import { calculateAnimationBias } from '@/services/animationBias';
 import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 import { TmdbGenreId } from '@/types/enums/TmdbGenreId';
 import { QUERY_PARAMS } from '@/constants/api/queryParams';
@@ -273,8 +273,6 @@ export default defineEventHandler(async (event) => {
   setHeader(event, 'Expires', '0');
 
   const config = useRuntimeConfig();
-  let user = null;
-  let userId: string | null = null;
 
   // Get query params for mood, attention, and content type
   const query = getQuery(event);
@@ -282,52 +280,10 @@ export default defineEventHandler(async (event) => {
   const attention = query[QUERY_PARAMS.ATTENTION] as Attention | undefined;
   const contentType = query[QUERY_PARAMS.TYPE] as 'movie' | 'tv' | undefined; // Filter by content type on server
 
-  // Try to get user from cookies first (default Supabase behavior)
-  const userFromCookies = await serverSupabaseUser(event);
+  // Use centralized function to get userId
+  const userId = await getUserIdFromEvent(event);
 
-  if (userFromCookies) {
-    userId =
-      userFromCookies.id || (userFromCookies as { sub?: string }).sub || null;
-
-    if (userId) {
-      user = { id: userId, sub: userId };
-      devLog('[Recommendations] User from cookies');
-    }
-  } else {
-    // If no user from cookies, try to get from Authorization header
-    const authHeader = event.node.req.headers.authorization;
-
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      const token = authHeader.substring(7);
-
-      try {
-        const parts = token.split('.');
-        if (parts.length === 3) {
-          const payload = JSON.parse(
-            Buffer.from(
-              parts[1].replace(/-/g, '+').replace(/_/g, '/'),
-              'base64'
-            ).toString()
-          );
-
-          userId = payload.sub;
-
-          if (userId) {
-            user = { id: userId, sub: userId };
-            devLog('[Recommendations] User from Authorization header');
-          }
-        }
-      } catch (err) {
-        safeError('[Recommendations] Error decoding token', err);
-      }
-    } else {
-      devWarn(
-        '[Recommendations] No user from cookies and no Authorization header'
-      );
-    }
-  }
-
-  if (!user || !userId) {
+  if (!userId) {
     devError('[Recommendations] Unauthorized - no user found');
     throw createError({
       statusCode: 401,
@@ -354,15 +310,21 @@ export default defineEventHandler(async (event) => {
   });
 
   try {
-    // Get user preferences for providers
+    // Get user preferences for providers and genres
     const { data: userPreferences } = await supabase
       .from(TABLES.USER_PREFERENCES)
-      .select(USER_PREFERENCES_COLUMNS.INCLUDED_PROVIDERS)
+      .select(
+        `${USER_PREFERENCES_COLUMNS.INCLUDED_PROVIDERS}, ${USER_PREFERENCES_COLUMNS.FAVORITE_GENRES}`
+      )
       .eq(USER_PREFERENCES_COLUMNS.USER_ID, userId)
       .maybeSingle();
 
     const includedProviders =
       (userPreferences?.[USER_PREFERENCES_COLUMNS.INCLUDED_PROVIDERS] as
+        | number[]
+        | null) || [];
+    const favoriteGenres =
+      (userPreferences?.[USER_PREFERENCES_COLUMNS.FAVORITE_GENRES] as
         | number[]
         | null) || [];
 
@@ -394,6 +356,8 @@ export default defineEventHandler(async (event) => {
     // Fetch all recommendations from pool (no source filtering)
     const fetchRecommendations = async (): Promise<Recommendation[]> => {
       // Build query to get pool entries (title_data removed, will fetch from titles table)
+      // IMPORTANT: We read base_score and preference_score, but order by score (base + preference)
+      // Final ordering will be done by final_score calculated in runtime
       const query = supabase
         .from(TABLES.RECOMMENDATION_POOL)
         .select(
@@ -402,14 +366,17 @@ export default defineEventHandler(async (event) => {
           ${RECOMMENDATION_POOL_COLUMNS.TYPE},
           ${RECOMMENDATION_POOL_COLUMNS.SOURCE},
           ${RECOMMENDATION_POOL_COLUMNS.SCORE},
+          ${RECOMMENDATION_POOL_COLUMNS.BASE_SCORE},
+          ${RECOMMENDATION_POOL_COLUMNS.PREFERENCE_SCORE},
+          ${RECOMMENDATION_POOL_COLUMNS.LAST_SHOWN_AT},
           ${RECOMMENDATION_POOL_COLUMNS.EXPLANATION_CODE},
           ${RECOMMENDATION_POOL_COLUMNS.CREATED_AT}
         `
         )
         .eq(RECOMMENDATION_POOL_COLUMNS.USER_ID, userId);
 
-      // Order by score (with mood/attention boost applied in application layer)
-      // Get more results to filter and apply boosts
+      // Get entries ordered by score (base + preference) as initial ranking
+      // Final ordering will be by final_score calculated in runtime
       const { data: poolEntries, error: poolError } = await query
         .order(RECOMMENDATION_POOL_COLUMNS.SCORE, { ascending: false })
         .order(RECOMMENDATION_POOL_COLUMNS.CREATED_AT, { ascending: false })
@@ -496,7 +463,8 @@ export default defineEventHandler(async (event) => {
         }
       };
 
-      // Filter by providers if user has preferences
+      // Filter by providers if user has preferences (best-effort)
+      // If a title doesn't have provider data, include it anyway (best-effort)
       if (includedProviders.length > 0) {
         const entriesWithProviders = await Promise.all(
           filteredEntries.map(async (entry) => {
@@ -505,9 +473,9 @@ export default defineEventHandler(async (event) => {
               entry.type as 'movie' | 'tv'
             );
 
-            // Exclude titles that don't have any providers
+            // Best-effort: if no provider data, include the title anyway
             if (titleProviders.length === 0) {
-              return null;
+              return entry; // Include if no data (best-effort)
             }
 
             // Check if any of the title's providers match user's included providers
@@ -515,6 +483,7 @@ export default defineEventHandler(async (event) => {
               includedProviders.includes(providerId)
             );
 
+            // Only exclude if we have provider data AND none match
             if (!hasMatchingProvider) {
               return null;
             }
@@ -528,6 +497,9 @@ export default defineEventHandler(async (event) => {
           (entry): entry is NonNullable<typeof entry> => entry !== null
         );
       }
+
+      // Filter by genres if user has preferences
+      // This will be applied after we get title data (genres come from titles table)
 
       // Helper to fetch title data from titles table (or TMDB if missing)
       // IMPORTANT: title_data has been removed from recommendation_pool, all data comes from titles table
@@ -578,8 +550,6 @@ export default defineEventHandler(async (event) => {
         }
 
         // Extract text in user's language from titles table (may return fallback if language missing)
-        const { getTitleInLanguage } =
-          await import('@/services/titles');
         const extractedTitle = getTitleInLanguage(
           titleJsonb,
           language,
@@ -841,7 +811,54 @@ export default defineEventHandler(async (event) => {
           const genreIds = titleData.genres.map((g) => g.id);
           const voteAverage = titleData.vote_average;
 
-          // Calculate boost factors using multiplicative logic
+          // Filter by genres if user has preferences
+          if (favoriteGenres.length > 0) {
+            const hasMatchingGenre = genreIds.some((genreId) =>
+              favoriteGenres.includes(genreId)
+            );
+            if (!hasMatchingGenre) {
+              return null; // Exclude if no matching genre
+            }
+          }
+
+          // Get base_score and preference_score from pool entry
+          const baseScore = entry.base_score ?? 0;
+          const preferenceScore = entry.preference_score ?? 0;
+
+          // Calculate recency_weight based on last_shown_at
+          // Exponential decay: e^(-days_since_shown * decay_rate)
+          // Normalize to range 0.5 - 1.0
+          let recencyWeight = 1.0;
+          if (entry.last_shown_at) {
+            const daysSinceShown =
+              (Date.now() - new Date(entry.last_shown_at).getTime()) /
+              (1000 * 60 * 60 * 24);
+            const decayRate = 0.1; // Adjustable decay rate
+            const decayFactor = Math.exp(-daysSinceShown * decayRate);
+            // Normalize to 0.5 - 1.0 range
+            recencyWeight = 0.5 + decayFactor * 0.5;
+          }
+
+          // Calculate animation_bias
+          const animationBias = await calculateAnimationBias(
+            entry.tmdb_id,
+            entry.type as 'movie' | 'tv',
+            titleData.genres,
+            voteAverage,
+            null, // popularity not available from titles table
+            userId,
+            supabase
+          );
+
+          // Calculate final_score with new formula:
+          // final_score = (base_score * 0.4 + preference_score * 0.4 + recency_weight * 0.2) * animation_bias
+          // Note: recency_weight is normalized 0.5-1.0, so we scale it appropriately
+          const recencyComponent = recencyWeight * 50; // Scale to 0-50 range
+          const finalScore =
+            (baseScore * 0.4 + preferenceScore * 0.4 + recencyComponent * 0.2) *
+            animationBias;
+
+          // Calculate boost factors for mood/attention (applied as runtime adjustment)
           // Note: runtime and episodeCount not available from titles table,
           // so we'll use genre-based heuristics for attention
           const { attentionFactor, moodFactor } = calculateBoostFactors(
@@ -854,24 +871,23 @@ export default defineEventHandler(async (event) => {
             attention
           );
 
-          // Combine factors with explicit weights
+          // Apply mood/attention as runtime multiplicative adjustment
           const combinedFactor =
             attentionFactor * BOOST_WEIGHTS.ATTENTION +
             moodFactor * BOOST_WEIGHTS.MOOD;
-
-          // Calculate final score using multiplicative formula
-          // Apply protection: never reduce below PROTECTION_FACTOR of base score
-          const baseScore = entry.score || 0;
-          const finalScore =
-            baseScore * Math.max(1 + combinedFactor, PROTECTION_FACTOR);
+          const adjustedFinalScore =
+            finalScore * Math.max(1 + combinedFactor, PROTECTION_FACTOR);
 
           return {
             ...entry,
             titleData,
-            finalScore,
+            finalScore: adjustedFinalScore,
             baseScore,
+            preferenceScore,
             genreIds,
             voteAverage,
+            recencyWeight,
+            animationBias,
           };
         })
       );
@@ -883,12 +899,23 @@ export default defineEventHandler(async (event) => {
           titleData: TitleData;
           finalScore: number;
           baseScore: number;
+          preferenceScore: number;
           genreIds: number[];
           voteAverage: number | null;
+          recencyWeight: number;
+          animationBias: number;
         }
       >;
 
-      // Sort by final score (base + boosts), then by base score, then by created_at
+      // Apply controlled randomization (±5%)
+      validEntries.forEach((entry) => {
+        const randomFactor = 1 + (Math.random() - 0.5) * 0.1; // ±5%
+        entry.finalScore = entry.finalScore * randomFactor;
+      });
+
+      // Sort by final_score (NOT by score)
+      // IMPORTANT: score is base_score + preference_score (persisted)
+      // final_score includes recency_weight and animation_bias (runtime)
       validEntries.sort((a, b) => {
         // First sort by final score
         if (b.finalScore !== a.finalScore) {

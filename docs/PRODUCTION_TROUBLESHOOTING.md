@@ -88,7 +88,7 @@ If counts are 0, the problem is not technical but the user simply has no data.
 
 1. **Check server logs in production** to see what's happening
 2. **Verify environment variables** - especially `SUPABASE_SERVICE_ROLE_KEY`
-3. **Open browser console** and verify that requests to `/api/recommendations` and `/api/user-history` are being made
+3. **Open browser console** and verify that requests to `/api/recommendations` are being made
 4. **Check request responses** in the browser Network tab
 5. **Verify token is being sent** in the `Authorization` header
 
@@ -99,4 +99,3 @@ In production, you can temporarily add more logging or verify:
 - That the user is correctly authenticated
 - That requests reach the server
 - That Supabase queries don't fail due to RLS
-

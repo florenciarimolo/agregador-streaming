@@ -161,10 +161,11 @@ export default defineEventHandler(async (event) => {
       [];
 
     return videosForLang;
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorObj = error && typeof error === 'object' && 'statusCode' in error ? error as { statusCode?: number; statusMessage?: string } : {};
     throw createError({
-      statusCode: error.statusCode || 500,
-      statusMessage: error.statusMessage || 'Error fetching season videos',
+      statusCode: errorObj.statusCode || 500,
+      statusMessage: errorObj.statusMessage || 'Error fetching season videos',
       data: error,
     });
   }

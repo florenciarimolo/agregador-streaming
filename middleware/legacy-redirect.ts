@@ -13,7 +13,6 @@
  * - NOTE: No cookies are used - language is determined solely from URL
  */
 
-import { getUrlCodeFromI18nCode } from '@/composables/useLangFromUrl';
 import {
   DEFAULT_LANGUAGE_URL_CODE,
   VALID_URL_CODES,
@@ -45,7 +44,7 @@ const hasLangPrefix = (path: string): boolean => {
     return false;
   }
   const firstPart = parts[0].toLowerCase();
-  return VALID_URL_CODES.includes(firstPart as any);
+  return VALID_URL_CODES.includes(firstPart as typeof VALID_URL_CODES[number]);
 };
 
 /**
@@ -71,7 +70,7 @@ const detectLanguageFromHeader = (
   // Try to match each language in order of preference
   for (const { code } of languages) {
     // Try exact match first (e.g., "en-gb" -> "en-gb")
-    if (VALID_URL_CODES.includes(code as any)) {
+    if (VALID_URL_CODES.includes(code as typeof VALID_URL_CODES[number])) {
       return code;
     }
 
@@ -80,7 +79,7 @@ const detectLanguageFromHeader = (
     if (langCode === 'en' && code.includes('gb')) {
       return 'en-gb';
     }
-    if (VALID_URL_CODES.includes(langCode as any)) {
+    if (VALID_URL_CODES.includes(langCode as typeof VALID_URL_CODES[number])) {
       return langCode;
     }
 

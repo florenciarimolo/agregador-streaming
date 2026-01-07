@@ -1,26 +1,14 @@
 import { getUserActivity } from '@/services/activity';
-import { getSession } from '@/services/auth';
+import { getUserIdFromEvent } from '@/server/utils/user-preferences';
 
 export default defineEventHandler(async (event) => {
   try {
-    const {
-      data: { session },
-    } = await getSession();
-
-    if (!session?.access_token) {
-      throw createError({
-        statusCode: 401,
-        statusMessage: 'Unauthorized',
-      });
-    }
-
-    const userId =
-      session.user.id || (session.user as { sub?: string }).sub;
+    const userId = await getUserIdFromEvent(event);
 
     if (!userId) {
       throw createError({
         statusCode: 401,
-        statusMessage: 'User ID not found',
+        statusMessage: 'Unauthorized',
       });
     }
 

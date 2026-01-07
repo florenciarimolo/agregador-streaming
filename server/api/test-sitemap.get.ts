@@ -4,7 +4,7 @@
  */
 import { getTitleIdsForSitemap, getDiscoverListsForSitemap } from '@/server/utils/sitemap';
 
-export default defineEventHandler(async (event) => {
+export default defineEventHandler(async () => {
   console.log('[Test Sitemap] Endpoint called');
   
   try {

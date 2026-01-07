@@ -7,7 +7,6 @@ import { computed } from 'vue';
 import { AVAILABLE_LANGUAGES, DEFAULT_LANGUAGE, type Language } from '@/constants/languages';
 import { getCurrentLangUrlCode } from '@/composables/useRouteWithLang';
 import { getI18nCodeFromUrlCode } from '@/composables/useLangFromUrl';
-import { DEFAULT_LANGUAGE_URL_CODE } from '@/constants/urlLanguageCodes';
 
 /**
  * Get current Language object based on route language

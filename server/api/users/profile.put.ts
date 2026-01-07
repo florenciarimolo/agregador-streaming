@@ -1,32 +1,13 @@
-import { serverSupabaseUser } from '#supabase/server';
 import { createClient } from '@supabase/supabase-js';
-import { getSession } from '@/services/auth';
-import { PROFILES_COLUMNS, USER_PREFERENCES_COLUMNS, TITLES_COLUMNS } from '@/constants/db/columns';
 import { TABLES } from '@/constants/db/tables';
-import { SCORE_WEIGHTS } from '@/constants/domain/scoring';
+import { getUserIdFromEvent } from '@/server/utils/user-preferences';
 
 export default defineEventHandler(async (event) => {
   try {
     const config = useRuntimeConfig();
-    let userId: string | null = null;
 
-    // Try to get user from cookies first
-    const userFromCookies = await serverSupabaseUser(event);
-
-    if (userFromCookies) {
-      userId =
-        userFromCookies.id || (userFromCookies as { sub?: string }).sub || null;
-    } else {
-      // Try Authorization header
-      const {
-        data: { session },
-      } = await getSession();
-
-      if (session?.access_token) {
-        userId =
-          session.user.id || (session.user as { sub?: string }).sub || null;
-      }
-    }
+    // Use centralized function to get userId
+    const userId = await getUserIdFromEvent(event);
 
     if (!userId) {
       throw createError({

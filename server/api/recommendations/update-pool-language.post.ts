@@ -1,5 +1,5 @@
-import { serverSupabaseUser } from '#supabase/server';
 import { devLog } from '@/server/utils/logger';
+import { getUserIdFromEvent } from '@/server/utils/user-preferences';
 
 /**
  * @deprecated This endpoint is no longer needed as title_data has been removed from recommendation_pool.
@@ -8,8 +8,8 @@ import { devLog } from '@/server/utils/logger';
  */
 export default defineEventHandler(async (event) => {
   // Verify user is authenticated
-  const userFromCookies = await serverSupabaseUser(event);
-  if (!userFromCookies) {
+  const userId = await getUserIdFromEvent(event);
+  if (!userId) {
     throw createError({
       statusCode: 401,
       message: 'Unauthorized',

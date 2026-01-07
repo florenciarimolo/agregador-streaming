@@ -160,7 +160,7 @@ const iconClasses = computed(() => {
 });
 
 const iconComponent = computed(() => {
-  const icons: Record<AlertVariant, any> = {
+  const icons: Record<AlertVariant, () => ReturnType<typeof import('vue').h> | null> = {
     success: () =>
       h('svg', {
         class: iconClasses.value,

@@ -452,7 +452,6 @@ const { data: providersData } = useAsyncData(
         logo_path: string | null;
       }>;
     }>('/api/tmdb/watch-providers', {
-      credentials: 'include', // Include cookies for authentication
       query: {
         ...(region ? { region } : {}),
         ...(language ? { language } : {}),
@@ -479,7 +478,6 @@ const refreshProviders = async () => {
       logo_path: string | null;
     }>;
   }>('/api/tmdb/watch-providers', {
-    credentials: 'include',
     query: {
       ...(region ? { region } : {}),
       ...(language ? { language } : {}),
@@ -559,10 +557,16 @@ const fetchContentPreferences = async () => {
     });
 
     if (response.success && response.preferences) {
+      // Ensure region is always a valid string (never null or undefined)
+      // If region is null/undefined in DB, it means user needs to set it (shouldn't happen after onboarding)
+      const region = response.preferences.region && typeof response.preferences.region === 'string' && response.preferences.region.length === 2
+        ? response.preferences.region
+        : undefined;
+      
       contentPreferences.value = {
         favorite_genres: response.preferences.favorite_genres || [],
         included_providers: response.preferences.included_providers || [],
-        region: response.preferences.region || undefined,
+        region,
       };
 
       // Map genres - wait for genres to be available if needed
@@ -690,6 +694,7 @@ const removeGenre = (genreId: number) => {
 };
 
 // Handle region change
+// IMPORTANT: Changing region requires regenerating the pool (new universe)
 const handleRegionChange = async () => {
   // Clear selected providers since they may not be available in the new region
   selectedProviders.value = [];
@@ -699,6 +704,9 @@ const handleRegionChange = async () => {
   await refreshProviders();
 
   markContentPreferencesChanged();
+  
+  // Note: populate-pool will be called when saving if region changed
+  // This ensures the pool is regenerated with the new region
 };
 
 // Mark content preferences as changed - compares current state with saved state
@@ -782,6 +790,12 @@ const confirmSaveContentPreferences = async () => {
   const id = userId.value;
   if (!id) return;
 
+  // Validate that region is set (mandatory)
+  if (!contentPreferences.value.region || typeof contentPreferences.value.region !== 'string' || contentPreferences.value.region.length !== 2) {
+    showToast(t('onboarding.regionRequired'), null, 5000);
+    return;
+  }
+
   try {
     const {
       data: { session },
@@ -792,7 +806,12 @@ const confirmSaveContentPreferences = async () => {
     }
 
     // If selection exists, include only selected items
-    const preferencesToSave = {
+    // Only include region if it's a valid value (never send null)
+    const preferencesToSave: {
+      favorite_genres?: number[];
+      included_providers?: number[];
+      region?: string;
+    } = {
       favorite_genres:
         selectedGenres.value.length > 0
           ? selectedGenres.value.map((g) => g.id)
@@ -801,8 +820,12 @@ const confirmSaveContentPreferences = async () => {
         selectedProviders.value.length > 0
           ? selectedProviders.value.map((p) => p.provider_id)
           : [], // Empty = all providers
-      region: contentPreferences.value.region || null,
     };
+
+    // Only include region if it's a valid string (never null)
+    if (contentPreferences.value.region && typeof contentPreferences.value.region === 'string' && contentPreferences.value.region.length === 2) {
+      preferencesToSave.region = contentPreferences.value.region;
+    }
 
     const response = await $fetch<{
       success: boolean;
@@ -816,21 +839,33 @@ const confirmSaveContentPreferences = async () => {
     });
 
     if (response.success) {
-      // Regenerate recommendation pool with loading modal (clear existing pool first)
-      // Show modal and disable closing
-      showGeneratingModal.value = true;
-      try {
-        await $fetch('/api/recommendations/populate-pool?clearPool=true', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-          },
-        });
-      } catch (poolError) {
-        console.error('Error regenerating pool:', poolError);
-        showToast(t('home.generateError'), null, 5000);
-      } finally {
-        showGeneratingModal.value = false;
+      // Check if region changed
+      const regionChanged = 
+        savedContentPreferences.value?.region !== preferencesToSave.region;
+      
+      // IMPORTANT: Only regenerate pool if region changed
+      // Genres and providers are filters only, they don't require pool regeneration
+      if (regionChanged) {
+        // Clear region cache so it's reloaded on next access
+        const { clearRegionCache } = useUserRegion();
+        clearRegionCache();
+        
+        // Regenerate recommendation pool with loading modal (clear existing pool first)
+        // Show modal and disable closing
+        showGeneratingModal.value = true;
+        try {
+          await $fetch('/api/recommendations/populate-pool?clearPool=true', {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${session.access_token}`,
+            },
+          });
+        } catch (poolError) {
+          console.error('Error regenerating pool:', poolError);
+          showToast(t('home.generateError'), null, 5000);
+        } finally {
+          showGeneratingModal.value = false;
+        }
       }
 
       hasUnsavedContentChanges.value = false;

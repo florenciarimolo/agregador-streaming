@@ -1,5 +1,5 @@
 import { ref, type Ref } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
+import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useSupabaseUser } from '#imports';
 import { getSession } from '@/services/auth';
@@ -30,12 +30,10 @@ function getUserId(
 export const useTitleActions = (
   recommendations: Ref<Recommendation[]>,
   allRecommendations: Ref<Recommendation[]>,
-  filterRecommendationsByType: () => void,
-  fetchRecommendations: () => Promise<Recommendation[]>
+  filterRecommendationsByType: () => void
 ) => {
-  const router = useRouter();
   const route = useRoute();
-  const { t, locale } = useI18n();
+  const { locale } = useI18n();
   const user = useSupabaseUser();
   const { getUserRegion } = useUserRegion();
   const { executeAction, executeLikedAction } = useTitleStatusAction();
@@ -99,7 +97,6 @@ export const useTitleActions = (
           headers: {
             Authorization: `Bearer ${session.access_token}`,
           },
-          credentials: 'include',
           query: queryParams,
         }
       );

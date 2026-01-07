@@ -1,52 +1,34 @@
-import { serverSupabaseUser } from '#supabase/server';
 import { createClient } from '@supabase/supabase-js';
 import { TABLES } from '@/constants/db/tables';
 import { USER_PREFERENCES_COLUMNS } from '@/constants/db/columns';
+import { getUserIdFromEvent } from '@/server/utils/user-preferences';
 
 export default defineEventHandler(async (event) => {
   try {
     const config = useRuntimeConfig();
-    let userId: string | null = null;
 
-    // Try to get user from cookies first
-    const userFromCookies = await serverSupabaseUser(event);
-
-    if (userFromCookies) {
-      userId =
-        userFromCookies.id || (userFromCookies as { sub?: string }).sub || null;
-    } else {
-      // Try Authorization header
-      const authHeader = event.node.req.headers.authorization;
-
-      if (authHeader && authHeader.startsWith('Bearer ')) {
-        const token = authHeader.substring(7);
-
-        try {
-          const parts = token.split('.');
-          if (parts.length === 3) {
-            const payload = JSON.parse(
-              Buffer.from(
-                parts[1].replace(/-/g, '+').replace(/_/g, '/'),
-                'base64'
-              ).toString()
-            );
-
-            userId = payload.sub;
-          }
-        } catch (err) {
-          // Error decoding token
-          if (import.meta.dev) {
-            console.error('Error decoding token:', err);
-          }
-        }
-      }
-    }
+    // Use the SAME function as getUserTMDBParams to get userId (ensures consistency)
+    const userId = await getUserIdFromEvent(event);
 
     if (!userId) {
+      if (import.meta.dev) {
+        console.error(
+          '[preferences.get] No userId found - missing or invalid Bearer token'
+        );
+        console.error('[preferences.get] Request headers:', {
+          authorization: event.node.req.headers.authorization
+            ? 'present'
+            : 'missing',
+        });
+      }
       throw createError({
         statusCode: 401,
         statusMessage: 'Unauthorized',
       });
+    }
+
+    if (import.meta.dev) {
+      console.log('[preferences.get] User ID:', userId);
     }
 
     // Create Supabase client for server-side operations
@@ -70,12 +52,57 @@ export default defineEventHandler(async (event) => {
 
     if (error && error.code !== 'PGRST116') {
       // PGRST116 is "not found" - return empty preferences
+      if (import.meta.dev) {
+        console.error('[preferences.get] Error fetching preferences:', error);
+      }
       throw createError({
         statusCode: 500,
         statusMessage: 'Failed to fetch preferences',
       });
     }
 
+    // Log raw database response before any processing
+    if (import.meta.dev) {
+      console.warn('[preferences.get] Raw database query result:', {
+        hasData: !!data,
+        dataType: typeof data,
+        dataIsNull: data === null,
+        dataIsUndefined: data === undefined,
+        rawData: data,
+        regionRaw: data?.region,
+        regionType: typeof data?.region,
+        regionValue: data?.region,
+        regionIsNull: data?.region === null,
+        regionIsUndefined: data?.region === undefined,
+        regionIsEmptyString: data?.region === '',
+        allKeys: data ? Object.keys(data) : [],
+      });
+    }
+
+    if (import.meta.dev) {
+      const dataStr = data ? JSON.stringify(data, null, 2) : 'null';
+      console.warn('[preferences.get] Database response:', {
+        hasData: !!data,
+        userId,
+        region: data?.region,
+        regionType: typeof data?.region,
+        regionLength: data?.region?.length,
+        regionIsNull: data?.region === null,
+        regionIsUndefined: data?.region === undefined,
+        regionIsEmptyString: data?.region === '',
+        fullData: dataStr,
+      });
+    }
+
+    // Log the exact value being returned
+    if (import.meta.dev) {
+      console.warn('[preferences.get] Returning response:', {
+        success: true,
+        preferences: data || null,
+        preferencesRegion: data?.region,
+        preferencesRegionType: typeof data?.region,
+      });
+    }
 
     return {
       success: true,
@@ -91,4 +118,3 @@ export default defineEventHandler(async (event) => {
     });
   }
 });
-

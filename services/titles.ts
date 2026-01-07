@@ -8,7 +8,6 @@ import {
   getPrimaryLanguageForRegion,
 } from '@/utils/language-detection';
 import {
-  LanguageCode,
   LanguageIsoCode,
   DEFAULT_LANGUAGE,
   DEFAULT_LANGUAGE_ISO,

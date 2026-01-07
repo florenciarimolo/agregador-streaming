@@ -60,7 +60,7 @@
 <script setup lang="ts">
 import { computed, useSlots } from 'vue';
 
-const props = withDefaults(
+withDefaults(
   defineProps<{
     id?: string;
     modelValue: string | number | null;

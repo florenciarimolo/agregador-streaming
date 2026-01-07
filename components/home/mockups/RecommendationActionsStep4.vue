@@ -163,10 +163,6 @@ const mediaType = computed(() =>
   mockTitle.type === MEDIA_TYPE.MOVIE ? 'movie' : 'tv-show'
 );
 
-// Computed link with language prefix
-const linkTo = computed(() => {
-  return routeWithLang(`/${mediaType.value}/${mockTitle.tmdb_id}`);
-});
 
 // Map explanation_code to user-friendly text
 const explanationText = computed(() => {

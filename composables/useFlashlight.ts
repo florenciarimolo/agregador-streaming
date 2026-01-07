@@ -16,7 +16,7 @@ export interface FlashlightStyles {
  * Helper function to get the actual DOM element from a ref
  * Handles both native DOM elements and Vue component instances
  */
-function getDOMElement(ref: Ref<any>): HTMLElement | null {
+function getDOMElement(ref: Ref<HTMLElement | null>): HTMLElement | null {
   if (!ref.value) return null;
   
   // If it's already a DOM element, return it
@@ -37,7 +37,7 @@ function getDOMElement(ref: Ref<any>): HTMLElement | null {
  * Composable for creating a subtle flashlight effect that follows the mouse cursor
  * on both the background and border of a card element.
  */
-export function useFlashlight(elementRef: Ref<HTMLElement | any>, enabled: Ref<boolean> | boolean = true) {
+export function useFlashlight(elementRef: Ref<HTMLElement | null>, enabled: Ref<boolean> | boolean = true) {
   const mouseX = ref<number>(0);
   const mouseY = ref<number>(0);
   const elementWidth = ref<number>(0);
@@ -130,7 +130,6 @@ export function useFlashlight(elementRef: Ref<HTMLElement | any>, enabled: Ref<b
     
     // Calculate border gradient that follows the cursor around the perimeter
     // We'll create gradients for each side of the border
-    const borderWidth = 1;
     const highlightSize = 120; // Size of the highlight along the border
     
     // Calculate which side of the border the cursor is closest to

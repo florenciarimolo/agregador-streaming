@@ -107,7 +107,6 @@ export const useRecommendations = () => {
         headers: {
           Authorization: `Bearer ${session.access_token}`,
         },
-        credentials: 'include',
         body: { tmdb_ids: tmdbIds },
       }).catch((error) => {
         if (import.meta.dev) {
@@ -160,7 +159,6 @@ export const useRecommendations = () => {
           Pragma: 'no-cache',
           Expires: '0',
         },
-        credentials: 'include',
         query: queryParams,
       });
 

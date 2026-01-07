@@ -1,62 +1,24 @@
-import { serverSupabaseUser } from '#supabase/server';
 import { createClient } from '@supabase/supabase-js';
 import {
   updateLastShownAt,
-  updatePoolScore,
 } from '@/services/recommendationPool';
+import { getUserIdFromEvent } from '@/server/utils/user-preferences';
 
 /**
  * Track when recommendations are shown to a user
- * Decreases score by 1 for each shown recommendation (floored at -100)
+ * Updates last_shown_at timestamp for recency_weight calculation in runtime
  * Body: { tmdb_ids: number[] }
+ * 
+ * IMPORTANT: Does NOT modify score directly.
+ * Penalization by exposure is calculated via recency_weight in runtime.
  */
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig();
-  let user = null;
-  let userId: string | null = null;
 
-  // Try to get user from cookies first
-  const userFromCookies = await serverSupabaseUser(event);
+  // Use centralized function to get userId
+  const userId = await getUserIdFromEvent(event);
 
-  if (userFromCookies) {
-    userId =
-      userFromCookies.id || (userFromCookies as { sub?: string }).sub || null;
-
-    if (userId) {
-      user = { id: userId, sub: userId };
-    }
-  } else {
-    // Try Authorization header
-    const authHeader = event.node.req.headers.authorization;
-
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      const token = authHeader.substring(7);
-
-      try {
-        const parts = token.split('.');
-        if (parts.length === 3) {
-          const payload = JSON.parse(
-            Buffer.from(
-              parts[1].replace(/-/g, '+').replace(/_/g, '/'),
-              'base64'
-            ).toString()
-          );
-
-          userId = payload.sub;
-
-          if (userId) {
-            user = { id: userId, sub: userId };
-          }
-        }
-      } catch (err) {
-        if (process.env.NODE_ENV === 'development') {
-          console.error('Error decoding token:', err);
-        }
-      }
-    }
-  }
-
-  if (!user || !userId) {
+  if (!userId) {
     throw createError({
       statusCode: 401,
       message: 'Unauthorized',
@@ -88,20 +50,8 @@ export default defineEventHandler(async (event) => {
 
   try {
     // Update last_shown_at timestamp
+    // This is used for recency_weight calculation in runtime
     await updateLastShownAt(userId, tmdb_ids, supabase);
-
-    // Decrease score by 1 for each shown recommendation
-    // Do this in parallel for better performance
-    await Promise.all(
-      tmdb_ids.map((tmdbId: number) =>
-        updatePoolScore(userId, tmdbId, -1, supabase).catch((err) => {
-          // Don't fail if individual update fails
-          if (process.env.NODE_ENV === 'development') {
-            console.error(`Error updating score for ${tmdbId}:`, err);
-          }
-        })
-      )
-    );
 
     return { success: true };
   } catch (error: unknown) {

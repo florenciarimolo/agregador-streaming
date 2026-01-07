@@ -18,14 +18,6 @@ export interface UpdateProfileData {
   avatar_url?: string;
 }
 
-export interface UserSettings {
-  theme?: 'light' | 'dark' | 'system';
-  // Note: language is NOT stored in database, only in cookies
-  region?: string;
-  autoplayTrailers?: boolean;
-  hideSpoilers?: boolean;
-}
-
 /**
  * Get profile by user ID
  */
@@ -115,7 +107,7 @@ export async function uploadAvatar(
   const filePath = `avatars/${fileName}`;
 
   // Upload file
-  const { data: uploadData, error: uploadError } = await supabase.storage
+  const { error: uploadError } = await supabase.storage
     .from('avatars')
     .upload(filePath, file, {
       cacheControl: '3600',
@@ -154,59 +146,4 @@ export async function deleteAvatar(avatarPath: string) {
   return await supabase.storage.from('avatars').remove([path]);
 }
 
-/**
- * Get user settings
- */
-export async function getSettings(userId: string) {
-  const supabase = useSupabaseClient();
-  const { data, error } = await supabase
-    .from(TABLES.PROFILES)
-    .select(PROFILES_COLUMNS.SETTINGS)
-    .eq(PROFILES_COLUMNS.ID, userId)
-    .single();
-
-  if (error) {
-    return { data: null, error };
-  }
-
-  return {
-    data: (data?.settings as UserSettings) || {},
-    error: null,
-  };
-}
-
-/**
- * Update user settings (merges with existing)
- */
-export async function updateSettings(
-  userId: string,
-  settings: Partial<UserSettings>
-) {
-  const supabase = useSupabaseClient();
-
-  // Get current settings
-  const { data: currentData, error: fetchError } = await supabase
-    .from(TABLES.PROFILES)
-    .select(PROFILES_COLUMNS.SETTINGS)
-    .eq(PROFILES_COLUMNS.ID, userId)
-    .single();
-
-  if (fetchError) {
-    return { data: null, error: fetchError };
-  }
-
-  // Merge with existing settings
-  const currentSettings = (currentData?.settings as UserSettings) || {};
-  const mergedSettings = { ...currentSettings, ...settings };
-
-  // Update
-  return await supabase
-    .from(TABLES.PROFILES)
-    .update({
-      [PROFILES_COLUMNS.SETTINGS]: mergedSettings,
-    })
-    .eq(PROFILES_COLUMNS.ID, userId)
-    .select()
-    .single();
-}
 

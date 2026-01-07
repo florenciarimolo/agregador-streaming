@@ -464,7 +464,7 @@ async function insertTitleIntoList(
   return true;
 }
 
-export default defineEventHandler(async (event) => {
+export default defineEventHandler(async () => {
   try {
     const config = useRuntimeConfig();
 

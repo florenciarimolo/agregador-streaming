@@ -43,7 +43,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useTitleMenuActions, type TitleStatusInfo } from '@/composables/useTitleMenuActions';
-import { TITLE_STATUS } from '@/constants/domain/titleStatus';
 import type { DiscoverListItem } from '@/composables/database/discoverLists';
 import ActionMenu from './ui/ActionMenu.vue';
 import IconButton from './ui/IconButton.vue';

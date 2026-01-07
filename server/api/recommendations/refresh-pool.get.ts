@@ -10,8 +10,7 @@ import { getTMDBConfig } from '@/server/utils/config';
 import { getUserTMDBParamsByUserId } from '@/server/utils/user-preferences';
 import { TITLE_STATUS } from '@/constants/domain/titleStatus';
 import { TABLES } from '@/constants/db/tables';
-import { PROFILES_COLUMNS, USER_PREFERENCES_COLUMNS, TITLES_COLUMNS, USER_TITLE_STATUS_COLUMNS } from '@/constants/db/columns';
-import { SCORE_WEIGHTS } from '@/constants/domain/scoring';
+import { TITLES_COLUMNS, USER_TITLE_STATUS_COLUMNS } from '@/constants/db/columns';
 import type { MultiLanguageText } from '@/services/titles';
 import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 
@@ -175,16 +174,56 @@ export default defineEventHandler(async (event) => {
           type: typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV;
           source: RecommendationPoolSource;
           score: number;
+          base_score: number;
+          preference_score: number;
           explanation_code: string | null;
         }> = [];
 
         // Helper to ensure title details are in titles table (fetch from TMDB if needed)
+        // Uses conditional fetch: only fetches if metadata is missing for current language
         // Returns void - we just need to ensure data is in titles table, not return it
         const fetchTitleDetails = async (
           tmdbId: number,
           type: 'movie' | 'tv'
         ): Promise<void> => {
           try {
+            // First, check if we already have data in the database
+            const { data: existingTitle } = await supabase
+              .from(TABLES.TITLES)
+              .select(
+                `${TITLES_COLUMNS.TITLE}, ${TITLES_COLUMNS.OVERVIEW}, ${TITLES_COLUMNS.POSTER_PATH}, ${TITLES_COLUMNS.GENRES}`
+              )
+              .eq(TITLES_COLUMNS.TMDB_ID, tmdbId)
+              .eq(TITLES_COLUMNS.TYPE, type)
+              .maybeSingle();
+
+            // Check if we need to fetch from TMDB
+            const titleJsonb: MultiLanguageText = existingTitle?.title
+              ? { ...(existingTitle.title as MultiLanguageText) }
+              : {};
+            const overviewJsonb: MultiLanguageText = existingTitle?.overview
+              ? { ...(existingTitle.overview as MultiLanguageText) }
+              : {};
+            const posterPathJsonb: MultiLanguageText = existingTitle?.poster_path
+              ? { ...(existingTitle.poster_path as MultiLanguageText) }
+              : {};
+
+            // Check if we have the exact language in JSONB
+            const hasExactLanguage =
+              titleJsonb &&
+              typeof titleJsonb === 'object' &&
+              titleJsonb[language] !== undefined;
+            const needsTitleFallback = !titleJsonb[language] || titleJsonb[language].trim() === '';
+            const needsOverviewFallback = !overviewJsonb[language] || overviewJsonb[language].trim() === '';
+            const needsGenres = !existingTitle?.genres || (Array.isArray(existingTitle.genres) && existingTitle.genres.length === 0);
+            const needsFullFetch = !existingTitle || needsTitleFallback || needsOverviewFallback || needsGenres;
+
+            // If we have everything from DB in the exact language, we're done
+            if (!needsFullFetch && existingTitle?.genres && hasExactLanguage) {
+              return; // Data is already in titles table, no need to fetch from TMDB
+            }
+
+            // Fetch from TMDB if needed
             const endpoint =
               type === MEDIA_TYPE.MOVIE
                 ? `/movie/${tmdbId}`
@@ -199,28 +238,7 @@ export default defineEventHandler(async (event) => {
 
             if (!fullResponse) return;
 
-            // Get existing data to preserve all languages
-            const { data: existingTitle } = await supabase
-              .from(TABLES.TITLES)
-              .select(
-                `${TITLES_COLUMNS.TITLE}, ${TITLES_COLUMNS.OVERVIEW}, ${TITLES_COLUMNS.POSTER_PATH}, ${TITLES_COLUMNS.GENRES}, ${TITLES_COLUMNS.BACKDROP_PATH}, ${TITLES_COLUMNS.VOTE_AVERAGE}, ${TITLES_COLUMNS.RELEASE_DATE}, ${TITLES_COLUMNS.FIRST_AIR_DATE}`
-              )
-              .eq(TITLES_COLUMNS.TMDB_ID, tmdbId)
-              .eq(TITLES_COLUMNS.TYPE, type)
-              .maybeSingle();
-
             // Merge with existing data to preserve all language keys
-            const titleJsonb: MultiLanguageText = existingTitle?.title
-              ? { ...(existingTitle.title as MultiLanguageText) }
-              : {};
-            const overviewJsonb: MultiLanguageText = existingTitle?.overview
-              ? { ...(existingTitle.overview as MultiLanguageText) }
-              : {};
-            const posterPathJsonb: MultiLanguageText = existingTitle?.poster_path
-              ? { ...(existingTitle.poster_path as MultiLanguageText) }
-              : {};
-
-            // Add/update current language
             if (fullResponse.title || fullResponse.name) {
               titleJsonb[language] = fullResponse.title || fullResponse.name || '';
             }
@@ -231,6 +249,14 @@ export default defineEventHandler(async (event) => {
               posterPathJsonb[language] = fullResponse.poster_path;
             }
 
+            // Get full existing data for merge
+            const { data: fullExistingTitle } = await supabase
+              .from(TABLES.TITLES)
+              .select('*')
+              .eq(TITLES_COLUMNS.TMDB_ID, tmdbId)
+              .eq(TITLES_COLUMNS.TYPE, type)
+              .maybeSingle();
+
             // Update titles table (async, don't wait)
             supabase
               .from(TABLES.TITLES)
@@ -240,11 +266,11 @@ export default defineEventHandler(async (event) => {
                 [TITLES_COLUMNS.TITLE]: titleJsonb,
                 [TITLES_COLUMNS.OVERVIEW]: Object.keys(overviewJsonb).length > 0 ? overviewJsonb : null,
                 [TITLES_COLUMNS.POSTER_PATH]: Object.keys(posterPathJsonb).length > 0 ? posterPathJsonb : null,
-                [TITLES_COLUMNS.GENRES]: (fullResponse.genres || []).length > 0 ? fullResponse.genres : (existingTitle?.genres || null),
-                [TITLES_COLUMNS.BACKDROP_PATH]: fullResponse.backdrop_path || existingTitle?.backdrop_path || null,
-                [TITLES_COLUMNS.VOTE_AVERAGE]: fullResponse.vote_average ?? existingTitle?.vote_average ?? null,
-                [TITLES_COLUMNS.RELEASE_DATE]: fullResponse.release_date || existingTitle?.release_date || null,
-                [TITLES_COLUMNS.FIRST_AIR_DATE]: fullResponse.first_air_date || existingTitle?.first_air_date || null,
+                [TITLES_COLUMNS.GENRES]: (fullResponse.genres || []).length > 0 ? fullResponse.genres : (fullExistingTitle?.genres || null),
+                [TITLES_COLUMNS.BACKDROP_PATH]: fullResponse.backdrop_path || fullExistingTitle?.backdrop_path || null,
+                [TITLES_COLUMNS.VOTE_AVERAGE]: fullResponse.vote_average ?? fullExistingTitle?.vote_average ?? null,
+                [TITLES_COLUMNS.RELEASE_DATE]: fullResponse.release_date || fullExistingTitle?.release_date || null,
+                [TITLES_COLUMNS.FIRST_AIR_DATE]: fullResponse.first_air_date || fullExistingTitle?.first_air_date || null,
               }, {
                 onConflict: TITLES_COLUMNS.TMDB_ID,
               })
@@ -311,11 +337,19 @@ export default defineEventHandler(async (event) => {
                 // (title_data removed from pool, data comes from titles table)
                 await fetchTitleDetails(result.id, type);
 
+                // Calculate base_score from popularity/rating
+                // Normalize vote_average (0-10) to a score (0-50)
+                const baseScore = result.vote_average
+                  ? (result.vote_average / 10) * 50
+                  : 25; // Default if no rating
+
                 entriesToInsert.push({
                   tmdb_id: result.id,
                   type,
                   source,
-                  score: 0,
+                  base_score: baseScore,
+                  preference_score: 0,
+                  score: baseScore, // base_score + preference_score (0)
                   explanation_code: explanationCode,
                 });
               }

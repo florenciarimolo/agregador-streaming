@@ -1,7 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
-import { PROFILES_COLUMNS, USER_PREFERENCES_COLUMNS, TITLES_COLUMNS } from '@/constants/db/columns';
+import { TITLES_COLUMNS } from '@/constants/db/columns';
 import { TABLES } from '@/constants/db/tables';
-import { SCORE_WEIGHTS } from '@/constants/domain/scoring';
 import { getTitleInLanguage } from '@/services/titles';
 import type { MultiLanguageText } from '@/services/titles';
 import { LanguageCode } from '@/constants/languages';

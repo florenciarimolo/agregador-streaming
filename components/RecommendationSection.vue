@@ -3,7 +3,7 @@
     v-if="recommendations.length > 0 || isFilterLoading"
     class="relative space-y-4 md:space-y-8"
   >
-    <SectionTitle :description="description">{{ title }}</SectionTitle>
+    <SectionTitle v-if="title" :description="description">{{ title }}</SectionTitle>
 
     <!-- Show skeletons when filter is loading -->
     <div v-if="isFilterLoading" class="space-y-4 md:space-y-8">
@@ -76,10 +76,6 @@ const isFilterLoading = computed(() => {
   return props.isLoading || false;
 });
 
-// Calculate skeleton count based on recommendations length or default to 8
-const skeletonCount = computed(() => {
-  return props.recommendations.length > 0 ? props.recommendations.length : 8;
-});
 
 defineEmits<{
   'mark-seen': [title: Recommendation];

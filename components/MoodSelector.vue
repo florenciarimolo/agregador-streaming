@@ -1,54 +1,56 @@
 <template>
   <div
-    class="bg-white/60 dark:bg-gray-900/40 backdrop-blur-xl border border-gray-300/50 dark:border-white/10 rounded-3xl p-6 md:p-8"
+    :class="[
+      'flex flex-col gap-6',
+      !noContainer &&
+        'bg-white/60 dark:bg-gray-900/40 backdrop-blur-xl border border-gray-300/50 dark:border-white/10 rounded-3xl p-6 md:p-8',
+    ]"
   >
-    <div class="flex flex-col gap-6">
-      <div class="flex flex-col gap-2">
-        <label
-          class="text-xs font-semibold uppercase tracking-wide text-gray-800 dark:text-gray-300"
+    <div class="flex flex-col gap-2">
+      <label
+        class="text-xs font-semibold uppercase tracking-wide text-gray-800 dark:text-gray-300"
+      >
+        {{ $t('mood.label') }}
+      </label>
+      <div class="flex flex-wrap gap-2">
+        <button
+          v-for="moodOption in moodOptions"
+          :key="moodOption.value"
+          :class="[
+            'flex items-center gap-1.5 px-3 py-1.5 rounded-full font-medium transition-all text-xs',
+            mood === moodOption.value
+              ? 'bg-primary-800 text-white border border-gray-700/50 dark:border-gray-600/50'
+              : 'bg-gray-100/50 dark:bg-gray-800/50 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700/50 hover:bg-gray-200 dark:hover:bg-gray-700/50 hover:border-primary/50 dark:hover:border-purple-500/30',
+          ]"
+          @click="selectMood(moodOption.value as Mood)"
         >
-          {{ $t('mood.label') }}
-        </label>
-        <div class="flex flex-wrap gap-2">
-          <button
-            v-for="moodOption in moodOptions"
-            :key="moodOption.value"
-            :class="[
-              'flex items-center gap-1.5 px-3 py-1.5 rounded-full font-medium transition-all text-xs',
-              mood === moodOption.value
-                ? 'bg-primary-800 text-white border border-gray-700/50 dark:border-gray-600/50'
-                : 'bg-gray-100/50 dark:bg-gray-800/50 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700/50 hover:bg-gray-200 dark:hover:bg-gray-700/50 hover:border-primary/50 dark:hover:border-purple-500/30',
-            ]"
-            @click="selectMood(moodOption.value as Mood)"
-          >
-            <component :is="moodOption.icon" class="w-3.5 h-3.5" />
-            <span>{{ moodOption.label }}</span>
-          </button>
-        </div>
+          <component :is="moodOption.icon" class="w-3.5 h-3.5" />
+          <span>{{ moodOption.label }}</span>
+        </button>
       </div>
+    </div>
 
-      <div class="flex flex-col gap-2">
-        <label
-          class="text-xs font-semibold uppercase tracking-wide text-gray-800 dark:text-gray-300"
+    <div class="flex flex-col gap-2">
+      <label
+        class="text-xs font-semibold uppercase tracking-wide text-gray-800 dark:text-gray-300"
+      >
+        {{ $t('attention.label') }}
+      </label>
+      <div class="flex flex-wrap gap-2">
+        <button
+          v-for="attentionOption in attentionOptions"
+          :key="attentionOption.value"
+          :class="[
+            'flex items-center gap-1.5 px-3 py-1.5 rounded-full font-medium transition-all text-xs',
+            attention === attentionOption.value
+              ? 'bg-primary-800 text-white border border-gray-700/50 dark:border-gray-600/50'
+              : 'bg-gray-100/50 dark:bg-gray-800/50 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700/50 hover:bg-gray-200 dark:hover:bg-gray-700/50 hover:border-primary/50 dark:hover:border-purple-500/30',
+          ]"
+          @click="selectAttention(attentionOption.value as Attention)"
         >
-          {{ $t('attention.label') }}
-        </label>
-        <div class="flex flex-wrap gap-2">
-          <button
-            v-for="attentionOption in attentionOptions"
-            :key="attentionOption.value"
-            :class="[
-              'flex items-center gap-1.5 px-3 py-1.5 rounded-full font-medium transition-all text-xs',
-              attention === attentionOption.value
-                ? 'bg-primary-800 text-white border border-gray-700/50 dark:border-gray-600/50'
-                : 'bg-gray-100/50 dark:bg-gray-800/50 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700/50 hover:bg-gray-200 dark:hover:bg-gray-700/50 hover:border-primary/50 dark:hover:border-purple-500/30',
-            ]"
-            @click="selectAttention(attentionOption.value as Attention)"
-          >
-            <component :is="attentionOption.icon" class="w-3.5 h-3.5" />
-            <span>{{ attentionOption.label }}</span>
-          </button>
-        </div>
+          <component :is="attentionOption.icon" class="w-3.5 h-3.5" />
+          <span>{{ attentionOption.label }}</span>
+        </button>
       </div>
     </div>
   </div>
@@ -57,14 +59,8 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import {
-  MOOD,
-  type Mood,
-} from '@/constants/domain/mood';
-import {
-  ATTENTION,
-  type Attention,
-} from '@/constants/domain/attention';
+import { MOOD, type Mood } from '@/constants/domain/mood';
+import { ATTENTION, type Attention } from '@/constants/domain/attention';
 import IconRelax from './icons/IconRelax.vue';
 import IconLigero from './icons/IconLigero.vue';
 import IconIntenso from './icons/IconIntenso.vue';
@@ -75,6 +71,15 @@ import IconBattery50 from './icons/IconBattery50.vue';
 import IconBattery100 from './icons/IconBattery100.vue';
 
 const { t } = useI18n();
+
+withDefaults(
+  defineProps<{
+    noContainer?: boolean;
+  }>(),
+  {
+    noContainer: false,
+  }
+);
 
 type MoodValue = Mood | null;
 type AttentionValue = Attention | null;
@@ -165,14 +170,14 @@ const updateQuery = () => {
 watch(
   () => route.query[QUERY_PARAMS.MOOD],
   (newMood) => {
-    mood.value = (newMood as MoodEnumType) || null;
+    mood.value = (newMood as Mood) || null;
   }
 );
 
 watch(
   () => route.query[QUERY_PARAMS.ATTENTION],
   (newAttention) => {
-    attention.value = (newAttention as AttentionEnumType) || null;
+    attention.value = (newAttention as Attention) || null;
   }
 );
 </script>

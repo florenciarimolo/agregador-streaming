@@ -1,23 +1,42 @@
-import { serverSupabaseUser } from '#supabase/server';
 import { createClient } from '@supabase/supabase-js';
 import type { H3Event } from 'h3';
 import { getRequestURL, getRequestHeader, getQuery } from 'h3';
 import { TABLES } from '@/constants/db/tables';
-import { PROFILES_COLUMNS, USER_PREFERENCES_COLUMNS } from '@/constants/db/columns';
-import { SCORE_WEIGHTS } from '@/constants/domain/scoring';
+import { USER_PREFERENCES_COLUMNS } from '@/constants/db/columns';
 import { LanguageCode, toTMDBLanguageCode } from '@/constants/languages';
 import { extractLangFromPath } from '@/composables/useRouteWithLang';
 
 /**
- * In-memory cache for user settings to avoid duplicate DB queries
- * Key: userId, Value: { data: settings, timestamp: number }
- * TTL: 5 seconds (short enough to be fresh, long enough to batch parallel requests)
+ * Extract userId from event (Bearer token ONLY)
+ * This is the SINGLE SOURCE OF TRUTH for getting userId in server endpoints
+ * Used by both preferences.get.ts and getUserTMDBParams to ensure consistency
+ *
+ * IMPORTANT: This function ONLY accepts Authorization: Bearer tokens.
+ * APIs use token-based auth, pages use cookie-based auth (separate systems).
  */
-const settingsCache = new Map<
-  string,
-  { data: Record<string, unknown> | null; timestamp: number }
->();
-const SETTINGS_CACHE_TTL_MS = 5000; // 5 seconds
+export async function getUserIdFromEvent(
+  event: H3Event
+): Promise<string | null> {
+  const authHeader = event.node.req.headers.authorization;
+
+  if (!authHeader?.startsWith('Bearer ')) {
+    return null;
+  }
+
+  try {
+    const token = authHeader.slice(7);
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+
+    const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const padded = base64 + '='.repeat((4 - (base64.length % 4)) % 4);
+    const payload = JSON.parse(Buffer.from(padded, 'base64').toString());
+
+    return payload.sub ?? null;
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Get user preferences from server-side (using createClient)
@@ -45,66 +64,6 @@ async function getUserPreferencesServer(userId: string) {
 }
 
 /**
- * Get user settings from server-side (using createClient)
- * Uses in-memory cache to avoid duplicate DB queries for parallel requests
- */
-async function getSettingsServer(userId: string) {
-  // Check cache first
-  const cached = settingsCache.get(userId);
-  const now = Date.now();
-  
-  if (cached && (now - cached.timestamp) < SETTINGS_CACHE_TTL_MS) {
-    return { data: cached.data, error: null };
-  }
-
-  // Cache miss or expired - fetch from DB
-  const config = useRuntimeConfig();
-  const supabaseKey =
-    process.env.SUPABASE_SERVICE_ROLE_KEY || config.public.supabaseAnonKey;
-
-  const supabase = createClient(config.public.supabaseUrl, supabaseKey, {
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false,
-      detectSessionInUrl: false,
-    },
-  });
-
-  const { data: profile, error: profileError } = await supabase
-    .from(TABLES.PROFILES)
-    .select(`${PROFILES_COLUMNS.SETTINGS}`)
-    .eq(PROFILES_COLUMNS.ID, userId)
-    .single();
-
-  if (profileError || !profile) {
-    const result = { data: null, error: profileError };
-    // Cache null result too (to avoid retrying on error)
-    settingsCache.set(userId, { data: null, timestamp: now });
-    return result;
-  }
-
-  const settingsData =
-    (profile[PROFILES_COLUMNS.SETTINGS] as Record<string, unknown>) || null;
-  
-  // Cache the result
-  settingsCache.set(userId, { data: settingsData, timestamp: now });
-  
-  // Clean up old cache entries (keep cache size reasonable)
-  if (settingsCache.size > 100) {
-    for (const [key, value] of settingsCache.entries()) {
-      if (now - value.timestamp > SETTINGS_CACHE_TTL_MS * 2) {
-        settingsCache.delete(key);
-      }
-    }
-  }
-
-  return {
-    data: settingsData,
-    error: null,
-  };
-}
-
-/**
  * Get user's language and region preferences for TMDB API calls by userId
  * Returns default values if preferences not set
  */
@@ -118,17 +77,17 @@ export async function getUserTMDBParamsByUserId(userId: string): Promise<{
   };
 
   try {
-    // Get settings (for region only - language is NOT stored in DB, comes from URL)
-    const settingsResult = await getSettingsServer(userId);
+    // Get region from user_preferences table (same source as preferences endpoint)
+    const preferencesResult = await getUserPreferencesServer(userId);
 
     // Language is always from URL, not from database or cookies
     // This function should not be used for language, but we return default for compatibility
-    let language = defaults.language;
+    const language = defaults.language;
 
-    // Priority: settings.region > default
+    // Priority: user_preferences.region > default
     let region = defaults.region;
-    if (settingsResult.data?.region) {
-      region = String(settingsResult.data.region);
+    if (preferencesResult.data?.region) {
+      region = String(preferencesResult.data.region);
     }
 
     return {
@@ -145,9 +104,9 @@ export async function getUserTMDBParamsByUserId(userId: string): Promise<{
 /**
  * Get user's language and region preferences for TMDB API calls from event
  * Language is read from URL (route.params.lang), NOT from cookies or database
- * Region is read from database (profiles.settings.region)
+ * Region is read from database (user_preferences.region)
  * Returns default values if user is not authenticated or preferences not set
- * 
+ *
  * Results are cached per request to avoid duplicate processing
  */
 export async function getUserTMDBParams(event?: H3Event): Promise<{
@@ -176,18 +135,18 @@ export async function getUserTMDBParams(event?: H3Event): Promise<{
     try {
       const query = getQuery(event);
       let langFromUrl: string | undefined;
-      
+
       // Priority 1: Query parameter (most reliable for API calls from pages)
       if (query.lang && typeof query.lang === 'string') {
         langFromUrl = query.lang.toLowerCase();
       }
-      
+
       // Priority 2: Try to get lang from route params (if route has :lang parameter)
       if (!langFromUrl) {
         const params = event.context.params || {};
         langFromUrl = params.lang as string | undefined;
       }
-      
+
       // Priority 3: If not in params, try to extract from Referer header
       // This handles cases where API routes don't have :lang in their route definition
       // but the request comes from a page URL that does have the language prefix (e.g., /gl/movie/123)
@@ -213,7 +172,7 @@ export async function getUserTMDBParams(event?: H3Event): Promise<{
           // If referer extraction fails, continue to next priority
         }
       }
-      
+
       // Priority 4: If still not found, try to extract from request URL path
       // This is a fallback for cases where referer is not available
       if (!langFromUrl) {
@@ -228,12 +187,13 @@ export async function getUserTMDBParams(event?: H3Event): Promise<{
           // If extraction fails, continue with default
         }
       }
-      
+
       if (langFromUrl) {
         // Map URL code to i18n code, then to TMDB language code
         // Use dynamic import to avoid loading Vue dependencies in server context
         try {
-          const { getI18nCodeFromUrlCode } = await import('@/composables/useLangFromUrl');
+          const { getI18nCodeFromUrlCode } =
+            await import('@/composables/useLangFromUrl');
           const i18nCode = getI18nCodeFromUrlCode(langFromUrl.toLowerCase());
           if (i18nCode) {
             language = toTMDBLanguageCode(i18nCode);
@@ -265,47 +225,72 @@ export async function getUserTMDBParams(event?: H3Event): Promise<{
     } catch (error) {
       // If error reading from URL, use default
       if (import.meta.dev) {
-        console.warn('[getUserTMDBParams] Error extracting language from URL:', error);
+        console.warn(
+          '[getUserTMDBParams] Error extracting language from URL:',
+          error
+        );
       }
       language = defaults.language;
     }
 
-    // Get region from database (user settings)
+    // Get region from database (user_preferences table - same source as /api/users/preferences)
+    // Use the SAME function as preferences.get.ts to get userId (ensures consistency)
     let region = defaults.region;
-    try {
-      // Try to get user from event
-      const user = await serverSupabaseUser(event);
+    const userId = await getUserIdFromEvent(event);
 
-      if (user) {
-        const userId = user.id || (user as { sub?: string }).sub;
+    // If we have a userId, fetch region from database (same source as preferences endpoint)
+    if (userId) {
+      try {
+        if (import.meta.dev) {
+          console.warn(
+            '[getUserTMDBParams] Fetching region for userId:',
+            userId
+          );
+        }
+        // Get region from user_preferences table (same source as preferences endpoint)
+        const preferencesResult = await getUserPreferencesServer(userId);
 
-        if (userId) {
-          // Get settings (for region only)
-          const settingsResult = await getSettingsServer(userId);
-          if (settingsResult.data?.region) {
-            region = String(settingsResult.data.region);
+        if (import.meta.dev) {
+          console.warn('[getUserTMDBParams] Preferences result:', {
+            hasData: !!preferencesResult.data,
+            region: preferencesResult.data?.region,
+            regionType: typeof preferencesResult.data?.region,
+            regionIsNull: preferencesResult.data?.region === null,
+            regionIsUndefined: preferencesResult.data?.region === undefined,
+            fullData: preferencesResult.data
+              ? JSON.stringify(preferencesResult.data, null, 2)
+              : 'null',
+          });
+        }
+
+        // IMPORTANT: Only use region from DB if it's a valid non-null value
+        // If region is null in DB, we should return null (not default), to match preferences.get.ts behavior
+        // However, for TMDB API calls, we need a valid region, so we use default as fallback
+        // This is a difference: preferences.get.ts returns null, but getUserTMDBParams needs a valid region for API calls
+        if (
+          preferencesResult.data?.region &&
+          preferencesResult.data.region !== null
+        ) {
+          region = String(preferencesResult.data.region);
+          if (import.meta.dev) {
+            console.warn('[getUserTMDBParams] Using region from DB:', region);
+          }
+        } else {
+          if (import.meta.dev) {
+            console.warn(
+              '[getUserTMDBParams] No valid region in DB, using default:',
+              defaults.region
+            );
           }
         }
-      }
-    } catch (error) {
-      // If error is about missing session, this is expected and we should return defaults silently
-      // Only log unexpected errors
-      let isAuthError = false;
-
-      if (error && typeof error === 'object') {
-        if ('statusMessage' in error) {
-          const statusMsg = String(error.statusMessage);
-          isAuthError =
-            statusMsg === 'Auth session missing!' ||
-            statusMsg.includes('Auth session');
-        } else if ('message' in error && typeof error.message === 'string') {
-          isAuthError = error.message.includes('Auth session');
+      } catch (error) {
+        // If error fetching preferences, use default region
+        if (import.meta.dev) {
+          console.error(
+            '[getUserTMDBParams] Error fetching preferences:',
+            error
+          );
         }
-      }
-
-      if (!isAuthError && import.meta.dev) {
-        // For other unexpected errors, log them
-        console.error('Error getting user region from database:', error);
       }
     }
 
@@ -313,10 +298,10 @@ export async function getUserTMDBParams(event?: H3Event): Promise<{
       language,
       region,
     };
-    
+
     // Cache result for this request
     event.context[cacheKey] = result;
-    
+
     return result;
   } catch (error) {
     // If any error occurs, return defaults
