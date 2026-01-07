@@ -7,6 +7,7 @@ This directory contains all documentation related to Supabase setup, migrations,
 - **[setup.md](./setup.md)** - Initial project setup, environment variables, and authentication configuration
 - **[migrations.md](./migrations.md)** - Complete guide to working with database migrations
 - **[local-vs-remote.md](./local-vs-remote.md)** - Working with local vs remote Supabase instances
+- **[edge-functions.md](./edge-functions.md)** - Development, deployment, and usage of Supabase Edge Functions
 
 ## Quick Start
 

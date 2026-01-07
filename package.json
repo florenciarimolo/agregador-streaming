@@ -24,7 +24,9 @@
     "supabase:db:push": "supabase db push",
     "supabase:db:reset": "supabase db reset",
     "supabase:db:diff": "supabase db diff",
-    "supabase:link": "supabase link"
+    "supabase:link": "supabase link",
+    "supabase:functions:deploy": "supabase functions deploy",
+    "supabase:functions:deploy:process-title-status": "supabase functions deploy process-title-status"
   },
   "dependencies": {
     "@headlessui/vue": "^1.7.23",

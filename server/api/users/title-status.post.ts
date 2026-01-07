@@ -1,22 +1,9 @@
 import { createClient } from '@supabase/supabase-js';
-import { TITLE_STATUS, type TitleStatusType } from '@/constants/domain/titleStatus';
+import { TITLE_STATUS } from '@/constants/domain/titleStatus';
 import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 import { TABLES } from '@/constants/db/tables';
 import { USER_TITLE_STATUS_COLUMNS } from '@/constants/db/columns';
 import { getUserIdFromEvent } from '@/server/utils/user-auth';
-import {
-  updatePreferenceScore,
-  removeFromPool,
-} from '@/services/recommendationPool';
-import {
-  propagateLikeInfluence,
-  propagateDislikeInfluence,
-  propagateRemoveLikeInfluence,
-} from '@/services/similarityPropagation';
-import {
-  detectExtremeBehavior,
-  performSoftReset,
-} from '@/services/poolSoftReset';
 import { DEFAULT_LANGUAGE } from '@/constants/languages';
 
 /**
@@ -100,7 +87,7 @@ export default defineEventHandler(async (event) => {
     if (!existingTitle) {
       try {
         const endpoint = type === MEDIA_TYPE.MOVIE ? 'movie' : 'tv';
-        
+
         // Call internal TMDB endpoint which will fetch and create the title
         await $fetch(`/api/tmdb/${endpoint}s/${tmdb_id}`, {
           query: {
@@ -117,6 +104,16 @@ export default defineEventHandler(async (event) => {
         }
       }
     }
+
+    // Get previous status to detect changes (needed for Edge Function)
+    const { data: previousStatus } = await supabase
+      .from(TABLES.USER_TITLE_STATUS)
+      .select(
+        `${USER_TITLE_STATUS_COLUMNS.STATUS}, ${USER_TITLE_STATUS_COLUMNS.LIKED}`
+      )
+      .eq(USER_TITLE_STATUS_COLUMNS.USER_ID, userId)
+      .eq(USER_TITLE_STATUS_COLUMNS.TMDB_ID, tmdb_id)
+      .maybeSingle();
 
     // Upsert user title status (insert or update)
     const upsertData: {
@@ -139,16 +136,6 @@ export default defineEventHandler(async (event) => {
       upsertData.liked = liked;
     }
 
-    // Get previous status to detect changes
-    const { data: previousStatus } = await supabase
-      .from(TABLES.USER_TITLE_STATUS)
-      .select(
-        `${USER_TITLE_STATUS_COLUMNS.STATUS}, ${USER_TITLE_STATUS_COLUMNS.LIKED}`
-      )
-      .eq(USER_TITLE_STATUS_COLUMNS.USER_ID, userId)
-      .eq(USER_TITLE_STATUS_COLUMNS.TMDB_ID, tmdb_id)
-      .maybeSingle();
-
     const { error } = await supabase
       .from(TABLES.USER_TITLE_STATUS)
       .upsert(upsertData, {
@@ -165,72 +152,81 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    // Update recommendation pool preference_score based on status changes
-    // New scoring model: preference_score is updated incrementally, score = base_score + preference_score
-    try {
-      const previousLiked = previousStatus?.liked ?? false;
-      // Only consider liked change if it was explicitly provided in the request
-      const likedWasProvided = typeof liked === 'boolean';
-      const newLiked = likedWasProvided ? liked : previousLiked;
+    // Respond immediately to user
+    // All recommendation logic is handled asynchronously by Edge Function
+    const response = { success: true };
 
-      // Get current preference_score
-      const { data: currentPoolEntry } = await supabase
-        .from(TABLES.RECOMMENDATION_POOL)
-        .select('preference_score')
-        .eq('user_id', userId)
-        .eq('tmdb_id', tmdb_id)
-        .maybeSingle();
+    // Trigger Edge Function asynchronously (fire and forget)
+    // This handles all recommendation logic: preference_score, propagations, soft reset
+    const supabaseUrl = config.public.supabaseUrl;
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-      const currentPreferenceScore = currentPoolEntry?.preference_score ?? 0;
+    if (supabaseUrl && serviceRoleKey) {
+      const edgeFunctionUrl = `${supabaseUrl}/functions/v1/process-title-status`;
+      const payload = {
+        userId,
+        tmdb_id,
+        type,
+        status,
+        liked: typeof liked === 'boolean' ? liked : undefined,
+        previousStatus: previousStatus
+          ? {
+              status: previousStatus.status,
+              liked: previousStatus.liked ?? undefined,
+            }
+          : undefined,
+      };
 
-      // Handle LIKE (liked changed from false to true)
-      if (likedWasProvided && previousLiked === false && newLiked === true) {
-        // Increment preference_score
-        const increment = 10; // Base increment for like
-        const newPreferenceScore = Math.min(100, currentPreferenceScore + increment);
-        await updatePreferenceScore(userId, tmdb_id, newPreferenceScore, supabase);
-
-        // Propagate influence to similar titles
-        await propagateLikeInfluence(userId, tmdb_id, type, supabase, increment);
-      }
-
-      // Handle REMOVE LIKE (liked changed from true to false)
-      if (likedWasProvided && previousLiked === true && newLiked === false) {
-        // Apply soft decay (*0.7)
-        const newPreferenceScore = currentPreferenceScore * 0.7;
-        await updatePreferenceScore(userId, tmdb_id, newPreferenceScore, supabase);
-
-        // Propagate decay to similar titles
-        await propagateRemoveLikeInfluence(userId, tmdb_id, type, supabase, 0.7);
-      }
-
-      // Handle DISLIKE (not_interested)
-      if (status === TITLE_STATUS.NOT_INTERESTED) {
-        // Strong penalty
-        const penalty = -15;
-        const newPreferenceScore = Math.max(-100, currentPreferenceScore + penalty);
-        await updatePreferenceScore(userId, tmdb_id, newPreferenceScore, supabase);
-
-        // Propagate penalty to similar titles
-        await propagateDislikeInfluence(userId, tmdb_id, type, supabase, penalty);
-
-        // Remove from pool
-        await removeFromPool(userId, tmdb_id, supabase);
-      }
-
-      // Check for extreme behavior and perform soft reset if needed
-      const shouldSoftReset = await detectExtremeBehavior(userId, supabase);
-      if (shouldSoftReset) {
-        await performSoftReset(userId, supabase, 0.5);
-      }
-    } catch (poolError) {
-      // Don't fail the request if pool update fails
+      // Log in development for debugging
       if (process.env.NODE_ENV === 'development') {
-        console.error('Error updating recommendation pool:', poolError);
+        console.log('[Title Status] Calling Edge Function:', {
+          url: edgeFunctionUrl,
+          payload: { ...payload, userId: '***' }, // Don't log full userId
+        });
       }
+
+      // Don't await - let it run in background
+      fetch(edgeFunctionUrl, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${serviceRoleKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      })
+        .then((response) => {
+          if (process.env.NODE_ENV === 'development') {
+            console.log(
+              '[Title Status] Edge Function response status:',
+              response.status
+            );
+          }
+          if (!response.ok) {
+            return response.text().then((text) => {
+              throw new Error(
+                `Edge Function returned ${response.status}: ${text}`
+              );
+            });
+          }
+        })
+        .catch((edgeFunctionError) => {
+          // Log error but don't fail the request
+          console.error(
+            '[Title Status] Error calling Edge Function:',
+            edgeFunctionError
+          );
+        });
+    } else {
+      console.warn(
+        '[Title Status] Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY, skipping Edge Function call',
+        {
+          hasSupabaseUrl: !!supabaseUrl,
+          hasServiceRoleKey: !!serviceRoleKey,
+        }
+      );
     }
 
-    return { success: true };
+    return response;
   } catch (error: unknown) {
     const errorMessage =
       error instanceof Error
