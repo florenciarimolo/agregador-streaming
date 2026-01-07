@@ -92,9 +92,9 @@ const badgeStyle = computed(() => {
         'bg-purple-600/90 dark:bg-purple-700/90 border-purple-500/30 text-purple-300': true,
       };
     case TmdbStatus.RELEASED:
-      // Yellow/Amber for released (available)
+      // Blue for released (available)
       return {
-        'bg-amber-600/90 dark:bg-amber-500/90 border-amber-500/30 text-amber-300': true,
+        'bg-blue-600/90 dark:bg-blue-700/90 border-blue-400/30 text-blue-100 dark:text-blue-200': true,
       };
     case TmdbStatus.CANCELED:
       // Red for canceled (negative)
