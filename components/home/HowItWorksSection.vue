@@ -4,7 +4,7 @@
       <PageContainer>
         <Section>
           <div class="home-section-title home-animate">
-            <SectionTitle>{{ $t('home.howItWorksTitle') }}</SectionTitle>
+            <SectionTitle align="center">{{ $t('home.howItWorksTitle') }}</SectionTitle>
           </div>
           <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
             <Card

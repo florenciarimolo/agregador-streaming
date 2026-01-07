@@ -4,7 +4,7 @@
       <PageContainer>
         <Section>
           <div class="home-section-title home-animate">
-            <SectionTitle>{{ $t('home.faq.title') }}</SectionTitle>
+            <SectionTitle align="center">{{ $t('home.faq.title') }}</SectionTitle>
           </div>
           <div class="space-y-4">
             <Disclosure

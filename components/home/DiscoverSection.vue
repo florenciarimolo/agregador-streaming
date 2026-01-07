@@ -12,7 +12,7 @@
             </span>
           </div>
           <div class="home-section-title home-animate home-animate-delay-1">
-            <SectionTitle>{{ $t('home.discover.title') }}</SectionTitle>
+            <SectionTitle align="center">{{ $t('home.discover.title') }}</SectionTitle>
           </div>
           <p
             class="mx-auto mb-8 text-subtitle text-center font-body text-gray-600 dark:text-gray-400 max-w-3xl home-animate home-animate-delay-2"

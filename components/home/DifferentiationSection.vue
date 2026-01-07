@@ -4,7 +4,7 @@
       <PageContainer>
         <Section>
           <div class="home-section-title home-animate">
-            <SectionTitle>{{ $t('home.differentiation.title') }}</SectionTitle>
+            <SectionTitle align="center">{{ $t('home.differentiation.title') }}</SectionTitle>
           </div>
           <div class="grid gap-8 md:gap-12 md:grid-cols-2">
             <!-- Other Platforms -->

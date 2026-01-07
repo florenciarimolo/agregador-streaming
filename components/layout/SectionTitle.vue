@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-4 text-center">
+  <div :class="['space-y-4', align === 'center' ? 'text-center' : 'text-left']">
     <h2
       class="text-h2 font-heading font-semibold text-gray-800 dark:text-gray-300"
     >
@@ -22,9 +22,11 @@
 
 interface Props {
   description?: string;
+  align?: 'left' | 'center';
 }
 
 withDefaults(defineProps<Props>(), {
   description: undefined,
+  align: 'left',
 });
 </script>
