@@ -6,7 +6,7 @@
 
 import { getRouterParams } from 'h3';
 import { serverSupabaseClient } from '#supabase/server';
-import { getUserIdFromEvent } from '@/server/utils/user-preferences';
+import { getUserIdFromEvent } from '@/server/utils/user-auth';
 import {
   getDiscoverListBySlug,
   insertDiscoverListIntoPool,

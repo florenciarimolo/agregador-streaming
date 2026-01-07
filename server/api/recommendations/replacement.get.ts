@@ -3,7 +3,7 @@ import { devLog, devError, safeError } from '@/server/utils/logger';
 import { Recommendation, Provider } from '@/types/Recommendation';
 import { TITLE_STATUS } from '@/constants/domain/titleStatus';
 import { QUERY_PARAMS } from '@/constants/api/queryParams';
-import { getUserIdFromEvent } from '@/server/utils/user-preferences';
+import { getUserIdFromEvent } from '@/server/utils/user-auth';
 import {
   MOOD,
   type Mood,
@@ -13,7 +13,7 @@ import {
   type Attention,
 } from '@/constants/domain/attention';
 import { getTMDBConfig } from '@/server/utils/config';
-import { getUserTMDBParams } from '@/server/utils/user-preferences';
+import { getUserTMDBParams } from '@/server/utils/user-tmdb';
 import { type TitleData } from '@/services/recommendationPool';
 import { TABLES } from '@/constants/db/tables';
 import { RECOMMENDATION_POOL_COLUMNS } from '@/constants/db/columns';

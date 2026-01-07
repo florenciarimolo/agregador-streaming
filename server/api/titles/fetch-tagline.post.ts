@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { createError, readBody } from 'h3';
 import { getTMDBConfig } from '@/server/utils/config';
-import { getUserTMDBParams } from '@/server/utils/user-preferences';
+import { getUserTMDBParams } from '@/server/utils/user-tmdb';
 import { TITLES_COLUMNS } from '@/constants/db/columns';
 import { TABLES } from '@/constants/db/tables';
 import { MEDIA_TYPE } from '@/constants/domain/mediaType';

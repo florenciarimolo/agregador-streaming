@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { TABLES } from '@/constants/db/tables';
-import { getUserIdFromEvent } from '@/server/utils/user-preferences';
+import { getUserIdFromEvent } from '@/server/utils/user-auth';
 
 export default defineEventHandler(async (event) => {
   try {

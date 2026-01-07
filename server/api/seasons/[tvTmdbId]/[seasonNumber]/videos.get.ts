@@ -15,7 +15,7 @@ import { fetchSeasonVideos } from '@/server/utils/tmdb-videos';
 import { normalizeVideosForStorage } from '@/server/utils/video-normalization';
 import { updateSeasonVideos } from '@/services/seasons';
 import { VIDEO_REFRESH_THRESHOLD_HOURS } from '@/constants/domain/videos';
-import { getUserTMDBParams } from '@/server/utils/user-preferences';
+import { getUserTMDBParams } from '@/server/utils/user-tmdb';
 import type { MultiLanguageVideos } from '@/types/Video';
 
 export default defineEventHandler(async (event) => {

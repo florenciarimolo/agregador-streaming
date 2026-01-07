@@ -3,7 +3,7 @@ import {
   WatchProviderTypes,
 } from '@/types/WatchProvider';
 import { getTMDBConfig } from '@/server/utils/config';
-import { getUserTMDBParams } from '@/server/utils/user-preferences';
+import { getUserTMDBParams } from '@/server/utils/user-tmdb';
 import { createError, getRouterParams } from 'h3';
 
 export default defineEventHandler(async (event) => {

@@ -18,7 +18,8 @@
     "noResults": "No s'han trobat resultats",
     "noImage": "Sense imatge",
     "optional": "Opcional",
-    "lists": "Llistes"
+    "lists": "Llistes",
+    "clearFilters": "Netejar filtres"
   },
   "navbar": {
     "home": "Inici",

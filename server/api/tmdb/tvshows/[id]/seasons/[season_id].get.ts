@@ -1,6 +1,6 @@
 import type { Season } from '@/types/TVShow';
 import { getTMDBConfig } from '@/server/utils/config';
-import { getUserTMDBParams } from '@/server/utils/user-preferences';
+import { getUserTMDBParams } from '@/server/utils/user-tmdb';
 import { getPrimaryLanguageForRegion } from '@/utils/language-detection';
 import {
   createError,

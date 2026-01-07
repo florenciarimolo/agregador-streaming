@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { devLog, devError, devWarn, safeError } from '@/server/utils/logger';
 import { Recommendation, Provider } from '@/types/Recommendation';
 import { TITLE_STATUS } from '@/constants/domain/titleStatus';
-import { getUserIdFromEvent } from '@/server/utils/user-preferences';
+import { getUserIdFromEvent } from '@/server/utils/user-auth';
 import {
   MOOD,
   type Mood,
@@ -12,7 +12,7 @@ import {
   type Attention,
 } from '@/constants/domain/attention';
 import { getTMDBConfig } from '@/server/utils/config';
-import { getUserTMDBParams } from '@/server/utils/user-preferences';
+import { getUserTMDBParams } from '@/server/utils/user-tmdb';
 import {
   type TitleData,
 } from '@/services/recommendationPool';

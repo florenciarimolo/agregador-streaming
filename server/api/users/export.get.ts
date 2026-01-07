@@ -12,10 +12,8 @@ import {
   getTitleInLanguage,
   type MultiLanguageText,
 } from '@/services/titles';
-import {
-  getUserTMDBParams,
-  getUserIdFromEvent,
-} from '@/server/utils/user-preferences';
+import { getUserTMDBParams } from '@/server/utils/user-tmdb';
+import { getUserIdFromEvent } from '@/server/utils/user-auth';
 import { TABLES } from '@/constants/db/tables';
 import { USER_PREFERENCES_COLUMNS } from '@/constants/db/columns';
 

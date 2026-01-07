@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import {
   updateLastShownAt,
 } from '@/services/recommendationPool';
-import { getUserIdFromEvent } from '@/server/utils/user-preferences';
+import { getUserIdFromEvent } from '@/server/utils/user-auth';
 
 /**
  * Track when recommendations are shown to a user

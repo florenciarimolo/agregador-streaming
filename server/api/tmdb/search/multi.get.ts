@@ -1,5 +1,5 @@
 import { getTMDBConfig } from '@/server/utils/config';
-import { getUserTMDBParams } from '@/server/utils/user-preferences';
+import { getUserTMDBParams } from '@/server/utils/user-tmdb';
 import { createError, defineEventHandler, getQuery, H3Event } from 'h3';
 import type { MediaResponse } from '@/types/Media';
 import { hasUnexpectedCharacters } from '@/utils/language-detection';

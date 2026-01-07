@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { getTMDBConfig } from '@/server/utils/config';
-import { getUserTMDBParams } from '@/server/utils/user-preferences';
+import { getUserTMDBParams } from '@/server/utils/user-tmdb';
 import { TITLES_COLUMNS } from '@/constants/db/columns';
 import { TABLES } from '@/constants/db/tables';
 import type { MultiLanguageText } from '@/services/titles';

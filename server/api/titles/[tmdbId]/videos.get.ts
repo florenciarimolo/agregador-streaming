@@ -19,7 +19,7 @@ import {
 import { normalizeVideosForStorage } from '@/server/utils/video-normalization';
 import { updateTitleVideos } from '@/services/titles';
 import { VIDEO_REFRESH_THRESHOLD_HOURS } from '@/constants/domain/videos';
-import { getUserTMDBParams } from '@/server/utils/user-preferences';
+import { getUserTMDBParams } from '@/server/utils/user-tmdb';
 import type { MultiLanguageVideos } from '@/types/Video';
 
 export default defineEventHandler(async (event) => {

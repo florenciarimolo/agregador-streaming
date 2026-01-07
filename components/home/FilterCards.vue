@@ -132,9 +132,12 @@
       <Button
         variant="secondary"
         size="small"
+        icon-position="left"
         @click="$emit('clear')"
       >
-        <IconX icon-class="w-4 h-4 mr-2" />
+        <template #icon>
+          <IconX icon-class="w-4 h-4" />
+        </template>
         {{ $t('common.clearFilters') }}
       </Button>
     </div>

@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { getTMDBConfig } from '@/server/utils/config';
-import { getUserTMDBParams, getUserIdFromEvent } from '@/server/utils/user-preferences';
+import { getUserTMDBParams } from '@/server/utils/user-tmdb';
+import { getUserIdFromEvent } from '@/server/utils/user-auth';
 import { devLog, devError, safeError } from '@/server/utils/logger';
 import {
   getPoolCount,

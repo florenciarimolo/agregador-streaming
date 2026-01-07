@@ -1,5 +1,5 @@
 import { getTMDBConfig } from '@/server/utils/config';
-import { getUserTMDBParams } from '@/server/utils/user-preferences';
+import { getUserTMDBParams } from '@/server/utils/user-tmdb';
 import { createError, defineEventHandler } from 'h3';
 import { createClient } from '@supabase/supabase-js';
 import { TITLES_COLUMNS } from '@/constants/db/columns';

@@ -4,7 +4,7 @@ import { TABLES } from '@/constants/db/tables';
 import { USER_TITLE_STATUS_COLUMNS } from '@/constants/db/columns';
 import { SCORE_WEIGHTS } from '@/constants/domain/scoring';
 import { updatePoolScore } from '@/services/recommendationPool';
-import { getUserIdFromEvent } from '@/server/utils/user-preferences';
+import { getUserIdFromEvent } from '@/server/utils/user-auth';
 
 /**
  * Delete user title status (remove from seen or not_interested)

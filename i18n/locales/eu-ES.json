@@ -18,7 +18,8 @@
     "noResults": "Ez da emaitzarik aurkitu",
     "noImage": "Irudirik ez",
     "optional": "Aukerakoa",
-    "lists": "Zerrendak"
+    "lists": "Zerrendak",
+    "clearFilters": "Garbitu iragazkiak"
   },
   "navbar": {
     "home": "Inicio",

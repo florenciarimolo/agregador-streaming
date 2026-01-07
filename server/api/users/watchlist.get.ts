@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
-import { getUserTMDBParams, getUserIdFromEvent } from '@/server/utils/user-preferences';
+import { getUserTMDBParams } from '@/server/utils/user-tmdb';
+import { getUserIdFromEvent } from '@/server/utils/user-auth';
 import { devLog, devError, devWarn, safeError } from '@/server/utils/logger';
 import { TITLE_STATUS } from '@/constants/domain/titleStatus';
 import { TABLES } from '@/constants/db/tables';

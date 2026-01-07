@@ -3,7 +3,7 @@ import { TITLE_STATUS, type TitleStatusType } from '@/constants/domain/titleStat
 import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 import { TABLES } from '@/constants/db/tables';
 import { USER_TITLE_STATUS_COLUMNS } from '@/constants/db/columns';
-import { getUserIdFromEvent } from '@/server/utils/user-preferences';
+import { getUserIdFromEvent } from '@/server/utils/user-auth';
 import {
   updatePreferenceScore,
   removeFromPool,

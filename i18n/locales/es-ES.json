@@ -18,7 +18,8 @@
     "noResults": "No se encontraron resultados",
     "noImage": "Sin imagen",
     "optional": "Opcional",
-    "lists": "Listas"
+    "lists": "Listas",
+    "clearFilters": "Limpiar filtros"
   },
   "navbar": {
     "home": "Inicio",

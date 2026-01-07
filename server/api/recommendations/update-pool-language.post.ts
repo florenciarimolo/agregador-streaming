@@ -1,5 +1,5 @@
 import { devLog } from '@/server/utils/logger';
-import { getUserIdFromEvent } from '@/server/utils/user-preferences';
+import { getUserIdFromEvent } from '@/server/utils/user-auth';
 
 /**
  * @deprecated This endpoint is no longer needed as title_data has been removed from recommendation_pool.
