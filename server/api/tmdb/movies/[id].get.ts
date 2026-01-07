@@ -160,6 +160,7 @@ export default defineEventHandler(async (event) => {
             backdrop_path?: string | null;
             release_date?: string;
             vote_average?: number;
+            vote_count?: number;
             status?: string;
             genres?: Array<{ id: number; name: string }>;
             genre_ids?: number[];
@@ -247,6 +248,7 @@ export default defineEventHandler(async (event) => {
         backdrop_path: titleFromDb.backdrop_path || null,
         release_date: titleFromDb.release_date || '',
         vote_average: titleFromDb.vote_average || 0,
+        vote_count: fullMovieResponse?.vote_count,
         status: (titleFromDb.status as string | undefined) || savedStatus || undefined, // Use saved value if we just saved it
         genres: fullMovieResponse?.genres || titleFromDb.genres || [],
         genre_ids: fullMovieResponse?.genre_ids || [],

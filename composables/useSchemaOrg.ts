@@ -15,14 +15,18 @@ export function useMovieSchema(movie: Movie, siteUrl: string) {
       ? `https://image.tmdb.org/t/p/w780${movie.poster_path}`
       : undefined,
     datePublished: movie.release_date || undefined,
-    aggregateRating: movie.vote_average
-      ? {
-          '@type': 'AggregateRating',
-          ratingValue: movie.vote_average,
-          bestRating: 10,
-          worstRating: 0,
-        }
-      : undefined,
+    // Only include aggregateRating if we have vote_count
+    // Google requires ratingCount or reviewCount when AggregateRating is present
+    aggregateRating:
+      movie.vote_average && movie.vote_count
+        ? {
+            '@type': 'AggregateRating',
+            ratingValue: movie.vote_average,
+            bestRating: 10,
+            worstRating: 0,
+            ratingCount: movie.vote_count,
+          }
+        : undefined,
     genre: movie.genres?.map((g) => g.name).join(', ') || undefined,
     duration: movie.runtime
       ? `PT${movie.runtime}M`
@@ -47,14 +51,18 @@ export function useTVShowSchema(tvShow: TVShow, siteUrl: string) {
       ? `https://image.tmdb.org/t/p/w780${tvShow.poster_path}`
       : undefined,
     datePublished: tvShow.first_air_date || undefined,
-    aggregateRating: tvShow.vote_average
-      ? {
-          '@type': 'AggregateRating',
-          ratingValue: tvShow.vote_average,
-          bestRating: 10,
-          worstRating: 0,
-        }
-      : undefined,
+    // Only include aggregateRating if we have vote_count
+    // Google requires ratingCount or reviewCount when AggregateRating is present
+    aggregateRating:
+      tvShow.vote_average && tvShow.vote_count
+        ? {
+            '@type': 'AggregateRating',
+            ratingValue: tvShow.vote_average,
+            bestRating: 10,
+            worstRating: 0,
+            ratingCount: tvShow.vote_count,
+          }
+        : undefined,
     genre: tvShow.genres?.map((g) => g.name).join(', ') || undefined,
     numberOfSeasons: tvShow.number_of_seasons || undefined,
     url: `${siteUrl}/tv-show/${tvShow.id}`,
@@ -81,14 +89,18 @@ export function useTVSeasonSchema(
       ? `https://image.tmdb.org/t/p/w780${season.poster_path}`
       : undefined,
     datePublished: season.air_date || undefined,
-    aggregateRating: season.vote_average
-      ? {
-          '@type': 'AggregateRating',
-          ratingValue: season.vote_average,
-          bestRating: 10,
-          worstRating: 0,
-        }
-      : undefined,
+    // Only include aggregateRating for seasons if we have vote_count
+    // Google requires ratingCount or reviewCount when AggregateRating is present
+    aggregateRating:
+      season.vote_average && season.vote_count
+        ? {
+            '@type': 'AggregateRating',
+            ratingValue: season.vote_average,
+            bestRating: 10,
+            worstRating: 0,
+            ratingCount: season.vote_count,
+          }
+        : undefined,
     partOfSeries: {
       '@type': 'TVSeries',
       name: tvShow.name,

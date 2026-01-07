@@ -159,6 +159,7 @@ export default defineEventHandler(async (event) => {
             backdrop_path?: string | null;
             first_air_date?: string;
             vote_average?: number;
+            vote_count?: number;
             genres?: Array<{ id: number; name: string }>;
             genre_ids?: number[];
             seasons?: Array<{
@@ -169,6 +170,7 @@ export default defineEventHandler(async (event) => {
               air_date: string;
               poster_path: string | null;
               vote_average: number;
+              vote_count?: number;
               episode_count?: number;
             }>;
             number_of_seasons?: number;
@@ -268,6 +270,7 @@ export default defineEventHandler(async (event) => {
         backdrop_path: (titleFromDb.backdrop_path || '') as string,
         first_air_date: titleFromDb.first_air_date || '',
         vote_average: titleFromDb.vote_average || 0,
+        vote_count: fullTvShowResponse?.vote_count,
         genres: fullTvShowResponse?.genres || titleFromDb.genres || [],
         genre_ids: fullTvShowResponse?.genre_ids || [],
         seasons: fullTvShowResponse?.seasons || [], // Will be updated after sync

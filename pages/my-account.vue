@@ -311,7 +311,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import AvatarUpload from '@/components/AvatarUpload.vue';
 import AppShell from '@/components/layout/AppShell.vue';
@@ -595,26 +595,24 @@ const handleUpdatePassword = async () => {
     });
 
     if (updateError) {
-      if (import.meta.dev) {
-        console.error('[my-account] Password update error:', updateError);
-      }
+      console.error('[my-account] Password update error:', updateError);
       throw updateError;
     }
 
-    if (import.meta.dev) {
-      console.log('[my-account] Password updated successfully');
-    }
+    console.log('[my-account] Password updated successfully');
 
     // Clear form
     currentPassword.value = '';
     newPassword.value = '';
     confirmPassword.value = '';
 
+    // Show success toast
+    // Use nextTick to ensure the toast is shown after all state updates
+    await nextTick();
     const successMessage = t('myAccount.password.updated');
-    if (import.meta.dev) {
-      console.log('[my-account] Showing success toast:', successMessage);
-    }
+    console.log('[my-account] About to show toast:', successMessage);
     showToast(successMessage, null);
+    console.log('[my-account] showToast called');
 
     if (import.meta.dev) {
       console.log(

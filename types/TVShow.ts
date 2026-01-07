@@ -21,6 +21,7 @@ export type Season = {
   air_date: string;
   poster_path: string | null;
   vote_average: number;
+  vote_count?: number;
   episodes?: Episode[];
   episode_count?: number;
 };
@@ -33,6 +34,7 @@ export type TVShow = {
   poster_path: string | null;
   first_air_date: string;
   vote_average: number;
+  vote_count?: number;
   imdb_id?: string; // Optional, as not all movies may have an IMDb ID
   backdrop_path: string;
   number_of_seasons: number;
