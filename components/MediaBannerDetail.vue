@@ -208,28 +208,28 @@
           v-if="hasSession"
           class="media-banner-tooltips flex absolute bottom-6 right-4 gap-2 z-20"
         >
-          <Tooltip v-if="isLiked" :text="$t('media.liked')">
+          <Tooltip v-if="isLiked" text="Favorito">
             <div
               class="flex justify-center items-center w-8 h-8 rounded-full backdrop-blur-sm bg-primary-600/90"
             >
               <IconHeartFilled icon-class="w-5 h-5 text-white" />
             </div>
           </Tooltip>
-          <Tooltip v-if="isSeen && !isLiked" :text="$t('media.seen')">
+          <Tooltip v-if="isSeen && !isLiked" text="Visto">
             <div
               class="flex justify-center items-center w-8 h-8 rounded-full backdrop-blur-sm bg-primary-600/90"
             >
               <IconCheck icon-class="w-5 h-5 text-white" />
             </div>
           </Tooltip>
-          <Tooltip v-if="isNotInterested" :text="$t('media.notInterested')">
+          <Tooltip v-if="isNotInterested" text="No me interesa">
             <div
               class="flex justify-center items-center w-8 h-8 rounded-full backdrop-blur-sm bg-primary-600/90"
             >
               <IconX icon-class="w-5 h-5 text-white" />
             </div>
           </Tooltip>
-          <Tooltip v-if="isInWatchlist" :text="$t('media.watchLater')">
+          <Tooltip v-if="isInWatchlist" text="Watchlist">
             <div
               class="flex justify-center items-center w-8 h-8 rounded-full backdrop-blur-sm bg-primary-600/90"
             >
@@ -285,14 +285,14 @@
                 v-if="hasSession"
                 class="media-banner-tooltips flex absolute top-2 right-2 gap-2 z-20"
               >
-                <Tooltip v-if="isLiked" :text="$t('media.liked')">
+                <Tooltip v-if="isLiked" text="Favorito">
                   <div
                     class="flex justify-center items-center w-8 h-8 rounded-full backdrop-blur-sm bg-primary-600/90"
                   >
                     <IconHeartFilled icon-class="w-5 h-5 text-white" />
                   </div>
                 </Tooltip>
-                <Tooltip v-if="isSeen && !isLiked" :text="$t('media.seen')">
+                <Tooltip v-if="isSeen && !isLiked" text="Visto">
                   <div
                     class="flex justify-center items-center w-8 h-8 rounded-full backdrop-blur-sm bg-primary-600/90"
                   >
@@ -301,7 +301,7 @@
                 </Tooltip>
                 <Tooltip
                   v-if="isNotInterested"
-                  :text="$t('media.notInterested')"
+                  text="No me interesa"
                 >
                   <div
                     class="flex justify-center items-center w-8 h-8 rounded-full backdrop-blur-sm bg-primary-600/90"
@@ -309,7 +309,7 @@
                     <IconX icon-class="w-5 h-5 text-white" />
                   </div>
                 </Tooltip>
-                <Tooltip v-if="isInWatchlist" :text="$t('media.watchLater')">
+                <Tooltip v-if="isInWatchlist" text="Watchlist">
                   <div
                     class="flex justify-center items-center w-8 h-8 rounded-full backdrop-blur-sm bg-primary-600/90"
                   >

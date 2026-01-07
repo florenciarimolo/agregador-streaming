@@ -31,7 +31,9 @@ defineProps<Props>();
   padding: 6px 10px;
   border-radius: 6px;
   font-size: 12px;
-  white-space: nowrap;
+  white-space: normal;
+  max-width: 200px;
+  word-wrap: break-word;
   pointer-events: none;
   opacity: 0;
   transition:
@@ -39,6 +41,7 @@ defineProps<Props>();
     transform 0.2s ease-in-out;
   z-index: 9999;
   margin-top: 0;
+  overflow: visible;
 }
 
 .tooltip::after {
