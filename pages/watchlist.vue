@@ -1,95 +1,105 @@
 <template>
   <AppShell>
     <PageContainer>
-    <div class="w-full pt-6 pb-6">
-    <div class="mb-8">
-      <h1
-        class="mb-2 text-3xl font-bold text-gray-800 md:text-4xl dark:text-gray-300 font-heading"
-      >
-        {{ $t('watchlist.title') }}
-      </h1>
-      <p class="text-gray-800 dark:text-gray-300">
-        {{ $t('watchlist.description') }}
-      </p>
-    </div>
+      <div class="w-full pt-6 pb-6">
+        <div class="mb-8">
+          <h2
+            class="mb-2 text-h2 font-bold text-gray-800 dark:text-gray-300 font-heading"
+          >
+            {{ $t('watchlist.title') }}
+          </h2>
+          <p class="text-gray-800 dark:text-gray-300">
+            {{ $t('watchlist.description') }}
+          </p>
+        </div>
 
-    <!-- Show loading while checking profile -->
-    <div v-if="!isProfileReady" class="flex items-center justify-center py-12">
-      <div
-        class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"
-      ></div>
-    </div>
-
-    <div v-else>
-      <!-- Toast component for notifications -->
-      <Toast />
-
-      <!-- Loading State -->
-      <div v-if="isLoading" class="py-12 text-center">
+        <!-- Show loading while checking profile -->
         <div
-          class="mx-auto mb-4 w-12 h-12 rounded-full border-b-2 animate-spin border-primary"
-        ></div>
-        <p class="text-gray-800 dark:text-gray-300">
-          {{ $t('watchlist.loading') }}
-        </p>
-      </div>
-
-      <!-- Content -->
-      <div v-else>
-        <EmptyState
-        v-if="watchlistTitles.length === 0"
-        :message="$t('watchlist.empty')"
-        icon="bookmark"
-        :cta-text="$t('watchlist.emptyCta')"
-        :cta-action="goToRecommendations"
-      />
-
-      <div
-        v-else
-        class="watchlist-grid grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
-      >
-        <TitleCard
-          v-for="title in watchlistTitles"
-          :key="`watchlist-${title.tmdb_id}`"
-          :title="title.title"
-          :poster-path="title.poster_path"
-          :link-to="getTitleLink(title.type, title.tmdb_id)"
-          :link-aria-label="$t('media.viewDetailsOf', { title: title.title })"
-          :image-alt="title.title"
-          :no-image-aria-label="$t('media.noPosterAvailableFor', { title: title.title })"
-          :type="title.type"
-          :aria-label="$t('media.titleCardLabel', { title: title.title })"
+          v-if="!isProfileReady"
+          class="flex items-center justify-center py-12"
         >
-          <!-- Top-right: Remove Button -->
-          <template #top-right-actions>
-            <Tooltip :text="$t('watchlist.removeTooltip')">
-              <IconButton
-                :aria-label="$t('watchlist.removeTitle', { title: title.title })"
-                size="small"
-                variant="default"
-                custom-class="p-2 rounded-full backdrop-blur-sm pointer-events-auto w-fit h-fit bg-black/50 hover:bg-red-600/80"
-                @click.stop.prevent="handleRemoveTitle(title)"
+          <div
+            class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"
+          ></div>
+        </div>
+
+        <div v-else>
+          <!-- Toast component for notifications -->
+          <Toast />
+
+          <!-- Loading State -->
+          <div v-if="isLoading" class="py-12 text-center">
+            <div
+              class="mx-auto mb-4 w-12 h-12 rounded-full border-b-2 animate-spin border-primary"
+            ></div>
+            <p class="text-gray-800 dark:text-gray-300">
+              {{ $t('watchlist.loading') }}
+            </p>
+          </div>
+
+          <!-- Content -->
+          <div v-else>
+            <EmptyState
+              v-if="watchlistTitles.length === 0"
+              :message="$t('watchlist.empty')"
+              icon="bookmark"
+              :cta-text="$t('watchlist.emptyCta')"
+              :cta-action="goToRecommendations"
+            />
+
+            <div
+              v-else
+              class="watchlist-grid grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
+            >
+              <TitleCard
+                v-for="title in watchlistTitles"
+                :key="`watchlist-${title.tmdb_id}`"
+                :title="title.title"
+                :poster-path="title.poster_path"
+                :link-to="getTitleLink(title.type, title.tmdb_id)"
+                :link-aria-label="
+                  $t('media.viewDetailsOf', { title: title.title })
+                "
+                :image-alt="title.title"
+                :no-image-aria-label="
+                  $t('media.noPosterAvailableFor', { title: title.title })
+                "
+                :type="title.type"
+                :aria-label="$t('media.titleCardLabel', { title: title.title })"
               >
-                <IconX icon-class="w-4 h-4 text-white" />
-              </IconButton>
-            </Tooltip>
-          </template>
-        </TitleCard>
+                <!-- Top-right: Remove Button -->
+                <template #top-right-actions>
+                  <Tooltip :text="$t('watchlist.removeTooltip')">
+                    <IconButton
+                      :aria-label="
+                        $t('watchlist.removeTitle', { title: title.title })
+                      "
+                      size="small"
+                      variant="default"
+                      custom-class="p-2 rounded-full backdrop-blur-sm pointer-events-auto w-fit h-fit bg-black/50 hover:bg-red-600/80"
+                      @click.stop.prevent="handleRemoveTitle(title)"
+                    >
+                      <IconX icon-class="w-4 h-4 text-white" />
+                    </IconButton>
+                  </Tooltip>
+                </template>
+              </TitleCard>
+            </div>
+          </div>
+        </div>
       </div>
-      </div>
-    </div>
-    </div>
     </PageContainer>
   </AppShell>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted, watch, computed } from 'vue';
 import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 import { getSession } from '@/services/auth';
 import { useUserStore } from '@/stores/user';
 import { useRouteWithLang } from '@/composables/useRouteWithLang';
 import { useTitleStatusAction } from '@/composables/useTitleStatusAction';
+import { useUndoToast } from '@/composables/useUndoToast';
 import { TITLE_STATUS } from '@/constants/domain/titleStatus';
 import Toast from '@/components/ui/Toast.vue';
 import IconButton from '@/components/ui/IconButton.vue';
@@ -102,8 +112,41 @@ import EmptyState from '@/components/EmptyState.vue';
 
 const { t, locale } = useI18n();
 
-// Get userStore - it must exist at this point
-const userStore = useUserStore();
+// Safely get userStore - it may not be available immediately after Pinia initialization
+// Use a computed to lazy-load the store, but only on client side
+const userStore = computed(() => {
+  // Only try to get store on client side
+  if (import.meta.server) {
+    return {
+      profile: null,
+      authInitialized: false,
+      hasCompletedOnboarding: false,
+      user: null,
+      setUser: () => {},
+      setProfile: () => {},
+      fetchProfile: async () => {},
+      ensureProfile: async () => {},
+    };
+  }
+
+  try {
+    return useUserStore();
+  } catch (error) {
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('[pages/watchlist.vue] useUserStore not available:', error);
+    }
+    return {
+      profile: null,
+      authInitialized: false,
+      hasCompletedOnboarding: false,
+      user: null,
+      setUser: () => {},
+      setProfile: () => {},
+      fetchProfile: async () => {},
+      ensureProfile: async () => {},
+    };
+  }
+});
 
 // SEO: Private page - noindex, nofollow
 useHead({
@@ -142,6 +185,8 @@ const isLoading = ref(true);
 const watchlistTitles = ref<WatchlistTitle[]>([]);
 const isRemoving = ref(false);
 const { executeAction } = useTitleStatusAction();
+const { showToast } = useUndoToast();
+const { routeWithLang } = useRouteWithLang();
 // Profile ready flag - controls main render, separate from isLoading
 const isProfileReady = ref(false);
 
@@ -184,9 +229,11 @@ const fetchWatchlist = async () => {
   }
 };
 
-
 // Helper function to generate link with language prefix
-const getTitleLink = (type: typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV, tmdbId: number): string => {
+const getTitleLink = (
+  type: typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV,
+  tmdbId: number
+): string => {
   const mediaType = type === MEDIA_TYPE.MOVIE ? 'movie' : 'tv-show';
   return routeWithLang(`/${mediaType}/${tmdbId}`);
 };
@@ -200,10 +247,10 @@ const handleRemoveTitle = async (title: WatchlistTitle) => {
   if (isRemoving.value) return;
 
   isRemoving.value = true;
-  
+
   // Store original title for undo
   const titleToRestore = { ...title };
-  
+
   try {
     // Use unified composable for API call and toast
     const result = await executeAction(
@@ -260,11 +307,10 @@ watch(
 
 onMounted(async () => {
   // Ensure profile is loaded
-  await userStore.ensureProfile();
+  await userStore.value.ensureProfile();
 
   // Check onboarding status
-  if (!userStore.hasCompletedOnboarding) {
-    const { routeWithLang } = useRouteWithLang();
+  if (!userStore.value.hasCompletedOnboarding) {
     await navigateTo(routeWithLang('/onboarding'), { replace: true });
     return;
   }
