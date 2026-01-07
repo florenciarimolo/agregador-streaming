@@ -7,7 +7,7 @@
             class="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center"
           >
             <!-- Columna izquierda: texto alineado a la izquierda -->
-            <div class="flex flex-col gap-6">
+            <div class="flex flex-col gap-6" data-aos="fade-up">
               <div class="text-left">
                 <p
                   class="text-label uppercase tracking-overline font-label text-primary dark:text-primary-400 mb-4"
@@ -57,6 +57,8 @@
                 padding="lg"
                 custom-class="p-6 backdrop-blur-xl bg-gray-100/90 dark:bg-gray-900/60 border border-gray-300/60 dark:border-white/15 shadow-lg shadow-black/10 dark:shadow-black/20 hover:border-primary-800 dark:hover:border-primary-600/50 transition-colors animated-border-card"
                 :enable-flashlight="true"
+                data-aos="fade-up"
+                data-aos-delay="100"
               >
                 <div class="space-y-2">
                   <div
@@ -83,6 +85,8 @@
                 padding="lg"
                 custom-class="p-6 backdrop-blur-xl bg-gray-100/90 dark:bg-gray-900/60 border border-gray-300/60 dark:border-white/15 shadow-lg shadow-black/10 dark:shadow-black/20 hover:border-primary-800 dark:hover:border-primary-600/50 transition-colors animated-border-card"
                 :enable-flashlight="true"
+                data-aos="fade-up"
+                data-aos-delay="200"
               >
                 <div class="grid grid-cols-4 gap-2">
                   <div
@@ -96,6 +100,8 @@
                 padding="lg"
                 custom-class="p-6 backdrop-blur-xl bg-gray-100/90 dark:bg-gray-900/60 border border-gray-300/60 dark:border-white/15 shadow-lg shadow-black/10 dark:shadow-black/20 hover:border-primary-800 dark:hover:border-primary-600/50 transition-colors animated-border-card"
                 :enable-flashlight="true"
+                data-aos="fade-up"
+                data-aos-delay="300"
               >
                 <div class="space-y-3">
                   <div class="flex gap-2">

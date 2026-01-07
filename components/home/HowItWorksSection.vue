@@ -3,7 +3,7 @@
     <AppShell>
       <PageContainer>
         <Section>
-          <div class="home-section-title">
+          <div class="home-section-title" data-aos="fade-up">
             <SectionTitle align="center">{{ $t('home.howItWorksTitle') }}</SectionTitle>
           </div>
           <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
@@ -11,6 +11,8 @@
               padding="lg"
               custom-class="md:p-6 relative overflow-hidden group hover:border-primary-800 dark:hover:border-primary-600/50 transition-colors flex flex-col !col-span-1"
               :enable-flashlight="true"
+              data-aos="fade-up"
+              data-aos-delay="100"
             >
               <div
                 class="flex justify-center items-center mb-4 w-14 h-14 bg-gradient-to-r rounded-full from-primary to-accent mx-auto"
@@ -30,6 +32,8 @@
               padding="lg"
               custom-class="md:p-6 relative overflow-hidden group hover:border-primary-800 dark:hover:border-primary-600/50 transition-colors flex flex-col !col-span-1"
               :enable-flashlight="true"
+              data-aos="fade-up"
+              data-aos-delay="200"
             >
               <div
                 class="flex justify-center items-center mb-4 w-14 h-14 bg-gradient-to-r rounded-full from-accent to-secondary mx-auto"
@@ -49,6 +53,8 @@
               padding="lg"
               custom-class="md:p-6 relative overflow-hidden group hover:border-primary-800 dark:hover:border-primary-600/50 transition-colors flex flex-col !col-span-1"
               :enable-flashlight="true"
+              data-aos="fade-up"
+              data-aos-delay="300"
             >
               <div
                 class="flex justify-center items-center mb-4 w-14 h-14 bg-gradient-to-r rounded-full from-secondary to-pink mx-auto"
@@ -68,6 +74,8 @@
               padding="lg"
               custom-class="md:p-6 relative overflow-hidden group hover:border-primary-800 dark:hover:border-primary-600/50 transition-colors flex flex-col !col-span-1"
               :enable-flashlight="true"
+              data-aos="fade-up"
+              data-aos-delay="400"
             >
               <div
                 class="flex justify-center items-center mb-4 w-14 h-14 bg-gradient-to-r rounded-full from-pink to-primary mx-auto"

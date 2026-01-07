@@ -3,11 +3,13 @@
     <AppShell>
       <PageContainer>
         <Section>
-          <div class="home-section-title">
+          <div class="home-section-title" data-aos="fade-up">
             <SectionTitle align="center">{{ $t('home.productFlow.title') }}</SectionTitle>
           </div>
           <p
             class="mx-auto mb-10 text-subtitle text-center font-body text-gray-600 dark:text-gray-400 max-w-3xl"
+            data-aos="fade-up"
+            data-aos-delay="100"
           >
             {{ $t('home.productFlow.description') }}
           </p>
@@ -19,6 +21,7 @@
               padding="lg"
               custom-class="md:p-6 relative overflow-hidden flex flex-col lg:col-span-4 hover:border-primary-800 dark:hover:border-primary-600/50 transition-colors"
               :enable-flashlight="true"
+              data-aos="fade-up"
             >
               <div class="flex flex-col gap-4 text-center">
                 <div
@@ -45,6 +48,8 @@
               padding="lg"
               custom-class="md:p-6 relative overflow-hidden flex flex-col lg:col-span-2 hover:border-primary-800 dark:hover:border-primary-600/50 transition-colors"
               :enable-flashlight="true"
+              data-aos="fade-up"
+              data-aos-delay="100"
             >
               <div class="flex flex-col gap-4 text-center items-center">
                 <div
@@ -71,6 +76,8 @@
               padding="lg"
               custom-class="md:p-6 relative overflow-hidden flex flex-col lg:col-span-3 hover:border-primary-800 dark:hover:border-primary-600/50 transition-colors"
               :enable-flashlight="true"
+              data-aos="fade-up"
+              data-aos-delay="200"
             >
               <div class="flex flex-col gap-4 text-center">
                 <div
@@ -103,6 +110,8 @@
               padding="lg"
               custom-class="md:p-6 relative overflow-hidden flex flex-col lg:col-span-3 hover:border-primary-800 dark:hover:border-primary-600/50 transition-colors"
               :enable-flashlight="true"
+              data-aos="fade-up"
+              data-aos-delay="300"
             >
               <div class="flex flex-col gap-4 text-center">
                 <div

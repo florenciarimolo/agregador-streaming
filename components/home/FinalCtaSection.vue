@@ -12,6 +12,7 @@
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
               }"
+              data-aos="fade-up"
             >
               <template v-for="(part, index) in finalCtaTextParts" :key="index">
                 <span
@@ -31,6 +32,8 @@
             <nuxt-link
               :to="discoverRoute"
               class="inline-block"
+              data-aos="fade-up"
+              data-aos-delay="100"
             >
               <Button size="medium" variant="primary">
                 {{ $t('home.finalCta.button') }}

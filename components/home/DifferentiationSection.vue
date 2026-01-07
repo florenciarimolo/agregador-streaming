@@ -3,7 +3,7 @@
     <AppShell>
       <PageContainer>
         <Section>
-          <div class="home-section-title">
+          <div class="home-section-title" data-aos="fade-up">
             <SectionTitle align="center">{{ $t('home.differentiation.title') }}</SectionTitle>
           </div>
           <div class="grid gap-8 md:gap-12 md:grid-cols-2">
@@ -12,6 +12,8 @@
               padding="lg"
               custom-class="hover:border-primary-800 dark:hover:border-primary-600/50 transition-colors"
               :enable-flashlight="true"
+              data-aos="fade-up"
+              data-aos-delay="100"
             >
               <h3
                 class="mb-4 text-h3 font-heading font-semibold text-gray-800 dark:text-gray-300 text-center"
@@ -51,6 +53,8 @@
               padding="lg"
               custom-class="border-primary/30 dark:border-primary/20 hover:border-primary-800 dark:hover:border-primary-600/50 transition-colors"
               :enable-flashlight="true"
+              data-aos="fade-up"
+              data-aos-delay="200"
             >
               <h3
                 class="mb-4 text-h3 font-heading font-semibold text-gray-800 dark:text-gray-300 text-center"

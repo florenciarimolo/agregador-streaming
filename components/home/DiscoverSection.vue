@@ -4,18 +4,20 @@
       <PageContainer>
         <Section>
           <!-- Pill MODO EXPLORACIÓN -->
-          <div class="flex justify-center mb-6">
+          <div class="flex justify-center mb-6" data-aos="fade-up">
             <span
               class="inline-flex items-center w-fit px-4 py-1.5 text-xs font-semibold tracking-wider rounded-full shadow-sm shadow-black/50 z-10 border whitespace-nowrap bg-primary-800/90 dark:bg-primary-700/90 border-primary-600/30 dark:border-primary-500/30 text-primary-200 dark:text-primary-300"
             >
               🔎 {{ $t('home.discover.modePill') }}
             </span>
           </div>
-          <div class="home-section-title">
+          <div class="home-section-title" data-aos="fade-up" data-aos-delay="100">
             <SectionTitle align="center">{{ $t('home.discover.title') }}</SectionTitle>
           </div>
           <p
             class="mx-auto mb-8 text-subtitle text-center font-body text-gray-600 dark:text-gray-400 max-w-3xl"
+            data-aos="fade-up"
+            data-aos-delay="200"
           >
             {{ $t('home.discover.description') }}
           </p>
@@ -29,6 +31,8 @@
               v-for="(list, index) in lists.slice(0, 4)"
               :key="list.id"
               :class="['h-full']"
+              :data-aos="'fade-up'"
+              :data-aos-delay="300 + index * 100"
             >
               <DiscoverListCard :list="list" />
             </div>
@@ -63,7 +67,7 @@
           </div>
 
           <!-- CTA secundario -->
-          <div class="flex justify-center">
+          <div class="flex justify-center" data-aos="fade-up" data-aos-delay="700">
             <nuxt-link :to="discoverRoute">
               <Button size="medium" variant="secondary">
                 {{ $t('home.discover.cta') }}

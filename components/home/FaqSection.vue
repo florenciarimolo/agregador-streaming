@@ -3,7 +3,7 @@
     <AppShell>
       <PageContainer>
         <Section>
-          <div class="home-section-title">
+          <div class="home-section-title" data-aos="fade-up">
             <SectionTitle align="center">{{ $t('home.faq.title') }}</SectionTitle>
           </div>
           <div class="space-y-4">
@@ -16,6 +16,8 @@
                 'bg-gray-100/80 dark:bg-gray-900/40 backdrop-blur-xl rounded-2xl border border-gray-300/50 dark:border-white/10 overflow-hidden hover:border-primary-800 dark:hover:border-primary-600/50 transition-colors',
                 i === 1 ? '' : i === 2 ? '' : i === 3 ? '' : ''
               ]"
+              :data-aos="'fade-up'"
+              :data-aos-delay="100 + (i - 1) * 100"
             >
               <DisclosureButton
                 class="w-full p-6 md:p-8 cursor-pointer font-heading dark:text-gray-300 text-gray-800 hover:bg-gray-100/50 dark:hover:bg-gray-800/50 transition-colors text-left"
