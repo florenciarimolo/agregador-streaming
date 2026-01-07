@@ -673,6 +673,15 @@ const handleSignupSuccess = () => {
   // Signup success is handled in AuthForm component
 };
 
+const handleCloseAuthForm = () => {
+  showAuthForm.value = false;
+  // Remove auth=login from URL
+  const { auth, ...restQuery } = route.query;
+  if (auth) {
+    router.replace({ query: restQuery });
+  }
+};
+
 const showAuthForm = ref(false);
 
 // Check if auth query param is present to show auth form
@@ -752,6 +761,7 @@ onMounted(() => {
             :hide-background="true"
             @auth-success="handleAuthSuccess"
             @signup-success="handleSignupSuccess"
+            @close="handleCloseAuthForm"
           />
         </template>
         <template #fallback>

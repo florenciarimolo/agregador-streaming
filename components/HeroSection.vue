@@ -18,6 +18,7 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{
   authSuccess: [];
   signupSuccess: [];
+  close: [];
 }>();
 
 const { t } = useI18n();
@@ -149,12 +150,36 @@ const descriptionParts = computed(() => {
       </div>
     </div>
 
-    <!-- AuthForm inside HeroSection, only if user is not logged in -->
-    <div v-if="!isAuthenticated && showAuthForm" class="relative z-10">
-      <AuthForm
-        @success="emit('authSuccess')"
-        @signup="emit('signupSuccess')"
-      />
-    </div>
+    <!-- AuthForm overlay - only if user is not logged in -->
+    <Transition
+      enter-active-class="transition duration-300 ease-out"
+      enter-from-class="opacity-0"
+      enter-to-class="opacity-100"
+      leave-active-class="transition duration-200 ease-in"
+      leave-from-class="opacity-100"
+      leave-to-class="opacity-0"
+    >
+      <div
+        v-if="!isAuthenticated && showAuthForm"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4"
+        @click.self="emit('close')"
+      >
+        <Transition
+          enter-active-class="transition duration-300 ease-out"
+          enter-from-class="opacity-0 scale-95"
+          enter-to-class="opacity-100 scale-100"
+          leave-active-class="transition duration-200 ease-in"
+          leave-from-class="opacity-100 scale-100"
+          leave-to-class="opacity-0 scale-95"
+        >
+          <div v-if="!isAuthenticated && showAuthForm" class="w-full max-w-md">
+            <AuthForm
+              @success="emit('authSuccess')"
+              @signup="emit('signupSuccess')"
+            />
+          </div>
+        </Transition>
+      </div>
+    </Transition>
   </section>
 </template>

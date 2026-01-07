@@ -1,5 +1,7 @@
 <template>
-  <div class="flex justify-center items-center px-4 min-h-screen">
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4"
+  >
     <div class="w-full max-w-md">
       <div class="mb-8 text-center">
         <!-- Light mode -->
@@ -289,6 +291,7 @@ import {
   validatePassword,
   getPasswordHelperText,
 } from '@/utils/passwordValidation';
+import { useUserStore } from '@/stores/user';
 import Button from '@/components/ui/Button.vue';
 import IconButton from '@/components/ui/IconButton.vue';
 import IconEye from '@/components/icons/IconEye.vue';
