@@ -108,6 +108,7 @@ export async function syncSeasonsFromTVShow(
       [SEASONS_COLUMNS.AIR_DATE]: tmdbSeason.air_date || null,
       [SEASONS_COLUMNS.POSTER_PATH]: tmdbSeason.poster_path || null,
       [SEASONS_COLUMNS.VOTE_AVERAGE]: tmdbSeason.vote_average || null,
+      [SEASONS_COLUMNS.EPISODE_COUNT]: tmdbSeason.episode_count ?? null,
       // overview and videos remain null (never fetched) until accessed on-demand
       [SEASONS_COLUMNS.OVERVIEW]: null,
       [SEASONS_COLUMNS.VIDEOS]: null,
