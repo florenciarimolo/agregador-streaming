@@ -163,10 +163,11 @@ export const useAuth = () => {
   const resetPassword = async (email: string) => {
     // Get current language from URL
     const lang = getCurrentLang();
-    // Redirect to callback - no next parameter needed, callback will check recovery flag
+    // Redirect to callback with next parameter so callback can handle recovery flow
     // CRITICAL: Remove trailing slash from baseUrl to prevent // when concatenating
+    // Result: baseUrl (no trailing /) + "/" + lang + "/auth/callback?next=..." = clean URL
     const baseUrl = config.public.baseUrl.replace(/\/$/, '');
-    const redirectUrl = `${baseUrl}/${lang}/auth/callback`;
+    const redirectUrl = `${baseUrl}/${lang}/auth/callback?next=/${lang}/auth/reset-password`;
 
     if (process.env.NODE_ENV === 'development') {
       console.log('[useAuth] ResetPassword redirectTo:', redirectUrl);

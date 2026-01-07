@@ -23,7 +23,7 @@ import { DEFAULT_LANGUAGE_URL_CODE } from '@/constants/urlLanguageCodes';
  * @param route - Route object
  * @returns Language URL code (e.g., 'es', 'en') or DEFAULT_LANGUAGE_URL_CODE as default
  */
-const getLangFromRoute = (route: { params?: { lang?: string } }): string => {
+const getLangFromRoute = (route: any): string => {
   const langParam = route.params?.lang as string | undefined;
   if (langParam) {
     return langParam.toLowerCase();

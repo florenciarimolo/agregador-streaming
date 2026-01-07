@@ -677,24 +677,26 @@ const showAuthForm = ref(false);
 
 // Check if auth query param is present to show auth form
 onMounted(() => {
-  // Redirect auth-related query params to auth/callback with language
-  if (typeof window !== 'undefined') {
-    const hasCode = !!route.query.code;
-    const hasError = !!(
-      route.query.error ||
-      route.query.error_code ||
-      route.query.error_description ||
-      route.query.error_message
-    );
+  // CRITICAL: Redirect auth codes to callback FIRST, before any other processing
+  // This prevents the auth listener from processing the session before we can check the recovery flag
+  const hasCode = !!route.query.code;
+  const hasError = !!(
+    route.query.error ||
+    route.query.error_code ||
+    route.query.error_description ||
+    route.query.error_message
+  );
 
-    if (hasCode || hasError) {
-      router.replace({
-        path: routeWithLang('/auth/callback'),
-        query: route.query,
-      });
-      return;
-    }
+  if (hasCode || hasError) {
+    // Redirect immediately to callback, preserving all query params
+    router.replace({
+      path: routeWithLang('/auth/callback'),
+      query: route.query,
+    });
+    return;
   }
+
+  // Only check for auth=login query param if no code/error
   if (route.query.auth === 'login' && !user.value) {
     showAuthForm.value = true;
   }
