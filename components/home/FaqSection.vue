@@ -3,7 +3,7 @@
     <AppShell>
       <PageContainer>
         <Section>
-          <div class="home-section-title home-animate">
+          <div class="home-section-title">
             <SectionTitle align="center">{{ $t('home.faq.title') }}</SectionTitle>
           </div>
           <div class="space-y-4">
@@ -13,8 +13,8 @@
               v-slot="{ open }"
               as="div"
               :class="[
-                'bg-gray-100/80 dark:bg-gray-900/40 backdrop-blur-xl rounded-2xl border border-gray-300/50 dark:border-white/10 overflow-hidden hover:border-primary-800 dark:hover:border-primary-600/50 transition-colors home-animate',
-                i === 1 ? '' : i === 2 ? 'home-animate-delay-1' : i === 3 ? 'home-animate-delay-2' : 'home-animate-delay-3'
+                'bg-gray-100/80 dark:bg-gray-900/40 backdrop-blur-xl rounded-2xl border border-gray-300/50 dark:border-white/10 overflow-hidden hover:border-primary-800 dark:hover:border-primary-600/50 transition-colors',
+                i === 1 ? '' : i === 2 ? '' : i === 3 ? '' : ''
               ]"
             >
               <DisclosureButton

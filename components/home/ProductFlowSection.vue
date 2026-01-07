@@ -3,11 +3,11 @@
     <AppShell>
       <PageContainer>
         <Section>
-          <div class="home-section-title home-animate">
+          <div class="home-section-title">
             <SectionTitle align="center">{{ $t('home.productFlow.title') }}</SectionTitle>
           </div>
           <p
-            class="mx-auto mb-10 text-subtitle text-center font-body text-gray-600 dark:text-gray-400 max-w-3xl home-animate home-animate-delay-1"
+            class="mx-auto mb-10 text-subtitle text-center font-body text-gray-600 dark:text-gray-400 max-w-3xl"
           >
             {{ $t('home.productFlow.description') }}
           </p>
@@ -17,7 +17,7 @@
             <!-- Step 1: Selecciona tu momento (lg:col-span-4) - Card protagonista -->
             <Card
               padding="lg"
-              custom-class="md:p-6 relative overflow-hidden flex flex-col lg:col-span-4 hover:border-primary-800 dark:hover:border-primary-600/50 transition-colors home-animate"
+              custom-class="md:p-6 relative overflow-hidden flex flex-col lg:col-span-4 hover:border-primary-800 dark:hover:border-primary-600/50 transition-colors"
               :enable-flashlight="true"
             >
               <div class="flex flex-col gap-4 text-center">
@@ -43,7 +43,7 @@
             <!-- Step 2: Confirma tu momento (lg:col-span-2) - Card compacta -->
             <Card
               padding="lg"
-              custom-class="md:p-6 relative overflow-hidden flex flex-col lg:col-span-2 hover:border-primary-800 dark:hover:border-primary-600/50 transition-colors home-animate home-animate-delay-1"
+              custom-class="md:p-6 relative overflow-hidden flex flex-col lg:col-span-2 hover:border-primary-800 dark:hover:border-primary-600/50 transition-colors"
               :enable-flashlight="true"
             >
               <div class="flex flex-col gap-4 text-center items-center">
@@ -69,7 +69,7 @@
             <!-- Step 3: Recibe recomendación (lg:col-span-3) - Contenido más pequeño -->
             <Card
               padding="lg"
-              custom-class="md:p-6 relative overflow-hidden flex flex-col lg:col-span-3 hover:border-primary-800 dark:hover:border-primary-600/50 transition-colors home-animate home-animate-delay-2"
+              custom-class="md:p-6 relative overflow-hidden flex flex-col lg:col-span-3 hover:border-primary-800 dark:hover:border-primary-600/50 transition-colors"
               :enable-flashlight="true"
             >
               <div class="flex flex-col gap-4 text-center">
@@ -101,7 +101,7 @@
             <!-- Step 4: Gestiona tus recomendaciones (lg:col-span-3) - Contenido más pequeño -->
             <Card
               padding="lg"
-              custom-class="md:p-6 relative overflow-hidden flex flex-col lg:col-span-3 hover:border-primary-800 dark:hover:border-primary-600/50 transition-colors home-animate home-animate-delay-3"
+              custom-class="md:p-6 relative overflow-hidden flex flex-col lg:col-span-3 hover:border-primary-800 dark:hover:border-primary-600/50 transition-colors"
               :enable-flashlight="true"
             >
               <div class="flex flex-col gap-4 text-center">

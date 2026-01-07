@@ -3,13 +3,13 @@
     <AppShell>
       <PageContainer>
         <Section>
-          <div class="home-section-title home-animate">
+          <div class="home-section-title">
             <SectionTitle align="center">{{ $t('home.howItWorksTitle') }}</SectionTitle>
           </div>
           <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
             <Card
               padding="lg"
-              custom-class="md:p-6 relative overflow-hidden group hover:border-primary-800 dark:hover:border-primary-600/50 transition-colors flex flex-col !col-span-1 home-animate"
+              custom-class="md:p-6 relative overflow-hidden group hover:border-primary-800 dark:hover:border-primary-600/50 transition-colors flex flex-col !col-span-1"
               :enable-flashlight="true"
             >
               <div
@@ -28,7 +28,7 @@
             </Card>
             <Card
               padding="lg"
-              custom-class="md:p-6 relative overflow-hidden group hover:border-primary-800 dark:hover:border-primary-600/50 transition-colors flex flex-col !col-span-1 home-animate home-animate-delay-1"
+              custom-class="md:p-6 relative overflow-hidden group hover:border-primary-800 dark:hover:border-primary-600/50 transition-colors flex flex-col !col-span-1"
               :enable-flashlight="true"
             >
               <div
@@ -47,7 +47,7 @@
             </Card>
             <Card
               padding="lg"
-              custom-class="md:p-6 relative overflow-hidden group hover:border-primary-800 dark:hover:border-primary-600/50 transition-colors flex flex-col !col-span-1 home-animate home-animate-delay-2"
+              custom-class="md:p-6 relative overflow-hidden group hover:border-primary-800 dark:hover:border-primary-600/50 transition-colors flex flex-col !col-span-1"
               :enable-flashlight="true"
             >
               <div
@@ -66,7 +66,7 @@
             </Card>
             <Card
               padding="lg"
-              custom-class="md:p-6 relative overflow-hidden group hover:border-primary-800 dark:hover:border-primary-600/50 transition-colors flex flex-col !col-span-1 home-animate home-animate-delay-3"
+              custom-class="md:p-6 relative overflow-hidden group hover:border-primary-800 dark:hover:border-primary-600/50 transition-colors flex flex-col !col-span-1"
               :enable-flashlight="true"
             >
               <div

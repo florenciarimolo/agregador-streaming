@@ -78,7 +78,7 @@ const descriptionParts = computed(() => {
       class="container overflow-visible relative z-10 mx-auto max-w-3xl text-center w-full"
     >
       <!-- Logo -->
-      <div class="mb-8 flex justify-center home-animate">
+      <div class="mb-8 flex justify-center">
         <img
           src="/logo-light.png"
           :alt="$t('common.appName')"
@@ -91,7 +91,7 @@ const descriptionParts = computed(() => {
         />
       </div>
       <h1
-        class="mb-8 text-hero font-heading font-bold text-transparent bg-clip-text bg-gradient-to-b drop-shadow-2xl from-primary-800 via-primary-800 to-primary-900 dark:from-white dark:via-white dark:to-gray-400 home-animate home-animate-delay-1"
+        class="mb-8 text-hero font-heading font-bold text-transparent bg-clip-text bg-gradient-to-b drop-shadow-2xl from-primary-800 via-primary-800 to-primary-900 dark:from-white dark:via-white dark:to-gray-400"
         style="
           line-height: 1.1;
           padding-top: 0.15em;
@@ -105,7 +105,7 @@ const descriptionParts = computed(() => {
         {{ $t('hero.title') }}
       </h1>
       <p
-        class="mx-auto mb-12 max-w-3xl text-subtitle font-body text-gray-600 dark:text-gray-400 home-animate home-animate-delay-2"
+        class="mx-auto mb-12 max-w-3xl text-subtitle font-body text-gray-600 dark:text-gray-400"
       >
         <template v-for="(part, index) in descriptionParts" :key="index">
           <span v-if="part.bold" class="font-bold">{{ part.text }}</span>
@@ -115,7 +115,7 @@ const descriptionParts = computed(() => {
         <span class="font-medium">{{ $t('hero.tagline') }}</span>
       </p>
       <div
-        class="flex flex-col gap-6 justify-center items-center sm:flex-row home-animate home-animate-delay-3"
+        class="flex flex-col gap-6 justify-center items-center sm:flex-row"
       >
         <Button
           size="medium"
@@ -133,7 +133,7 @@ const descriptionParts = computed(() => {
         </Button>
       </div>
       <!-- Enlace discreto a Discover -->
-      <div class="mt-4 home-animate home-animate-delay-4">
+      <div class="mt-4">
         <button
           class="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors underline cursor-pointer bg-transparent border-none p-0"
           @click="scrollToSection('discover')"

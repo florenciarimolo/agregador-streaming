@@ -4,18 +4,18 @@
       <PageContainer>
         <Section>
           <!-- Pill MODO EXPLORACIÓN -->
-          <div class="flex justify-center mb-6 home-animate">
+          <div class="flex justify-center mb-6">
             <span
               class="inline-flex items-center w-fit px-4 py-1.5 text-xs font-semibold tracking-wider rounded-full shadow-sm shadow-black/50 z-10 border whitespace-nowrap bg-primary-800/90 dark:bg-primary-700/90 border-primary-600/30 dark:border-primary-500/30 text-primary-200 dark:text-primary-300"
             >
               🔎 {{ $t('home.discover.modePill') }}
             </span>
           </div>
-          <div class="home-section-title home-animate home-animate-delay-1">
+          <div class="home-section-title">
             <SectionTitle align="center">{{ $t('home.discover.title') }}</SectionTitle>
           </div>
           <p
-            class="mx-auto mb-8 text-subtitle text-center font-body text-gray-600 dark:text-gray-400 max-w-3xl home-animate home-animate-delay-2"
+            class="mx-auto mb-8 text-subtitle text-center font-body text-gray-600 dark:text-gray-400 max-w-3xl"
           >
             {{ $t('home.discover.description') }}
           </p>
@@ -28,16 +28,7 @@
             <div
               v-for="(list, index) in lists.slice(0, 4)"
               :key="list.id"
-              :class="[
-                'home-animate h-full',
-                index === 0
-                  ? 'home-animate-delay-3'
-                  : index === 1
-                    ? 'home-animate-delay-4'
-                    : index === 2
-                      ? 'home-animate-delay-5'
-                      : 'home-animate-delay-6',
-              ]"
+              :class="['h-full']"
             >
               <DiscoverListCard :list="list" />
             </div>
@@ -72,7 +63,7 @@
           </div>
 
           <!-- CTA secundario -->
-          <div class="flex justify-center home-animate home-animate-delay-6">
+          <div class="flex justify-center">
             <nuxt-link :to="discoverRoute">
               <Button size="medium" variant="secondary">
                 {{ $t('home.discover.cta') }}

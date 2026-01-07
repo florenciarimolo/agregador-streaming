@@ -4,7 +4,7 @@
       <PageContainer>
         <Section>
           <!-- Título centrado, grande -->
-          <div class="text-center mb-4 home-animate">
+          <div class="text-center mb-4">
             <h2
               class="font-heading font-semibold text-gray-800 dark:text-gray-300 mb-4"
               style="font-size: clamp(2.5rem, 6vw, 4.5rem);"
@@ -18,7 +18,7 @@
 
           <!-- Grid de 3 bloques -->
           <div class="grid gap-8 md:gap-12 grid-cols-1 md:grid-cols-3 mt-12">
-            <div class="flex flex-col items-center text-center home-animate">
+            <div class="flex flex-col items-center text-center">
               <div class="mb-6 relative">
                 <IconBrain
                   :icon-class="'w-16 h-16 text-primary dark:text-primary-400'"
@@ -36,7 +36,7 @@
               </p>
             </div>
 
-            <div class="flex flex-col items-center text-center home-animate home-animate-delay-1">
+            <div class="flex flex-col items-center text-center">
               <div class="mb-6 relative">
                 <IconTarget
                   :icon-class="'w-16 h-16 text-primary dark:text-primary-400'"
@@ -54,7 +54,7 @@
               </p>
             </div>
 
-            <div class="flex flex-col items-center text-center home-animate home-animate-delay-2">
+            <div class="flex flex-col items-center text-center">
               <div class="mb-6 relative">
                 <IconTime
                   :icon-class="'w-16 h-16 text-primary dark:text-primary-400'"
