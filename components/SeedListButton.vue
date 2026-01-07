@@ -30,6 +30,7 @@ import { useI18n } from 'vue-i18n';
 import Button from './ui/Button.vue';
 import IconSeed from './icons/IconSeed.vue';
 import { useUndoToast } from '@/composables/useUndoToast';
+import { getSession } from '@/services/auth';
 
 interface Props {
   listSlug: string;
@@ -47,12 +48,24 @@ async function handleSeed() {
   isLoading.value = true;
 
   try {
+    // Get session for authentication
+    const {
+      data: { session },
+    } = await getSession();
+
+    if (!session?.access_token) {
+      throw new Error('Not authenticated');
+    }
+
     const response = await $fetch<{
       success: boolean;
       inserted: number;
       message: string;
     }>(`/api/discover/list/${props.listSlug}/seed`, {
       method: 'POST',
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
       // Silently handle errors - we'll show a generic message in the catch block
       onResponseError: () => {
         // Error will be caught by catch block below
