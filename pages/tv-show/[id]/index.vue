@@ -53,7 +53,11 @@
                 :key="season.id"
                 :title="season.name"
                 :poster-path="season.poster_path"
-                :link-to="routeWithLang(`/tv-show/${tvShowId}/season/${season.season_number}`)"
+                :link-to="
+                  routeWithLang(
+                    `/tv-show/${tvShowId}/season/${season.season_number}`
+                  )
+                "
                 :link-aria-label="
                   $t('media.viewDetailsOf', { title: season.name })
                 "
@@ -89,10 +93,14 @@
                       <IconCalendar icon-class="w-3 h-3 md:w-4 md:h-4" />
                       <span
                         class="truncate"
-                        :class="{ italic: !season.air_date || season.air_date.trim() === '' }"
-                      >{{
-                        formatDateByRegion(season.air_date, userRegion, t)
-                      }}</span>
+                        :class="{
+                          italic:
+                            !season.air_date || season.air_date.trim() === '',
+                        }"
+                        >{{
+                          formatDateByRegion(season.air_date, userRegion, t)
+                        }}</span
+                      >
                     </div>
                     <div
                       class="flex items-center gap-2 dark:text-gray-300 text-gray-800 text-xs md:text-sm"
@@ -300,7 +308,7 @@ useHead({
     ...hreflangLinks.value,
     {
       rel: 'canonical',
-      href: canonicalUrlFromComposable.value,
+      href: canonicalUrlFromComposable,
     },
   ],
   script: tvShowSchema.value
@@ -319,8 +327,8 @@ useSeoMeta({
   ogTitle: pageTitle,
   ogDescription: pageDescription,
   ogImage: ogImage,
-  ogType: 'video.TV_show',
-  ogUrl: canonicalUrlFromComposable.value,
+  ogType: 'video.tv_show',
+  ogUrl: canonicalUrlFromComposable,
   twitterCard: 'summary_large_image',
   twitterTitle: pageTitle,
   twitterDescription: pageDescription,

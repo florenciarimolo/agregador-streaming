@@ -14,7 +14,7 @@
         <EmptyState
           v-else
           :message="$t('discover.listNotFound')"
-          icon="image"
+          icon="default"
         />
       </Section>
     </PageContainer>
@@ -77,7 +77,7 @@ useHead({
     ...hreflangLinks.value,
     {
       rel: 'canonical',
-      href: canonicalUrl.value,
+      href: canonicalUrl,
     },
   ],
 });
@@ -88,7 +88,7 @@ useSeoMeta({
   ogTitle: pageTitle,
   ogDescription: pageDescription,
   ogType: 'website',
-  ogUrl: canonicalUrl.value,
+  ogUrl: canonicalUrl,
   twitterCard: 'summary_large_image',
   robots: 'index, follow',
 });
@@ -109,7 +109,9 @@ const loadList = async () => {
       success: boolean;
       list: DiscoverList;
       items: DiscoverListItem[];
-    }>(`/api/discover/list/${slug}?language=${encodeURIComponent(locale.value)}`);
+    }>(
+      `/api/discover/list/${slug}?language=${encodeURIComponent(locale.value)}`
+    );
 
     if (response.success) {
       list.value = response.list;
@@ -132,4 +134,3 @@ watch(locale, () => {
   loadList();
 });
 </script>
-

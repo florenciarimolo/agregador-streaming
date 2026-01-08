@@ -232,7 +232,7 @@ const ogImage = computed(() => {
   if (movie.value?.backdrop_path) {
     return `https://image.tmdb.org/t/p/w1280${movie.value.backdrop_path}`;
   }
-  
+
   return '';
 });
 
@@ -263,7 +263,7 @@ useHead({
     ...hreflangLinks.value,
     {
       rel: 'canonical',
-      href: canonicalUrlFromComposable.value,
+      href: canonicalUrlFromComposable,
     },
   ],
   script: movieSchema.value
@@ -282,8 +282,8 @@ useSeoMeta({
   ogTitle: pageTitle,
   ogDescription: pageDescription,
   ogImage: ogImage,
-  ogType: 'video.MOVIE',
-  ogUrl: canonicalUrlFromComposable.value,
+  ogType: 'video.movie',
+  ogUrl: canonicalUrlFromComposable,
   twitterCard: 'summary_large_image',
   twitterTitle: pageTitle,
   twitterDescription: pageDescription,
