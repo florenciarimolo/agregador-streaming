@@ -1,5 +1,6 @@
 import type { Region } from '@/constants/regions';
 import { DEFAULT_LANGUAGE } from '@/constants/languages';
+import { getI18nCodeFromUrlCode } from '@/composables/useLangFromUrl';
 
 /**
  * Composable to get and cache regions by language
@@ -49,18 +50,25 @@ export const useRegions = () => {
   /**
    * Get current app language (i18n locale)
    * This is the language in which the UI is displayed, not the user's content preference
+   * Returns i18n code (e.g., 'es-ES'), not URL code (e.g., 'es')
    */
   const getAppLanguage = (): string => {
     // If we have the locale ref from setup, use it
     if (i18nLocaleRef) {
-      return i18nLocaleRef.value || DEFAULT_LANGUAGE;
+      const urlCode = i18nLocaleRef.value || '';
+      // Convert URL code to i18n code (e.g., 'es' -> 'es-ES')
+      const i18nCode = getI18nCodeFromUrlCode(urlCode);
+      return i18nCode || DEFAULT_LANGUAGE;
     }
 
     // Otherwise, try to get it (might work if called from a component setup)
     try {
       if (import.meta.client) {
         const { locale } = useI18n();
-        return locale.value || DEFAULT_LANGUAGE;
+        const urlCode = locale.value || '';
+        // Convert URL code to i18n code (e.g., 'es' -> 'es-ES')
+        const i18nCode = getI18nCodeFromUrlCode(urlCode);
+        return i18nCode || DEFAULT_LANGUAGE;
       }
     } catch {
       // If error, fall back to default

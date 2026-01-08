@@ -25,6 +25,7 @@ const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 
 /**
  * Get available flag files from public/icons/flags directory
+ * In Vercel/serverless, we try to read from filesystem first, but fallback to a static list
  */
 async function getAvailableFlags(): Promise<Set<string>> {
   // Return cached flags if available
@@ -32,8 +33,13 @@ async function getAvailableFlags(): Promise<Set<string>> {
     return flagsCache;
   }
 
+  // Try to read from filesystem first (works in local/dev)
   try {
     const flagsDir = join(process.cwd(), 'public', 'icons', 'flags');
+    console.log('[Regions] Attempting to read flags from directory:', flagsDir);
+    console.log('[Regions] process.cwd():', process.cwd());
+    console.log('[Regions] __dirname equivalent check...');
+
     const files = await readdir(flagsDir);
     const flags = new Set<string>();
 
@@ -46,11 +52,70 @@ async function getAvailableFlags(): Promise<Set<string>> {
 
     // Cache the flags
     flagsCache = flags;
+    console.log('[Regions] Successfully loaded flags from filesystem:', {
+      count: flags.size,
+      sampleFlags: Array.from(flags).slice(0, 10),
+      directory: flagsDir,
+    });
     return flags;
   } catch (error) {
-    console.error('[Regions] Error reading flags directory:', error);
-    // Return empty set if error, but don't cache it
-    return new Set<string>();
+    console.warn(
+      '[Regions] Could not read flags from filesystem (expected in Vercel/serverless):',
+      {
+        error: error instanceof Error ? error.message : String(error),
+        cwd: process.cwd(),
+        attemptedPath: join(process.cwd(), 'public', 'icons', 'flags'),
+      }
+    );
+
+    // Fallback: Use static list of flags that we know exist
+    // This list is based on the flags in public/icons/flags/
+    // In Vercel, public/ is served as static files but not accessible via readdir
+    const staticFlags = new Set<string>([
+      'AR',
+      'AU',
+      'BO',
+      'BR',
+      'CA',
+      'CAT',
+      'CL',
+      'CO',
+      'CR',
+      'CU',
+      'DE',
+      'DO',
+      'EC',
+      'ES',
+      'EUS',
+      'FR',
+      'GAL',
+      'GB',
+      'GT',
+      'HN',
+      'IT',
+      'MX',
+      'NI',
+      'NZ',
+      'PA',
+      'PE',
+      'PR',
+      'PT',
+      'PY',
+      'SV',
+      'US',
+      'UY',
+      'VE',
+    ]);
+
+    flagsCache = staticFlags;
+    console.log(
+      '[Regions] Using static flags list (fallback for serverless):',
+      {
+        count: staticFlags.size,
+        sampleFlags: Array.from(staticFlags).slice(0, 10),
+      }
+    );
+    return staticFlags;
   }
 }
 
@@ -224,12 +289,13 @@ export default defineEventHandler(async (event) => {
       throw new Error('Invalid response from TMDB API');
     }
 
-    if (import.meta.dev) {
-      console.log('[Regions] TMDB response:', {
-        totalRegions: response.results.length,
-        sampleRegions: response.results.slice(0, 5),
-      });
-    }
+    // Log TMDB response (visible in production for debugging)
+    console.log('[Regions] TMDB response:', {
+      totalRegions: response.results.length,
+      sampleRegions: response.results.slice(0, 5),
+      languageSentToTMDB: languageSentToTMDB,
+      tmdbUrl: `${tmdbConfig.baseUrl}/watch/providers/regions`,
+    });
 
     // Update cache for this language
     regionsCache.set(language, {
@@ -240,12 +306,11 @@ export default defineEventHandler(async (event) => {
     // Get available flags and filter regions
     const availableFlags = await getAvailableFlags();
 
-    if (import.meta.dev) {
-      console.log('[Regions] Available flags:', {
-        count: availableFlags.size,
-        sampleFlags: Array.from(availableFlags).slice(0, 10),
-      });
-    }
+    // Log flags info (visible in production for debugging)
+    console.log('[Regions] Available flags:', {
+      count: availableFlags.size,
+      sampleFlags: Array.from(availableFlags).slice(0, 10),
+    });
 
     const filteredRegions = response.results
       .filter((region) => availableFlags.has(region.iso_3166_1))
@@ -255,24 +320,22 @@ export default defineEventHandler(async (event) => {
       }))
       .sort((a, b) => a.name.localeCompare(b.name));
 
-    if (import.meta.dev) {
-      // Debug: Show which regions from TMDB don't have flags
-      const regionsWithoutFlags = response.results
-        .filter((region) => !availableFlags.has(region.iso_3166_1))
-        .slice(0, 10)
-        .map((r) => r.iso_3166_1);
+    // Debug: Show which regions from TMDB don't have flags (visible in production)
+    const regionsWithoutFlags = response.results
+      .filter((region) => !availableFlags.has(region.iso_3166_1))
+      .slice(0, 10)
+      .map((r) => r.iso_3166_1);
 
-      console.log('[Regions] Filtered regions:', {
-        totalFromTMDB: response.results.length,
-        filteredCount: filteredRegions.length,
-        sampleFiltered: filteredRegions.slice(0, 5),
-        regionsWithoutFlags: regionsWithoutFlags,
-        sampleRegionsFromTMDB: response.results.slice(0, 5).map((r) => ({
-          code: r.iso_3166_1,
-          hasFlag: availableFlags.has(r.iso_3166_1),
-        })),
-      });
-    }
+    console.log('[Regions] Filtered regions:', {
+      totalFromTMDB: response.results.length,
+      filteredCount: filteredRegions.length,
+      sampleFiltered: filteredRegions.slice(0, 5),
+      regionsWithoutFlags: regionsWithoutFlags,
+      sampleRegionsFromTMDB: response.results.slice(0, 5).map((r) => ({
+        code: r.iso_3166_1,
+        hasFlag: availableFlags.has(r.iso_3166_1),
+      })),
+    });
 
     // Set cache headers
     event.node.res.setHeader('Cache-Control', 'public, max-age=86400'); // 24 hours
