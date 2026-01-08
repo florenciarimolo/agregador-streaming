@@ -1,6 +1,5 @@
 import { getTMDBConfig } from '@/server/utils/config';
-import { readdir } from 'fs/promises';
-import { join } from 'path';
+import { AVAILABLE_FLAG_CODES } from '@/constants/availableFlags';
 
 /**
  * Cache for regions data by language
@@ -15,108 +14,17 @@ const regionsCache = new Map<
   }
 >();
 
-/**
- * Cache for available flags
- * Flags don't change frequently, so we cache them
- */
-let flagsCache: Set<string> | null = null;
-
 const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 
 /**
- * Get available flag files from public/icons/flags directory
- * In Vercel/serverless, we try to read from filesystem first, but fallback to a static list
+ * Get available flag codes
+ * Uses the auto-generated constants file created during build
+ * This works in all environments (local, Vercel, serverless) without filesystem access
  */
-async function getAvailableFlags(): Promise<Set<string>> {
-  // Return cached flags if available
-  if (flagsCache) {
-    return flagsCache;
-  }
-
-  // Try to read from filesystem first (works in local/dev)
-  try {
-    const flagsDir = join(process.cwd(), 'public', 'icons', 'flags');
-    console.log('[Regions] Attempting to read flags from directory:', flagsDir);
-    console.log('[Regions] process.cwd():', process.cwd());
-    console.log('[Regions] __dirname equivalent check...');
-
-    const files = await readdir(flagsDir);
-    const flags = new Set<string>();
-
-    files.forEach((file) => {
-      if (file.endsWith('.svg')) {
-        const code = file.replace('.svg', '').toUpperCase();
-        flags.add(code);
-      }
-    });
-
-    // Cache the flags
-    flagsCache = flags;
-    console.log('[Regions] Successfully loaded flags from filesystem:', {
-      count: flags.size,
-      sampleFlags: Array.from(flags).slice(0, 10),
-      directory: flagsDir,
-    });
-    return flags;
-  } catch (error) {
-    console.warn(
-      '[Regions] Could not read flags from filesystem (expected in Vercel/serverless):',
-      {
-        error: error instanceof Error ? error.message : String(error),
-        cwd: process.cwd(),
-        attemptedPath: join(process.cwd(), 'public', 'icons', 'flags'),
-      }
-    );
-
-    // Fallback: Use static list of flags that we know exist
-    // This list is based on the flags in public/icons/flags/
-    // In Vercel, public/ is served as static files but not accessible via readdir
-    const staticFlags = new Set<string>([
-      'AR',
-      'AU',
-      'BO',
-      'BR',
-      'CA',
-      'CAT',
-      'CL',
-      'CO',
-      'CR',
-      'CU',
-      'DE',
-      'DO',
-      'EC',
-      'ES',
-      'EUS',
-      'FR',
-      'GAL',
-      'GB',
-      'GT',
-      'HN',
-      'IT',
-      'MX',
-      'NI',
-      'NZ',
-      'PA',
-      'PE',
-      'PR',
-      'PT',
-      'PY',
-      'SV',
-      'US',
-      'UY',
-      'VE',
-    ]);
-
-    flagsCache = staticFlags;
-    console.log(
-      '[Regions] Using static flags list (fallback for serverless):',
-      {
-        count: staticFlags.size,
-        sampleFlags: Array.from(staticFlags).slice(0, 10),
-      }
-    );
-    return staticFlags;
-  }
+function getAvailableFlags(): Set<string> {
+  // AVAILABLE_FLAG_CODES is generated during build from public/icons/flags/
+  // This avoids filesystem access issues in serverless environments
+  return AVAILABLE_FLAG_CODES;
 }
 
 /**
@@ -304,13 +212,7 @@ export default defineEventHandler(async (event) => {
     });
 
     // Get available flags and filter regions
-    const availableFlags = await getAvailableFlags();
-
-    // Log flags info (visible in production for debugging)
-    console.log('[Regions] Available flags:', {
-      count: availableFlags.size,
-      sampleFlags: Array.from(availableFlags).slice(0, 10),
-    });
+    const availableFlags = getAvailableFlags();
 
     const filteredRegions = response.results
       .filter((region) => availableFlags.has(region.iso_3166_1))
