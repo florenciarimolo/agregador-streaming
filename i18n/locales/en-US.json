@@ -213,7 +213,27 @@
         "modePill": "Exploration mode",
         "title": "Prefer to explore at your own pace?",
         "description": "When you don't want to decide right now. Explore curated lists without filters or decisions.",
-        "cta": "Explore Discover"
+        "cta": "Explore Discover",
+        "list1": {
+          "title": "Cult movies",
+          "description": "Classics that have marked generations",
+          "count": "45 titles"
+        },
+        "list2": {
+          "title": "Series to binge-watch",
+          "description": "Perfect for a long weekend",
+          "count": "32 titles"
+        },
+        "list3": {
+          "title": "Psychological thrillers",
+          "description": "Suspense that keeps you on edge",
+          "count": "28 titles"
+        },
+        "list4": {
+          "title": "Romantic comedies",
+          "description": "To relax and smile",
+          "count": "38 titles"
+        }
       },
       "mockup": {
         "mainTitle": "Example recommendation",
@@ -265,9 +285,9 @@
     },
     "manualGenerateHint": "If you've already waited a moment and recommendations don't appear, click the button to generate them manually.",
     "addFavorites": "Add favorites",
-    "noResultsWithFilters": "No hemos encontrado nada con estos filtros",
-    "noResultsWithFiltersDescription": "Esta combinación es bastante específica. Prueba a ajustar el nivel de atención o el estado de ánimo.",
-    "relaxFilters": "Relajar filtros automáticamente",
+    "noResultsWithFilters": "We couldn't find anything with these filters",
+    "noResultsWithFiltersDescription": "This combination is quite specific. Try adjusting the attention level or mood.",
+    "relaxFilters": "Relax filters automatically",
     "removeFilters": "Clear filters",
     "sessionError": "Error: Could not get session",
     "poolPopulated": "Pool populated: {inserted} recommendations added",

@@ -150,26 +150,26 @@
     "exploreDiscover": "Edo esploratu Discover zure erritmoan"
   },
   "home": {
-    "generatingRecommendations": "Generando recomendaciones",
-    "generatingRecommendationsDescription": "Estamos generando tus recomendaciones personalizadas. Esto puede tardar unos minutos. Mesedez, espera y no recargues la página.",
+    "generatingRecommendations": "Gomendioak sortzen",
+    "generatingRecommendationsDescription": "Zure gomendio pertsonalizatuak sortzen ari gara. Honek minutu batzuk har ditzake. Mesedez, itxaron eta ez kargatu orria berriro.",
     "noRegion": "Eskualdea ez dago konfiguratuta",
     "noRegionDescription": "Gomendio pertsonalizatuak jasotzeko, lehenik zure eskualdea konfiguratu behar duzu. Honek zure eremuan eskuragarri dagoen edukia aurkitzeko laguntzen digu.",
     "configurePreferences": "Konfiguratu hobespenak",
-    "noRecommendations": "Aún no hay recomendaciones",
-    "generatingDescription": "Estamos preparando recomendaciones personalizadas basadas en tus gustos. Esto puede tardar unos momentos.",
-    "noRecommendationsDescription": "Para recibir recomendaciones personalizadas, primero necesitas agregar filmak y telesailak que te gusten. Esto nos ayuda a conocerte mejor y sugerirte contenido que realmente disfrutarás.",
-    "generateButton": "Generar recomendaciones",
-    "generatingButton": "Generando recomendaciones...",
-    "loadingRecommendations": "Kargatzen recomendaciones...",
+    "noRecommendations": "Oraindik ez dago gomendiorik",
+    "generatingDescription": "Zure gustuetan oinarritutako gomendio pertsonalizatuak prestatzen ari gara. Honek momentu batzuk har ditzake.",
+    "noRecommendationsDescription": "Gomendio pertsonalizatuak jasotzeko, lehenik zure gustuko filmak eta telesailak gehitu behar dituzu. Honek hobeto ezagutzen laguntzen digu eta benetan gozatuko duzun edukia iradokitzen.",
+    "generateButton": "Gomendioak sortu",
+    "generatingButton": "Gomendioak sortzen...",
+    "loadingRecommendations": "Gomendioak kargatzen...",
     "updatingLanguage": "Hizkuntza eguneratzen...",
-    "tagline1": "No es otra lista más.",
-    "tagline2": "Es una",
-    "tagline3": "decisión",
-    "tagline4": "hecha por ti, pero",
-    "tagline5": "sin pensar",
+    "tagline1": "Ez da beste zerrenda bat.",
+    "tagline2": "Zuk hartutako",
+    "tagline3": "erabakia da",
+    "tagline4": "baina",
+    "tagline5": "pentsatu gabe",
     "tagline6": ".",
-    "recommendationsTitle": "Recomendaciones para ti",
-    "recommendationsDescription": "Personalizadas según tu estado de ánimo y nivel de atención.",
+    "recommendationsTitle": "Zuretzako gomendioak",
+    "recommendationsDescription": "Zure egoera eta arreta mailaren arabera pertsonalizatuak.",
     "contentTypeFilter": "Tipo de contenido",
     "contentTypeAll": "Todo",
     "contentTypeMovie": "Filmak",
@@ -213,7 +213,27 @@
         "modePill": "Esplorazio modua",
         "title": "Zure erritmoan esploratzea nahiago duzu?",
         "description": "Orain erabakitzeko gogorik ez duzunean. Iragazkirik edo erabakirik gabe kuratutako zerrendak esploratu.",
-        "cta": "Discover esploratu"
+        "cta": "Discover esploratu",
+        "list1": {
+          "title": "Kultu filmak",
+          "description": "Belaurak markatu dituzten klasikoak",
+          "count": "45 titulu"
+        },
+        "list2": {
+          "title": "Maratoi ikusteko telesailak",
+          "description": "Aste bukaera luze baterako idealak",
+          "count": "32 titulu"
+        },
+        "list3": {
+          "title": "Thriller psikologikoak",
+          "description": "Tentsioan mantentzen zaituen suspense",
+          "count": "28 titulu"
+        },
+        "list4": {
+          "title": "Komedia erromantikoak",
+          "description": "Erlaxatzeko eta irribarretarako",
+          "count": "38 titulu"
+        }
       },
       "mockup": {
         "mainTitle": "Gomendio adibidea",
@@ -263,11 +283,11 @@
       "text": "Zuk hartutako erabakia da, baina pentsatu gabe.",
       "button": "Zer ikusi orain aurkitu"
     },
-    "manualGenerateHint": "Si ya esperaste un momento y no aparecen recomendaciones, haz clic en el botón para generarlas manualmente.",
-    "addFavorites": "Agregar favoritos",
-    "noResultsWithFilters": "No hemos encontrado nada con estos filtros",
-    "noResultsWithFiltersDescription": "Esta combinación es bastante específica. Prueba a ajustar el nivel de atención o el estado de ánimo.",
-    "relaxFilters": "Relajar filtros automáticamente",
+    "manualGenerateHint": "Momentu bat itxaron baduzu eta gomendioak ez badira agertzen, egin klik botoian eskuz sortzeko.",
+    "addFavorites": "Gogokoak gehitu",
+    "noResultsWithFilters": "Ez dugu ezer aurkitu iragazki hauekin",
+    "noResultsWithFiltersDescription": "Konbinazio hau nahiko zehatza da. Saiatu arreta maila edo egoera doitzeko.",
+    "relaxFilters": "Iragazkiak automatikoki erlaxatu",
     "removeFilters": "Garbitu iragazkiak",
     "sessionError": "Errorea: No se pudo obtener la sesión",
     "poolPopulated": "Pool poblado: {inserted} recomendaciones agregadas",

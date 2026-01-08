@@ -213,7 +213,27 @@
         "modePill": "Mode exploració",
         "title": "Prefereixes explorar al teu ritme?",
         "description": "Quan no vols decidir ara. Explora llistes curades sense filtres ni decisions.",
-        "cta": "Explorar Discover"
+        "cta": "Explorar Discover",
+        "list1": {
+          "title": "Pel·lícules de culte",
+          "description": "Clàssics que han marcat generacions",
+          "count": "45 títols"
+        },
+        "list2": {
+          "title": "Sèries per maratonejar",
+          "description": "Ideal per a un cap de setmana llarg",
+          "count": "32 títols"
+        },
+        "list3": {
+          "title": "Thrillers psicològics",
+          "description": "Suspens que et manté en tensió",
+          "count": "28 títols"
+        },
+        "list4": {
+          "title": "Comèdies romàntiques",
+          "description": "Per relaxar-te i somriure",
+          "count": "38 títols"
+        }
       },
       "mockup": {
         "mainTitle": "Exemple de recomanació",
@@ -265,9 +285,9 @@
     },
     "manualGenerateHint": "Si ja has esperat un moment i no apareixen recomanacions, fes clic al botó per generar-les manualment.",
     "addFavorites": "Afegir favorits",
-    "noResultsWithFilters": "No hemos encontrado nada con estos filtros",
-    "noResultsWithFiltersDescription": "Esta combinación es bastante específica. Prueba a ajustar el nivel de atención o el estado de ánimo.",
-    "relaxFilters": "Relajar filtros automáticamente",
+    "noResultsWithFilters": "No hem trobat res amb aquests filtres",
+    "noResultsWithFiltersDescription": "Aquesta combinació és força específica. Prova d'ajustar el nivell d'atenció o l'estat d'ànim.",
+    "relaxFilters": "Relaxar filtres automàticament",
     "removeFilters": "Netejar filtres",
     "sessionError": "Error: No s'ha pogut obtenir la sessió",
     "poolPopulated": "Pool poblat: {inserted} recomanacions afegides",

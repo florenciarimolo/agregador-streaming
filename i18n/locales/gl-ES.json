@@ -150,26 +150,26 @@
     "exploreDiscover": "Ou explora Discover ao teu ritmo"
   },
   "home": {
-    "generatingRecommendations": "Generando recomendaciones",
-    "generatingRecommendationsDescription": "Estamos generando tus recomendaciones personalizadas. Esto puede tardar unos minutos. Por favor, espera y no recargues la página.",
+    "generatingRecommendations": "Xerando recomendacións",
+    "generatingRecommendationsDescription": "Estamos xerando as túas recomendacións personalizadas. Isto pode tardar uns minutos. Por favor, agarda e non recargues a páxina.",
     "noRegion": "Rexión non configurada",
     "noRegionDescription": "Para recibir recomendacións personalizadas, primeiro necesitas configurar a túa rexión. Isto axúdanos a atopar contido dispoñible na túa área.",
     "configurePreferences": "Configurar preferencias",
-    "noRecommendations": "Aún no hay recomendaciones",
-    "generatingDescription": "Estamos preparando recomendaciones personalizadas basadas en tus gustos. Esto puede tardar unos momentos.",
-    "noRecommendationsDescription": "Para recibir recomendaciones personalizadas, primero necesitas agregar películas y series que te gusten. Esto nos ayuda a conocerte mejor y sugerirte contenido que realmente disfrutarás.",
-    "generateButton": "Generar recomendaciones",
-    "generatingButton": "Generando recomendaciones...",
-    "loadingRecommendations": "Cargando recomendaciones...",
+    "noRecommendations": "Aínda non hai recomendacións",
+    "generatingDescription": "Estamos preparando recomendacións personalizadas baseadas nos teus gustos. Isto pode tardar uns momentos.",
+    "noRecommendationsDescription": "Para recibir recomendacións personalizadas, primeiro necesitas agregar películas e series que che gusten. Isto axúdanos a coñecerte mellor e suxerirche contido que realmente disfrutarás.",
+    "generateButton": "Xerar recomendacións",
+    "generatingButton": "Xerando recomendacións...",
+    "loadingRecommendations": "Cargando recomendacións...",
     "updatingLanguage": "Actualizando idioma...",
-    "tagline1": "No es otra lista más.",
-    "tagline2": "Es una",
+    "tagline1": "Non é outra lista máis.",
+    "tagline2": "É unha",
     "tagline3": "decisión",
-    "tagline4": "hecha por ti, pero",
-    "tagline5": "sin pensar",
+    "tagline4": "feita por ti, pero",
+    "tagline5": "sen pensar",
     "tagline6": ".",
-    "recommendationsTitle": "Recomendaciones para ti",
-    "recommendationsDescription": "Personalizadas según tu estado de ánimo y nivel de atención.",
+    "recommendationsTitle": "Recomendacións para ti",
+    "recommendationsDescription": "Personalizadas segundo o teu estado de ánimo e nivel de atención.",
     "contentTypeFilter": "Tipo de contenido",
     "contentTypeAll": "Todo",
     "contentTypeMovie": "Películas",
@@ -213,7 +213,27 @@
         "modePill": "Modo exploración",
         "title": "Prefires explorar ao teu ritmo?",
         "description": "Cando non queres decidir agora. Explora listas curadas sen filtros nin decisións.",
-        "cta": "Explorar Discover"
+        "cta": "Explorar Discover",
+        "list1": {
+          "title": "Películas de culto",
+          "description": "Clásicos que marcaron xeracións",
+          "count": "45 títulos"
+        },
+        "list2": {
+          "title": "Series para maratonear",
+          "description": "Ideal para un fin de semana longo",
+          "count": "32 títulos"
+        },
+        "list3": {
+          "title": "Thrillers psicolóxicos",
+          "description": "Suspense que te mantén en vilo",
+          "count": "28 títulos"
+        },
+        "list4": {
+          "title": "Comedias románticas",
+          "description": "Para relaxarte e sorrir",
+          "count": "38 títulos"
+        }
       },
       "mockup": {
         "mainTitle": "Exemplo de recomendación",
@@ -263,11 +283,11 @@
       "text": "É unha decisión feita por ti, pero sen pensar.",
       "button": "Descubrir que ver agora"
     },
-    "manualGenerateHint": "Si ya esperaste un momento y no aparecen recomendaciones, haz clic en el botón para generarlas manualmente.",
-    "addFavorites": "Agregar favoritos",
-    "noResultsWithFilters": "No hemos encontrado nada con estos filtros",
-    "noResultsWithFiltersDescription": "Esta combinación es bastante específica. Prueba a ajustar el nivel de atención o el estado de ánimo.",
-    "relaxFilters": "Relajar filtros automáticamente",
+    "manualGenerateHint": "Se xa agardaches un momento e non aparecen recomendacións, fai clic no botón para xeralas manualmente.",
+    "addFavorites": "Engadir favoritos",
+    "noResultsWithFilters": "Non atopamos nada con estes filtros",
+    "noResultsWithFiltersDescription": "Esta combinación é bastante específica. Proba a axustar o nivel de atención ou o estado de ánimo.",
+    "relaxFilters": "Relaxar filtros automaticamente",
     "removeFilters": "Limpar filtros",
     "sessionError": "Erro: No se pudo obtener la sesión",
     "poolPopulated": "Pool poblado: {inserted} recomendaciones agregadas",
