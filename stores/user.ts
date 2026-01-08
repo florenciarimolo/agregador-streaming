@@ -42,11 +42,13 @@ export const useUserStore = defineStore('user', {
     // hasCompletedOnboarding checks the onboarding_completed flag in profiles table
     hasCompletedOnboarding: (state: UserState) => {
       const result = state.profile?.onboarding_completed ?? false;
-      console.log('[UserStore] hasCompletedOnboarding getter:', {
-        hasProfile: !!state.profile,
-        onboarding_completed: state.profile?.onboarding_completed,
-        result,
-      });
+      if (import.meta.dev) {
+        console.log('[UserStore] hasCompletedOnboarding getter:', {
+          hasProfile: !!state.profile,
+          onboarding_completed: state.profile?.onboarding_completed,
+          result,
+        });
+      }
       return result;
     },
   },
@@ -68,7 +70,9 @@ export const useUserStore = defineStore('user', {
       // If there's already a fetch in progress, wait for it instead of starting a new one
       // This prevents race conditions where multiple concurrent fetches could overwrite each other
       if (this._fetchProfilePromise) {
-        console.log('[UserStore] fetchProfile: Already in progress, waiting...');
+        if (import.meta.dev) {
+          console.log('[UserStore] fetchProfile: Already in progress, waiting...');
+        }
         await this._fetchProfilePromise;
         return;
       }
@@ -155,16 +159,20 @@ export const useUserStore = defineStore('user', {
     async ensureProfile() {
       // Only fetch if profile is missing
       if (!this.profile && this.user) {
-        console.log('[UserStore] ensureProfile: Profile missing, fetching...');
+        if (import.meta.dev) {
+          console.log('[UserStore] ensureProfile: Profile missing, fetching...');
+        }
         await this.fetchProfile();
-        const onboardingStatus = this.profile
-          ? (this.profile as Profile).onboarding_completed
-          : undefined;
-        console.log(
-          '[UserStore] ensureProfile: Profile fetched, onboarding_completed:',
-          onboardingStatus
-        );
-      } else {
+        if (import.meta.dev) {
+          const onboardingStatus = this.profile
+            ? (this.profile as Profile).onboarding_completed
+            : undefined;
+          console.log(
+            '[UserStore] ensureProfile: Profile fetched, onboarding_completed:',
+            onboardingStatus
+          );
+        }
+      } else if (import.meta.dev) {
         const onboardingStatus = this.profile
           ? (this.profile as Profile).onboarding_completed
           : undefined;

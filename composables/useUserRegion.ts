@@ -33,10 +33,12 @@ export const useUserRegion = () => {
       typeof regionCache.value === 'string' &&
       regionCache.value.length > 0
     ) {
-      console.warn(
-        '[useUserRegion] Returning cached region:',
-        regionCache.value
-      );
+      if (import.meta.dev) {
+        console.warn(
+          '[useUserRegion] Returning cached region:',
+          regionCache.value
+        );
+      }
       return regionCache.value;
     }
 
@@ -67,7 +69,9 @@ export const useUserRegion = () => {
           return null;
         }
 
-        console.log('[useUserRegion] Fetching preferences from API...');
+        if (import.meta.dev) {
+          console.log('[useUserRegion] Fetching preferences from API...');
+        }
 
         const prefsResponse = await $fetch<{
           success: boolean;
@@ -80,51 +84,35 @@ export const useUserRegion = () => {
           },
         });
 
-        // Log the raw response first
-        console.error(
-          '[useUserRegion] RAW API response:',
-          JSON.stringify(prefsResponse, null, 2)
-        );
-        console.error(
-          '[useUserRegion] preferences object:',
-          prefsResponse?.preferences
-        );
-        console.error(
-          '[useUserRegion] region field:',
-          prefsResponse?.preferences?.region
-        );
-        console.error(
-          '[useUserRegion] region type:',
-          typeof prefsResponse?.preferences?.region
-        );
-        console.error(
-          '[useUserRegion] region length:',
-          prefsResponse?.preferences?.region?.length
-        );
-
         if (prefsResponse?.success && prefsResponse?.preferences) {
           // Check if region exists (even if it's null, we want to know it was checked)
           const region = prefsResponse.preferences.region;
-          console.warn('[useUserRegion] Checking region:', {
-            region,
-            type: typeof region,
-            isString: typeof region === 'string',
-            length: typeof region === 'string' ? region.length : 'N/A',
-            isEmpty:
-              !region || (typeof region === 'string' && region.length === 0),
-          });
+          if (import.meta.dev) {
+            console.warn('[useUserRegion] Checking region:', {
+              region,
+              type: typeof region,
+              isString: typeof region === 'string',
+              length: typeof region === 'string' ? region.length : 'N/A',
+              isEmpty:
+                !region || (typeof region === 'string' && region.length === 0),
+            });
+          }
 
           if (region && typeof region === 'string' && region.length > 0) {
             regionCache.value = region;
-            console.warn('[useUserRegion] ✅ Region found and cached:', region);
+            if (import.meta.dev) {
+              console.warn('[useUserRegion] ✅ Region found and cached:', region);
+            }
             return regionCache.value;
           }
           // If preferences exist but region is null/empty, cache null explicitly
           regionCache.value = null;
-          console.error(
-            '[useUserRegion] ❌ Preferences found but region is null/empty. Full preferences:',
-            JSON.stringify(prefsResponse, null, 2)
-          );
+          if (import.meta.dev) {
+            console.error(
+              '[useUserRegion] ❌ Preferences found but region is null/empty. Full preferences:',
+              JSON.stringify(prefsResponse, null, 2)
+            );
+          }
           return null;
         }
 

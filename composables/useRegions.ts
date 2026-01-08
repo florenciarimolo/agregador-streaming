@@ -94,15 +94,6 @@ export const useRegions = () => {
     }
 
     try {
-      // Log the API call parameters for debugging (visible in production)
-      console.log('[useRegions] Calling /api/tmdb/regions with params:', {
-        language: targetLanguage,
-        url: '/api/tmdb/regions',
-        query: {
-          language: targetLanguage,
-        },
-      });
-
       const response = await $fetch<{
         success: boolean;
         regions: Region[];
@@ -112,14 +103,6 @@ export const useRegions = () => {
         query: {
           language: targetLanguage,
         },
-      });
-
-      // Log the response for debugging (visible in production)
-      console.log('[useRegions] Response from /api/tmdb/regions:', {
-        success: response?.success,
-        regionsCount: response?.regions?.length || 0,
-        cached: response?.cached,
-        language: response?.language,
       });
 
       if (response && response.success && response.regions) {
