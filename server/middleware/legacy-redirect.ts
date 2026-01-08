@@ -106,6 +106,18 @@ const getLanguageFromCookie = (
       }
 
       // Try to convert i18n code to URL code
+      // First, try direct lookup in the map (handles exact matches like 'es-ES')
+      const directUrlCode = getUrlCodeFromI18nCode(i18nCode);
+      if (
+        directUrlCode &&
+        VALID_URL_CODES.includes(
+          directUrlCode as (typeof VALID_URL_CODES)[number]
+        )
+      ) {
+        return directUrlCode;
+      }
+
+      // If direct lookup fails, try normalized version
       const normalizedI18nCode =
         i18nCode.toLowerCase().split('-').length > 1
           ? `${i18nCode.split('-')[0].toLowerCase()}-${i18nCode.split('-')[1].toUpperCase()}`

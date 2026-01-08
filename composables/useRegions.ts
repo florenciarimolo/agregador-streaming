@@ -12,14 +12,20 @@ export const useRegions = () => {
    * Key: language code (e.g., 'es-ES', 'en-US')
    * Must be called inside the composable function, not at module level
    */
-  const regionsMap = useState<Map<string, Region[]>>('regions-by-language', () => new Map());
+  const regionsMap = useState<Map<string, Region[]>>(
+    'regions-by-language',
+    () => new Map()
+  );
 
   /**
    * Global state to notify when app language (i18n locale) changes
    * This allows components to react to language changes without polling
    * Must be called inside the composable function, not at module level
    */
-  const appLanguageChangeState = useState<string | null>('app-language-change', () => null);
+  const appLanguageChangeState = useState<string | null>(
+    'app-language-change',
+    () => null
+  );
 
   // Get i18n locale at the top level of the composable (setup function)
   // This must be called at the top level, not inside nested functions
@@ -34,7 +40,9 @@ export const useRegions = () => {
     // If error (e.g., called outside setup context from plugin), we'll use DEFAULT_LANGUAGE
     // This is expected when called from plugins before Vue setup
     if (import.meta.dev) {
-      console.warn('[useRegions] useI18n() not available in this context, will use default language');
+      console.warn(
+        '[useRegions] useI18n() not available in this context, will use default language'
+      );
     }
   }
 
@@ -78,6 +86,15 @@ export const useRegions = () => {
     }
 
     try {
+      // Log the API call parameters for debugging (visible in production)
+      console.log('[useRegions] Calling /api/tmdb/regions with params:', {
+        language: targetLanguage,
+        url: '/api/tmdb/regions',
+        query: {
+          language: targetLanguage,
+        },
+      });
+
       const response = await $fetch<{
         success: boolean;
         regions: Region[];
@@ -87,6 +104,14 @@ export const useRegions = () => {
         query: {
           language: targetLanguage,
         },
+      });
+
+      // Log the response for debugging (visible in production)
+      console.log('[useRegions] Response from /api/tmdb/regions:', {
+        success: response?.success,
+        regionsCount: response?.regions?.length || 0,
+        cached: response?.cached,
+        language: response?.language,
       });
 
       if (response && response.success && response.regions) {

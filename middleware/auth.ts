@@ -33,6 +33,7 @@ export default defineNuxtRouteMiddleware(
 
     const user = useSupabaseUser();
     const userStore = useUserStore();
+    const supabase = useSupabaseClient();
 
     // Get language from URL
     const lang = getLangFromRoute(to);
@@ -44,6 +45,7 @@ export default defineNuxtRouteMiddleware(
       userId: user.value?.id || user.value?.sub,
       hasProfile: userStore.profile !== null,
       onboardingCompleted: userStore.profile?.onboarding_completed,
+      authInitialized: userStore.authInitialized,
     });
 
     // Public routes (with language prefix)
@@ -62,13 +64,55 @@ export default defineNuxtRouteMiddleware(
       return;
     }
 
-    // Protect routes: redirect unauthenticated users to home (with language)
-    if (!user.value) {
+    // CRITICAL: Wait for auth to initialize before checking user
+    // During F5/refresh, user.value might be null temporarily while session loads
+    // We need to wait for the session to be checked before redirecting
+    if (!userStore.authInitialized) {
       console.log(
-        '[AUTH TRACE] middleware redirecting to / (no user)',
+        '[AUTH TRACE] middleware waiting for auth initialization...',
+        to.path
+      );
+
+      // Try to get session if not initialized yet
+      try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        if (sessionData?.session?.user) {
+          userStore.setUser(sessionData.session.user);
+        }
+        // Mark as initialized after checking session
+        if (!userStore.authInitialized) {
+          userStore.setAuthInitialized(true);
+        }
+      } catch {
+        // If session check fails, mark as initialized to avoid blocking
+        if (!userStore.authInitialized) {
+          userStore.setAuthInitialized(true);
+        }
+      }
+    }
+
+    // Re-check user after waiting for initialization
+    const currentUser = user.value;
+
+    // Protect routes: redirect unauthenticated users to home (with language)
+    // Only redirect if auth is initialized AND there's no user
+    if (!currentUser && userStore.authInitialized) {
+      console.log(
+        '[AUTH TRACE] middleware redirecting to / (no user after init)',
         to.path
       );
       return navigateTo(`/${lang}/`);
+    }
+
+    // If auth not initialized yet and no user, allow navigation to proceed
+    // The auth initialization will happen and user will be set if session exists
+    if (!currentUser && !userStore.authInitialized) {
+      console.log(
+        '[AUTH TRACE] middleware allowing navigation (auth not initialized yet)',
+        to.path
+      );
+      // Don't redirect - let the page load and auth will initialize
+      return;
     }
 
     // If user exists but profile is not loaded, wait for it to load

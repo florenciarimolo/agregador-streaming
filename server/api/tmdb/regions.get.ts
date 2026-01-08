@@ -81,7 +81,7 @@ export default defineEventHandler(async (event) => {
     // Priority 2: Query parameter (fallback for API calls)
     // CRITICAL: Convert URL code (e.g., 'en') to i18n code (e.g., 'en-US') for TMDB
     else if (query.language && typeof query.language === 'string') {
-      const langParam = query.language.toLowerCase();
+      const langParam = query.language;
 
       if (import.meta.dev) {
         console.log(
@@ -90,29 +90,61 @@ export default defineEventHandler(async (event) => {
         );
       }
 
-      // Try to convert URL code to i18n code first
-      const { getI18nCodeFromUrlCode } =
-        await import('@/composables/useLangFromUrl');
-      const i18nCode = getI18nCodeFromUrlCode(langParam);
-      if (i18nCode) {
-        language = i18nCode;
-        if (import.meta.dev) {
-          console.log(
-            '[Regions] Converted URL code to i18n code:',
-            langParam,
-            '->',
-            i18nCode
-          );
+      // Check if it's already an i18n code (contains hyphen, e.g., 'es-ES', 'en-US')
+      if (langParam.includes('-')) {
+        // Normalize i18n code: lowercase first part, uppercase second part (e.g., 'es-ES')
+        const parts = langParam.split('-');
+        if (parts.length === 2) {
+          const normalizedI18nCode = `${parts[0].toLowerCase()}-${parts[1].toUpperCase()}`;
+          // Verify it's a valid i18n code by checking if we can get URL code from it
+          const { getI18nCodeFromUrlCode, getUrlCodeFromI18nCode } =
+            await import('@/composables/useLangFromUrl');
+          const urlCode = getUrlCodeFromI18nCode(normalizedI18nCode);
+          if (urlCode) {
+            // Valid i18n code, use normalized version
+            language = normalizedI18nCode;
+            if (import.meta.dev) {
+              console.log(
+                '[Regions] Using normalized i18n code:',
+                langParam,
+                '->',
+                normalizedI18nCode
+              );
+            }
+          } else {
+            // Invalid i18n code, try to convert as URL code
+            const i18nCode = getI18nCodeFromUrlCode(langParam.toLowerCase());
+            if (i18nCode) {
+              language = i18nCode;
+            } else {
+              // Fallback to default
+              language = DEFAULT_LANGUAGE;
+            }
+          }
+        } else {
+          // Invalid format, try to convert as URL code
+          const { getI18nCodeFromUrlCode } =
+            await import('@/composables/useLangFromUrl');
+          const i18nCode = getI18nCodeFromUrlCode(langParam.toLowerCase());
+          if (i18nCode) {
+            language = i18nCode;
+          } else {
+            language = DEFAULT_LANGUAGE;
+          }
         }
       } else {
-        // If conversion fails, check if it's already an i18n code (e.g., 'en-US')
-        // If it contains a hyphen, assume it's already an i18n code
-        if (langParam.includes('-')) {
-          language = langParam;
+        // No hyphen, treat as URL code (e.g., 'es', 'en')
+        const { getI18nCodeFromUrlCode } =
+          await import('@/composables/useLangFromUrl');
+        const i18nCode = getI18nCodeFromUrlCode(langParam.toLowerCase());
+        if (i18nCode) {
+          language = i18nCode;
           if (import.meta.dev) {
             console.log(
-              '[Regions] Using language as-is (already i18n code):',
-              langParam
+              '[Regions] Converted URL code to i18n code:',
+              langParam,
+              '->',
+              i18nCode
             );
           }
         } else {
@@ -132,7 +164,14 @@ export default defineEventHandler(async (event) => {
     }
     // Priority 3: Default (no cookies - language comes from URL only)
 
-    // Check cache for this specific language
+    // Get TMDB config to determine the exact language code sent to TMDB
+    // This ensures the response language field matches what was sent to TMDB (for debug)
+    const tmdbConfig = getTMDBConfig(language);
+    // Use tmdbConfig.language as the language value in response (exactly what we send to TMDB)
+    // This is the exact value that will be sent to TMDB API
+    const tmdbLanguage = tmdbConfig.language;
+
+    // Check cache for this specific language (use the language variable for cache key)
     const now = Date.now();
     const cachedData = regionsCache.get(language);
     if (cachedData && now - cachedData.timestamp < CACHE_DURATION) {
@@ -155,12 +194,11 @@ export default defineEventHandler(async (event) => {
         success: true,
         regions: filteredRegions,
         cached: true,
-        language,
+        language: tmdbLanguage, // Return the exact language sent to TMDB (for debug)
       };
     }
 
     // Fetch from TMDB API for this language
-    const tmdbConfig = getTMDBConfig(language);
 
     if (import.meta.dev) {
       console.log('[Regions] Fetching from TMDB:', {
@@ -170,12 +208,15 @@ export default defineEventHandler(async (event) => {
       });
     }
 
+    // The exact language code that will be sent to TMDB API
+    const languageSentToTMDB = tmdbConfig.language;
+
     const response = await $fetch<{
       results: Array<{ iso_3166_1: string; native_name: string }>;
     }>(`${tmdbConfig.baseUrl}/watch/providers/regions`, {
       query: {
         api_key: tmdbConfig.apiKey,
-        language: tmdbConfig.language,
+        language: languageSentToTMDB,
       },
     });
 
@@ -242,7 +283,7 @@ export default defineEventHandler(async (event) => {
       success: true,
       regions: filteredRegions,
       cached: false,
-      language,
+      language: languageSentToTMDB, // Return the exact language sent to TMDB (for debug)
     };
   } catch (error) {
     console.error('[Regions] Error fetching regions from TMDB:', error);
