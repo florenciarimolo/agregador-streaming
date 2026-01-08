@@ -61,28 +61,14 @@ const showHero = computed(() => !user.value);
 const { routeWithLang } = useRouteWithLang();
 const discoverRoute = computed(() => routeWithLang('/discover'));
 
-// Process finalCta text to apply gradient to "sin pensar" and the period after it
+// Process finalCta text to apply gradient to the second part
 const finalCtaTextParts = computed(() => {
-  const text = t('home.finalCta.text');
-  const parts: Array<{ text: string; isGradient: boolean }> = [];
-  const gradientText = 'sin pensar';
-  const index = text.indexOf(gradientText);
+  const part1 = t('home.finalCta.textPart1');
+  const part2 = t('home.finalCta.textPart2');
 
-  if (index === -1) {
-    // If "sin pensar" not found, return whole text
-    parts.push({ text, isGradient: false });
-    return parts;
-  }
-
-  // Add text before "sin pensar"
-  if (index > 0) {
-    parts.push({ text: text.substring(0, index), isGradient: false });
-  }
-
-  // Add "sin pensar" and everything after it (including the period) with gradient
-  const remainingText = text.substring(index);
-  parts.push({ text: remainingText, isGradient: true });
-
-  return parts;
+  return [
+    { text: part1, isGradient: false },
+    { text: part2, isGradient: true },
+  ];
 });
 </script>

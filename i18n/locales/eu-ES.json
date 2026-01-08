@@ -142,7 +142,8 @@
     "callbackUnexpectedError": "Ustekabeko errore bat gertatu da. Mesedez, saiatu berriro."
   },
   "hero": {
-    "title": "Ez dakizu orain zer ikusi?",
+    "titlePart1": "Ez dakizu ",
+    "titlePart2": "orain zer ikusi?",
     "description": "UpNext-ek nola sentitzen zaren eta zure **arreta maila oraintxe bertan** kontuan hartuta filmak eta telesailak gomendatzen dizkizu.",
     "tagline": "Gutxiago erabakitzea. Gehiago ikustea.",
     "discoverButton": "Zer ikusi orain aurkitu",
@@ -280,7 +281,8 @@
       "a4": "Bai, zure egoera eta arreta maila edozein unetan aldatu dezakezu. Gomendioak automatikoki eguneratuko dira zure uneko momentu berria islatzeko."
     },
     "finalCta": {
-      "text": "Zuk hartutako erabakia da, baina pentsatu gabe.",
+      "textPart1": "Zuk hartutako erabakia da, baina ",
+      "textPart2": "pentsatu gabe.",
       "button": "Zer ikusi orain aurkitu"
     },
     "manualGenerateHint": "Momentu bat itxaron baduzu eta gomendioak ez badira agertzen, egin klik botoian eskuz sortzeko.",

@@ -142,7 +142,8 @@
     "callbackUnexpectedError": "S'ha produït un error inesperat. Si us plau, intenta-ho de nou."
   },
   "hero": {
-    "title": "No saps què veure ara?",
+    "titlePart1": "No saps què veure ",
+    "titlePart2": "ara?",
     "description": "UpNext et recomana pel·lícules i sèries segons com et sents i el teu **nivell d'atenció en aquest moment**.",
     "tagline": "Menys decidir. Més veure.",
     "discoverButton": "Descobrir què veure ara",
@@ -280,7 +281,8 @@
       "a4": "Sí, pots canviar el teu estat d'ànim i nivell d'atenció en qualsevol moment. Les recomanacions s'actualitzaran automàticament per reflectir el teu nou moment."
     },
     "finalCta": {
-      "text": "És una decisió feta per tu, però sense pensar.",
+      "textPart1": "És una decisió feta per tu, però ",
+      "textPart2": "sense pensar.",
       "button": "Descobrir què veure ara"
     },
     "manualGenerateHint": "Si ja has esperat un moment i no apareixen recomanacions, fes clic al botó per generar-les manualment.",

@@ -142,7 +142,8 @@
     "callbackUnexpectedError": "An unexpected error occurred. Please try again."
   },
   "hero": {
-    "title": "Don't know what to watch now?",
+    "titlePart1": "Don't know what to watch ",
+    "titlePart2": "now?",
     "description": "UpNext recommends movies and TV shows based on how you feel and your **attention level right now**.",
     "tagline": "Less deciding. More watching.",
     "discoverButton": "Discover what to watch now",
@@ -280,7 +281,8 @@
       "a4": "Yes, you can change your mood and attention level at any time. The recommendations will update automatically to reflect your new moment."
     },
     "finalCta": {
-      "text": "It's a decision made by you, but without thinking.",
+      "textPart1": "It's a decision made by you, but ",
+      "textPart2": "without thinking.",
       "button": "Discover what to watch now"
     },
     "manualGenerateHint": "If you've already waited a moment and recommendations don't appear, click the button to generate them manually.",

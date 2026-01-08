@@ -142,7 +142,8 @@
     "callbackUnexpectedError": "Ocurrió un error inesperado. Por favor, intenta de nuevo."
   },
   "hero": {
-    "title": "¿No sabes qué ver ahora?",
+    "titlePart1": "¿No sabes qué ver ",
+    "titlePart2": "ahora?",
     "description": "UpNext te recomienda películas y series según cómo te sientes y tu **nivel de atención en este momento**.",
     "tagline": "Menos decidir. Más ver.",
     "discoverButton": "Descubrir qué ver ahora",
@@ -280,7 +281,8 @@
       "a4": "Sí, puedes cambiar tu estado de ánimo y nivel de atención en cualquier momento. Las recomendaciones se actualizarán automáticamente para reflejar tu nuevo momento."
     },
     "finalCta": {
-      "text": "Es una decisión hecha por ti, pero sin pensar.",
+      "textPart1": "Es una decisión hecha por ti, pero ",
+      "textPart2": "sin pensar.",
       "button": "Descubrir qué ver ahora"
     },
     "manualGenerateHint": "Si ya esperaste un momento y no aparecen recomendaciones, haz clic en el botón para generarlas manualmente.",

@@ -68,6 +68,17 @@ const descriptionParts = computed(() => {
   }
   return parts;
 });
+
+// Process hero title to apply gradient to "now?" and its equivalents
+const heroTitleParts = computed(() => {
+  const part1 = t('hero.titlePart1');
+  const part2 = t('hero.titlePart2');
+
+  return [
+    { text: part1, isGradient: false },
+    { text: part2, isGradient: true },
+  ];
+});
 </script>
 
 <template>
@@ -92,20 +103,32 @@ const descriptionParts = computed(() => {
         />
       </div>
       <h1
-        class="mb-8 text-hero font-heading font-bold text-transparent bg-clip-text bg-gradient-to-b drop-shadow-2xl from-primary-800 via-primary-800 to-primary-900 dark:from-white dark:via-white dark:to-gray-400"
+        class="mb-8 text-hero font-heading font-bold drop-shadow-2xl"
         style="
           line-height: 1.1;
           padding-top: 0.15em;
           padding-bottom: 0.15em;
-          background-clip: text;
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
           font-size: clamp(4rem, 10vw, 7rem);
         "
         data-aos="fade-up"
         data-aos-delay="100"
       >
-        {{ $t('hero.title') }}
+        <template v-for="(part, index) in heroTitleParts" :key="index">
+          <span
+            v-if="part.isGradient"
+            class="text-transparent bg-clip-text bg-gradient-to-b from-primary-800 via-primary-800 to-primary-900 dark:text-gray-300"
+            :style="{
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+            }"
+          >
+            {{ part.text }}
+          </span>
+          <span v-else class="text-gray-800 dark:text-gray-300">
+            {{ part.text }}
+          </span>
+        </template>
       </h1>
       <p
         class="mx-auto mb-12 max-w-[1000px] text-subtitle font-body text-gray-600 dark:text-gray-400"
