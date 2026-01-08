@@ -175,9 +175,18 @@ onMounted(() => {
       try {
         const referrerPath = new URL(referrer).pathname;
         // Don't save if we're coming from another detail page (to avoid loops)
+        // Check for paths with language prefix (e.g., /es/movie/, /en/tv-show/)
+        const hasLangPrefix = referrerPath
+          .split('/')
+          .filter(Boolean)[0]
+          ?.match(/^(es|ca|eu|gl|en|en-gb)$/i);
+        const pathWithoutLang = hasLangPrefix
+          ? '/' + referrerPath.split('/').slice(2).join('/')
+          : referrerPath;
+
         if (
-          !referrerPath.startsWith('/movie/') &&
-          !referrerPath.startsWith('/tv-show/')
+          !pathWithoutLang.startsWith('/movie/') &&
+          !pathWithoutLang.startsWith('/tv-show/')
         ) {
           sessionStorage.setItem('previousRoute', referrerPath);
         }

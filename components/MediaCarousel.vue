@@ -146,13 +146,13 @@
           v-if="mediaObject.release_date || mediaObject.first_air_date"
           class="text-sm text-center text-gray-700 dark:text-gray-100"
         >
-            {{
-              formatDateByRegion(
-                (mediaObject.release_date || mediaObject.first_air_date) ?? '',
-                userRegion.value,
-                t
-              )
-            }}
+          {{
+            formatDateByRegion(
+              (mediaObject.release_date || mediaObject.first_air_date) ?? '',
+              userRegion.value,
+              t
+            )
+          }}
         </p>
       </article>
     </div>
@@ -180,6 +180,7 @@ import Button from '@/components/ui/Button.vue';
 import { useUserRegion } from '@/composables/useUserRegion';
 
 const { t } = useI18n();
+const { routeWithLang } = useRouteWithLang();
 
 const props = defineProps({
   mediaTrendingList: {
@@ -263,9 +264,9 @@ watch(
 
     mediaList.value.forEach((media) => {
       if (media.media_type === MEDIA_TYPE.MOVIE) {
-        media.path = `/movie/${media.id}`;
+        media.path = routeWithLang(`/movie/${media.id}`);
       } else {
-        media.path = `/tv-show/${media.id}`;
+        media.path = routeWithLang(`/tv-show/${media.id}`);
       }
     });
     currentPage.value = 0; // Reset to first page when the list changes

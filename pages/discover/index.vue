@@ -46,11 +46,7 @@
         custom-class="max-w-md p-0"
         @close="showAuthForm = false"
       >
-        <AuthForm
-          in-modal
-          @success="showAuthForm = false"
-          @signup="() => {}"
-        />
+        <AuthForm in-modal @success="showAuthForm = false" @signup="() => {}" />
       </Modal>
     </PageContainer>
   </AppShell>
@@ -168,7 +164,13 @@ watch(locale, () => {
 watch(
   () => route.path,
   (newPath) => {
-    if (newPath === '/discover') {
+    // Check if path matches discover route (with language prefix)
+    const lang = route.params?.lang as string | undefined;
+    if (
+      lang &&
+      (newPath === `/${lang}/discover` ||
+        newPath.startsWith(`/${lang}/discover/`))
+    ) {
       loadLists();
     }
   }

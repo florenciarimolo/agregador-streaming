@@ -1,7 +1,7 @@
 <template>
   <nuxt-link
     ref="cardRef"
-    :to="`/discover/list/${list.slug}`"
+    :to="discoverListRoute"
     class="block h-full overflow-hidden rounded-2xl border backdrop-blur-xl transition-all duration-300 dark:bg-gray-900/40 bg-gray-100/80 border-gray-300/50 dark:border-white/10 hover:border-primary-800 dark:hover:border-primary-600/50 hover:shadow-lg hover:shadow-gray-900/20 flashlight-card flex flex-col"
     :aria-label="$t('discover.viewList', { title: list.title })"
     :style="flashlightCardStyle"
@@ -36,7 +36,10 @@
             class="relative w-12 h-16 rounded overflow-hidden"
             :style="{
               zIndex: 10 - index,
-              boxShadow: getShadowStyle(index, list.previewPosters.slice(0, 4).length),
+              boxShadow: getShadowStyle(
+                index,
+                list.previewPosters.slice(0, 4).length
+              ),
             }"
           >
             <img
@@ -69,7 +72,11 @@
           v-if="list.itemCount && list.itemCount > list.previewPosters.length"
           class="text-sm text-gray-600 dark:text-gray-400 ml-2"
         >
-          {{ $t('discover.andMore', { count: list.itemCount - list.previewPosters.length }) }}
+          {{
+            $t('discover.andMore', {
+              count: list.itemCount - list.previewPosters.length,
+            })
+          }}
         </span>
       </div>
     </div>
@@ -91,8 +98,16 @@ interface Props {
   list: ExtendedDiscoverList;
 }
 
-defineProps<Props>();
+const props = defineProps<Props>();
 const TMDB_IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w500';
+
+// Get routeWithLang helper to build routes with language prefix
+const { routeWithLang } = useRouteWithLang();
+
+// Build discover list route with language prefix
+const discoverListRoute = computed(() =>
+  routeWithLang(`/discover/list/${props.list.slug}`)
+);
 
 const cardRef = ref<HTMLElement | null>(null);
 const { styles, isHovering } = useFlashlight(cardRef);
@@ -107,7 +122,7 @@ const flashlightCardStyle = computed(() => {
       '--flashlight-border-left': 'transparent',
     } as Record<string, string>;
   }
-  
+
   return {
     '--flashlight-bg': styles.value.backgroundStyle,
     '--flashlight-border-top': styles.value.borderTopStyle,
@@ -148,20 +163,28 @@ function getShadowStyle(): string {
   inset: -1px;
   border-radius: inherit;
   pointer-events: none;
-  background-image: 
+  background-image:
     var(--flashlight-border-top, transparent),
     var(--flashlight-border-right, transparent),
     var(--flashlight-border-bottom, transparent),
     var(--flashlight-border-left, transparent);
-  background-size: 100% 1px, 1px 100%, 100% 1px, 1px 100%;
+  background-size:
+    100% 1px,
+    1px 100%,
+    100% 1px,
+    1px 100%;
   background-position: top, right, bottom, left;
   background-repeat: no-repeat;
   opacity: var(--flashlight-opacity, 0);
   transition: opacity 0.2s ease-out;
   z-index: 0;
-  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
   mask-composite: exclude;
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   padding: 1px;
 }
@@ -171,4 +194,3 @@ function getShadowStyle(): string {
   --flashlight-opacity: 1;
 }
 </style>
-
