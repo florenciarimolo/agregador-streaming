@@ -205,11 +205,12 @@ export default defineNuxtConfig({
         // Twitter
         // Note: twitter:image is updated dynamically in app.vue based on language
         // This is a fallback for default language (en)
+        // CRITICAL: Twitter cards require absolute URLs, not relative paths
         { name: 'twitter:card', content: 'summary_large_image' },
         { name: 'twitter:site', content: '@upnext' },
         {
           name: 'twitter:image',
-          content: '/twitter-cards/en-twitter-card.jpg',
+          content: `${getSiteUrl()}/twitter-cards/en-twitter-card.jpg`,
         },
       ],
       link: [

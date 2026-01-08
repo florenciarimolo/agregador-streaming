@@ -1,9 +1,11 @@
 /**
- * Composable to get Twitter card image path based on current language
- * Returns the path to the language-specific Twitter card image
- * Format: /twitter-cards/{iso}-twitter-card.jpg
+ * Composable to get Twitter card image URL based on current language
+ * Returns the absolute URL to the language-specific Twitter card image
+ * Format: {baseUrl}/twitter-cards/{iso}-twitter-card.jpg
  *
  * Supported languages: es, en, eu, ca, gl
+ *
+ * CRITICAL: Twitter cards require absolute URLs, not relative paths
  */
 
 import { computed } from 'vue';
@@ -14,11 +16,12 @@ import {
 } from '@/constants/urlLanguageCodes';
 
 /**
- * Get Twitter card image path for current language
- * @returns Path to Twitter card image (e.g., '/twitter-cards/es-twitter-card.jpg')
+ * Get Twitter card image absolute URL for current language
+ * @returns Absolute URL to Twitter card image (e.g., 'https://example.com/twitter-cards/es-twitter-card.jpg')
  */
 export const useTwitterCardImage = () => {
   const route = useRoute();
+  const config = useRuntimeConfig();
 
   const twitterCardImage = computed(() => {
     // Get current language URL code (e.g., 'es', 'en', 'eu', 'ca', 'gl', 'en-gb')
@@ -34,8 +37,13 @@ export const useTwitterCardImage = () => {
       iso = 'en';
     }
 
-    // Return path to language-specific Twitter card image
-    return `/twitter-cards/${iso}-twitter-card.jpg`;
+    // Get base URL (remove trailing slash if present)
+    // CRITICAL: baseUrl must NOT end with / to prevent // when concatenating
+    const baseUrl = (config.public.baseUrl || '').replace(/\/$/, '');
+
+    // Return absolute URL to language-specific Twitter card image
+    // Result: baseUrl (no trailing /) + "/twitter-cards/..." = clean absolute URL
+    return `${baseUrl}/twitter-cards/${iso}-twitter-card.jpg`;
   });
 
   return {
