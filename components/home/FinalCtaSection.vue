@@ -5,12 +5,9 @@
         <Section>
           <div class="flex flex-col items-center text-center">
             <p
-              class="mb-8 text-h2 font-heading font-semibold text-transparent bg-clip-text bg-gradient-to-b from-gray-800 via-gray-800 to-gray-600 dark:from-white dark:via-white dark:to-gray-400"
+              class="mb-8 text-h2 font-heading font-semibold"
               :style="{
                 fontSize: 'clamp(2.5rem, 5vw, 4rem)',
-                backgroundClip: 'text',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
               }"
               data-aos="fade-up"
             >
@@ -26,7 +23,17 @@
                 >
                   {{ part.text }}
                 </span>
-                <span v-else>{{ part.text }}</span>
+                <span
+                  v-else
+                  class="text-transparent bg-clip-text bg-gradient-to-b from-gray-800 via-gray-800 to-gray-600 dark:from-white dark:via-white dark:to-gray-400"
+                  :style="{
+                    backgroundClip: 'text',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                  }"
+                >
+                  {{ part.text }}
+                </span>
               </template>
             </p>
             <nuxt-link
