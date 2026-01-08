@@ -128,7 +128,8 @@ export const useRecommendations = () => {
 
   // Fetch recommendations function
   const fetchRecommendations = async (
-    languageOverride?: string
+    languageOverride?: string,
+    preserveIds?: Array<{ tmdb_id: number; type: 'movie' | 'tv' }>
   ): Promise<Recommendation[]> => {
     if (!user.value || !userStore.value?.hasCompletedOnboarding) {
       return [];
@@ -164,6 +165,13 @@ export const useRecommendations = () => {
       // Otherwise, the endpoint will get language from URL automatically
       if (languageOverride) {
         queryParams.lang = languageOverride;
+      }
+      // If preserveIds is provided, pass them to maintain order when changing language
+      if (preserveIds && preserveIds.length > 0) {
+        // Format: "tmdb_id:type,tmdb_id:type" (e.g., "123:movie,456:tv")
+        queryParams[QUERY_PARAMS.PRESERVE_IDS] = preserveIds
+          .map((item) => `${item.tmdb_id}:${item.type}`)
+          .join(',');
       }
 
       const data = await $fetch<Recommendation[]>('/api/recommendations', {
@@ -287,13 +295,31 @@ export const useRecommendations = () => {
           }
         }
 
+        // Save current recommendation IDs and order before refreshing
+        // This ensures we show the same recommendations in the same order, just with new language data
+        const currentIds = allRecommendations.value.map((rec) => ({
+          tmdb_id: rec.tmdb_id,
+          type: rec.type,
+        }));
+
+        if (import.meta.dev) {
+          console.log(
+            '[useRecommendations] Preserving recommendation order:',
+            currentIds.length,
+            'titles'
+          );
+        }
+
         // Refresh recommendations with new language
-        // Pass the language as query parameter so the endpoint uses it
-        // The endpoint will fetch the same recommendations but with data in the new language
+        // Pass the language and IDs to maintain the same order
+        // The endpoint will return the same recommendations in the same order with data in the new language
         // Keep existing recommendations visible while loading to avoid showing empty state
         // Only update once new data is loaded
         try {
-          const fetched = await fetchRecommendations(urlLangCode);
+          const fetched = await fetchRecommendations(
+            urlLangCode,
+            currentIds.length > 0 ? currentIds : undefined
+          );
           // Only update if we got results, otherwise keep existing recommendations
           if (fetched && fetched.length > 0) {
             allRecommendations.value = fetched;

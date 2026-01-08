@@ -31,6 +31,7 @@ import {
   filterByProviders,
   getTitleData,
 } from '@/server/utils/recommendations';
+import { getExplanationTranslation } from '@/server/utils/translations';
 
 /**
  * Maximum number of recommendations to return
@@ -99,11 +100,14 @@ export default defineEventHandler(async (event) => {
 
   const config = useRuntimeConfig();
 
-  // Get query params for mood, attention, and content type
+  // Get query params for mood, attention, content type, and preserve_ids
   const query = getQuery(event);
   const mood = query[QUERY_PARAMS.MOOD] as Mood | undefined;
   const attention = query[QUERY_PARAMS.ATTENTION] as Attention | undefined;
   const contentType = query[QUERY_PARAMS.TYPE] as 'movie' | 'tv' | undefined; // Filter by content type on server
+  const preserveIdsParam = query[QUERY_PARAMS.PRESERVE_IDS] as
+    | string
+    | undefined; // Format: "tmdb_id:type,tmdb_id:type"
 
   // Use centralized function to get userId
   const userId = await getUserIdFromEvent(event);
@@ -186,8 +190,233 @@ export default defineEventHandler(async (event) => {
       });
     }
 
+    // Parse preserve_ids if provided (for language changes - maintain same order)
+    let preserveIdsOrder: Array<{
+      tmdb_id: number;
+      type: 'movie' | 'tv';
+    }> | null = null;
+    if (preserveIdsParam) {
+      try {
+        preserveIdsOrder = preserveIdsParam.split(',').map((item) => {
+          const [tmdbId, type] = item.trim().split(':');
+          return {
+            tmdb_id: parseInt(tmdbId, 10),
+            type: type as 'movie' | 'tv',
+          };
+        });
+        if (import.meta.dev) {
+          devWarn(
+            `[Recommendations] Preserving recommendation order: ${preserveIdsOrder.length} titles`
+          );
+        }
+      } catch (error) {
+        devWarn(
+          '[Recommendations] Error parsing preserve_ids, ignoring:',
+          error
+        );
+        preserveIdsOrder = null;
+      }
+    }
+
     // Fetch all recommendations from pool (no source filtering)
     const fetchRecommendations = async (): Promise<Recommendation[]> => {
+      let poolEntries;
+      let poolError;
+
+      // If preserve_ids is provided, fetch only those specific IDs in the specified order
+      if (preserveIdsOrder && preserveIdsOrder.length > 0) {
+        // Build a map of requested IDs for quick lookup
+        const requestedIdsMap = new Map<string, number>();
+        preserveIdsOrder.forEach((item, index) => {
+          const key = `${item.tmdb_id}:${item.type}`;
+          requestedIdsMap.set(key, index);
+        });
+
+        // Fetch all requested IDs from pool
+        const tmdbIds = preserveIdsOrder.map((item) => item.tmdb_id);
+        const types = preserveIdsOrder.map((item) => item.type);
+
+        const query = supabase
+          .from(TABLES.RECOMMENDATION_POOL)
+          .select(
+            `
+            ${RECOMMENDATION_POOL_COLUMNS.TMDB_ID},
+            ${RECOMMENDATION_POOL_COLUMNS.TYPE},
+            ${RECOMMENDATION_POOL_COLUMNS.SOURCE},
+            ${RECOMMENDATION_POOL_COLUMNS.SCORE},
+            ${RECOMMENDATION_POOL_COLUMNS.BASE_SCORE},
+            ${RECOMMENDATION_POOL_COLUMNS.PREFERENCE_SCORE},
+            ${RECOMMENDATION_POOL_COLUMNS.LAST_SHOWN_AT},
+            ${RECOMMENDATION_POOL_COLUMNS.EXPLANATION_CODE},
+            ${RECOMMENDATION_POOL_COLUMNS.CREATED_AT}
+          `
+          )
+          .eq(RECOMMENDATION_POOL_COLUMNS.USER_ID, userId)
+          .in(RECOMMENDATION_POOL_COLUMNS.TMDB_ID, tmdbIds);
+
+        const result = await query;
+        poolEntries = result.data;
+        poolError = result.error;
+
+        if (poolError) {
+          safeError('[Recommendations] Error fetching from pool', poolError);
+          return [];
+        }
+
+        if (!poolEntries || poolEntries.length === 0) {
+          return [];
+        }
+
+        // Sort entries to match the preserve_ids order
+        poolEntries.sort((a, b) => {
+          const keyA = `${a.tmdb_id}:${a.type}`;
+          const keyB = `${b.tmdb_id}:${b.type}`;
+          const indexA = requestedIdsMap.get(keyA) ?? Infinity;
+          const indexB = requestedIdsMap.get(keyB) ?? Infinity;
+          return indexA - indexB;
+        });
+
+        // Filter out excluded titles (shouldn't happen if IDs are from current recommendations, but safety check)
+        // When preserve_ids is used, the IDs already reflect all applied filters (mood, attention, content type, etc.)
+        // So we should NOT re-apply filters that could remove titles - only safety checks
+        let filteredEntries = poolEntries.filter(
+          (entry) => !excludedTmdbIds.has(entry.tmdb_id)
+        );
+
+        // Note: We don't filter by contentType here because the preserve_ids already reflect the filtered state
+        // If contentType filter was applied, the IDs passed already have the correct type
+        // Re-filtering could incorrectly remove titles that should be preserved
+
+        // Sort entries to match the preserve_ids order exactly
+        filteredEntries.sort((a, b) => {
+          const keyA = `${a.tmdb_id}:${a.type}`;
+          const keyB = `${b.tmdb_id}:${b.type}`;
+          const indexA = requestedIdsMap.get(keyA) ?? Infinity;
+          const indexB = requestedIdsMap.get(keyB) ?? Infinity;
+          return indexA - indexB;
+        });
+
+        // Continue with filtered entries
+        // Skip provider/genre/mood/attention filtering to maintain exact order
+        // The IDs passed already reflect all filters applied on the client side
+        // Get user preferences for language and region (needed for TMDB fallback)
+        const { language, region } = await getUserTMDBParams(event);
+        const tmdbConfig = getTMDBConfig(language, region);
+
+        // Helper to fetch title data from titles table (or TMDB if missing)
+        const getTitleDataForEntry = async (
+          entry: (typeof filteredEntries)[0]
+        ): Promise<TitleData | null> => {
+          return getTitleData(
+            entry,
+            language,
+            region,
+            supabase,
+            tmdbConfig,
+            '[Recommendations]'
+          );
+        };
+
+        // Get title data for all entries in order
+        const entriesWithTitles = await Promise.all(
+          filteredEntries.map(async (entry) => {
+            const titleData = await getTitleDataForEntry(entry);
+            if (!titleData) return null;
+
+            // Get base_score and preference_score from pool entry
+            const baseScore = entry.base_score ?? 0;
+            const preferenceScore = entry.preference_score ?? 0;
+
+            // Build recommendation object (simplified - no score calculation needed, just preserve order)
+            return {
+              entry,
+              titleData,
+              baseScore,
+              preferenceScore,
+            };
+          })
+        );
+
+        // Filter out null entries and build recommendations
+        const validEntries = entriesWithTitles.filter(
+          (item): item is NonNullable<typeof item> => item !== null
+        );
+
+        // Build recommendations in the preserved order
+        const recommendations: Recommendation[] = validEntries.map(
+          ({ entry, titleData }) => {
+            // Get explanation text
+            const explanationCode = entry.explanation_code;
+            const explanation = explanationCode
+              ? getExplanationTranslation(event, explanationCode)
+              : getExplanationTranslation(event, null);
+
+            return {
+              id: `${entry.tmdb_id}-${entry.type}`,
+              tmdb_id: entry.tmdb_id,
+              title: titleData.title,
+              type: entry.type as 'movie' | 'tv',
+              poster_path: titleData.poster_path,
+              overview: titleData.overview,
+              vote_average: titleData.vote_average,
+              genres: titleData.genres.map((g) => g.id),
+              release_date: titleData.release_date,
+              first_air_date: titleData.first_air_date,
+              explanation,
+              explanation_code: explanationCode,
+              providers: titleData.providers,
+              in_watchlist: false, // Will be set below if needed
+              liked: false, // Will be set below if needed
+            };
+          }
+        );
+
+        // Set watchlist and liked status
+        const recommendationTmdbIds = new Set(
+          recommendations.map((r) => r.tmdb_id)
+        );
+        const { data: statusData } = await supabase
+          .from(TABLES.USER_TITLE_STATUS)
+          .select(
+            `${USER_TITLE_STATUS_COLUMNS.TMDB_ID}, ${USER_TITLE_STATUS_COLUMNS.STATUS}, ${USER_TITLE_STATUS_COLUMNS.LIKED}`
+          )
+          .eq(USER_TITLE_STATUS_COLUMNS.USER_ID, userId)
+          .in(
+            USER_TITLE_STATUS_COLUMNS.TMDB_ID,
+            Array.from(recommendationTmdbIds)
+          );
+
+        if (statusData) {
+          const statusMap = new Map<
+            number,
+            { status: string; liked: boolean }
+          >();
+          statusData.forEach((status) => {
+            statusMap.set(status.tmdb_id, {
+              status: status.status,
+              liked: status.liked || false,
+            });
+          });
+
+          recommendations.forEach((rec) => {
+            const status = statusMap.get(rec.tmdb_id);
+            if (status) {
+              rec.in_watchlist = status.status === TITLE_STATUS.WATCHLIST;
+              rec.liked = status.liked;
+            }
+          });
+        }
+
+        // Update last_shown_at for all recommendations
+        if (recommendations.length > 0) {
+          const tmdbIdsToUpdate = recommendations.map((r) => r.tmdb_id);
+          await updateLastShownAt(userId, tmdbIdsToUpdate, supabase);
+        }
+
+        return recommendations;
+      }
+
+      // Normal flow: fetch all recommendations from pool
       // Build query to get pool entries (title_data removed, will fetch from titles table)
       // IMPORTANT: We read base_score and preference_score, but order by score (base + preference)
       // Final ordering will be done by final_score calculated in runtime
@@ -210,10 +439,13 @@ export default defineEventHandler(async (event) => {
 
       // Get entries ordered by score (base + preference) as initial ranking
       // Final ordering will be by final_score calculated in runtime
-      const { data: poolEntries, error: poolError } = await query
+      const result = await query
         .order(RECOMMENDATION_POOL_COLUMNS.SCORE, { ascending: false })
         .order(RECOMMENDATION_POOL_COLUMNS.CREATED_AT, { ascending: false })
         .limit(MAX_RECOMMENDATIONS * 3); // Get more to filter excluded titles and apply boosts
+
+      poolEntries = result.data;
+      poolError = result.error;
 
       if (poolError) {
         safeError('[Recommendations] Error fetching from pool', poolError);

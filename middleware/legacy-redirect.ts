@@ -57,9 +57,20 @@ const hasLangPrefix = (path: string): boolean => {
 const detectLanguageFromHeader = (
   acceptLanguage: string | null | undefined
 ): string | null => {
-  if (!acceptLanguage) return null;
+  if (!acceptLanguage) {
+    if (import.meta.dev) {
+      console.log(
+        '[legacy-redirect] detectLanguageFromHeader: No Accept-Language header'
+      );
+    }
+    return null;
+  }
 
-  // Parse Accept-Language header (e.g., "en-GB,en;q=0.9,es;q=0.8")
+  if (import.meta.dev) {
+    console.log('[legacy-redirect] Parsing Accept-Language:', acceptLanguage);
+  }
+
+  // Parse Accept-Language header (e.g., "en-GB,en;q=0.9,es;q=0.8" or "es-ES,es;q=0.9")
   const languages = acceptLanguage
     .split(',')
     .map((lang) => {
@@ -69,52 +80,112 @@ const detectLanguageFromHeader = (
     })
     .sort((a, b) => b.quality - a.quality);
 
+  if (import.meta.dev) {
+    console.log(
+      '[legacy-redirect] Parsed languages (sorted by quality):',
+      languages
+    );
+  }
+
   // Try to match each language in order of preference
   for (const { code } of languages) {
-    // Try exact match first (e.g., "en-gb" -> "en-gb")
+    if (import.meta.dev) {
+      console.log('[legacy-redirect] Trying to match language code:', code);
+    }
+
+    // Try exact match first (e.g., "en-gb" -> "en-gb", "es" -> "es")
     if (VALID_URL_CODES.includes(code as (typeof VALID_URL_CODES)[number])) {
+      if (import.meta.dev) {
+        console.log('[legacy-redirect] Exact match found:', code);
+      }
       return code;
     }
 
-    // Try language code match (e.g., "en" -> "en", "en-US" -> "en")
+    // Try language code match (e.g., "en" -> "en", "en-US" -> "en", "es-ES" -> "es")
     const langCode = code.split('-')[0];
     if (langCode === 'en' && code.includes('gb')) {
+      if (import.meta.dev) {
+        console.log('[legacy-redirect] English GB match found');
+      }
       return 'en-gb';
     }
     if (
       VALID_URL_CODES.includes(langCode as (typeof VALID_URL_CODES)[number])
     ) {
+      if (import.meta.dev) {
+        console.log('[legacy-redirect] Language code match found:', langCode);
+      }
       return langCode;
     }
 
-    // Try i18n code match (e.g., "es-ES" -> "es")
+    // Try i18n code match (e.g., "es-ES" -> "es", "ca-ES" -> "ca")
+    // Normalize to proper case (language-REGION format)
+    const parts = code.split('-');
+    const normalizedCode =
+      parts.length > 1 ? `${parts[0]}-${parts[1].toUpperCase()}` : code;
     const urlCode =
       I18N_TO_URL_MAP[code] ||
-      I18N_TO_URL_MAP[code.split('-')[0] + '-ES'] ||
-      I18N_TO_URL_MAP[code.split('-')[0] + '-US'];
+      I18N_TO_URL_MAP[normalizedCode] ||
+      I18N_TO_URL_MAP[langCode + '-ES'] ||
+      I18N_TO_URL_MAP[langCode + '-US'];
     if (urlCode) {
+      if (import.meta.dev) {
+        console.log(
+          '[legacy-redirect] i18n code match found:',
+          urlCode,
+          'from',
+          code
+        );
+      }
       return urlCode;
     }
   }
 
+  if (import.meta.dev) {
+    console.log('[legacy-redirect] No language match found in header');
+  }
   return null;
 };
 
 // NOTE: Language cookies removed - language is determined solely from URL
 
 /**
- * Get language from Accept-Language header (Priority 2)
+ * Get language from Accept-Language header (Priority 1)
  * Only works on server side
  */
 const getLanguageFromHeader = (): string | null => {
-  if (!import.meta.server) return null;
+  if (!import.meta.server) {
+    if (import.meta.dev) {
+      console.log(
+        '[legacy-redirect] getLanguageFromHeader: Not on server, skipping'
+      );
+    }
+    return null;
+  }
 
   try {
     // In Nuxt middleware, we can access headers via useRequestHeaders
     const headers = useRequestHeaders(['accept-language']);
     const acceptLanguage = headers['accept-language'];
-    return detectLanguageFromHeader(acceptLanguage);
-  } catch {
+
+    if (import.meta.dev) {
+      console.log('[legacy-redirect] Accept-Language header:', acceptLanguage);
+    }
+
+    const detected = detectLanguageFromHeader(acceptLanguage);
+
+    if (import.meta.dev) {
+      console.log('[legacy-redirect] Detected language from header:', detected);
+    }
+
+    return detected;
+  } catch (error) {
+    if (import.meta.dev) {
+      console.error(
+        '[legacy-redirect] Error getting language from header:',
+        error
+      );
+    }
     return null;
   }
 };

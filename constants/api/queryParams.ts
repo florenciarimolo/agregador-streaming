@@ -27,5 +27,11 @@ export const QUERY_PARAMS = {
    * Values: tab identifiers
    */
   TAB: 'tab',
+  
+  /**
+   * Preserve recommendation IDs and order (for language changes)
+   * Values: comma-separated list of "tmdb_id:type" (e.g., "123:movie,456:tv")
+   */
+  PRESERVE_IDS: 'preserve_ids',
 } as const;
 

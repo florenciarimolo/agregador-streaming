@@ -101,7 +101,7 @@
                   <img
                     :src="step3Mockup"
                     :alt="$t('home.productFlow.step3.imageAlt')"
-                    class="max-h-[300px] w-auto object-contain rounded-lg"
+                    class="max-h-[300px] w-auto object-contain"
                   />
                 </div>
               </div>
@@ -135,7 +135,7 @@
                   <img
                     :src="step4Mockup"
                     :alt="$t('home.productFlow.step4.imageAlt')"
-                    class="max-h-[300px] w-auto object-contain rounded-lg"
+                    class="max-h-[300px] w-auto object-contain"
                   />
                 </div>
               </div>
