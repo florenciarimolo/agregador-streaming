@@ -71,15 +71,64 @@ export default defineEventHandler(async (event) => {
     // Priority 1: URL parameter (route.params.lang) - deterministic source of truth
     const langFromUrl = params.lang as string | undefined;
     if (langFromUrl) {
-      const { getI18nCodeFromUrlCode } = await import('@/composables/useLangFromUrl');
+      const { getI18nCodeFromUrlCode } =
+        await import('@/composables/useLangFromUrl');
       const i18nCode = getI18nCodeFromUrlCode(langFromUrl.toLowerCase());
       if (i18nCode) {
         language = i18nCode;
       }
-    } 
+    }
     // Priority 2: Query parameter (fallback for API calls)
+    // CRITICAL: Convert URL code (e.g., 'en') to i18n code (e.g., 'en-US') for TMDB
     else if (query.language && typeof query.language === 'string') {
-      language = query.language;
+      const langParam = query.language.toLowerCase();
+
+      if (import.meta.dev) {
+        console.log(
+          '[Regions] Processing query language parameter:',
+          langParam
+        );
+      }
+
+      // Try to convert URL code to i18n code first
+      const { getI18nCodeFromUrlCode } =
+        await import('@/composables/useLangFromUrl');
+      const i18nCode = getI18nCodeFromUrlCode(langParam);
+      if (i18nCode) {
+        language = i18nCode;
+        if (import.meta.dev) {
+          console.log(
+            '[Regions] Converted URL code to i18n code:',
+            langParam,
+            '->',
+            i18nCode
+          );
+        }
+      } else {
+        // If conversion fails, check if it's already an i18n code (e.g., 'en-US')
+        // If it contains a hyphen, assume it's already an i18n code
+        if (langParam.includes('-')) {
+          language = langParam;
+          if (import.meta.dev) {
+            console.log(
+              '[Regions] Using language as-is (already i18n code):',
+              langParam
+            );
+          }
+        } else {
+          // Use toTMDBLanguageCode as fallback
+          const { toTMDBLanguageCode } = await import('@/constants/languages');
+          language = toTMDBLanguageCode(langParam);
+          if (import.meta.dev) {
+            console.log(
+              '[Regions] Using toTMDBLanguageCode fallback:',
+              langParam,
+              '->',
+              language
+            );
+          }
+        }
+      }
     }
     // Priority 3: Default (no cookies - language comes from URL only)
 
@@ -112,17 +161,33 @@ export default defineEventHandler(async (event) => {
 
     // Fetch from TMDB API for this language
     const tmdbConfig = getTMDBConfig(language);
+
+    if (import.meta.dev) {
+      console.log('[Regions] Fetching from TMDB:', {
+        inputLanguage: language,
+        tmdbLanguage: tmdbConfig.language,
+        baseUrl: tmdbConfig.baseUrl,
+      });
+    }
+
     const response = await $fetch<{
       results: Array<{ iso_3166_1: string; native_name: string }>;
     }>(`${tmdbConfig.baseUrl}/watch/providers/regions`, {
       query: {
         api_key: tmdbConfig.apiKey,
-        language: language,
+        language: tmdbConfig.language,
       },
     });
 
     if (!response || !response.results) {
       throw new Error('Invalid response from TMDB API');
+    }
+
+    if (import.meta.dev) {
+      console.log('[Regions] TMDB response:', {
+        totalRegions: response.results.length,
+        sampleRegions: response.results.slice(0, 5),
+      });
     }
 
     // Update cache for this language
@@ -133,6 +198,14 @@ export default defineEventHandler(async (event) => {
 
     // Get available flags and filter regions
     const availableFlags = await getAvailableFlags();
+
+    if (import.meta.dev) {
+      console.log('[Regions] Available flags:', {
+        count: availableFlags.size,
+        sampleFlags: Array.from(availableFlags).slice(0, 10),
+      });
+    }
+
     const filteredRegions = response.results
       .filter((region) => availableFlags.has(region.iso_3166_1))
       .map((region) => ({
@@ -140,6 +213,25 @@ export default defineEventHandler(async (event) => {
         name: region.native_name,
       }))
       .sort((a, b) => a.name.localeCompare(b.name));
+
+    if (import.meta.dev) {
+      // Debug: Show which regions from TMDB don't have flags
+      const regionsWithoutFlags = response.results
+        .filter((region) => !availableFlags.has(region.iso_3166_1))
+        .slice(0, 10)
+        .map((r) => r.iso_3166_1);
+
+      console.log('[Regions] Filtered regions:', {
+        totalFromTMDB: response.results.length,
+        filteredCount: filteredRegions.length,
+        sampleFiltered: filteredRegions.slice(0, 5),
+        regionsWithoutFlags: regionsWithoutFlags,
+        sampleRegionsFromTMDB: response.results.slice(0, 5).map((r) => ({
+          code: r.iso_3166_1,
+          hasFlag: availableFlags.has(r.iso_3166_1),
+        })),
+      });
+    }
 
     // Set cache headers
     event.node.res.setHeader('Cache-Control', 'public, max-age=86400'); // 24 hours
