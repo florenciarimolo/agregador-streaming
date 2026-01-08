@@ -1250,7 +1250,7 @@ watch(
     if (newLocale && oldLocale && newLocale !== oldLocale && userId.value) {
       if (import.meta.dev) {
         console.log(
-          '[lists.vue] Language changed, updating pool language and refreshing all lists:',
+          '[lists.vue] Language changed, refreshing all lists with new language:',
           {
             oldLocale,
             newLocale,
@@ -1258,31 +1258,8 @@ watch(
         );
       }
 
-      // Update title_data in recommendation pool with new language (don't regenerate pool)
-      try {
-        const {
-          data: { session },
-        } = await getSession();
-        if (session?.access_token) {
-          await $fetch(
-            `/api/recommendations/update-pool-language?language=${encodeURIComponent(newLocale)}`,
-            {
-              method: 'POST',
-              headers: {
-                Authorization: `Bearer ${session.access_token}`,
-              },
-            }
-          );
-          if (import.meta.dev) {
-            console.log('[lists.vue] Pool language updated successfully');
-          }
-        }
-      } catch (poolError) {
-        console.error('[lists.vue] Error updating pool language:', poolError);
-        // Continue anyway to refresh lists
-      }
-
       // Refresh all lists with new language
+      // getAppLanguage() will automatically use the new locale.value
       await fetchAllLists();
     }
   },

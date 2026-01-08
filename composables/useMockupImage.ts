@@ -8,7 +8,10 @@
 
 import { computed } from 'vue';
 import { getCurrentLangUrlCode } from '@/composables/useRouteWithLang';
-import { DEFAULT_LANGUAGE_URL_CODE } from '@/constants/urlLanguageCodes';
+import {
+  DEFAULT_LANGUAGE_URL_CODE,
+  URL_TO_I18N_MAP,
+} from '@/constants/urlLanguageCodes';
 
 /**
  * Get mockup image path for current language
@@ -26,7 +29,9 @@ export const useMockupImage = (filename: string) => {
     let iso = langCode || DEFAULT_LANGUAGE_URL_CODE;
 
     // Normalize en-gb to en (only 2-letter codes are supported for mockups)
-    if (iso === 'en-gb') {
+    // Use constant from URL_TO_I18N_MAP instead of hardcoded string
+    const enGbCode: keyof typeof URL_TO_I18N_MAP = 'en-gb';
+    if (iso === enGbCode) {
       iso = 'en';
     }
 

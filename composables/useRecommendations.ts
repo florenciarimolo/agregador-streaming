@@ -6,6 +6,9 @@ import { useUserStore } from '@/stores/user';
 import { getSession } from '@/services/auth';
 import { QUERY_PARAMS } from '@/constants/api/queryParams';
 import type { Recommendation } from '@/types/Recommendation';
+import { getUrlCodeFromI18nCode } from '@/composables/useLangFromUrl';
+import { getCurrentLangUrlCode } from '@/composables/useRouteWithLang';
+import { toTMDBLanguageCode, LanguageIsoCode } from '@/constants/languages';
 
 /**
  * Composable for managing recommendations
@@ -15,7 +18,7 @@ export const useRecommendations = () => {
   const route = useRoute();
   const { locale } = useI18n();
   const user = useSupabaseUser();
-  
+
   // Safely get userStore - it may not be available immediately after Pinia initialization
   // Use a computed to lazy-load the store, but only on client side
   const userStore = computed(() => {
@@ -26,7 +29,7 @@ export const useRecommendations = () => {
         hasCompletedOnboarding: false,
       };
     }
-    
+
     try {
       return useUserStore();
     } catch (error) {
@@ -110,7 +113,10 @@ export const useRecommendations = () => {
         body: { tmdb_ids: tmdbIds },
       }).catch((error) => {
         if (import.meta.dev) {
-          console.warn('[TrackView] Error tracking recommendations view:', error);
+          console.warn(
+            '[TrackView] Error tracking recommendations view:',
+            error
+          );
         }
       });
     } catch (error) {
@@ -121,7 +127,9 @@ export const useRecommendations = () => {
   };
 
   // Fetch recommendations function
-  const fetchRecommendations = async (): Promise<Recommendation[]> => {
+  const fetchRecommendations = async (
+    languageOverride?: string
+  ): Promise<Recommendation[]> => {
     if (!user.value || !userStore.value?.hasCompletedOnboarding) {
       return [];
     }
@@ -146,10 +154,16 @@ export const useRecommendations = () => {
       const query = route.query;
       const queryParams: Record<string, string> = {};
       if (query.mood) queryParams[QUERY_PARAMS.MOOD] = query.mood as string;
-      if (query.attention) queryParams[QUERY_PARAMS.ATTENTION] = query.attention as string;
+      if (query.attention)
+        queryParams[QUERY_PARAMS.ATTENTION] = query.attention as string;
       // Send content type to server when not 'all' (server-side filtering)
       if (selectedContentType.value !== 'all') {
         queryParams[QUERY_PARAMS.TYPE] = selectedContentType.value;
+      }
+      // If language override is provided, use it (for language changes)
+      // Otherwise, the endpoint will get language from URL automatically
+      if (languageOverride) {
+        queryParams.lang = languageOverride;
       }
 
       const data = await $fetch<Recommendation[]>('/api/recommendations', {
@@ -229,7 +243,7 @@ export const useRecommendations = () => {
       ) {
         if (import.meta.dev) {
           console.log(
-            '[useRecommendations] Language changed, updating pool language and refreshing recommendations:',
+            '[useRecommendations] Language changed, refreshing recommendations with new language:',
             {
               oldLocale,
               newLocale,
@@ -237,35 +251,65 @@ export const useRecommendations = () => {
           );
         }
 
-        // Update title_data in recommendation pool with new language
-        try {
-          const {
-            data: { session },
-          } = await getSession();
-          if (session?.access_token) {
-            await $fetch<{ success: boolean; updated: number }>(
-              `/api/recommendations/update-pool-language?language=${encodeURIComponent(newLocale)}`,
-              {
-                method: 'POST',
-                headers: {
-                  Authorization: `Bearer ${session.access_token}`,
-                },
-              }
-            );
+        // Convert i18n locale code to URL language code
+        // Handle both formats: 'gl-ES' (full) and 'gl' (short)
+        let urlLangCode = getUrlCodeFromI18nCode(newLocale);
+
+        // If conversion failed, try normalizing the locale first
+        // Some locales might be in short format (e.g., 'gl' instead of 'gl-ES')
+        if (!urlLangCode) {
+          // Use toTMDBLanguageCode to normalize legacy codes to TMDB format
+          // This function handles both 'gl' -> 'gl-ES' and 'en' -> 'en-US' conversions
+          const normalizedLocale = toTMDBLanguageCode(newLocale);
+          urlLangCode = getUrlCodeFromI18nCode(normalizedLocale);
+        }
+
+        // If still no conversion, fallback to current URL language code
+        if (!urlLangCode) {
+          const currentUrlLang = getCurrentLangUrlCode(route);
+          if (currentUrlLang) {
+            urlLangCode = currentUrlLang;
             if (import.meta.dev) {
-              console.log(
-                '[useRecommendations] Pool language updated successfully'
+              console.warn(
+                '[useRecommendations] Could not convert locale to URL code, using current URL language:',
+                {
+                  locale: newLocale,
+                  fallback: urlLangCode,
+                }
               );
             }
+          } else {
+            console.error(
+              '[useRecommendations] Could not determine language code, skipping refresh:',
+              newLocale
+            );
+            return;
           }
-        } catch (poolError) {
-          console.error('[useRecommendations] Error updating pool language:', poolError);
         }
 
         // Refresh recommendations with new language
-        const fetched = await fetchRecommendations();
-        allRecommendations.value = fetched;
-        filterRecommendationsByType();
+        // Pass the language as query parameter so the endpoint uses it
+        // The endpoint will fetch the same recommendations but with data in the new language
+        // Keep existing recommendations visible while loading to avoid showing empty state
+        // Only update once new data is loaded
+        try {
+          const fetched = await fetchRecommendations(urlLangCode);
+          // Only update if we got results, otherwise keep existing recommendations
+          if (fetched && fetched.length > 0) {
+            allRecommendations.value = fetched;
+            filterRecommendationsByType();
+          } else if (import.meta.dev) {
+            console.warn(
+              '[useRecommendations] No recommendations returned, keeping existing ones'
+            );
+          }
+        } catch (error) {
+          console.error(
+            '[useRecommendations] Error refreshing recommendations with new language:',
+            error
+          );
+          // On error, keep existing recommendations visible
+        }
       }
     },
     { immediate: false }
@@ -294,18 +338,24 @@ export const useRecommendations = () => {
           if (sessionForPool?.access_token) {
             sessionStorage.setItem('generatingRecommendations', 'true');
             try {
-              await $fetch('/api/recommendations/populate-pool?clearPool=true', {
-                method: 'POST',
-                headers: {
-                  Authorization: `Bearer ${sessionForPool.access_token}`,
-                },
-              });
+              await $fetch(
+                '/api/recommendations/populate-pool?clearPool=true',
+                {
+                  method: 'POST',
+                  headers: {
+                    Authorization: `Bearer ${sessionForPool.access_token}`,
+                  },
+                }
+              );
               // After generation, fetch recommendations again
               const newFetched = await fetchRecommendations();
               allRecommendations.value = newFetched;
               filterRecommendationsByType();
             } catch (error) {
-              console.error('[useRecommendations] Error regenerating pool:', error);
+              console.error(
+                '[useRecommendations] Error regenerating pool:',
+                error
+              );
             } finally {
               sessionStorage.removeItem('generatingRecommendations');
             }
@@ -326,7 +376,6 @@ export const useRecommendations = () => {
     return recommendations.value.length === 0 && !loading.value;
   });
 
-
   return {
     recommendations,
     allRecommendations,
@@ -339,4 +388,3 @@ export const useRecommendations = () => {
     filterRecommendationsByType,
   };
 };
-
