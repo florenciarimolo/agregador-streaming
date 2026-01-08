@@ -203,9 +203,14 @@ export default defineNuxtConfig({
             'Descubre y explora películas y series de televisión. Encuentra dónde ver tu contenido favorito en diferentes plataformas de streaming.',
         },
         // Twitter
+        // Note: twitter:image is updated dynamically in app.vue based on language
+        // This is a fallback for default language (en)
         { name: 'twitter:card', content: 'summary_large_image' },
         { name: 'twitter:site', content: '@upnext' },
-        { name: 'twitter:image', content: '/logo-banner.png' },
+        {
+          name: 'twitter:image',
+          content: '/twitter-cards/en-twitter-card.jpg',
+        },
       ],
       link: [
         { rel: 'icon', type: 'image/png', href: '/favicon.png' },

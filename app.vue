@@ -69,7 +69,10 @@ watch(
         await setLocale(i18nCodeFromUrl);
 
         // Verify synchronization (safety check)
-        if (locale.value !== i18nCodeFromUrl && process.env.NODE_ENV === 'development') {
+        if (
+          locale.value !== i18nCodeFromUrl &&
+          process.env.NODE_ENV === 'development'
+        ) {
           console.warn(
             `[app.vue] WARNING: Failed to synchronize locale. Expected: ${i18nCodeFromUrl}, Got: ${locale.value}`
           );
@@ -89,14 +92,22 @@ watch(
 // This ensures <html lang="xx"> matches the language in the URL
 const { htmlLang } = useHtmlLang();
 
-// Watch for route changes and update html lang
+// Get Twitter card image based on current language
+const { twitterCardImage } = useTwitterCardImage();
+
+// Watch for route changes and update html lang and Twitter card image
 watch(
-  () => [route.params.lang, htmlLang.value],
+  () => [route.params.lang, htmlLang.value, twitterCardImage.value],
   () => {
     useHead({
       htmlAttrs: {
         lang: htmlLang.value,
       },
+    });
+
+    // Update Twitter card image dynamically based on language
+    useSeoMeta({
+      twitterImage: twitterCardImage.value,
     });
   },
   { immediate: true }

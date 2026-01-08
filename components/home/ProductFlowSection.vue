@@ -4,7 +4,9 @@
       <PageContainer>
         <Section>
           <div class="home-section-title" data-aos="fade-up">
-            <SectionTitle align="center">{{ $t('home.productFlow.title') }}</SectionTitle>
+            <SectionTitle align="center">{{
+              $t('home.productFlow.title')
+            }}</SectionTitle>
           </div>
           <p
             class="mx-auto mb-10 text-subtitle text-center font-body text-gray-600 dark:text-gray-400 max-w-3xl"
