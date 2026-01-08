@@ -38,5 +38,4 @@ export const VALID_URL_CODES: readonly UrlLanguageCode[] = [
 /**
  * Default language URL code (used for fallback when no lang param in URL)
  */
-export const DEFAULT_LANGUAGE_URL_CODE = 'es';
-
+export const DEFAULT_LANGUAGE_URL_CODE = 'en';

@@ -175,7 +175,7 @@ export default defineNuxtConfig({
         file: 'en-GB.json',
       },
     ],
-    defaultLocale: 'es',
+    defaultLocale: 'en',
     strategy: 'prefix',
     vueI18n: 'i18n/i18n.config.ts',
     detectBrowserLanguage: false, // Disabled - we handle / redirect manually in legacy-redirect middleware

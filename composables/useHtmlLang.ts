@@ -1,11 +1,11 @@
 /**
  * Composable to set HTML lang attribute dynamically based on URL language
- * 
+ *
  * Rules:
  * - lang must match the language in the URL (/:lang)
  * - Must be deterministic (derived from route.params.lang, not cookies)
  * - Must be consistent with canonical and hreflang
- * 
+ *
  * Mapping:
  * /es     → <html lang="es">
  * /ca     → <html lang="ca">
@@ -30,7 +30,7 @@ const URL_TO_HTML_LANG_MAP: Record<string, string> = {
 /**
  * Default HTML lang (fallback)
  */
-const DEFAULT_HTML_LANG = 'es';
+const DEFAULT_HTML_LANG = 'en';
 
 /**
  * Get HTML lang attribute value from URL language code
@@ -52,15 +52,14 @@ export const getHtmlLangFromUrlCode = (urlCode: string | undefined): string => {
  */
 export const useHtmlLang = () => {
   const route = useRoute();
-  
+
   // Get language from URL parameter
   const langFromUrl = route.params.lang as string | undefined;
-  
+
   // Map to HTML lang value
   const htmlLang = getHtmlLangFromUrlCode(langFromUrl);
-  
+
   return {
     htmlLang,
   };
 };
-
