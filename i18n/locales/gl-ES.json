@@ -204,11 +204,13 @@
       },
       "step3": {
         "title": "Recibe recomendacións",
-        "description": "Atopa contido perfecto para agora."
+        "description": "Atopa contido perfecto para agora.",
+        "imageAlt": "Mockup de recomendacións"
       },
       "step4": {
         "title": "Xestiona as túas recomendacións",
-        "description": "Marca como vista, engade a favoritos ou garda para máis tarde."
+        "description": "Marca como vista, engade a favoritos ou garda para máis tarde.",
+        "imageAlt": "Mockup de accións de recomendacións"
       },
       "mockup": {
         "mainTitle": "Exemplo de recomendación",

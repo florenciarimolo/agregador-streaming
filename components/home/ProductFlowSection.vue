@@ -98,7 +98,7 @@
                 >
                   <img
                     src="/mockups/step3-result-mockup.webp"
-                    alt="Mockup de recomendaciones"
+                    :alt="$t('home.productFlow.step3.imageAlt')"
                     class="max-h-[300px] w-auto object-contain rounded-lg"
                   />
                 </div>
@@ -132,7 +132,7 @@
                 >
                   <img
                     src="/mockups/step4-actions-mockup.webp"
-                    alt="Mockup de acciones de recomendaciones"
+                    :alt="$t('home.productFlow.step4.imageAlt')"
                     class="max-h-[300px] w-auto object-contain rounded-lg"
                   />
                 </div>

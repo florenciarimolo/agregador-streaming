@@ -204,11 +204,13 @@
       },
       "step3": {
         "title": "Rep recomanacions",
-        "description": "Troba contingut perfecte per ara."
+        "description": "Troba contingut perfecte per ara.",
+        "imageAlt": "Mockup de recomanacions"
       },
       "step4": {
         "title": "Gestiona les teves recomanacions",
-        "description": "Marca com a vista, afegeix a preferits o guarda per després."
+        "description": "Marca com a vista, afegeix a preferits o guarda per després.",
+        "imageAlt": "Mockup d'accions de recomanacions"
       },
       "mockup": {
         "mainTitle": "Exemple de recomanació",

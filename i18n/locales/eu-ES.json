@@ -204,11 +204,13 @@
       },
       "step3": {
         "title": "Jaso gomendioak",
-        "description": "Aurki oraintxe bertarako eduki perfektua."
+        "description": "Aurki oraintxe bertarako eduki perfektua.",
+        "imageAlt": "Gomendioen mockup-a"
       },
       "step4": {
         "title": "Zure gomendioak kudeatu",
-        "description": "Ikusita bezala markatu, gogokoenetara gehitu edo geroago gorde."
+        "description": "Ikusita bezala markatu, gogokoenetara gehitu edo geroago gorde.",
+        "imageAlt": "Gomendioen ekintzen mockup-a"
       },
       "mockup": {
         "mainTitle": "Gomendio adibidea",

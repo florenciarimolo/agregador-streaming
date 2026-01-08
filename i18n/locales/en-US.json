@@ -204,11 +204,13 @@
       },
       "step3": {
         "title": "Get recommendations",
-        "description": "Find perfect content for right now."
+        "description": "Find perfect content for right now.",
+        "imageAlt": "Recommendations mockup"
       },
       "step4": {
         "title": "Manage your recommendations",
-        "description": "Mark as seen, add to favorites, or save for later."
+        "description": "Mark as seen, add to favorites, or save for later.",
+        "imageAlt": "Recommendation actions mockup"
       },
       "mockup": {
         "mainTitle": "Example recommendation",
