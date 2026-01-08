@@ -189,21 +189,25 @@ const detectLanguageFromHeader = (
 const getRedirectLanguage = (
   cookieHeader: string | undefined,
   acceptLanguage: string | undefined
-): { lang: string; isPermanent: boolean } => {
+): { lang: string; isPermanent: boolean; shouldSetCookie: boolean } => {
   // Priority 1: Language cookie
   const cookieLang = getLanguageFromCookie(cookieHeader);
   if (cookieLang) {
-    return { lang: cookieLang, isPermanent: true }; // 301 - cookie preference
+    return { lang: cookieLang, isPermanent: true, shouldSetCookie: false }; // 301 - cookie preference
   }
 
   // Priority 2: Browser Accept-Language
   const headerLang = detectLanguageFromHeader(acceptLanguage);
   if (headerLang) {
-    return { lang: headerLang, isPermanent: false }; // 302 - browser detection
+    return { lang: headerLang, isPermanent: false, shouldSetCookie: true }; // 302 - browser detection, set cookie
   }
 
   // Priority 3: Default
-  return { lang: DEFAULT_LANGUAGE_URL_CODE, isPermanent: true }; // 301 - default
+  return {
+    lang: DEFAULT_LANGUAGE_URL_CODE,
+    isPermanent: true,
+    shouldSetCookie: true,
+  }; // 301 - default, set cookie
 };
 
 export default defineEventHandler((event) => {
@@ -212,18 +216,60 @@ export default defineEventHandler((event) => {
     return;
   }
 
-  // Only process root path
-  if (url !== '/' && !url.startsWith('/?')) {
-    return;
-  }
-
-  // Skip if path already has language prefix (shouldn't happen for /, but safety check)
-  if (hasLangPrefix(url)) {
-    return;
-  }
-
   // Skip API routes
   if (url.startsWith('/api/')) {
+    return;
+  }
+
+  // Handle routes with language prefix: set cookie and return (no redirect)
+  if (hasLangPrefix(url)) {
+    const parts = url.split('/').filter(Boolean);
+    const langFromUrl = parts[0]?.toLowerCase();
+
+    if (
+      langFromUrl &&
+      VALID_URL_CODES.includes(langFromUrl as (typeof VALID_URL_CODES)[number])
+    ) {
+      const i18nCode =
+        URL_TO_I18N_MAP[langFromUrl as keyof typeof URL_TO_I18N_MAP];
+      if (i18nCode) {
+        // Get current cookie value
+        const cookieHeader =
+          event.node.req.headers.cookie || event.node.req.headers.Cookie;
+        const cookies = cookieHeader
+          ? cookieHeader.split(';').reduce(
+              (acc, cookie) => {
+                const [key, value] = cookie.trim().split('=');
+                if (key && value) {
+                  acc[key.trim()] = decodeURIComponent(value);
+                }
+                return acc;
+              },
+              {} as Record<string, string>
+            )
+          : {};
+
+        // Only set cookie if different from current value
+        if (cookies['i18n_redirected'] !== i18nCode) {
+          const cookieOptions = [
+            `i18n_redirected=${i18nCode}`,
+            `Path=/`,
+            `Max-Age=${60 * 60 * 24 * 365}`, // 1 year
+            `SameSite=Lax`,
+            process.env.NODE_ENV === 'production' ? 'Secure' : '',
+          ]
+            .filter(Boolean)
+            .join('; ');
+          setHeader(event, 'Set-Cookie', cookieOptions);
+        }
+      }
+    }
+    // Return without redirect - let the route handler process normally
+    return;
+  }
+
+  // Only process root path (routes without language prefix)
+  if (url !== '/' && !url.startsWith('/?')) {
     return;
   }
 
@@ -235,10 +281,28 @@ export default defineEventHandler((event) => {
     event.node.req.headers['Accept-Language'];
 
   // Determine redirect language
-  const { lang, isPermanent } = getRedirectLanguage(
+  const { lang, isPermanent, shouldSetCookie } = getRedirectLanguage(
     cookieHeader,
     acceptLanguage as string | undefined
   );
+
+  // If we detected language from header (not cookie), set cookie for future visits
+  if (shouldSetCookie) {
+    const i18nCode = URL_TO_I18N_MAP[lang as keyof typeof URL_TO_I18N_MAP];
+    if (i18nCode) {
+      // Set i18n_redirected cookie with i18n code (e.g., 'es-ES')
+      const cookieOptions = [
+        `i18n_redirected=${i18nCode}`,
+        `Path=/`,
+        `Max-Age=${60 * 60 * 24 * 365}`, // 1 year
+        `SameSite=Lax`,
+        process.env.NODE_ENV === 'production' ? 'Secure' : '',
+      ]
+        .filter(Boolean)
+        .join('; ');
+      setHeader(event, 'Set-Cookie', cookieOptions);
+    }
+  }
 
   // Build redirect path
   const queryString = url.includes('?') ? url.substring(url.indexOf('?')) : '';
