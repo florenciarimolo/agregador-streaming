@@ -926,5 +926,15 @@
     "cookiesManagementNote": "Lehentasun cookieak ezeztatzen badituzu, gunearen zenbait funtzionalitate ez dago erabilgarri edo ez du behar bezala funtzionatuko.",
     "contactTitle": "Kontaktua",
     "contactDescription": "Pribatutasun politika honi buruzko galderak badituzu, honako helbidean jar zaitezke gurekin harremanetan:"
+  },
+  "recommendations": {
+    "explanation": {
+      "BASED_ON_LIKE": "Antzeko zerbait gustatu zitzaizulako",
+      "TRENDING": "Aste honetako joera",
+      "DISCOVER": "Editorial hautaketa",
+      "EASY_TO_WATCH": "Ikusteko erraza, erlaxatzeko egokia",
+      "MOOD_MATCH": "Zure egoera emozionalerako perfektua",
+      "default": "Zuretzat gomendatua"
+    }
   }
 }

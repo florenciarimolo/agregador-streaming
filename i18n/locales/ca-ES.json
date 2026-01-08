@@ -926,5 +926,15 @@
     "cookiesManagementNote": "Si rebutges les cookies de preferències, algunes funcionalitats del lloc poden no estar disponibles o no funcionar correctament.",
     "contactTitle": "Contacte",
     "contactDescription": "Si tens preguntes sobre aquesta política de privacitat, pots contactar-nos a:"
+  },
+  "recommendations": {
+    "explanation": {
+      "BASED_ON_LIKE": "Perquè t'agradà alguna cosa similar",
+      "TRENDING": "Tendència aquesta setmana",
+      "DISCOVER": "Selecció editorial",
+      "EASY_TO_WATCH": "Fàcil de veure, ideal per relaxar-se",
+      "MOOD_MATCH": "Perfecte per al teu estat d'ànim",
+      "default": "Recomanat per a tu"
+    }
   }
 }

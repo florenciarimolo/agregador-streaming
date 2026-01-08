@@ -99,7 +99,7 @@
                   class="mt-4 max-h-[300px] overflow-hidden flex justify-center"
                 >
                   <img
-                    src="/mockups/step3-result-mockup.webp"
+                    :src="step3Mockup"
                     :alt="$t('home.productFlow.step3.imageAlt')"
                     class="max-h-[300px] w-auto object-contain rounded-lg"
                   />
@@ -133,7 +133,7 @@
                   class="mt-4 max-h-[300px] overflow-hidden flex justify-center"
                 >
                   <img
-                    src="/mockups/step4-actions-mockup.webp"
+                    :src="step4Mockup"
                     :alt="$t('home.productFlow.step4.imageAlt')"
                     class="max-h-[300px] w-auto object-contain rounded-lg"
                   />
@@ -156,9 +156,16 @@ import SectionTitle from '@/components/layout/SectionTitle.vue';
 import Card from '@/components/ui/Card.vue';
 import MoodAttentionSelection from './mockups/MoodAttentionSelection.vue';
 import MomentConfirmation from './mockups/MomentConfirmation.vue';
+import { useMockupImage } from '@/composables/useMockupImage';
 
 const user = useSupabaseUser();
 const showHero = computed(() => !user.value);
+
+// Get language-specific mockup images
+const { mockupImage: step3Mockup } = useMockupImage('step3-result-mockup.webp');
+const { mockupImage: step4Mockup } = useMockupImage(
+  'step4-actions-mockup.webp'
+);
 </script>
 
 <style scoped>

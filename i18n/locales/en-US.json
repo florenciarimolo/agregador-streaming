@@ -926,5 +926,15 @@
     "cookiesManagementNote": "If you reject preference cookies, some site features may not be available or may not work correctly.",
     "contactTitle": "Contact",
     "contactDescription": "If you have questions about this privacy policy, you can contact us at:"
+  },
+  "recommendations": {
+    "explanation": {
+      "BASED_ON_LIKE": "Because you liked something similar",
+      "TRENDING": "Trending this week",
+      "DISCOVER": "Editorial selection",
+      "EASY_TO_WATCH": "Easy to watch, perfect for relaxing",
+      "MOOD_MATCH": "Perfect for your mood",
+      "default": "Recommended for you"
+    }
   }
 }

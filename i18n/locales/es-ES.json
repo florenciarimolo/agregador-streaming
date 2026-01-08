@@ -926,5 +926,15 @@
     "cookiesManagementNote": "Si rechazas las cookies de preferencias, algunas funcionalidades del sitio pueden no estar disponibles o no funcionar correctamente.",
     "contactTitle": "Contacto",
     "contactDescription": "Si tienes preguntas sobre esta política de privacidad, puedes contactarnos en:"
+  },
+  "recommendations": {
+    "explanation": {
+      "BASED_ON_LIKE": "Porque te gustó algo parecido",
+      "TRENDING": "Tendencia esta semana",
+      "DISCOVER": "Selección editorial",
+      "EASY_TO_WATCH": "Fácil de ver, ideal para relajarse",
+      "MOOD_MATCH": "Perfecto para tu estado de ánimo",
+      "default": "Recomendado para ti"
+    }
   }
 }

@@ -232,19 +232,16 @@ const linkTo = computed(() => {
   return routeWithLang(`/${mediaType.value}/${props.title.tmdb_id}`);
 });
 
-// Map explanation_code to user-friendly text
+// Map explanation_code to user-friendly text using translations
+const { t } = useI18n();
 const explanationText = computed(() => {
   if (!props.title.explanation_code) return null;
 
-  const map: Record<string, string> = {
-    BASED_ON_LIKE: 'Porque te gustó algo parecido',
-    TRENDING: 'Tendencia esta semana',
-    DISCOVER: 'Selección editorial',
-    EASY_TO_WATCH: 'Fácil de ver, ideal para relajarse',
-    MOOD_MATCH: 'Perfecto para tu estado de ánimo',
-  };
+  const translationKey = `recommendations.explanation.${props.title.explanation_code}`;
+  const translated = t(translationKey);
 
-  return map[props.title.explanation_code] ?? null;
+  // If translation doesn't exist, return null (fallback handled by server)
+  return translated !== translationKey ? translated : null;
 });
 
 // Filter providers that have logos

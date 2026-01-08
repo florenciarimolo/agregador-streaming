@@ -3,12 +3,8 @@ import { devError, devWarn, safeError } from '@/server/utils/logger';
 import { Recommendation, Provider } from '@/types/Recommendation';
 import { TITLE_STATUS } from '@/constants/domain/titleStatus';
 import { getUserIdFromEvent } from '@/server/utils/user-auth';
-import {
-  type Mood,
-} from '@/constants/domain/mood';
-import {
-  type Attention,
-} from '@/constants/domain/attention';
+import { type Mood } from '@/constants/domain/mood';
+import { type Attention } from '@/constants/domain/attention';
 import {
   EXPLORATION_MODE,
   type ExplorationMode,
@@ -22,14 +18,14 @@ import { getUserTMDBParams } from '@/server/utils/user-tmdb';
 import { RECOMMENDATION_POOL_COLUMNS } from '@/constants/db/columns';
 import { updateLastShownAt } from '@/services/recommendationPool';
 import { TABLES } from '@/constants/db/tables';
-import { USER_PREFERENCES_COLUMNS, USER_TITLE_STATUS_COLUMNS } from '@/constants/db/columns';
+import {
+  USER_PREFERENCES_COLUMNS,
+  USER_TITLE_STATUS_COLUMNS,
+} from '@/constants/db/columns';
 import { calculateAnimationBias } from '@/services/animationBias';
 import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 import { QUERY_PARAMS } from '@/constants/api/queryParams';
-import {
-  BOOST_WEIGHTS,
-  PROTECTION_FACTOR,
-} from '@/constants/recommendations';
+import { BOOST_WEIGHTS, PROTECTION_FACTOR } from '@/constants/recommendations';
 import {
   calculateBoostFactors,
   filterByProviders,
@@ -50,12 +46,16 @@ function isRecentRelease(
   titleData: { release_date: string | null; first_air_date: string | null },
   type: 'movie' | 'tv'
 ): boolean {
-  const dateStr = type === MEDIA_TYPE.MOVIE ? titleData.release_date : titleData.first_air_date;
+  const dateStr =
+    type === MEDIA_TYPE.MOVIE
+      ? titleData.release_date
+      : titleData.first_air_date;
   if (!dateStr) return false;
 
   const releaseDate = new Date(dateStr);
   const now = new Date();
-  const yearsDiff = (now.getTime() - releaseDate.getTime()) / (1000 * 60 * 60 * 24 * 365);
+  const yearsDiff =
+    (now.getTime() - releaseDate.getTime()) / (1000 * 60 * 60 * 24 * 365);
 
   return type === MEDIA_TYPE.MOVIE ? yearsDiff <= 2 : yearsDiff <= 1;
 }
@@ -72,7 +72,8 @@ function isClassic(titleData: {
 
   const releaseDate = new Date(dateStr);
   const now = new Date();
-  const yearsDiff = (now.getTime() - releaseDate.getTime()) / (1000 * 60 * 60 * 24 * 365);
+  const yearsDiff =
+    (now.getTime() - releaseDate.getTime()) / (1000 * 60 * 60 * 24 * 365);
 
   return yearsDiff > 20;
 }
@@ -152,13 +153,13 @@ export default defineEventHandler(async (event) => {
         | number[]
         | null) || [];
     const explorationMode =
-      (userPreferences?.[USER_PREFERENCES_COLUMNS.EXPLORATION_MODE] as
-        | ExplorationMode
-        | null) || EXPLORATION_MODE.BALANCED;
+      (userPreferences?.[
+        USER_PREFERENCES_COLUMNS.EXPLORATION_MODE
+      ] as ExplorationMode | null) || EXPLORATION_MODE.BALANCED;
     const prioritizeContent =
-      (userPreferences?.[USER_PREFERENCES_COLUMNS.PRIORITIZE_CONTENT] as
-        | PrioritizeContent
-        | null) || PRIORITIZE_CONTENT.NEW;
+      (userPreferences?.[
+        USER_PREFERENCES_COLUMNS.PRIORITIZE_CONTENT
+      ] as PrioritizeContent | null) || PRIORITIZE_CONTENT.NEW;
 
     // Get excluded titles (seen + not_interested + watchlist)
     // Watchlist titles should NOT appear in recommendations
@@ -382,7 +383,10 @@ export default defineEventHandler(async (event) => {
 
           // Apply boost cap: sum of runtime boosts never exceeds +25% of base score
           // This prevents "hyper-optimized" feeds if more signals are added in the future
-          adjustedFinalScore = Math.min(adjustedFinalScore, baseFinalScore * 1.25);
+          adjustedFinalScore = Math.min(
+            adjustedFinalScore,
+            baseFinalScore * 1.25
+          );
 
           // Determine runtime explanation code (MOOD_MATCH override if applicable)
           // MOOD_MATCH has highest priority, then persisted explanation_code
@@ -503,11 +507,21 @@ export default defineEventHandler(async (event) => {
           // Fill with the type that has more remaining entries, or alternate if both have some
           let movieIndex = 0;
           let tvShowIndex = 0;
-          for (let i = 0; i < remaining && balanced.length < MAX_RECOMMENDATIONS; i++) {
+          for (
+            let i = 0;
+            i < remaining && balanced.length < MAX_RECOMMENDATIONS;
+            i++
+          ) {
             // Alternate between types if both have remaining entries
-            if (movieIndex < remainingMovies.length && tvShowIndex < remainingTvShows.length) {
+            if (
+              movieIndex < remainingMovies.length &&
+              tvShowIndex < remainingTvShows.length
+            ) {
               // Alternate based on current balance
-              if (balanced.length % 2 === 0 && movieIndex < remainingMovies.length) {
+              if (
+                balanced.length % 2 === 0 &&
+                movieIndex < remainingMovies.length
+              ) {
                 balanced.push(remainingMovies[movieIndex++]);
               } else if (tvShowIndex < remainingTvShows.length) {
                 balanced.push(remainingTvShows[tvShowIndex++]);
@@ -585,31 +599,25 @@ export default defineEventHandler(async (event) => {
           }
         }
 
-        // Map explanation_code to explanation text
+        // Map explanation_code to explanation text using translations
         // Priority: MOOD_MATCH (runtime) > persisted explanation_code > fallback
         // Note: explanation is NOT a single causal reason, it's the best available explanation for the user
-        const explanationMap: Record<string, string> = {
-          BASED_ON_LIKE: 'Porque te gustó',
-          TRENDING: 'Tendencia esta semana',
-          DISCOVER: 'Descubierto para ti',
-          EASY_TO_WATCH: 'Fácil de ver, perfecto para relajarse',
-          MOOD_MATCH: 'Perfecto para tu estado de ánimo',
-        };
+        const { getExplanationTranslation } =
+          await import('@/server/utils/translations');
 
         // Use runtime explanation code (may be MOOD_MATCH override) or fallback to persisted
-        const explanationCodeToUse = entry.runtimeExplanationCode || entry.explanation_code || null;
-        const explanation =
-          explanationCodeToUse && explanationMap[explanationCodeToUse]
-            ? explanationMap[explanationCodeToUse]
-            : 'Recomendado para ti';
+        const explanationCodeToUse =
+          entry.runtimeExplanationCode || entry.explanation_code || null;
+        const explanation = getExplanationTranslation(
+          event,
+          explanationCodeToUse
+        );
 
         recommendations.push({
           id: `pool-${entry.tmdb_id}`,
           tmdb_id: entry.tmdb_id,
           title: titleData.title || '',
-          type: entry.type as
-            | typeof MEDIA_TYPE.MOVIE
-            | typeof MEDIA_TYPE.TV,
+          type: entry.type as typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV,
           poster_path: titleData.poster_path,
           overview: titleData.overview || null,
           vote_average: titleData.vote_average,

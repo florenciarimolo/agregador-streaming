@@ -4,12 +4,8 @@ import { Recommendation, Provider } from '@/types/Recommendation';
 import { TITLE_STATUS } from '@/constants/domain/titleStatus';
 import { QUERY_PARAMS } from '@/constants/api/queryParams';
 import { getUserIdFromEvent } from '@/server/utils/user-auth';
-import {
-  type Mood,
-} from '@/constants/domain/mood';
-import {
-  type Attention,
-} from '@/constants/domain/attention';
+import { type Mood } from '@/constants/domain/mood';
+import { type Attention } from '@/constants/domain/attention';
 import { getTMDBConfig } from '@/server/utils/config';
 import { getUserTMDBParams } from '@/server/utils/user-tmdb';
 import { type TitleData } from '@/services/recommendationPool';
@@ -20,16 +16,12 @@ import {
   USER_TITLE_STATUS_COLUMNS,
 } from '@/constants/db/columns';
 import { MEDIA_TYPE } from '@/constants/domain/mediaType';
-import {
-  BOOST_WEIGHTS,
-  PROTECTION_FACTOR,
-} from '@/constants/recommendations';
+import { BOOST_WEIGHTS, PROTECTION_FACTOR } from '@/constants/recommendations';
 import {
   calculateBoostFactors,
   filterByProviders,
   getTitleData,
 } from '@/server/utils/recommendations';
-
 
 /**
  * Get a replacement recommendation when one is removed
@@ -59,9 +51,7 @@ export default defineEventHandler(async (event) => {
     : null;
   const excludedType = query.excluded_type as 'movie' | 'tv' | undefined;
   const mood = query[QUERY_PARAMS.MOOD] as Mood | undefined;
-  const attention = query[QUERY_PARAMS.ATTENTION] as
-    | Attention
-    | undefined;
+  const attention = query[QUERY_PARAMS.ATTENTION] as Attention | undefined;
 
   if (!excludedTmdbId || !excludedType) {
     throw createError({
@@ -202,9 +192,7 @@ export default defineEventHandler(async (event) => {
 
     // Helper to fetch title data from titles table (or TMDB if missing)
     // IMPORTANT: title_data has been removed from recommendation_pool, all data comes from titles table
-    const getTitleDataForEntry = async (
-      entry: (typeof filteredEntries)[0]
-    ) => {
+    const getTitleDataForEntry = async (entry: (typeof filteredEntries)[0]) => {
       return getTitleData(
         entry,
         language,
@@ -374,17 +362,13 @@ export default defineEventHandler(async (event) => {
       // Don't fail if providers can't be fetched
     }
 
-    const explanationMap: Record<string, string> = {
-      BASED_ON_LIKE: 'Porque te gustó',
-      TRENDING: 'Tendencia esta semana',
-      DISCOVER: 'Descubierto para ti',
-      EASY_TO_WATCH: 'Fácil de ver, perfecto para relajarse',
-      MOOD_MATCH: 'Perfecto para tu estado de ánimo',
-    };
-
-    const explanation =
-      explanationMap[replacementEntry.explanation_code || ''] ||
-      'Recomendado para ti';
+    // Get translated explanation using server-side translation utility
+    const { getExplanationTranslation } =
+      await import('@/server/utils/translations');
+    const explanation = getExplanationTranslation(
+      event,
+      replacementEntry.explanation_code || null
+    );
 
     const replacement: Recommendation = {
       id: `pool-${replacementEntry.tmdb_id}`,
