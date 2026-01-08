@@ -76,7 +76,7 @@ const descriptionParts = computed(() => {
   >
     <!-- Content -->
     <div
-      class="container overflow-visible relative z-10 mx-auto max-w-3xl text-center w-full"
+      class="container overflow-visible relative z-10 mx-auto max-w-[1000px] text-center w-full"
     >
       <!-- Logo -->
       <div class="mb-8 flex justify-center" data-aos="fade-up">
@@ -108,7 +108,7 @@ const descriptionParts = computed(() => {
         {{ $t('hero.title') }}
       </h1>
       <p
-        class="mx-auto mb-12 max-w-3xl text-subtitle font-body text-gray-600 dark:text-gray-400"
+        class="mx-auto mb-12 max-w-[1000px] text-subtitle font-body text-gray-600 dark:text-gray-400"
         data-aos="fade-up"
         data-aos-delay="200"
       >
