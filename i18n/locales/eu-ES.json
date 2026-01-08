@@ -209,38 +209,38 @@
         "title": "Zure gomendioak kudeatu",
         "description": "Ikusita bezala markatu, gogokoenetara gehitu edo geroago gorde."
       },
-      "discover": {
-        "modePill": "Esplorazio modua",
-        "title": "Zure erritmoan esploratzea nahiago duzu?",
-        "description": "Orain erabakitzeko gogorik ez duzunean. Iragazkirik edo erabakirik gabe kuratutako zerrendak esploratu.",
-        "cta": "Discover esploratu",
-        "list1": {
-          "title": "Kultu filmak",
-          "description": "Belaurak markatu dituzten klasikoak",
-          "count": "45 titulu"
-        },
-        "list2": {
-          "title": "Maratoi ikusteko telesailak",
-          "description": "Aste bukaera luze baterako idealak",
-          "count": "32 titulu"
-        },
-        "list3": {
-          "title": "Thriller psikologikoak",
-          "description": "Tentsioan mantentzen zaituen suspense",
-          "count": "28 titulu"
-        },
-        "list4": {
-          "title": "Komedia erromantikoak",
-          "description": "Erlaxatzeko eta irribarretarako",
-          "count": "38 titulu"
-        }
-      },
       "mockup": {
         "mainTitle": "Gomendio adibidea",
         "mainType": "Filma · Drama",
         "mainDescription": "Zure uneko momentuarekin perfektuki bat datorren istorioa.",
         "alternatives": "Alternatibak",
         "alternativeTitle": "Aukera {number}"
+      }
+    },
+    "discover": {
+      "modePill": "Esplorazio modua",
+      "title": "Zure erritmoan esploratzea nahiago duzu?",
+      "description": "Orain erabakitzeko gogorik ez duzunean. Iragazkirik edo erabakirik gabe kuratutako zerrendak esploratu.",
+      "cta": "Discover esploratu",
+      "list1": {
+        "title": "Kultu filmak",
+        "description": "Belaurak markatu dituzten klasikoak",
+        "count": "45 titulu"
+      },
+      "list2": {
+        "title": "Maratoi ikusteko telesailak",
+        "description": "Aste bukaera luze baterako idealak",
+        "count": "32 titulu"
+      },
+      "list3": {
+        "title": "Thriller psikologikoak",
+        "description": "Tentsioan mantentzen zaituen suspense",
+        "count": "28 titulu"
+      },
+      "list4": {
+        "title": "Komedia erromantikoak",
+        "description": "Erlaxatzeko eta irribarretarako",
+        "count": "38 titulu"
       }
     },
     "differentiation": {

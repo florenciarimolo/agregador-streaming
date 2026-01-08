@@ -209,38 +209,38 @@
         "title": "Manage your recommendations",
         "description": "Mark as seen, add to favourites, or save for later."
       },
-      "discover": {
-        "modePill": "Exploration mode",
-        "title": "Prefer to explore at your own pace?",
-        "description": "When you don't want to decide right now. Explore curated lists without filters or decisions.",
-        "cta": "Explore Discover",
-        "list1": {
-          "title": "Cult films",
-          "description": "Classics that have marked generations",
-          "count": "45 titles"
-        },
-        "list2": {
-          "title": "Series to binge-watch",
-          "description": "Perfect for a long weekend",
-          "count": "32 titles"
-        },
-        "list3": {
-          "title": "Psychological thrillers",
-          "description": "Suspense that keeps you on edge",
-          "count": "28 titles"
-        },
-        "list4": {
-          "title": "Romantic comedies",
-          "description": "To relax and smile",
-          "count": "38 titles"
-        }
-      },
       "mockup": {
         "mainTitle": "Example recommendation",
         "mainType": "Movie · Drama",
         "mainDescription": "A story that fits perfectly with your current moment.",
         "alternatives": "Alternatives",
         "alternativeTitle": "Option {number}"
+      }
+    },
+    "discover": {
+      "modePill": "Exploration mode",
+      "title": "Prefer to explore at your own pace?",
+      "description": "When you don't want to decide right now. Explore curated lists without filters or decisions.",
+      "cta": "Explore Discover",
+      "list1": {
+        "title": "Cult films",
+        "description": "Classics that have marked generations",
+        "count": "45 titles"
+      },
+      "list2": {
+        "title": "Series to binge-watch",
+        "description": "Perfect for a long weekend",
+        "count": "32 titles"
+      },
+      "list3": {
+        "title": "Psychological thrillers",
+        "description": "Suspense that keeps you on edge",
+        "count": "28 titles"
+      },
+      "list4": {
+        "title": "Romantic comedies",
+        "description": "To relax and smile",
+        "count": "38 titles"
       }
     },
     "differentiation": {

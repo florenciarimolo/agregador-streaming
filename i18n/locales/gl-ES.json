@@ -209,38 +209,38 @@
         "title": "Xestiona as túas recomendacións",
         "description": "Marca como vista, engade a favoritos ou garda para máis tarde."
       },
-      "discover": {
-        "modePill": "Modo exploración",
-        "title": "Prefires explorar ao teu ritmo?",
-        "description": "Cando non queres decidir agora. Explora listas curadas sen filtros nin decisións.",
-        "cta": "Explorar Discover",
-        "list1": {
-          "title": "Películas de culto",
-          "description": "Clásicos que marcaron xeracións",
-          "count": "45 títulos"
-        },
-        "list2": {
-          "title": "Series para maratonear",
-          "description": "Ideal para un fin de semana longo",
-          "count": "32 títulos"
-        },
-        "list3": {
-          "title": "Thrillers psicolóxicos",
-          "description": "Suspense que te mantén en vilo",
-          "count": "28 títulos"
-        },
-        "list4": {
-          "title": "Comedias románticas",
-          "description": "Para relaxarte e sorrir",
-          "count": "38 títulos"
-        }
-      },
       "mockup": {
         "mainTitle": "Exemplo de recomendación",
         "mainType": "Película · Drama",
         "mainDescription": "Unha historia que encaixa perfectamente co teu momento actual.",
         "alternatives": "Alternativas",
         "alternativeTitle": "Opción {number}"
+      }
+    },
+    "discover": {
+      "modePill": "Modo exploración",
+      "title": "Prefires explorar ao teu ritmo?",
+      "description": "Cando non queres decidir agora. Explora listas curadas sen filtros nin decisións.",
+      "cta": "Explorar Discover",
+      "list1": {
+        "title": "Películas de culto",
+        "description": "Clásicos que marcaron xeracións",
+        "count": "45 títulos"
+      },
+      "list2": {
+        "title": "Series para maratonear",
+        "description": "Ideal para un fin de semana longo",
+        "count": "32 títulos"
+      },
+      "list3": {
+        "title": "Thrillers psicolóxicos",
+        "description": "Suspense que te mantén en vilo",
+        "count": "28 títulos"
+      },
+      "list4": {
+        "title": "Comedias románticas",
+        "description": "Para relaxarte e sorrir",
+        "count": "38 títulos"
       }
     },
     "differentiation": {

@@ -208,6 +208,13 @@
       "step4": {
         "title": "Gestiona tus recomendaciones",
         "description": "Marca como vista, añade a favoritos o guarda para más tarde."
+      },
+      "mockup": {
+        "mainTitle": "Ejemplo de recomendación",
+        "mainType": "Película · Drama",
+        "mainDescription": "Una historia que encaja perfectamente con tu momento actual.",
+        "alternatives": "Alternativas",
+        "alternativeTitle": "Opción {number}"
       }
     },
     "discover": {
@@ -235,13 +242,6 @@
         "description": "Para relajarte y sonreír",
         "count": "38 títulos"
       }
-    },
-    "mockup": {
-      "mainTitle": "Ejemplo de recomendación",
-      "mainType": "Película · Drama",
-      "mainDescription": "Una historia que encaja perfectamente con tu momento actual.",
-      "alternatives": "Alternativas",
-      "alternativeTitle": "Opción {number}"
     },
     "differentiation": {
       "title": "No es otra lista más",
