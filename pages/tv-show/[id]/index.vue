@@ -270,9 +270,6 @@ const ogImage = computed(() => {
   if (tvShow.value?.backdrop_path) {
     return `https://image.tmdb.org/t/p/w1280${tvShow.value.backdrop_path}`;
   }
-  if (tvShow.value?.poster_path) {
-    return `https://image.tmdb.org/t/p/w780${tvShow.value.poster_path}`;
-  }
   return '';
 });
 

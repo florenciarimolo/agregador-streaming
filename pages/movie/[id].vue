@@ -232,9 +232,7 @@ const ogImage = computed(() => {
   if (movie.value?.backdrop_path) {
     return `https://image.tmdb.org/t/p/w1280${movie.value.backdrop_path}`;
   }
-  if (movie.value?.poster_path) {
-    return `https://image.tmdb.org/t/p/w780${movie.value.poster_path}`;
-  }
+  
   return '';
 });
 
