@@ -162,6 +162,7 @@ export default defineEventHandler(async (event) => {
             vote_average?: number;
             vote_count?: number;
             status?: string;
+            runtime?: number;
             genres?: Array<{ id: number; name: string }>;
             genre_ids?: number[];
           }>(`${tmdbConfig.baseUrl}/movie/${tmdbId}`, {
@@ -209,7 +210,7 @@ export default defineEventHandler(async (event) => {
         ? getTitleInLanguage(taglineJsonb, userLanguage, region)
         : null;
       
-      // If tagline or status is missing in DB but exists in TMDB response, save it
+      // If tagline, status, or runtime is missing in DB but exists in TMDB response, save it
       const needsUpdate: Record<string, unknown> = {};
       let savedStatus: string | undefined = undefined;
       if (!taglineFromDb && fullMovieResponse?.tagline) {
@@ -221,6 +222,9 @@ export default defineEventHandler(async (event) => {
       if (!titleFromDb.status && fullMovieResponse?.status) {
         needsUpdate[TITLES_COLUMNS.STATUS] = fullMovieResponse.status;
         savedStatus = fullMovieResponse.status; // Store the value we're saving
+      }
+      if (!titleFromDb.runtime && fullMovieResponse?.runtime) {
+        needsUpdate[TITLES_COLUMNS.RUNTIME] = fullMovieResponse.runtime;
       }
       if (Object.keys(needsUpdate).length > 0) {
         await supabase
@@ -250,6 +254,7 @@ export default defineEventHandler(async (event) => {
         vote_average: titleFromDb.vote_average || 0,
         vote_count: fullMovieResponse?.vote_count,
         status: (titleFromDb.status as string | undefined) || savedStatus || undefined, // Use saved value if we just saved it
+        runtime: (titleFromDb.runtime as number | undefined) || fullMovieResponse?.runtime || undefined,
         genres: fullMovieResponse?.genres || titleFromDb.genres || [],
         genre_ids: fullMovieResponse?.genre_ids || [],
         tagline: taglineJsonb && Object.keys(taglineJsonb).length > 0
@@ -290,6 +295,7 @@ export default defineEventHandler(async (event) => {
           release_date?: string;
           vote_average?: number;
           status?: string;
+          runtime?: number;
           genres?: Array<{ id: number; name: string }>;
         }>(`${tmdbConfig.baseUrl}/movie/${tmdbId}`, {
           query: {
@@ -316,6 +322,7 @@ export default defineEventHandler(async (event) => {
     let releaseDate: string | null = null;
     let voteAverage: number | null = null;
     let status: string | null = null;
+    let runtime: number | null = null;
     let genres: Array<{ id: number; name: string }> = [];
 
     languageResults.forEach(({ lang, data }) => {
@@ -355,6 +362,7 @@ export default defineEventHandler(async (event) => {
           release_date: releaseDate,
           vote_average: voteAverage,
           status: status,
+          runtime: runtime,
           genres: genres,
         },
         {
@@ -375,11 +383,12 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    // Include tagline in response (as MultiLanguageText if available, or as string)
+    // Include tagline and runtime in response (as MultiLanguageText if available, or as string)
     const response: Partial<Movie> & {
       tagline?: string | MultiLanguageText;
     } = {
       ...userLangData,
+      runtime: runtime || undefined,
       tagline:
         Object.keys(taglineMultiLang).length > 0
           ? taglineMultiLang

@@ -542,7 +542,7 @@ export async function getTitleData(
       const { data: existingTitle } = await supabase
         .from(TABLES.TITLES)
         .select(
-          `${TITLES_COLUMNS.TITLE}, ${TITLES_COLUMNS.OVERVIEW}, ${TITLES_COLUMNS.POSTER_PATH}, ${TITLES_COLUMNS.GENRES}, ${TITLES_COLUMNS.BACKDROP_PATH}, ${TITLES_COLUMNS.VOTE_AVERAGE}, ${TITLES_COLUMNS.RELEASE_DATE}, ${TITLES_COLUMNS.FIRST_AIR_DATE}, ${TITLES_COLUMNS.STATUS}`
+          `${TITLES_COLUMNS.TITLE}, ${TITLES_COLUMNS.OVERVIEW}, ${TITLES_COLUMNS.POSTER_PATH}, ${TITLES_COLUMNS.GENRES}, ${TITLES_COLUMNS.BACKDROP_PATH}, ${TITLES_COLUMNS.VOTE_AVERAGE}, ${TITLES_COLUMNS.RELEASE_DATE}, ${TITLES_COLUMNS.FIRST_AIR_DATE}, ${TITLES_COLUMNS.STATUS}, ${TITLES_COLUMNS.RUNTIME}`
         )
         .eq(TITLES_COLUMNS.TMDB_ID, entry.tmdb_id)
         .eq(TITLES_COLUMNS.TYPE, entry.type)
@@ -615,6 +615,10 @@ export async function getTitleData(
               tmdbResponse.status ||
               existingTitle?.status ||
               null,
+            [TITLES_COLUMNS.RUNTIME]:
+              entry.type === MEDIA_TYPE.MOVIE
+                ? (tmdbResponse.runtime || existingTitle?.runtime || null)
+                : null,
           },
           {
             onConflict: TITLES_COLUMNS.TMDB_ID,

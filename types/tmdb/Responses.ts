@@ -34,6 +34,7 @@ export type TMDBTitleDetails = {
   backdrop_path: string | null;
   vote_average: number | null;
   status?: string;
+  runtime?: number;
   genres: Array<{ id: number; name: string }>;
   release_date?: string | null;
   first_air_date?: string | null;

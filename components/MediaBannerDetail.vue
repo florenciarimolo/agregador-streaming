@@ -678,6 +678,13 @@
                 .join(', ') || $t('media.notAvailable')
             }}</span>
           </div>
+          <div
+            v-if="mediaType === MEDIA_TYPE.MOVIE && mediaWithProviders.runtime != null && mediaWithProviders.runtime > 0"
+            class="flex gap-2 items-center text-gray-800 dark:text-gray-300"
+          >
+            <IconClock icon-class="w-5 h-5" />
+            <span>{{ mediaWithProviders.runtime }} min</span>
+          </div>
           <!-- Videos section -->
           <div v-if="trailers || recaps" class="flex flex-col gap-6">
             <VideoSection

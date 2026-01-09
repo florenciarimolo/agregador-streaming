@@ -402,6 +402,7 @@ async function ensureTitleInDatabase(
           first_air_date?: string;
           vote_average?: number;
           status?: string;
+          runtime?: number;
           genres?: Array<{ id: number; name: string }>;
         }>(`${tmdbConfig.baseUrl}/${endpoint}/${tmdbId}`, {
           query: {
@@ -427,6 +428,7 @@ async function ensureTitleInDatabase(
     let firstAirDate: string | null = null;
     let voteAverage: number | null = null;
     let status: string | null = null;
+    let runtime: number | null = null;
     let genres: Array<{ id: number; name: string }> = [];
 
     languageResults.forEach(({ lang, data }) => {
@@ -446,6 +448,7 @@ async function ensureTitleInDatabase(
         }
         if (!voteAverage && data.vote_average) voteAverage = data.vote_average;
         if (!status && data.status) status = data.status;
+        if (!runtime && data.runtime) runtime = data.runtime;
         if (genres.length === 0 && data.genres) genres = data.genres;
       }
     });
@@ -469,6 +472,7 @@ async function ensureTitleInDatabase(
 
       if (type === MEDIA_TYPE.MOVIE) {
         insertData.release_date = releaseDate;
+        insertData.runtime = runtime;
       } else {
         insertData.first_air_date = firstAirDate;
       }

@@ -59,6 +59,7 @@ export interface Database {
           genres: Json | null;
           vote_average: number | null;
           status: string | null;
+          runtime: number | null;
           viewing_effort: string | null;
           videos: Json | null;
           videos_updated_at: string | null;
@@ -78,6 +79,8 @@ export interface Database {
           first_air_date?: string | null;
           genres?: Json | null;
           vote_average?: number | null;
+          status?: string | null;
+          runtime?: number | null;
           viewing_effort?: string | null;
           videos?: Json | null;
           videos_updated_at?: string | null;
@@ -98,6 +101,7 @@ export interface Database {
           genres?: Json | null;
           vote_average?: number | null;
           status?: string | null;
+          runtime?: number | null;
           viewing_effort?: string | null;
           videos?: Json | null;
           videos_updated_at?: string | null;

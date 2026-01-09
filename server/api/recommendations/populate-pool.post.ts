@@ -354,6 +354,7 @@ export default defineEventHandler(async (event) => {
               [TITLES_COLUMNS.RELEASE_DATE]: fullResponse.release_date || existingTitle?.release_date || null,
               [TITLES_COLUMNS.FIRST_AIR_DATE]: fullResponse.first_air_date || existingTitle?.first_air_date || null,
               [TITLES_COLUMNS.STATUS]: fullResponse.status || existingTitle?.status || null,
+              [TITLES_COLUMNS.RUNTIME]: type === MEDIA_TYPE.MOVIE ? (fullResponse.runtime || existingTitle?.runtime || null) : null,
             }, {
               onConflict: TITLES_COLUMNS.TMDB_ID,
             });

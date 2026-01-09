@@ -954,6 +954,8 @@ Stores movie and TV show information.
 - `first_air_date`: DATE - First air date for TV shows
 - `genres`: JSONB - Array of genre objects from TMDB: `[{"id": 28, "name": "Action"}, ...]`
 - `vote_average`: DECIMAL(3, 1) - Average rating
+- `status`: TEXT - Production/release status from TMDB (for both movies and TV shows)
+- `runtime`: INTEGER - Runtime in minutes for movies only (NULL for TV shows)
 - `created_at`: TIMESTAMP WITH TIME ZONE - Creation timestamp (auto-set)
 - `updated_at`: TIMESTAMP WITH TIME ZONE - Last update timestamp (auto-updated via trigger)
 

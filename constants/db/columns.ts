@@ -34,6 +34,7 @@ export const TITLES_COLUMNS = {
   GENRES: 'genres',
   VOTE_AVERAGE: 'vote_average',
   STATUS: 'status',
+  RUNTIME: 'runtime',
   VIEWING_EFFORT: 'viewing_effort',
   VIDEOS: 'videos',
   VIDEOS_UPDATED_AT: 'videos_updated_at',

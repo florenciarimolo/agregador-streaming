@@ -271,6 +271,7 @@ export default defineEventHandler(async (event) => {
                 [TITLES_COLUMNS.VOTE_AVERAGE]: fullResponse.vote_average ?? fullExistingTitle?.vote_average ?? null,
                 [TITLES_COLUMNS.RELEASE_DATE]: fullResponse.release_date || fullExistingTitle?.release_date || null,
                 [TITLES_COLUMNS.FIRST_AIR_DATE]: fullResponse.first_air_date || fullExistingTitle?.first_air_date || null,
+                [TITLES_COLUMNS.RUNTIME]: type === MEDIA_TYPE.MOVIE ? (fullResponse.runtime || fullExistingTitle?.runtime || null) : null,
               }, {
                 onConflict: TITLES_COLUMNS.TMDB_ID,
               })

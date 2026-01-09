@@ -16,6 +16,7 @@ export type Movie = {
   genres: Genre[];
   original_language: string;
   status?: TmdbStatusType; // Production/release status from TMDB
+  runtime?: number; // Runtime in minutes
   providers?: WatchProviderTypes; // Optional, as not all movies may have providers
   imdb_id?: string; // Optional, as not all movies may have an IMDb ID
   alternative_titles?: AlternativeTitlesResponse; // Alternative titles from TMDB

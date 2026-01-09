@@ -35,6 +35,7 @@ CREATE TABLE IF NOT EXISTS public.titles (
   genres JSONB, -- Array of genre objects from TMDB: [{"id": 28, "name": "Action"}, ...]
   vote_average DECIMAL(3, 1),
   status TEXT CHECK (status IN ('Rumored', 'Planned', 'Pilot', 'In Production', 'Post Production', 'Released', 'Canceled', 'Returning Series', 'Ended')), -- Production/release status from TMDB (for both movies and TV shows)
+  runtime INTEGER, -- Runtime in minutes for movies only (NULL for TV shows)
   viewing_effort TEXT CHECK (viewing_effort IN ('short', 'medium', 'long')), -- For TV shows only: measures approximate effort to start and follow a series (NULL if insufficient data)
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL
