@@ -118,10 +118,10 @@ export default defineCachedEventHandler(
           });
 
           if (
-            findResponse.MOVIE_results &&
-            findResponse.MOVIE_results.length > 0
+            findResponse.movie_results &&
+            findResponse.movie_results.length > 0
           ) {
-            const tmdbId = findResponse.MOVIE_results[0].id;
+            const tmdbId = findResponse.movie_results[0].id;
 
             // Fetch full movie details from TMDB in Spanish first
             // Don't type as Media - TMDB returns full Movie object with all fields including overview

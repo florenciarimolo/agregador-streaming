@@ -152,53 +152,6 @@ export interface Database {
           updated_at?: string;
         };
       };
-      seasons: {
-        Row: {
-          id: string;
-          tv_tmdb_id: number;
-          season_number: number;
-          tmdb_season_id: number;
-          name: string | null;
-          air_date: string | null;
-          poster_path: string | null;
-          vote_average: number | null;
-          overview: Json | null;
-          videos: Json | null;
-          videos_updated_at: string | null;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          tv_tmdb_id: number;
-          season_number: number;
-          tmdb_season_id: number;
-          name?: string | null;
-          air_date?: string | null;
-          poster_path?: string | null;
-          vote_average?: number | null;
-          overview?: Json | null;
-          videos?: Json | null;
-          videos_updated_at?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          tv_tmdb_id?: number;
-          season_number?: number;
-          tmdb_season_id?: number;
-          name?: string | null;
-          air_date?: string | null;
-          poster_path?: string | null;
-          vote_average?: number | null;
-          overview?: Json | null;
-          videos?: Json | null;
-          videos_updated_at?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-      };
       user_title_status: {
         Row: {
           id: string;

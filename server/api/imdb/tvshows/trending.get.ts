@@ -117,8 +117,8 @@ export default defineCachedEventHandler(
             },
           });
 
-          if (findResponse.TV_results && findResponse.TV_results.length > 0) {
-            const tmdbId = findResponse.TV_results[0].id;
+          if (findResponse.tv_results && findResponse.tv_results.length > 0) {
+            const tmdbId = findResponse.tv_results[0].id;
 
             // Fetch full TV show details from TMDB in Spanish first
             // Don't type as Media - TMDB returns full TVShow object with all fields including overview

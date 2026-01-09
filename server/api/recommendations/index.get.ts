@@ -30,6 +30,7 @@ import {
   calculateBoostFactors,
   filterByProviders,
   getTitleData,
+  type TitleData,
 } from '@/server/utils/recommendations';
 import { getExplanationTranslation } from '@/server/utils/translations';
 
@@ -358,7 +359,7 @@ export default defineEventHandler(async (event) => {
               poster_path: titleData.poster_path,
               overview: titleData.overview,
               vote_average: titleData.vote_average,
-              genres: titleData.genres.map((g) => g.id),
+              genres: titleData.genres.map((g: { id: number }) => g.id),
               release_date: titleData.release_date,
               first_air_date: titleData.first_air_date,
               explanation,
@@ -511,7 +512,7 @@ export default defineEventHandler(async (event) => {
 
           // Filter by genres if user has preferences
           if (favoriteGenres.length > 0) {
-            const hasMatchingGenre = genreIds.some((genreId) =>
+            const hasMatchingGenre = genreIds.some((genreId: number) =>
               favoriteGenres.includes(genreId)
             );
             if (!hasMatchingGenre) {

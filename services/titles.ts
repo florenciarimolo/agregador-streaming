@@ -300,7 +300,7 @@ export async function getTitlesByTmdbIds(
     data = [];
   }
 
-  const foundTmdbIds = new Set(data.map((t) => t.tmdb_id));
+  const foundTmdbIds = new Set(data.map((t: { tmdb_id: number }) => t.tmdb_id));
   const missingTmdbIds = tmdbIds.filter((id) => !foundTmdbIds.has(id));
 
   // If there are missing titles and we have type information, fetch them from TMDB
@@ -423,7 +423,7 @@ export async function getTitlesByTmdbIds(
     hasPosterPathLanguage: boolean;
   }> = [];
 
-  data.forEach((title) => {
+  data.forEach((title: { title: unknown; overview: unknown; poster_path: unknown; tmdb_id: number; type: string }) => {
     const titleJsonb = title.title as MultiLanguageText;
     const overviewJsonb = title.overview as MultiLanguageText | null;
     const posterPathJsonb = title.poster_path as MultiLanguageText | null;
@@ -502,9 +502,9 @@ export async function getTitlesByTmdbIds(
 
       if (!reloadError && updatedData) {
         // Update the data array with the reloaded data
-        const updatedDataMap = new Map(updatedData.map((t) => [t.tmdb_id, t]));
+        const updatedDataMap = new Map(updatedData.map((t: { tmdb_id: number }) => [t.tmdb_id, t]));
 
-        data.forEach((title, index) => {
+        data.forEach((title: { tmdb_id: number }, index: number) => {
           const updated = updatedDataMap.get(title.tmdb_id);
           if (updated) {
             // Replace with the updated data from database
@@ -532,7 +532,7 @@ export async function getTitlesByTmdbIds(
     needsOverview: boolean; // If overview is empty in preferred language, also fetch it
   }> = [];
 
-  const titlesWithLanguage = data.map((title) => {
+  const titlesWithLanguage = data.map((title: { title: unknown; overview: unknown; poster_path: unknown; tmdb_id: number; type: string }) => {
     const titleJsonb = title.title as MultiLanguageText;
     const overviewJsonb = title.overview as MultiLanguageText | null;
 
@@ -630,10 +630,10 @@ export async function getTitlesByTmdbIds(
 
     if (!reloadError && reloadedData) {
       // Update the titlesWithLanguage array with the reloaded data
-      const reloadedDataMap = new Map(reloadedData.map((t) => [t.tmdb_id, t]));
+      const reloadedDataMap = new Map(reloadedData.map((t: { tmdb_id: number }) => [t.tmdb_id, t]));
 
-      titlesWithLanguage.forEach((title, index) => {
-        const reloaded = reloadedDataMap.get(title.tmdb_id);
+      titlesWithLanguage.forEach((title: { tmdb_id: number }, index: number) => {
+        const reloaded = reloadedDataMap.get(title.tmdb_id) as { title: unknown; overview: unknown; poster_path: unknown } | undefined;
         if (reloaded) {
           // Re-extract with the updated JSONB that now includes primary language
           titlesWithLanguage[index] = {

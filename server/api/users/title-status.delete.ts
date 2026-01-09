@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { TITLE_STATUS } from '@/constants/domain/titleStatus';
+import { TITLE_STATUS, type TitleStatus } from '@/constants/domain/titleStatus';
 import { TABLES } from '@/constants/db/tables';
 import { USER_TITLE_STATUS_COLUMNS } from '@/constants/db/columns';
 import { SCORE_WEIGHTS } from '@/constants/domain/scoring';

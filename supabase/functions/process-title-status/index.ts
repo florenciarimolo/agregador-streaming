@@ -148,7 +148,7 @@ async function findSimilarTitles(
     return [];
   }
 
-  const poolTmdbIds = poolEntries.map((e) => e.tmdb_id);
+  const poolTmdbIds = poolEntries.map((e: { tmdb_id: number }) => e.tmdb_id);
 
   // Get titles from pool with genres
   const { data: titlesWithGenres } = await supabase
@@ -174,7 +174,7 @@ async function findSimilarTitles(
       (g: { id: number } | number) => (typeof g === 'number' ? g : g.id)
     );
 
-    const sharedGenres = sourceGenreIds.filter((g) => titleGenreIds.includes(g));
+    const sharedGenres = sourceGenreIds.filter((g: number) => titleGenreIds.includes(g));
 
     if (sharedGenres.length > 0) {
       similarTitles.push({
@@ -329,7 +329,7 @@ async function detectExtremeBehavior(
   // Count how many likes were removed
   const totalLikes = allLikes.length;
   const recentUnlikes = recentStatuses?.filter(
-    (s) => s.liked === false && s.created_at >= cutoffTime.toISOString()
+    (s: { liked: boolean; created_at: string }) => s.liked === false && s.created_at >= cutoffTime.toISOString()
   ).length || 0;
 
   // If >60% of likes were removed in short window, trigger soft reset

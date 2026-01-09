@@ -141,7 +141,7 @@ export async function fetchOverviewWithPrimaryLanguageFallback(
           .then(() => {
             // Success - no action needed
           })
-          .catch((error) => {
+          .catch((error: unknown) => {
             // Log but don't fail the request
             if (import.meta.dev) {
               console.error(
@@ -149,7 +149,7 @@ export async function fetchOverviewWithPrimaryLanguageFallback(
                 error
               );
             }
-          });
+          }) as Promise<void>;
 
         if (import.meta.dev) {
           console.log(
@@ -326,7 +326,7 @@ export async function extractTitleDataWithFallback(
           .then(() => {
             // Success - no action needed
           })
-          .catch((error) => {
+          .catch((error: unknown) => {
             // Log but don't fail the request
             if (import.meta.dev) {
               console.error(
@@ -334,7 +334,7 @@ export async function extractTitleDataWithFallback(
                 error
               );
             }
-          });
+          }) as Promise<void>;
       }
     } catch (error) {
       // Log but don't fail the request

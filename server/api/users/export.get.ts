@@ -70,8 +70,8 @@ export default defineEventHandler(async (event) => {
       seenStatuses.data,
       notInterestedStatuses.data,
       watchlistStatuses.data,
-    ].forEach((statuses) => {
-      statuses?.forEach((s) => allTmdbIds.add(s.tmdb_id));
+    ].forEach((statuses: Array<{ tmdb_id: number }> | null | undefined) => {
+      statuses?.forEach((s: { tmdb_id: number }) => allTmdbIds.add(s.tmdb_id));
     });
 
     const { data: titlesData } = await getTitlesByTmdbIds(
@@ -84,7 +84,7 @@ export default defineEventHandler(async (event) => {
 
     // Extract language-specific text from JSONB and create map
     const titleMap = new Map(
-      titlesData?.map((t) => {
+      titlesData?.map((t: { tmdb_id: number; title: unknown; overview: unknown }) => {
         const titleWithLanguage = {
           ...t,
           title: getTitleInLanguage(t.title as MultiLanguageText, userLanguage),
@@ -102,19 +102,19 @@ export default defineEventHandler(async (event) => {
       profile: profile.data,
       preferences: preferencesResult.data,
       lists: {
-        liked: (likedStatuses.data || []).map((s) => ({
+        liked: (likedStatuses.data || []).map((s: { tmdb_id: number }) => ({
           ...s,
           title: titleMap.get(s.tmdb_id),
         })),
-        seen: (seenStatuses.data || []).map((s) => ({
+        seen: (seenStatuses.data || []).map((s: { tmdb_id: number }) => ({
           ...s,
           title: titleMap.get(s.tmdb_id),
         })),
-        notInterested: (notInterestedStatuses.data || []).map((s) => ({
+        notInterested: (notInterestedStatuses.data || []).map((s: { tmdb_id: number }) => ({
           ...s,
           title: titleMap.get(s.tmdb_id),
         })),
-        watchlist: (watchlistStatuses.data || []).map((s) => ({
+        watchlist: (watchlistStatuses.data || []).map((s: { tmdb_id: number }) => ({
           ...s,
           title: titleMap.get(s.tmdb_id),
         })),

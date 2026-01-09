@@ -250,7 +250,7 @@ export default defineEventHandler((event) => {
           event.node.req.headers.cookie || event.node.req.headers.Cookie;
         const cookies = cookieHeader
           ? cookieHeader.split(';').reduce(
-              (acc, cookie) => {
+              (acc: Record<string, string>, cookie: string) => {
                 const [key, value] = cookie.trim().split('=');
                 if (key && value) {
                   acc[key.trim()] = decodeURIComponent(value);
