@@ -9,7 +9,7 @@
     <div v-if="isFilterLoading" class="space-y-4 md:space-y-8">
       <!-- First row: full row -->
       <div
-        class="grid grid-cols-2 gap-4 md:grid-cols-5 lg:grid-cols-6 overflow-visible"
+        class="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-6 overflow-visible"
       >
         <SkeletonMediaCard
           v-for="i in 6"
@@ -20,7 +20,7 @@
       </div>
       <!-- Second row: only 2 cards -->
       <div
-        class="grid grid-cols-2 gap-4 md:grid-cols-5 lg:grid-cols-6 overflow-visible"
+        class="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-6 overflow-visible"
       >
         <SkeletonMediaCard
           v-for="i in 2"
@@ -34,7 +34,7 @@
     <!-- Show real content when not loading filters -->
     <div
       v-else
-      class="grid grid-cols-2 gap-4 md:grid-cols-5 lg:grid-cols-6 overflow-visible"
+      class="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-6 overflow-visible"
     >
       <RecommendationCard
         v-for="recommendation in recommendations"

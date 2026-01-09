@@ -840,7 +840,7 @@ onMounted(() => {
               <!-- Skeleton loading (also show while filters are loading) -->
               <Section v-if="(showSkeleton && loading) || filtersLoading">
                 <div
-                  class="grid grid-cols-2 gap-4 md:grid-cols-5 lg:grid-cols-6 overflow-visible"
+                  class="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-6 overflow-visible"
                 >
                   <SkeletonMediaCard
                     v-for="i in 20"

@@ -87,20 +87,32 @@
             </template>
           </slot>
         </div>
-        <!-- Show tag instead of type badge in discover lists, otherwise show type badge -->
-        <template v-if="isDiscoverList">
+        <!-- Show type badge (tag is shown in top bar for discover lists) -->
+        <Badge v-if="showType && !(isDiscoverList && tag)" :type="computedType" />
+      </div>
+
+      <!-- Top bar for discover lists: tag and actions on same line -->
+      <template v-if="isDiscoverList && tag">
+        <div class="flex overflow-visible absolute top-2 left-2 right-2 z-30 items-center justify-between pointer-events-none">
           <Badge
-            v-if="tag"
             :label="capitalizeTag(tag)"
             size="sm"
           />
-        </template>
-        <Badge v-else-if="showType" :type="computedType" />
-      </div>
+          <div class="pointer-events-auto">
+            <slot name="top-right-actions">
+              <!-- Empty default slot for discover lists -->
+            </slot>
+          </div>
+        </div>
+      </template>
 
       <!-- Top-right actions slot - Outside the link to prevent navigation -->
       <!-- Use pointer-events-none on container, pointer-events-auto on menu itself -->
-      <div class="overflow-visible absolute top-2 right-2 z-30 pointer-events-none">
+      <!-- Only show this for non-discover lists or discover lists without tag -->
+      <div
+        v-if="!isDiscoverList || !tag"
+        class="overflow-visible absolute top-2 right-2 z-30 pointer-events-none"
+      >
         <div class="pointer-events-auto">
           <slot name="top-right-actions">
           <!-- Default recommendation action menu if recommendation prop is provided -->
