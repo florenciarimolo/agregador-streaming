@@ -1,9 +1,11 @@
 <template>
   <div
-    v-if="recommendations.length > 0 || isFilterLoading"
+    v-if="recommendations.length > 0 || isFilterLoading || fetchingReplacement"
     class="relative space-y-4 md:space-y-8"
   >
-    <SectionTitle v-if="title" :description="description">{{ title }}</SectionTitle>
+    <SectionTitle v-if="title" :description="description">{{
+      title
+    }}</SectionTitle>
 
     <!-- Show skeletons when filter is loading -->
     <div v-if="isFilterLoading" class="space-y-4 md:space-y-8">
@@ -52,6 +54,13 @@
         @remove-liked="$emit('remove-liked', $event)"
         @mark-watchlist="$emit('mark-watchlist', $event)"
       />
+      <!-- Show skeleton while fetching replacement -->
+      <SkeletonMediaCard
+        v-if="fetchingReplacement"
+        :key="'skeleton-replacement'"
+        :show-rating="true"
+        :show-watchlist="false"
+      />
     </div>
   </div>
 </template>
@@ -69,13 +78,13 @@ const props = defineProps<{
   recommendations: Recommendation[];
   loadingTitles?: Set<number>; // Still passed but not used for UI loading state
   isLoading?: boolean; // For filter changes
+  fetchingReplacement?: boolean; // When fetching a replacement title
 }>();
 
 // Check if filter is loading (for showing skeletons)
 const isFilterLoading = computed(() => {
   return props.isLoading || false;
 });
-
 
 defineEmits<{
   'mark-seen': [title: Recommendation];
