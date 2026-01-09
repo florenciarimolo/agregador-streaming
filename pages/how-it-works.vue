@@ -266,7 +266,7 @@
   </AppShell>
 
   <!-- Auth Form Modal -->
-  <Modal :is-open="showAuthForm" @close="showAuthForm = false" custom-class="max-w-md p-0">
+  <Modal :is-open="showAuthForm" custom-class="max-w-md p-0" @close="showAuthForm = false">
     <AuthForm
       in-modal
       @success="handleAuthSuccess"

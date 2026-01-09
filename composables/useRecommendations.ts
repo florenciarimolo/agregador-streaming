@@ -8,7 +8,7 @@ import { QUERY_PARAMS } from '@/constants/api/queryParams';
 import type { Recommendation } from '@/types/Recommendation';
 import { getUrlCodeFromI18nCode } from '@/composables/useLangFromUrl';
 import { getCurrentLangUrlCode } from '@/composables/useRouteWithLang';
-import { toTMDBLanguageCode, LanguageIsoCode } from '@/constants/languages';
+import { toTMDBLanguageCode } from '@/constants/languages';
 
 /**
  * Composable for managing recommendations

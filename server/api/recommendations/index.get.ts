@@ -234,7 +234,6 @@ export default defineEventHandler(async (event) => {
 
         // Fetch all requested IDs from pool
         const tmdbIds = preserveIdsOrder.map((item) => item.tmdb_id);
-        const types = preserveIdsOrder.map((item) => item.type);
 
         const query = supabase
           .from(TABLES.RECOMMENDATION_POOL)
@@ -279,7 +278,7 @@ export default defineEventHandler(async (event) => {
         // Filter out excluded titles (shouldn't happen if IDs are from current recommendations, but safety check)
         // When preserve_ids is used, the IDs already reflect all applied filters (mood, attention, content type, etc.)
         // So we should NOT re-apply filters that could remove titles - only safety checks
-        let filteredEntries = poolEntries.filter(
+        const filteredEntries = poolEntries.filter(
           (entry) => !excludedTmdbIds.has(entry.tmdb_id)
         );
 

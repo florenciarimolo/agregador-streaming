@@ -45,9 +45,9 @@
               <div class="relative">
                 <ComboboxInput
                   :display-value="() => searchQuery"
-                  @change="searchQuery = $event.target.value"
                   :placeholder="t('preferences.content.region.searchPlaceholder')"
                   class="px-4 py-2 pr-4 pl-10 w-full text-sm text-gray-800 rounded-lg border-gray-300 opacity-90 transition-all dark:text-gray-300 dark:bg-gray-800/50 bg-white/80 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-transparent focus:border-transparent backdrop-blur-xs hover:opacity-100"
+                  @change="searchQuery = $event.target.value"
                 />
                 <!-- Search Icon -->
                 <div class="flex absolute inset-y-0 left-0 items-center pl-3 pointer-events-none">
@@ -61,8 +61,8 @@
                 <ComboboxOption
                   v-for="region in filteredRegions"
                   :key="region.code"
-                  :value="region"
                   v-slot="{ active, selected }"
+                  :value="region"
                   as="template"
                 >
                   <div

@@ -42,6 +42,7 @@ const props = withDefaults(
     closeOnOverlayClick?: boolean;
   }>(),
   {
+    customClass: undefined,
     closeOnOverlayClick: true,
   }
 );

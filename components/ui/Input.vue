@@ -78,7 +78,9 @@ withDefaults(
     inputStyle?: string;
   }>(),
   {
+    id: undefined,
     type: 'text',
+    label: undefined,
     placeholder: '',
     disabled: false,
     required: false,

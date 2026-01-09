@@ -32,6 +32,8 @@ const props = withDefaults(
     variant?: 'default' | 'red' | 'toast';
   }>(),
   {
+    ariaLabel: undefined,
+    customClass: undefined,
     size: 'small',
     variant: 'default',
   }

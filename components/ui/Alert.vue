@@ -103,7 +103,9 @@ const props = withDefaults(
   }>(),
   {
     variant: 'info',
+    title: undefined,
     showIcon: true,
+    customClass: undefined,
     withTransition: false,
     message: null,
   }

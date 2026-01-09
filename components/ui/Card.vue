@@ -29,6 +29,7 @@ const props = withDefaults(
   }>(),
   {
     padding: 'lg',
+    customClass: undefined,
     enableFlashlight: false,
   }
 );

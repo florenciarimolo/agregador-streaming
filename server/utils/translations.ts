@@ -3,7 +3,6 @@
  * Provides translations for recommendation explanations based on language
  */
 
-import { getI18nCodeFromUrlCode } from '@/composables/useLangFromUrl';
 import type { H3Event } from 'h3';
 import { getQuery, getRouterParams } from 'h3';
 
