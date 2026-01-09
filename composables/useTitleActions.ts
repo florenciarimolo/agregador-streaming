@@ -144,21 +144,31 @@ export const useTitleActions = (
   ) => {
     loadingTitles.value.add(title.tmdb_id);
 
-    let originalTitleIndex = -1;
-    let originalInWatchlist: boolean | undefined = undefined;
+    // Store original state for rollback
+    const originalTitleIndexInAll = allRecommendations.value.findIndex(
+      (r: Recommendation) => r.tmdb_id === title.tmdb_id
+    );
+    const originalTitleIndexInFiltered = recommendations.value.findIndex(
+      (r: Recommendation) => r.tmdb_id === title.tmdb_id
+    );
+    const originalTitle =
+      originalTitleIndexInAll !== -1
+        ? { ...allRecommendations.value[originalTitleIndexInAll] }
+        : null;
+
+    // Optimistic update: Remove title immediately from UI
+    if (originalTitleIndexInAll !== -1) {
+      allRecommendations.value = allRecommendations.value.filter(
+        (r: Recommendation) => r.tmdb_id !== title.tmdb_id
+      );
+      filterRecommendationsByType();
+    }
 
     try {
-      // Store original state for rollback
-      originalTitleIndex = recommendations.value.findIndex(
-        (r: Recommendation) => r.tmdb_id === title.tmdb_id
-      );
-      if (originalTitleIndex !== -1 && status === TITLE_STATUS.WATCHLIST) {
-        originalInWatchlist =
-          recommendations.value[originalTitleIndex].in_watchlist;
-      }
-
       // Get current status (if any)
-      const currentStatus = title.in_watchlist ? TITLE_STATUS.WATCHLIST : null; // For recommendations, we don't track seen/not_interested in the object
+      const currentStatus = originalTitle?.in_watchlist
+        ? TITLE_STATUS.WATCHLIST
+        : null; // For recommendations, we don't track seen/not_interested in the object
 
       // Get title with alphabet detection
       const titleWithDetection = await getTitleWithAlphabetDetection(title);
@@ -180,37 +190,28 @@ export const useTitleActions = (
           console.log('[handleTitleStatus] Success:', { status, result });
         }
 
-        // Remove from UI and get replacement (UI-specific logic)
-        const removedIndex = allRecommendations.value.findIndex(
-          (r: Recommendation) => r.tmdb_id === title.tmdb_id
-        );
-
-        if (removedIndex !== -1) {
-          allRecommendations.value = allRecommendations.value.filter(
-            (r: Recommendation) => r.tmdb_id !== title.tmdb_id
+        // Get replacement title
+        await fetchReplacementTitle(title);
+      } else {
+        // API call failed, restore title to original position
+        if (originalTitle && originalTitleIndexInAll !== -1) {
+          allRecommendations.value.splice(
+            originalTitleIndexInAll,
+            0,
+            originalTitle
           );
-          await fetchReplacementTitle(title);
-        } else {
           filterRecommendationsByType();
         }
       }
     } catch (error) {
       // Rollback optimistic update if error occurred
-      if (originalTitleIndex !== -1) {
-        if (status === TITLE_STATUS.WATCHLIST) {
-          recommendations.value[originalTitleIndex] = {
-            ...recommendations.value[originalTitleIndex],
-            in_watchlist: originalInWatchlist,
-          };
-        } else {
-          const originalTitle = allRecommendations.value.find(
-            (r) => r.tmdb_id === title.tmdb_id
-          );
-          if (!originalTitle) {
-            allRecommendations.value.push(title);
-            filterRecommendationsByType();
-          }
-        }
+      if (originalTitle && originalTitleIndexInAll !== -1) {
+        allRecommendations.value.splice(
+          originalTitleIndexInAll,
+          0,
+          originalTitle
+        );
+        filterRecommendationsByType();
       }
 
       if (process.env.NODE_ENV === 'development') {
@@ -225,9 +226,35 @@ export const useTitleActions = (
   const handleMarkLiked = async (title: Recommendation) => {
     loadingTitles.value.add(title.tmdb_id);
 
+    // Store original state for rollback
+    const originalTitleIndexInAll = allRecommendations.value.findIndex(
+      (r: Recommendation) => r.tmdb_id === title.tmdb_id
+    );
+    const originalTitle =
+      originalTitleIndexInAll !== -1
+        ? { ...allRecommendations.value[originalTitleIndexInAll] }
+        : null;
+
+    // Optimistic update: Remove title immediately from UI
+    if (originalTitleIndexInAll !== -1) {
+      allRecommendations.value = allRecommendations.value.filter(
+        (r: Recommendation) => r.tmdb_id !== title.tmdb_id
+      );
+      filterRecommendationsByType();
+    }
+
     try {
       const userId = getUserId(user.value);
       if (!userId) {
+        // Restore title if no user
+        if (originalTitle && originalTitleIndexInAll !== -1) {
+          allRecommendations.value.splice(
+            originalTitleIndexInAll,
+            0,
+            originalTitle
+          );
+          filterRecommendationsByType();
+        }
         return;
       }
 
@@ -238,13 +265,23 @@ export const useTitleActions = (
       );
 
       if (likedTitle) {
-        // Title is already liked, remove it
+        // Title is already liked, restore and remove it
+        if (originalTitle && originalTitleIndexInAll !== -1) {
+          allRecommendations.value.splice(
+            originalTitleIndexInAll,
+            0,
+            originalTitle
+          );
+          filterRecommendationsByType();
+        }
         await confirmRemoveLike(title);
         return;
       }
 
       // Get current status (if any)
-      const currentStatus = title.in_watchlist ? TITLE_STATUS.WATCHLIST : null;
+      const currentStatus = originalTitle?.in_watchlist
+        ? TITLE_STATUS.WATCHLIST
+        : null;
 
       // Get title with alphabet detection
       const titleWithDetection = await getTitleWithAlphabetDetection(title);
@@ -266,21 +303,30 @@ export const useTitleActions = (
           console.log('[handleMarkLiked] Success');
         }
 
-        // Remove from UI and get replacement (UI-specific logic)
-        const removedIndex = allRecommendations.value.findIndex(
-          (r) => r.tmdb_id === title.tmdb_id
-        );
-
-        if (removedIndex !== -1) {
-          allRecommendations.value = allRecommendations.value.filter(
-            (r) => r.tmdb_id !== title.tmdb_id
+        // Get replacement title
+        await fetchReplacementTitle(title);
+      } else {
+        // API call failed, restore title to original position
+        if (originalTitle && originalTitleIndexInAll !== -1) {
+          allRecommendations.value.splice(
+            originalTitleIndexInAll,
+            0,
+            originalTitle
           );
-          await fetchReplacementTitle(title);
-        } else {
           filterRecommendationsByType();
         }
       }
     } catch (error) {
+      // Rollback optimistic update if error occurred
+      if (originalTitle && originalTitleIndexInAll !== -1) {
+        allRecommendations.value.splice(
+          originalTitleIndexInAll,
+          0,
+          originalTitle
+        );
+        filterRecommendationsByType();
+      }
+
       if (process.env.NODE_ENV === 'development') {
         console.error('[handleMarkLiked] Error:', error);
       }
