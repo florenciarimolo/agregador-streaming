@@ -9,7 +9,10 @@ import { useUserRegion } from '@/composables/useUserRegion';
 import { useTitleStatusAction } from '@/composables/useTitleStatusAction';
 import { QUERY_PARAMS } from '@/constants/api/queryParams';
 import type { Recommendation } from '@/types/Recommendation';
-import { TITLE_STATUS, type TitleStatusType } from '@/constants/domain/titleStatus';
+import {
+  TITLE_STATUS,
+  type TitleStatusType,
+} from '@/constants/domain/titleStatus';
 
 // Helper function to safely get user ID from Supabase user object
 type SupabaseUserWithSub = {
@@ -45,7 +48,7 @@ export const useTitleActions = (
     try {
       // Get user region from preferences
       const userRegion = await getUserRegion();
-      
+
       // Get title from database with language detection
       const { data: titleData } = await getTitleByTmdbIdWithLanguage(
         title.tmdb_id,
@@ -53,7 +56,7 @@ export const useTitleActions = (
         locale.value || 'es-ES',
         userRegion
       );
-      
+
       // If we got a title from database (with alphabet detection), use it
       if (titleData?.title) {
         return titleData.title;
@@ -63,7 +66,7 @@ export const useTitleActions = (
         console.error('[getTitleWithAlphabetDetection] Error:', error);
       }
     }
-    
+
     // Fallback to original title if database fetch fails
     return title.title;
   };
@@ -83,13 +86,27 @@ export const useTitleActions = (
       }
 
       fetchingReplacement.value = true;
+      // Get current recommendation IDs to exclude them from replacement
+      const currentRecommendationIds = allRecommendations.value
+        .map((r: Recommendation) => r.tmdb_id)
+        .filter((id) => id !== title.tmdb_id); // Exclude the one being replaced
+
       const queryParams: Record<string, string> = {
         excluded_tmdb_id: title.tmdb_id.toString(),
         excluded_type: title.type,
       };
-      if (route.query[QUERY_PARAMS.MOOD]) queryParams[QUERY_PARAMS.MOOD] = route.query[QUERY_PARAMS.MOOD] as string;
+      if (currentRecommendationIds.length > 0) {
+        queryParams.excluded_recommendations =
+          currentRecommendationIds.join(',');
+      }
+      if (route.query[QUERY_PARAMS.MOOD])
+        queryParams[QUERY_PARAMS.MOOD] = route.query[
+          QUERY_PARAMS.MOOD
+        ] as string;
       if (route.query[QUERY_PARAMS.ATTENTION])
-        queryParams[QUERY_PARAMS.ATTENTION] = route.query[QUERY_PARAMS.ATTENTION] as string;
+        queryParams[QUERY_PARAMS.ATTENTION] = route.query[
+          QUERY_PARAMS.ATTENTION
+        ] as string;
 
       const replacement = await $fetch<Recommendation | null>(
         '/api/recommendations/replacement',
@@ -102,7 +119,13 @@ export const useTitleActions = (
       );
 
       if (replacement) {
-        allRecommendations.value.push(replacement);
+        // Check if replacement already exists in recommendations to avoid duplicates
+        const alreadyExists = allRecommendations.value.some(
+          (r: Recommendation) => r.tmdb_id === replacement.tmdb_id
+        );
+        if (!alreadyExists) {
+          allRecommendations.value.push(replacement);
+        }
       }
       filterRecommendationsByType();
     } catch (error) {
@@ -135,9 +158,7 @@ export const useTitleActions = (
       }
 
       // Get current status (if any)
-      const currentStatus = title.in_watchlist
-        ? TITLE_STATUS.WATCHLIST
-        : null; // For recommendations, we don't track seen/not_interested in the object
+      const currentStatus = title.in_watchlist ? TITLE_STATUS.WATCHLIST : null; // For recommendations, we don't track seen/not_interested in the object
 
       // Get title with alphabet detection
       const titleWithDetection = await getTitleWithAlphabetDetection(title);
@@ -223,9 +244,7 @@ export const useTitleActions = (
       }
 
       // Get current status (if any)
-      const currentStatus = title.in_watchlist
-        ? TITLE_STATUS.WATCHLIST
-        : null;
+      const currentStatus = title.in_watchlist ? TITLE_STATUS.WATCHLIST : null;
 
       // Get title with alphabet detection
       const titleWithDetection = await getTitleWithAlphabetDetection(title);
@@ -320,4 +339,3 @@ export const useTitleActions = (
     handleRemoveLiked,
   };
 };
-

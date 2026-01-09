@@ -52,6 +52,13 @@ export default defineEventHandler(async (event) => {
   const excludedType = query.excluded_type as 'movie' | 'tv' | undefined;
   const mood = query[QUERY_PARAMS.MOOD] as Mood | undefined;
   const attention = query[QUERY_PARAMS.ATTENTION] as Attention | undefined;
+  // Optional: exclude titles already in current recommendations
+  const excludedRecommendations = query.excluded_recommendations
+    ? (query.excluded_recommendations as string)
+        .split(',')
+        .map((id) => Number(id.trim()))
+        .filter((id) => !isNaN(id))
+    : [];
 
   if (!excludedTmdbId || !excludedType) {
     throw createError({
@@ -123,6 +130,10 @@ export default defineEventHandler(async (event) => {
         excludedTmdbIds.add(status.tmdb_id);
       });
     }
+    // Add titles already in current recommendations to avoid duplicates
+    excludedRecommendations.forEach((id) => {
+      excludedTmdbIds.add(id);
+    });
 
     // Get watchlist titles to mark them in recommendations
     const { data: watchlistStatuses } = await supabase
