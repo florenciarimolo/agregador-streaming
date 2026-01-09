@@ -13,6 +13,7 @@ export const useAuth = () => {
   const router = useRouter();
   const route = useRoute();
   const config = useRuntimeConfig();
+  const { routeWithLang } = useRouteWithLang();
 
   /**
    * Get language from current route
@@ -272,8 +273,7 @@ export const useAuth = () => {
       }
 
       // Get current language from URL and redirect to homepage with language
-      const lang = getCurrentLang();
-      await router.push(`/${lang}/`);
+      await router.push(routeWithLang('/'));
       return { error: null };
     } catch (error: unknown) {
       console.error('Sign out error:', error);

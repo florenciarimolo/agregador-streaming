@@ -127,6 +127,7 @@ import { useTitleStatusAction } from '@/composables/useTitleStatusAction';
 import { useRouteWithLang } from '@/composables/useRouteWithLang';
 
 const router = useRouter();
+const { routeWithLang } = useRouteWithLang();
 
 interface Props {
   list: DiscoverList;
@@ -147,7 +148,6 @@ const showAuthForm = ref(false);
 
 // Handle back navigation
 const handleBack = () => {
-  const { routeWithLang } = useRouteWithLang();
   router.push(routeWithLang('/discover'));
 };
 
