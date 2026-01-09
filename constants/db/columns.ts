@@ -110,6 +110,7 @@ export const DISCOVER_LIST_ITEMS_COLUMNS = {
   TMDB_ID: 'tmdb_id',
   TYPE: 'type',
   POSITION: 'position',
+  TAG: 'tag',
 } as const;
 
 /**

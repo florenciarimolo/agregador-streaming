@@ -34,6 +34,7 @@ export interface DiscoverListItem {
   tmdb_id: number;
   type: 'movie' | 'tv';
   position: number;
+  tag?: string | null; // Tag extracted from JSONB in requested language
   // Title data (from join with titles table)
   title?: string;
   poster_path?: string | null;
@@ -177,11 +178,13 @@ export async function getDiscoverListBySlug(
  * CRITICAL: Does NOT use recommendation_pool - only uses discover_list_items and titles
  * @param listId Discover list ID
  * @param language Language code in ISO format (e.g., 'es-ES', 'ca-ES')
+ * @param urlLangCode URL language code (e.g., 'es', 'ca', 'en', 'en-gb') for tag extraction
  * @param supabaseClient Optional Supabase client (for server-side use)
  */
 export async function getDiscoverListItems(
   listId: string,
   language: string = DEFAULT_LANGUAGE,
+  urlLangCode?: string | null,
   supabaseClient?: SupabaseClient
 ): Promise<{ data: DiscoverListItem[] | null; error: Error | null }> {
   const supabase = supabaseClient || useSupabaseClient();
@@ -228,12 +231,48 @@ export async function getDiscoverListItems(
     const itemsWithTitles: DiscoverListItem[] = items.map((item) => {
       const title = titles?.find((t) => t.tmdb_id === item.tmdb_id);
 
+      // Extract tag from JSONB in requested language
+      let extractedTag: string | null = null;
+      if (item.tag) {
+        // If urlLangCode is provided, extract the specific language tag
+        if (urlLangCode) {
+          const tagJsonb = item.tag as Record<string, string> | null;
+          if (tagJsonb && typeof tagJsonb === 'object' && !Array.isArray(tagJsonb)) {
+            // Extract tag using URL language code (es, ca, eu, gl, en, en-gb)
+            extractedTag = tagJsonb[urlLangCode] || null;
+            // Debug logging in development
+            if (import.meta.dev && !extractedTag && tagJsonb) {
+              console.warn(
+                `[DiscoverLists] Tag not found for lang "${urlLangCode}". Available keys:`,
+                Object.keys(tagJsonb)
+              );
+            }
+          } else if (import.meta.dev) {
+            console.warn(
+              '[DiscoverLists] Tag is not a valid JSONB object:',
+              item.tag,
+              typeof item.tag
+            );
+          }
+        } else if (import.meta.dev) {
+          console.warn(
+            '[DiscoverLists] Tag exists but urlLangCode is missing. Tag will be null.',
+            item.tag
+          );
+        }
+        // Always set to null if we couldn't extract a string (never return the object)
+        if (typeof extractedTag !== 'string') {
+          extractedTag = null;
+        }
+      }
+
       return {
         id: item.id,
         discover_list_id: item.discover_list_id,
         tmdb_id: item.tmdb_id,
         type: item.type as 'movie' | 'tv',
         position: item.position,
+        tag: extractedTag,
         title: title?.title || undefined,
         poster_path: title?.poster_path || undefined,
         overview: title?.overview || undefined,

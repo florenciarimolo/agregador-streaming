@@ -87,7 +87,15 @@
             </template>
           </slot>
         </div>
-        <Badge v-if="showType" :type="computedType" />
+        <!-- Show tag instead of type badge in discover lists, otherwise show type badge -->
+        <template v-if="isDiscoverList">
+          <Badge
+            v-if="tag"
+            :label="capitalizeTag(tag)"
+            size="sm"
+          />
+        </template>
+        <Badge v-else-if="showType" :type="computedType" />
       </div>
 
       <!-- Top-right actions slot - Outside the link to prevent navigation -->
@@ -333,6 +341,12 @@ interface Props {
   isSeen?: boolean;
   isNotInterested?: boolean;
   isInWatchlist?: boolean;
+
+  // Tag for discover lists (extracted from JSONB, already in current language)
+  // Should be string | null, but handle object case defensively
+  tag?: string | null | Record<string, string>;
+  // Flag to indicate if this is a discover list card (to show tag instead of type badge)
+  isDiscoverList?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -355,6 +369,8 @@ const props = withDefaults(defineProps<Props>(), {
   isSeen: false,
   isNotInterested: false,
   isInWatchlist: false,
+  tag: undefined,
+  isDiscoverList: false,
 });
 
 const user = useSupabaseUser();
@@ -444,6 +460,27 @@ const handleAction = (action: TitleStatusType | 'liked' | 'remove-liked') => {
     emit('mark-watchlist', props.recommendation);
   }
 };
+
+// Capitalize first letter of tag
+function capitalizeTag(tag: string | null | undefined | Record<string, string>): string {
+  if (!tag) return '';
+  // Handle case where tag might be an object (defensive programming)
+  // This should not happen if server extraction works correctly
+  if (typeof tag !== 'string') {
+    if (typeof tag === 'object' && tag !== null) {
+      console.warn('[TitleCard] Tag is an object instead of string:', tag);
+      // Try to extract string from object if possible (fallback)
+      const tagObj = tag as Record<string, string>;
+      const firstKey = Object.keys(tagObj)[0];
+      if (firstKey && typeof tagObj[firstKey] === 'string') {
+        const tagValue = tagObj[firstKey];
+        return tagValue.charAt(0).toUpperCase() + tagValue.slice(1);
+      }
+    }
+    return '';
+  }
+  return tag.charAt(0).toUpperCase() + tag.slice(1);
+}
 
 // Handle link click explicitly to ensure navigation works
 // This ensures navigation works even if other elements are blocking the default nuxt-link behavior

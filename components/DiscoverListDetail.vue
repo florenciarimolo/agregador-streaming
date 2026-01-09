@@ -70,6 +70,7 @@
           $t('media.noPosterAvailableFor', { title: item.title })
         "
         :type="item.type"
+        :show-type="false"
         :aria-label="$t('media.titleCardLabel', { title: item.title })"
         :is-liked="titleStatuses.get(item.tmdb_id)?.liked || false"
         :is-seen="
@@ -83,6 +84,8 @@
           titleStatuses.get(item.tmdb_id)?.status === TITLE_STATUS.WATCHLIST ||
           false
         "
+        :tag="typeof item.tag === 'string' ? item.tag : null"
+        :is-discover-list="true"
       >
         <!-- Actions for logged users only -->
         <template v-if="isLoggedIn" #top-right-actions>
@@ -125,6 +128,7 @@ import { getSession } from '@/services/auth';
 import { getUserLikedTitle, getTitleStatus } from '@/services/userTitleStatus';
 import { useTitleStatusAction } from '@/composables/useTitleStatusAction';
 import { useRouteWithLang } from '@/composables/useRouteWithLang';
+import { useSupabaseUser } from '#imports';
 
 const router = useRouter();
 const { routeWithLang } = useRouteWithLang();

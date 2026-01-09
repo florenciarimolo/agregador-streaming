@@ -547,6 +547,7 @@ CREATE TABLE IF NOT EXISTS public.discover_list_items (
   tmdb_id INTEGER NOT NULL,
   type TEXT NOT NULL CHECK (type IN ('movie', 'tv')), -- Source of truth for content type
   position INTEGER NOT NULL, -- Editorial order, stable (changing order does NOT change URLs, does NOT affect SEO, does NOT invalidate list)
+  tag JSONB, -- Multi-language tag for badges (keys: es, ca, eu, gl, en, en-gb)
   UNIQUE(discover_list_id, tmdb_id)
 );
 

@@ -2,7 +2,10 @@
   <nuxt-link
     ref="cardRef"
     :to="discoverListRoute"
-    class="block h-full overflow-hidden rounded-2xl border backdrop-blur-xl transition-all duration-300 dark:bg-gray-900/40 bg-gray-100/80 border-gray-300/50 dark:border-white/10 hover:border-primary-800 dark:hover:border-primary-600/50 hover:shadow-lg hover:shadow-gray-900/20 flashlight-card flex flex-col"
+    :class="[
+      'h-full overflow-hidden rounded-2xl border backdrop-blur-xl transition-all duration-300 dark:bg-gray-900/40 bg-gray-100/80 border-gray-300/50 dark:border-white/10 hover:border-primary-800 dark:hover:border-primary-600/50 hover:shadow-lg hover:shadow-gray-900/20 flex flex-col',
+      hasSession ? '' : 'flashlight-card'
+    ]"
     :aria-label="$t('discover.viewList', { title: list.title })"
     :style="flashlightCardStyle"
   >
@@ -88,6 +91,7 @@ import { computed, ref } from 'vue';
 import type { DiscoverList } from '@/composables/database/discoverLists';
 import Badge from './Badge.vue';
 import { useFlashlight } from '@/composables/useFlashlight';
+import { useSupabaseUser } from '#imports';
 
 interface ExtendedDiscoverList extends DiscoverList {
   itemCount?: number;
@@ -109,8 +113,12 @@ const discoverListRoute = computed(() =>
   routeWithLang(`/discover/list/${props.list.slug}`)
 );
 
+const user = useSupabaseUser();
+const hasSession = computed(() => !!user.value);
+
 const cardRef = ref<HTMLElement | null>(null);
-const { styles, isHovering } = useFlashlight(cardRef);
+// Disable flashlight effect when user is logged in
+const { styles, isHovering } = useFlashlight(cardRef, computed(() => !hasSession.value));
 
 const flashlightCardStyle = computed(() => {
   if (!isHovering.value) {

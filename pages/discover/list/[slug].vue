@@ -25,6 +25,7 @@
 import { ref, onMounted, computed, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
+import { useRouteWithLang } from '@/composables/useRouteWithLang';
 import AppShell from '@/components/layout/AppShell.vue';
 import PageContainer from '@/components/layout/PageContainer.vue';
 import Section from '@/components/layout/Section.vue';
@@ -38,6 +39,7 @@ import type {
 
 const { t, locale } = useI18n();
 const route = useRoute();
+const { lang } = useRouteWithLang();
 
 // SEO: hreflang and canonical
 const { hreflangLinks } = useHreflang();
@@ -104,13 +106,25 @@ const loadList = async () => {
 
   isLoading.value = true;
   try {
+    // Get URL language code using useRouteWithLang composable (e.g., 'es', 'en', 'en-gb')
+    // This is needed for tag extraction from JSONB
+    const urlLangCode = lang.value;
+    
     // Pass current locale as query parameter to ensure correct language
+    // Also pass urlLangCode for tag extraction
+    const queryParams = new URLSearchParams({
+      language: locale.value,
+    });
+    if (urlLangCode) {
+      queryParams.set('urlLang', urlLangCode);
+    }
+    
     const response = await $fetch<{
       success: boolean;
       list: DiscoverList;
       items: DiscoverListItem[];
     }>(
-      `/api/discover/list/${slug}?language=${encodeURIComponent(locale.value)}`
+      `/api/discover/list/${slug}?${queryParams.toString()}`
     );
 
     if (response.success) {
