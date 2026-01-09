@@ -326,7 +326,7 @@ export async function filterByProviders(
       // Only fetch flatrate providers when filtering
       const titleFlatrateProviders = await fetchWatchProviders(
         entry.tmdb_id,
-        entry.type as 'movie' | 'tv',
+        entry.type as typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV,
         region,
         tmdbConfig,
         true // onlyFlatrate = true
@@ -525,7 +525,7 @@ export async function getTitleData(
       finalOverview = await fetchOverviewWithPrimaryLanguageFallback(
         finalOverview,
         entry.tmdb_id,
-        entry.type,
+        entry.type as typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV,
         language,
         region,
         endpoint,
@@ -542,7 +542,7 @@ export async function getTitleData(
       const { data: existingTitle } = await supabase
         .from(TABLES.TITLES)
         .select(
-          `${TITLES_COLUMNS.TITLE}, ${TITLES_COLUMNS.OVERVIEW}, ${TITLES_COLUMNS.POSTER_PATH}, ${TITLES_COLUMNS.GENRES}, ${TITLES_COLUMNS.BACKDROP_PATH}, ${TITLES_COLUMNS.VOTE_AVERAGE}, ${TITLES_COLUMNS.RELEASE_DATE}, ${TITLES_COLUMNS.FIRST_AIR_DATE}`
+          `${TITLES_COLUMNS.TITLE}, ${TITLES_COLUMNS.OVERVIEW}, ${TITLES_COLUMNS.POSTER_PATH}, ${TITLES_COLUMNS.GENRES}, ${TITLES_COLUMNS.BACKDROP_PATH}, ${TITLES_COLUMNS.VOTE_AVERAGE}, ${TITLES_COLUMNS.RELEASE_DATE}, ${TITLES_COLUMNS.FIRST_AIR_DATE}, ${TITLES_COLUMNS.STATUS}`
         )
         .eq(TITLES_COLUMNS.TMDB_ID, entry.tmdb_id)
         .eq(TITLES_COLUMNS.TYPE, entry.type)

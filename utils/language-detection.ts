@@ -25,7 +25,7 @@ export function hasUnexpectedCharacters(
   const latinLanguages = LATIN_SCRIPT_LANGUAGE_ISO_CODES.map((code) => code);
 
   // If the expected language is not a Latin script language in ES region, don't check
-  if (!latinLanguages.includes(expectedLanguage)) {
+  if (!latinLanguages.includes(expectedLanguage as typeof LATIN_SCRIPT_LANGUAGE_ISO_CODES[number])) {
     return false;
   }
 

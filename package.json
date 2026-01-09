@@ -16,7 +16,7 @@
     "postinstall": "cross-env NODE_OPTIONS=--no-warnings nuxt prepare",
     "lint": "eslint .",
     "typecheck": "nuxt prepare && vue-tsc -b",
-    "clean": "rm -rf .nuxt .output .nitro .nitro.json node_modules/.vite node_modules/.cache vite.localStoragePlugin.js && find . -type f \\( -name '*.vue.js' -o -name 'app.vue.js' -o -name 'error.vue.js' -o -name 'nuxt.config.js' -o -name '*.tsbuildinfo' \\) ! -path '*/node_modules/*' -delete && find types server/api server/middleware server/plugins server/routes server/utils middleware components pages layouts composables utils stores services config constants i18n plugins -type f -name '*.js' ! -path '*/node_modules/*' -delete 2>/dev/null || true && find . -type f -path '*/vite.*.js' ! -path '*/node_modules/*' -delete 2>/dev/null || true",
+    "clean": "rm -rf .nuxt .output .nitro .nitro.json node_modules/.vite node_modules/.cache vite.localStoragePlugin.js && find . -type f \\( -name '*.vue.js' -o -name 'app.vue.js' -o -name 'error.vue.js' -o -name 'nuxt.config.js' -o -name '*.tsbuildinfo' \\) ! -path '*/node_modules/*' -delete && find types server/api server/middleware server/plugins server/routes server/utils middleware components pages layouts composables utils stores services config constants i18n plugins -type f -name '*.js' ! -path '*/node_modules/*' -delete 2>/dev/null || true && find . -type f -path '*/vite.*.js' ! -path '*/node_modules/*' -delete 2>/dev/null || true && find scripts -type f -name '*.js' ! -name 'check-localStorage.js' ! -name 'check-translations.js' -delete 2>/dev/null || true && find supabase/functions -type f -name '*.js' -delete 2>/dev/null || true",
     "supabase:start": "supabase start",
     "supabase:stop": "supabase stop",
     "supabase:status": "supabase status",

@@ -1,4 +1,4 @@
-import { MEDIA_TYPE } from '@/constants/domain/mediaType';
+import { MEDIA_TYPE, type MediaType } from '@/constants/domain/mediaType';
 
 // Provider mapping with their base URLs and search patterns (only TMDB available providers for Spain)
 export const PROVIDER_LINKS: Record<
@@ -194,7 +194,13 @@ async function fetchAtresPlayerUrl(query: string): Promise<string | null> {
       return null;
     }
 
-    const data = await response.json();
+    const data = (await response.json()) as {
+      itemRows?: Array<{
+        link?: {
+          url?: string;
+        };
+      }>;
+    };
 
     // Get the first item from itemRows
     if (
@@ -223,8 +229,6 @@ async function fetchAtresPlayerUrl(query: string): Promise<string | null> {
  * @param alternativeTitles Alternative titles array
  * @param mediaType Type of media (movie or tv)
  * @param region User's region (e.g., 'ES', 'US'). If 'ES', will use Spanish title for providers
- * @param tmdbId TMDB ID of the media (required if region is 'ES' to fetch Spanish title)
- * @param mediaTypeForDb Type for database lookup ('movie' or 'tv')
  * @param spanishTitle Optional pre-fetched Spanish title (to avoid duplicate API calls)
  */
 export async function generateProviderSearchUrl(
@@ -232,10 +236,8 @@ export async function generateProviderSearchUrl(
   mediaTitle: string,
   originalTitle?: string,
   alternativeTitles?: Array<{ title: string; type: string }>,
-  mediaType?: MEDIA_TYPE,
+  mediaType?: MediaType,
   region?: string,
-  tmdbId?: number,
-  mediaTypeForDb?: 'movie' | 'tv',
   spanishTitle?: string | null
 ): Promise<string | null> {
   const provider = getProviderLink(providerName);

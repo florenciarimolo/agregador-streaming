@@ -171,8 +171,6 @@ onMounted(async () => {
             : undefined,
           props.mediaType,
           userRegion,
-          props.tmdbId,
-          mediaTypeForDb,
           spanishTitle // Pass cached Spanish title
         );
         if (url) {
@@ -193,8 +191,6 @@ onMounted(async () => {
             : undefined,
           props.mediaType,
           userRegion,
-          props.tmdbId,
-          mediaTypeForDb,
           spanishTitle // Pass cached Spanish title
         );
         if (url) {

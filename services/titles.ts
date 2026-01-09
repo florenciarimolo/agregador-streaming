@@ -99,7 +99,7 @@ export function getTitleInLanguage(
   const shouldCheckAlphabet =
     !isImagePath &&
     requestedLangCode !== primaryLangCode &&
-    LATIN_SCRIPT_LANGUAGE_ISO_CODES.includes(requestedLangCode as LanguageIsoCode) &&
+    LATIN_SCRIPT_LANGUAGE_ISO_CODES.includes(requestedLangCode as typeof LATIN_SCRIPT_LANGUAGE_ISO_CODES[number]) &&
     (userRegion?.toUpperCase() === 'ES' || !userRegion);
 
   // Try requested language first (using ISO/TMDB format - standard)
@@ -197,7 +197,7 @@ export function getTitleInLanguage(
   if (firstKey) {
     const fallbackText = titleJsonb[firstKey];
     const fallbackLangCode = firstKey.split('-')[0]?.toLowerCase() || '';
-    const isFallbackLatin = LATIN_SCRIPT_LANGUAGE_ISO_CODES.includes(fallbackLangCode as LanguageIsoCode);
+    const isFallbackLatin = LATIN_SCRIPT_LANGUAGE_ISO_CODES.includes(fallbackLangCode as typeof LATIN_SCRIPT_LANGUAGE_ISO_CODES[number]);
 
     // If we're expecting Latin but the fallback is non-Latin, check for non-Latin characters
     if (shouldCheckAlphabet && !isFallbackLatin) {
@@ -358,7 +358,7 @@ export async function getTitlesByTmdbIds(
         '[getTitlesByTmdbIds] Error reloading titles after TMDB fetch:',
         reloadError
       );
-    } else if (reloadData) {
+    } else if (reloadedData) {
       // Use reloaded data which includes the newly fetched titles
       data = reloadedData;
       if (import.meta.dev) {
@@ -807,13 +807,17 @@ export async function updateTitleVideos(
   supabaseClient?: ReturnType<typeof import('@supabase/supabase-js').createClient>
 ): Promise<void> {
   const supabase = supabaseClient || useSupabaseClient();
+  const updateData: {
+    [TITLES_COLUMNS.VIDEOS]: MultiLanguageVideos | Record<string, never>;
+    [TITLES_COLUMNS.VIDEOS_UPDATED_AT]: string;
+  } = {
+    [TITLES_COLUMNS.VIDEOS]:
+      Object.keys(videos).length > 0 ? videos : {},
+    [TITLES_COLUMNS.VIDEOS_UPDATED_AT]: videosUpdatedAt.toISOString(),
+  };
   const { error } = await supabase
     .from(TABLES.TITLES)
-    .update({
-      [TITLES_COLUMNS.VIDEOS]:
-        Object.keys(videos).length > 0 ? videos : {},
-      [TITLES_COLUMNS.VIDEOS_UPDATED_AT]: videosUpdatedAt.toISOString(),
-    })
+    .update(updateData as never)
     .eq(TITLES_COLUMNS.TMDB_ID, tmdbId)
     .eq(TITLES_COLUMNS.TYPE, type);
 

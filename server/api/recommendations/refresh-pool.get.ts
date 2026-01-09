@@ -10,7 +10,7 @@ import { getTMDBConfig } from '@/server/utils/config';
 import { getUserTMDBParamsByUserId } from '@/server/utils/user-tmdb';
 import { TITLE_STATUS } from '@/constants/domain/titleStatus';
 import { TABLES } from '@/constants/db/tables';
-import { TITLES_COLUMNS, USER_TITLE_STATUS_COLUMNS } from '@/constants/db/columns';
+import { TITLES_COLUMNS, USER_TITLE_STATUS_COLUMNS, PROFILES_COLUMNS } from '@/constants/db/columns';
 import type { MultiLanguageText } from '@/services/titles';
 import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 

@@ -73,6 +73,14 @@ i18n/**/*.js
 plugins/**/*.js
 vite.*.js
 
+# Scripts compiled files (generated from .ts)
+scripts/**/*.js
+!scripts/check-localStorage.js
+!scripts/check-translations.js
+
+# Supabase functions compiled files (generated from .ts)
+supabase/functions/**/*.js
+
 # Vercel
 .vercel
 

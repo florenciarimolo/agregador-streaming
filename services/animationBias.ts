@@ -47,7 +47,6 @@ export function detectAdultAnimation(
  */
 export async function calculateAnimationBias(
   tmdbId: number,
-  type: 'movie' | 'tv',
   genres: Array<{ id: number; name: string }> | null,
   voteAverage: number | null,
   popularity: number | null,

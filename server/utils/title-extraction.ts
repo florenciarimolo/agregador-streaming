@@ -107,7 +107,7 @@ export async function fetchOverviewWithPrimaryLanguageFallback(
 
     // Only fetch primary language if it's different from requested language
     if (requestedLangCode !== primaryLangCode) {
-      const primaryTmdbConfig = getTMDBConfig(primaryLanguageKey, region);
+      const primaryTmdbConfig = getTMDBConfig(primaryLanguageKey, region ?? undefined);
       const primaryResponse = await $fetch<{
         overview?: string;
       }>(`${primaryTmdbConfig.baseUrl}${endpoint}`, {

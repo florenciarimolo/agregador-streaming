@@ -540,7 +540,6 @@ export default defineEventHandler(async (event) => {
           // Calculate animation_bias
           const animationBias = await calculateAnimationBias(
             entry.tmdb_id,
-            entry.type as 'movie' | 'tv',
             titleData.genres,
             voteAverage,
             null, // popularity not available from titles table
