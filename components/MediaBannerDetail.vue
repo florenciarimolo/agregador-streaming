@@ -886,17 +886,13 @@ const alternativeTitles = computed(() => {
 // Local ref for tagline that can be updated reactively
 // Initialize from props, but will be updated reactively when props change
 const localTagline = computed(() => {
-  const taglineValue = (
-    mediaWithProviders.value as Movie & {
-      tagline?: string | MultiLanguageText;
-    }
-  ).tagline || null;
-  
-  // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/fa20eabc-ceed-4124-936f-87a814c192af',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'MediaBannerDetail.vue:888',message:'localTagline computed',data:{taglineType:typeof taglineValue,isObject:typeof taglineValue==='object'&&taglineValue!==null,isString:typeof taglineValue==='string',keys:typeof taglineValue==='object'&&taglineValue!==null?Object.keys(taglineValue):null,value:typeof taglineValue==='string'?taglineValue.substring(0,50):null},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-  // #endregion
-  
-  return taglineValue;
+  return (
+    (
+      mediaWithProviders.value as Movie & {
+        tagline?: string | MultiLanguageText;
+      }
+    ).tagline || null
+  );
 });
 
 // Extract tagline with language fallback (same logic as overview)
@@ -905,12 +901,6 @@ const localTagline = computed(() => {
 // When data refreshes, localTagline changes (from props), which also reactivates this computed
 const tagline = computed(() => {
   const taglineData = localTagline.value;
-  const currentI18nCode = currentLanguage.value.i18nCode;
-  const region = userRegion.value;
-
-  // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/fa20eabc-ceed-4124-936f-87a814c192af',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'MediaBannerDetail.vue:902',message:'tagline computed entry',data:{hasTaglineData:!!taglineData,taglineType:typeof taglineData,currentI18nCode,userRegion:region},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-  // #endregion
 
   if (!taglineData) {
     return '';
@@ -918,24 +908,14 @@ const tagline = computed(() => {
 
   // If tagline is a MultiLanguageText object, use getTitleInLanguage
   if (typeof taglineData === 'object' && taglineData !== null) {
-    const result = getTitleInLanguage(
+    return getTitleInLanguage(
       taglineData as MultiLanguageText,
-      currentI18nCode,
-      region
+      currentLanguage.value.i18nCode,
+      userRegion.value
     );
-    
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/fa20eabc-ceed-4124-936f-87a814c192af',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'MediaBannerDetail.vue:920',message:'tagline computed result',data:{result:result.substring(0,50),currentI18nCode,userRegion:region,taglineKeys:Object.keys(taglineData)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-    // #endregion
-    
-    return result;
   }
 
   // If tagline is a string, return it directly
-  // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/fa20eabc-ceed-4124-936f-87a814c192af',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'MediaBannerDetail.vue:925',message:'tagline is string',data:{taglineString:taglineData.substring(0,50)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
-  // #endregion
-  
   return taglineData;
 });
 

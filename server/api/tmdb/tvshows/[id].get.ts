@@ -285,10 +285,6 @@ export default defineEventHandler(async (event) => {
         // CRITICAL: Return MultiLanguageText object, not extracted string
         // The component will extract the correct language using getTitleInLanguage
         tagline: taglineJsonb || undefined,
-        
-        // #region agent log
-        // Log tagline type for debugging
-        // #endregion
       };
 
       // Add providers if available
