@@ -132,9 +132,7 @@ export default defineEventHandler(async (event) => {
                 ? updatedPosterPath
                 : null,
             tagline:
-              Object.keys(updatedTagline).length > 0
-                ? updatedTagline
-                : null,
+              Object.keys(updatedTagline).length > 0 ? updatedTagline : null,
           })
           .eq(TITLES_COLUMNS.TMDB_ID, tmdbId)
           .eq(TITLES_COLUMNS.TYPE, MEDIA_TYPE.MOVIE);
@@ -206,10 +204,10 @@ export default defineEventHandler(async (event) => {
 
       // Get tagline from DB or TMDB
       const { getTitleInLanguage } = await import('@/services/titles');
-      const taglineFromDb = taglineJsonb
+      let taglineFromDb = taglineJsonb
         ? getTitleInLanguage(taglineJsonb, userLanguage, region)
         : null;
-      
+
       // If tagline, status, or runtime is missing in DB but exists in TMDB response, save it
       const needsUpdate: Record<string, unknown> = {};
       let savedStatus: string | undefined = undefined;
@@ -218,6 +216,8 @@ export default defineEventHandler(async (event) => {
         updatedTagline[userLanguage] = fullMovieResponse.tagline;
         needsUpdate.tagline = updatedTagline;
         taglineJsonb = updatedTagline;
+        // Recalculate taglineFromDb after updating taglineJsonb
+        taglineFromDb = getTitleInLanguage(taglineJsonb, userLanguage, region);
       }
       if (!titleFromDb.status && fullMovieResponse?.status) {
         needsUpdate[TITLES_COLUMNS.STATUS] = fullMovieResponse.status;
@@ -242,7 +242,7 @@ export default defineEventHandler(async (event) => {
         title: string;
         overview: string;
         poster_path: string | null;
-        tagline?: string | MultiLanguageText;
+        tagline?: string;
         genre_ids?: number[];
       } = {
         id: titleFromDb.tmdb_id,
@@ -253,13 +253,17 @@ export default defineEventHandler(async (event) => {
         release_date: titleFromDb.release_date || '',
         vote_average: titleFromDb.vote_average || 0,
         vote_count: fullMovieResponse?.vote_count,
-        status: (titleFromDb.status as string | undefined) || savedStatus || undefined, // Use saved value if we just saved it
-        runtime: (titleFromDb.runtime as number | undefined) || fullMovieResponse?.runtime || undefined,
+        status:
+          (titleFromDb.status as string | undefined) ||
+          savedStatus ||
+          undefined, // Use saved value if we just saved it
+        runtime:
+          (titleFromDb.runtime as number | undefined) ||
+          fullMovieResponse?.runtime ||
+          undefined,
         genres: fullMovieResponse?.genres || titleFromDb.genres || [],
         genre_ids: fullMovieResponse?.genre_ids || [],
-        tagline: taglineJsonb && Object.keys(taglineJsonb).length > 0
-          ? taglineJsonb
-          : (taglineFromDb || undefined),
+        tagline: taglineFromDb || undefined,
       };
 
       // Add providers if available
@@ -355,9 +359,7 @@ export default defineEventHandler(async (event) => {
               ? posterPathMultiLang
               : null,
           tagline:
-            Object.keys(taglineMultiLang).length > 0
-              ? taglineMultiLang
-              : null,
+            Object.keys(taglineMultiLang).length > 0 ? taglineMultiLang : null,
           backdrop_path: backdropPath,
           release_date: releaseDate,
           vote_average: voteAverage,
@@ -383,15 +385,21 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    // Include tagline and runtime in response (as MultiLanguageText if available, or as string)
+    // Include tagline and runtime in response (as string extracted from MultiLanguageText)
+    const { getTitleInLanguage: getTitleInLanguageForResponse } =
+      await import('@/services/titles');
     const response: Partial<Movie> & {
-      tagline?: string | MultiLanguageText;
+      tagline?: string;
     } = {
       ...userLangData,
       runtime: runtime || undefined,
       tagline:
         Object.keys(taglineMultiLang).length > 0
-          ? taglineMultiLang
+          ? getTitleInLanguageForResponse(
+              taglineMultiLang,
+              userLanguage,
+              region
+            ) || undefined
           : userLangData.tagline || undefined,
     };
 

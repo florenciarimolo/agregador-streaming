@@ -221,7 +221,7 @@ export default defineEventHandler(async (event) => {
 
       // Get tagline from DB or TMDB
       const { getTitleInLanguage } = await import('@/services/titles');
-      const taglineFromDb = taglineJsonb
+      let taglineFromDb = taglineJsonb
         ? getTitleInLanguage(taglineJsonb, userLanguage, region)
         : null;
 
@@ -233,6 +233,8 @@ export default defineEventHandler(async (event) => {
         updatedTagline[userLanguage] = fullTvShowResponse.tagline;
         needsUpdate.tagline = updatedTagline;
         taglineJsonb = updatedTagline;
+        // Recalculate taglineFromDb after updating taglineJsonb
+        taglineFromDb = getTitleInLanguage(taglineJsonb, userLanguage, region);
       }
       if (!titleFromDb.status && fullTvShowResponse?.status) {
         needsUpdate[TITLES_COLUMNS.STATUS] = fullTvShowResponse.status;
@@ -259,7 +261,7 @@ export default defineEventHandler(async (event) => {
         vote_average: number;
         number_of_seasons: number;
         in_production: boolean;
-        tagline?: string | MultiLanguageText;
+        tagline?: string;
         genre_ids?: number[];
       } = {
         id: titleFromDb.tmdb_id,
@@ -280,10 +282,7 @@ export default defineEventHandler(async (event) => {
         status:
           ((titleFromDb.status || savedStatus) as TmdbStatusType | undefined) ||
           undefined, // Use saved value if we just saved it
-        tagline:
-          taglineJsonb && Object.keys(taglineJsonb).length > 0
-            ? taglineJsonb
-            : taglineFromDb || undefined,
+        tagline: taglineFromDb || undefined,
       };
 
       // Add providers if available
@@ -327,7 +326,12 @@ export default defineEventHandler(async (event) => {
 
       // Get seasons from database (after sync, to ensure we have the latest data including air_date from first episode)
       const { getSeasonsByTvTmdbId } = await import('@/services/seasons');
-      const seasonsFromDb = await getSeasonsByTvTmdbId(tmdbId, supabase, userLanguage, region);
+      const seasonsFromDb = await getSeasonsByTvTmdbId(
+        tmdbId,
+        supabase,
+        userLanguage,
+        region
+      );
 
       // Check if we need to fetch missing season names in user's language or episode_count
       // Reuse fullTvShowResponse.seasons if available (already fetched with user's language)
@@ -344,11 +348,18 @@ export default defineEventHandler(async (event) => {
 
         for (const season of seasonsFromDb) {
           // Check if episode_count is missing in DB
-          if ((season.episode_count === null || season.episode_count === undefined) && fullTvShowResponse.seasons) {
+          if (
+            (season.episode_count === null ||
+              season.episode_count === undefined) &&
+            fullTvShowResponse.seasons
+          ) {
             const tmdbSeason = fullTvShowResponse.seasons.find(
               (s) => s.season_number === season.season_number
             );
-            if (tmdbSeason?.episode_count !== null && tmdbSeason?.episode_count !== undefined) {
+            if (
+              tmdbSeason?.episode_count !== null &&
+              tmdbSeason?.episode_count !== undefined
+            ) {
               seasonsNeedingEpisodeCountUpdate.push({
                 season,
                 episodeCount: tmdbSeason.episode_count,
@@ -383,7 +394,10 @@ export default defineEventHandler(async (event) => {
         // Update seasons with missing episode_count in DB
         if (seasonsNeedingEpisodeCountUpdate.length > 0) {
           const { upsertSeason } = await import('@/services/seasons');
-          for (const { season, episodeCount } of seasonsNeedingEpisodeCountUpdate) {
+          for (const {
+            season,
+            episodeCount,
+          } of seasonsNeedingEpisodeCountUpdate) {
             await upsertSeason(
               {
                 tv_tmdb_id: tmdbId,
@@ -408,7 +422,8 @@ export default defineEventHandler(async (event) => {
               .eq(SEASONS_COLUMNS.SEASON_NUMBER, season.season_number)
               .maybeSingle();
 
-            const currentNameJsonb = (currentSeasonData?.name as MultiLanguageText) || {};
+            const currentNameJsonb =
+              (currentSeasonData?.name as MultiLanguageText) || {};
             const updatedNameJsonb: MultiLanguageText = {
               ...currentNameJsonb,
               [userLanguage]: tmdbSeason.name,
@@ -427,9 +442,20 @@ export default defineEventHandler(async (event) => {
         }
 
         // Re-fetch seasons from DB (source of truth) after updates
-        if (seasonsNeedingEpisodeCountUpdate.length > 0 || seasonsNeedingNameUpdate.length > 0) {
-          const updatedSeasons = await getSeasonsByTvTmdbId(tmdbId, supabase, userLanguage, region);
-          tvShow.seasons = updatedSeasons.length > 0 ? updatedSeasons : fullTvShowResponse?.seasons || [];
+        if (
+          seasonsNeedingEpisodeCountUpdate.length > 0 ||
+          seasonsNeedingNameUpdate.length > 0
+        ) {
+          const updatedSeasons = await getSeasonsByTvTmdbId(
+            tmdbId,
+            supabase,
+            userLanguage,
+            region
+          );
+          tvShow.seasons =
+            updatedSeasons.length > 0
+              ? updatedSeasons
+              : fullTvShowResponse?.seasons || [];
         } else {
           // All seasons are up to date, use seasons from DB
           tvShow.seasons = seasonsFromDb;
@@ -593,7 +619,12 @@ export default defineEventHandler(async (event) => {
 
       // Get seasons from database (after sync, to ensure we have the latest data including air_date from first episode)
       const { getSeasonsByTvTmdbId } = await import('@/services/seasons');
-      const seasonsFromDb = await getSeasonsByTvTmdbId(tmdbId, supabase, userLanguage, region);
+      const seasonsFromDb = await getSeasonsByTvTmdbId(
+        tmdbId,
+        supabase,
+        userLanguage,
+        region
+      );
 
       // Check if we need to fetch missing season names in user's language or episode_count
       // Reuse fullTvShowResponse.seasons if available (already fetched with user's language)
@@ -611,11 +642,18 @@ export default defineEventHandler(async (event) => {
 
         for (const season of seasonsFromDb) {
           // Check if episode_count is missing in DB
-          if ((season.episode_count === null || season.episode_count === undefined) && fullTvShowResponse.seasons) {
+          if (
+            (season.episode_count === null ||
+              season.episode_count === undefined) &&
+            fullTvShowResponse.seasons
+          ) {
             const tmdbSeason = fullTvShowResponse.seasons.find(
               (s) => s.season_number === season.season_number
             );
-            if (tmdbSeason?.episode_count !== null && tmdbSeason?.episode_count !== undefined) {
+            if (
+              tmdbSeason?.episode_count !== null &&
+              tmdbSeason?.episode_count !== undefined
+            ) {
               seasonsNeedingEpisodeCountUpdate.push({
                 season,
                 episodeCount: tmdbSeason.episode_count,
@@ -650,7 +688,10 @@ export default defineEventHandler(async (event) => {
         // Update seasons with missing episode_count in DB
         if (seasonsNeedingEpisodeCountUpdate.length > 0) {
           const { upsertSeason } = await import('@/services/seasons');
-          for (const { season, episodeCount } of seasonsNeedingEpisodeCountUpdate) {
+          for (const {
+            season,
+            episodeCount,
+          } of seasonsNeedingEpisodeCountUpdate) {
             await upsertSeason(
               {
                 tv_tmdb_id: tmdbId,
@@ -675,7 +716,8 @@ export default defineEventHandler(async (event) => {
               .eq(SEASONS_COLUMNS.SEASON_NUMBER, season.season_number)
               .maybeSingle();
 
-            const currentNameJsonb = (currentSeasonData?.name as MultiLanguageText) || {};
+            const currentNameJsonb =
+              (currentSeasonData?.name as MultiLanguageText) || {};
             const updatedNameJsonb: MultiLanguageText = {
               ...currentNameJsonb,
               [userLanguage]: tmdbSeason.name,
@@ -694,14 +736,24 @@ export default defineEventHandler(async (event) => {
         }
 
         // Re-fetch seasons from DB (source of truth) after updates
-        if (seasonsNeedingEpisodeCountUpdate.length > 0 || seasonsNeedingNameUpdate.length > 0) {
-          finalSeasons = await getSeasonsByTvTmdbId(tmdbId, supabase, userLanguage, region);
+        if (
+          seasonsNeedingEpisodeCountUpdate.length > 0 ||
+          seasonsNeedingNameUpdate.length > 0
+        ) {
+          finalSeasons = await getSeasonsByTvTmdbId(
+            tmdbId,
+            supabase,
+            userLanguage,
+            region
+          );
         }
       }
 
-      // Include tagline in response (as MultiLanguageText if available, or as string)
+      // Include tagline in response (as string extracted from MultiLanguageText)
+      const { getTitleInLanguage: getTitleInLanguageForResponse } =
+        await import('@/services/titles');
       const response: Partial<TVShow> & {
-        tagline?: string | MultiLanguageText;
+        tagline?: string;
         seasons?: Season[];
       } = {
         ...userLangData,
@@ -710,7 +762,11 @@ export default defineEventHandler(async (event) => {
           (userLangData.status as TmdbStatusType | undefined) || undefined,
         tagline:
           Object.keys(taglineMultiLang).length > 0
-            ? taglineMultiLang
+            ? getTitleInLanguageForResponse(
+                taglineMultiLang,
+                userLanguage,
+                region
+              ) || undefined
             : userLangData.tagline || undefined,
         seasons:
           finalSeasons.length > 0
@@ -726,8 +782,10 @@ export default defineEventHandler(async (event) => {
       }
 
       // Still return response even if season sync failed
+      const { getTitleInLanguage: getTitleInLanguageForErrorResponse } =
+        await import('@/services/titles');
       const response: Partial<TVShow> & {
-        tagline?: string | MultiLanguageText;
+        tagline?: string;
       } = {
         ...userLangData,
         backdrop_path: (userLangData.backdrop_path || '') as string,
@@ -735,7 +793,11 @@ export default defineEventHandler(async (event) => {
           (userLangData.status as TmdbStatusType | undefined) || undefined,
         tagline:
           Object.keys(taglineMultiLang).length > 0
-            ? taglineMultiLang
+            ? getTitleInLanguageForErrorResponse(
+                taglineMultiLang,
+                userLanguage,
+                region
+              ) || undefined
             : userLangData.tagline || undefined,
       };
 
