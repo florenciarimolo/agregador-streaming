@@ -77,12 +77,20 @@ export function getTitleInLanguage(
   userRegion?: string | null,
   isImagePath: boolean = false
 ): string {
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/fa20eabc-ceed-4124-936f-87a814c192af',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'services/titles.ts:74',message:'getTitleInLanguage entry',data:{hasTitleJsonb:!!titleJsonb,titleJsonbType:typeof titleJsonb,language,userRegion,titleJsonbKeys:titleJsonb&&typeof titleJsonb==='object'?Object.keys(titleJsonb):null},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+  // #endregion
+  
   if (!titleJsonb || typeof titleJsonb !== 'object') {
     return '';
   }
 
   // Normalize language to ISO/TMDB format (standard format)
   const normalizedLanguage = normalizeLanguageCode(language, userRegion);
+  
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/fa20eabc-ceed-4124-936f-87a814c192af',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'services/titles.ts:85',message:'getTitleInLanguage normalized',data:{normalizedLanguage,language,userRegion,hasNormalized:!!titleJsonb[normalizedLanguage],hasOriginal:!!titleJsonb[language]},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+  // #endregion
   
   // Determine primary language for region
   const primaryLanguage = userRegion
@@ -105,6 +113,11 @@ export function getTitleInLanguage(
   // Try requested language first (using ISO/TMDB format - standard)
   // First try normalized format, then try original format (in case it's already normalized)
   const titleText = titleJsonb[normalizedLanguage] || titleJsonb[language];
+  
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/fa20eabc-ceed-4124-936f-87a814c192af',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'services/titles.ts:107',message:'getTitleInLanguage titleText check',data:{hasTitleText:!!titleText,normalizedLanguage,language,titleTextValue:titleText?titleText.substring(0,50):null,allKeys:Object.keys(titleJsonb)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+  // #endregion
+  
   if (titleText) {
 
     // Check alphabet if conditions are met
@@ -136,6 +149,11 @@ export function getTitleInLanguage(
 
     // Return the requested language title (Catalan, Basque, Galician, etc.)
     // This is the normal case - titles in Catalan should be returned as-is
+    
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/fa20eabc-ceed-4124-936f-87a814c192af',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'services/titles.ts:139',message:'getTitleInLanguage returning titleText',data:{result:titleText.substring(0,50),normalizedLanguage,language},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+    // #endregion
+    
     return titleText;
   }
 

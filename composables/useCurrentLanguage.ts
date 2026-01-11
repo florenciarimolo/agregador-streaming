@@ -23,6 +23,10 @@ export const useCurrentLanguage = () => {
 
     // Map URL code to i18n code (e.g., 'es' -> 'es-ES', 'gl' -> 'gl-ES')
     const i18nCode = getI18nCodeFromUrlCode(urlCode);
+    
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/fa20eabc-ceed-4124-936f-87a814c192af',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'composables/useCurrentLanguage.ts:19',message:'currentLanguage computed',data:{urlCode,i18nCode,routeParamsLang:route.params?.lang},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'G'})}).catch(()=>{});
+    // #endregion
 
     if (i18nCode) {
       // Find the language object that matches the i18n code

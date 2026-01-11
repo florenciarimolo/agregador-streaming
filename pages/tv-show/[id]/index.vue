@@ -186,6 +186,26 @@ const {
 watch(
   () => lang.value,
   async (newLang, oldLang) => {
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/fa20eabc-ceed-4124-936f-87a814c192af', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        location: 'pages/tv-show/[id]/index.vue:186',
+        message: 'lang watcher triggered',
+        data: {
+          newLang,
+          oldLang,
+          willRefresh: newLang && oldLang && newLang !== oldLang,
+        },
+        timestamp: Date.now(),
+        sessionId: 'debug-session',
+        runId: 'run1',
+        hypothesisId: 'D',
+      }),
+    }).catch(() => {});
+    // #endregion
+
     if (newLang && oldLang && newLang !== oldLang) {
       if (import.meta.dev) {
         console.log(
@@ -198,6 +218,31 @@ watch(
       }
       // Refresh all data with new language
       await Promise.all([refreshTVShowDetails(), refreshTVProviders()]);
+
+      // #region agent log
+      fetch(
+        'http://127.0.0.1:7242/ingest/fa20eabc-ceed-4124-936f-87a814c192af',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            location: 'pages/tv-show/[id]/index.vue:200',
+            message: 'data refresh completed',
+            data: {
+              newLang,
+              oldLang,
+              taglineAfterRefresh: tvShowDetails.value?.tagline
+                ? Object.keys(tvShowDetails.value.tagline)
+                : null,
+            },
+            timestamp: Date.now(),
+            sessionId: 'debug-session',
+            runId: 'run1',
+            hypothesisId: 'D',
+          }),
+        }
+      ).catch(() => {});
+      // #endregion
     }
   },
   { immediate: false }

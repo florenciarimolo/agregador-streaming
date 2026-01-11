@@ -261,7 +261,7 @@ export default defineEventHandler(async (event) => {
         vote_average: number;
         number_of_seasons: number;
         in_production: boolean;
-        tagline?: string;
+        tagline?: string | MultiLanguageText;
         genre_ids?: number[];
       } = {
         id: titleFromDb.tmdb_id,
@@ -282,7 +282,13 @@ export default defineEventHandler(async (event) => {
         status:
           ((titleFromDb.status || savedStatus) as TmdbStatusType | undefined) ||
           undefined, // Use saved value if we just saved it
-        tagline: taglineFromDb || undefined,
+        // CRITICAL: Return MultiLanguageText object, not extracted string
+        // The component will extract the correct language using getTitleInLanguage
+        tagline: taglineJsonb || undefined,
+        
+        // #region agent log
+        // Log tagline type for debugging
+        // #endregion
       };
 
       // Add providers if available
@@ -749,24 +755,20 @@ export default defineEventHandler(async (event) => {
         }
       }
 
-      // Include tagline in response (as string extracted from MultiLanguageText)
-      const { getTitleInLanguage: getTitleInLanguageForResponse } =
-        await import('@/services/titles');
+      // Include tagline in response (as MultiLanguageText object)
       const response: Partial<TVShow> & {
-        tagline?: string;
+        tagline?: string | MultiLanguageText;
         seasons?: Season[];
       } = {
         ...userLangData,
         backdrop_path: (userLangData.backdrop_path || '') as string,
         status:
           (userLangData.status as TmdbStatusType | undefined) || undefined,
+        // CRITICAL: Return MultiLanguageText object, not extracted string
+        // The component will extract the correct language using getTitleInLanguage
         tagline:
           Object.keys(taglineMultiLang).length > 0
-            ? getTitleInLanguageForResponse(
-                taglineMultiLang,
-                userLanguage,
-                region
-              ) || undefined
+            ? taglineMultiLang
             : userLangData.tagline || undefined,
         seasons:
           finalSeasons.length > 0
@@ -782,22 +784,18 @@ export default defineEventHandler(async (event) => {
       }
 
       // Still return response even if season sync failed
-      const { getTitleInLanguage: getTitleInLanguageForErrorResponse } =
-        await import('@/services/titles');
       const response: Partial<TVShow> & {
-        tagline?: string;
+        tagline?: string | MultiLanguageText;
       } = {
         ...userLangData,
         backdrop_path: (userLangData.backdrop_path || '') as string,
         status:
           (userLangData.status as TmdbStatusType | undefined) || undefined,
+        // CRITICAL: Return MultiLanguageText object, not extracted string
+        // The component will extract the correct language using getTitleInLanguage
         tagline:
           Object.keys(taglineMultiLang).length > 0
-            ? getTitleInLanguageForErrorResponse(
-                taglineMultiLang,
-                userLanguage,
-                region
-              ) || undefined
+            ? taglineMultiLang
             : userLangData.tagline || undefined,
       };
 

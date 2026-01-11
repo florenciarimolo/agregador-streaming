@@ -299,10 +299,7 @@
                     <IconCheck icon-class="w-5 h-5 text-white" />
                   </div>
                 </Tooltip>
-                <Tooltip
-                  v-if="isNotInterested"
-                  text="No me interesa"
-                >
+                <Tooltip v-if="isNotInterested" text="No me interesa">
                   <div
                     class="flex justify-center items-center w-8 h-8 rounded-full backdrop-blur-sm bg-primary-600/90"
                   >
@@ -679,7 +676,11 @@
             }}</span>
           </div>
           <div
-            v-if="mediaType === MEDIA_TYPE.MOVIE && mediaWithProviders.runtime != null && mediaWithProviders.runtime > 0"
+            v-if="
+              mediaType === MEDIA_TYPE.MOVIE &&
+              mediaWithProviders.runtime != null &&
+              mediaWithProviders.runtime > 0
+            "
             class="flex gap-2 items-center text-gray-800 dark:text-gray-300"
           >
             <IconClock icon-class="w-5 h-5" />
@@ -774,7 +775,15 @@
 <script setup lang="ts">
 import RatingBadge from './RatingBadge.vue';
 import type { Media } from '@/types/Media';
-import { computed, nextTick, onMounted, onUnmounted, PropType, ref, watch } from 'vue';
+import {
+  computed,
+  nextTick,
+  onMounted,
+  onUnmounted,
+  PropType,
+  ref,
+  watch,
+} from 'vue';
 import { formatDateByRegion } from '@/utils/formatDate';
 import type { Genre } from '@/types/Genre';
 import ProviderList from './ProviderList.vue';
@@ -875,25 +884,33 @@ const alternativeTitles = computed(() => {
 });
 
 // Local ref for tagline that can be updated reactively
-const localTagline = ref<string | MultiLanguageText | null | undefined>(
-  (mediaWithProviders.value as Movie & { tagline?: string | MultiLanguageText })
-    .tagline || null
-);
-
-// Watch for changes in props.media.tagline and update local ref
-watch(
-  () => (mediaWithProviders.value as Movie & { tagline?: string | MultiLanguageText }).tagline,
-  (newTagline) => {
-    if (newTagline) {
-      localTagline.value = newTagline;
+// Initialize from props, but will be updated reactively when props change
+const localTagline = computed(() => {
+  const taglineValue = (
+    mediaWithProviders.value as Movie & {
+      tagline?: string | MultiLanguageText;
     }
-  },
-  { immediate: true }
-);
+  ).tagline || null;
+  
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/fa20eabc-ceed-4124-936f-87a814c192af',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'MediaBannerDetail.vue:888',message:'localTagline computed',data:{taglineType:typeof taglineValue,isObject:typeof taglineValue==='object'&&taglineValue!==null,isString:typeof taglineValue==='string',keys:typeof taglineValue==='object'&&taglineValue!==null?Object.keys(taglineValue):null,value:typeof taglineValue==='string'?taglineValue.substring(0,50):null},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+  // #endregion
+  
+  return taglineValue;
+});
 
 // Extract tagline with language fallback (same logic as overview)
+// CRITICAL: This computed depends on both localTagline (from props) and currentLanguage
+// When language changes, currentLanguage.value.i18nCode changes, which reactivates this computed
+// When data refreshes, localTagline changes (from props), which also reactivates this computed
 const tagline = computed(() => {
   const taglineData = localTagline.value;
+  const currentI18nCode = currentLanguage.value.i18nCode;
+  const region = userRegion.value;
+
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/fa20eabc-ceed-4124-936f-87a814c192af',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'MediaBannerDetail.vue:902',message:'tagline computed entry',data:{hasTaglineData:!!taglineData,taglineType:typeof taglineData,currentI18nCode,userRegion:region},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+  // #endregion
 
   if (!taglineData) {
     return '';
@@ -901,14 +918,24 @@ const tagline = computed(() => {
 
   // If tagline is a MultiLanguageText object, use getTitleInLanguage
   if (typeof taglineData === 'object' && taglineData !== null) {
-    return getTitleInLanguage(
+    const result = getTitleInLanguage(
       taglineData as MultiLanguageText,
-      currentLanguage.value.i18nCode,
-      userRegion.value
+      currentI18nCode,
+      region
     );
+    
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/fa20eabc-ceed-4124-936f-87a814c192af',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'MediaBannerDetail.vue:920',message:'tagline computed result',data:{result:result.substring(0,50),currentI18nCode,userRegion:region,taglineKeys:Object.keys(taglineData)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+    // #endregion
+    
+    return result;
   }
 
   // If tagline is a string, return it directly
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/fa20eabc-ceed-4124-936f-87a814c192af',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'MediaBannerDetail.vue:925',message:'tagline is string',data:{taglineString:taglineData.substring(0,50)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
+  // #endregion
+  
   return taglineData;
 });
 
@@ -934,12 +961,18 @@ const hasTaglineInCurrentLanguage = (
     const normalizedLanguage = `${langCode}-${normalizedRegion}`;
 
     // Check ISO format (e.g., 'es-ES')
-    if (taglineData[normalizedLanguage] && taglineData[normalizedLanguage].trim() !== '') {
+    if (
+      taglineData[normalizedLanguage] &&
+      taglineData[normalizedLanguage].trim() !== ''
+    ) {
       return true;
     }
 
     // Check original i18n code format (in case it's already normalized)
-    if (taglineData[currentI18nCode] && taglineData[currentI18nCode].trim() !== '') {
+    if (
+      taglineData[currentI18nCode] &&
+      taglineData[currentI18nCode].trim() !== ''
+    ) {
       return true;
     }
 

@@ -242,7 +242,7 @@ export default defineEventHandler(async (event) => {
         title: string;
         overview: string;
         poster_path: string | null;
-        tagline?: string;
+        tagline?: string | MultiLanguageText;
         genre_ids?: number[];
       } = {
         id: titleFromDb.tmdb_id,
@@ -263,7 +263,9 @@ export default defineEventHandler(async (event) => {
           undefined,
         genres: fullMovieResponse?.genres || titleFromDb.genres || [],
         genre_ids: fullMovieResponse?.genre_ids || [],
-        tagline: taglineFromDb || undefined,
+        // CRITICAL: Return MultiLanguageText object, not extracted string
+        // The component will extract the correct language using getTitleInLanguage
+        tagline: taglineJsonb || undefined,
       };
 
       // Add providers if available
@@ -385,21 +387,17 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    // Include tagline and runtime in response (as string extracted from MultiLanguageText)
-    const { getTitleInLanguage: getTitleInLanguageForResponse } =
-      await import('@/services/titles');
+    // Include tagline and runtime in response (as MultiLanguageText object)
     const response: Partial<Movie> & {
-      tagline?: string;
+      tagline?: string | MultiLanguageText;
     } = {
       ...userLangData,
       runtime: runtime || undefined,
+      // CRITICAL: Return MultiLanguageText object, not extracted string
+      // The component will extract the correct language using getTitleInLanguage
       tagline:
         Object.keys(taglineMultiLang).length > 0
-          ? getTitleInLanguageForResponse(
-              taglineMultiLang,
-              userLanguage,
-              region
-            ) || undefined
+          ? taglineMultiLang
           : userLangData.tagline || undefined,
     };
 
