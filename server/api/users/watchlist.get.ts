@@ -336,11 +336,34 @@ export default defineEventHandler(async (event) => {
 
             // Use user's region for providers, fallback to ES
             // IMPORTANT: Only use flatrate providers (streaming services)
+            // Try both uppercase and lowercase region codes (TMDB uses uppercase)
+            const regionUpper = region?.toUpperCase() || 'ES';
+            const regionLower = region?.toLowerCase() || 'es';
             const regionProviders =
-              providerResponse.results?.[region] ||
-              providerResponse.results?.ES;
-            if (regionProviders) {
+              providerResponse.results?.[regionUpper] ||
+              providerResponse.results?.[regionLower] ||
+              providerResponse.results?.ES ||
+              providerResponse.results?.es;
+            if (regionProviders && regionProviders.flatrate) {
               providers = (regionProviders.flatrate || []).slice(0, 5);
+              // Log for debugging
+              if (import.meta.dev && providers.length > 0) {
+                devLog(
+                  `[User Watchlist] Found ${providers.length} providers for ${title.tmdb_id} in region ${regionUpper}:`,
+                  providers.map((p) => ({
+                    id: p.provider_id,
+                    name: p.provider_name,
+                    logo: p.logo_path,
+                  }))
+                );
+              }
+            } else if (import.meta.dev) {
+              devLog(
+                `[User Watchlist] No providers found for ${title.tmdb_id} in region ${regionUpper}. Available regions:`,
+                providerResponse.results
+                  ? Object.keys(providerResponse.results)
+                  : 'none'
+              );
             }
           } catch (error) {
             // Don't fail if providers can't be fetched
@@ -350,6 +373,14 @@ export default defineEventHandler(async (event) => {
                 error
               );
             }
+          }
+
+          // Log providers for debugging (only in dev)
+          if (import.meta.dev && providers.length > 0) {
+            devLog(
+              `[User Watchlist] Providers for ${title.tmdb_id}:`,
+              providers.map((p) => p.provider_name)
+            );
           }
 
           return {

@@ -121,6 +121,7 @@
                 :vote-average="title.vote_average"
                 :type="title.type"
                 :tmdb-id="title.tmdb_id"
+                :providers="title.providers"
               >
                 <template #actions>
                   <Tooltip :text="$t('watchlist.removeTooltip')">
@@ -147,10 +148,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch, computed } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 import { getSession } from '@/services/auth';
-import { useUserStore } from '@/stores/user';
 import { useRouteWithLang } from '@/composables/useRouteWithLang';
 import { useTitleStatusAction } from '@/composables/useTitleStatusAction';
 import { useUndoToast } from '@/composables/useUndoToast';
@@ -170,42 +170,6 @@ import SkeletonListItem from '@/components/SkeletonListItem.vue';
 import { useViewMode } from '@/composables/useViewMode';
 
 const { t, locale } = useI18n();
-
-// Safely get userStore - it may not be available immediately after Pinia initialization
-// Use a computed to lazy-load the store, but only on client side
-const userStore = computed(() => {
-  // Only try to get store on client side
-  if (import.meta.server) {
-    return {
-      profile: null,
-      authInitialized: false,
-      hasCompletedOnboarding: false,
-      user: null,
-      setUser: () => {},
-      setProfile: () => {},
-      fetchProfile: async () => {},
-      ensureProfile: async () => {},
-    };
-  }
-
-  try {
-    return useUserStore();
-  } catch (error) {
-    if (process.env.NODE_ENV === 'development') {
-      console.warn('[pages/watchlist.vue] useUserStore not available:', error);
-    }
-    return {
-      profile: null,
-      authInitialized: false,
-      hasCompletedOnboarding: false,
-      user: null,
-      setUser: () => {},
-      setProfile: () => {},
-      fetchProfile: async () => {},
-      ensureProfile: async () => {},
-    };
-  }
-});
 
 // SEO: Private page - noindex, nofollow
 useHead({
@@ -289,17 +253,26 @@ const fetchWatchlist = async () => {
       }
     );
 
-    watchlistTitles.value = (response.watchlist || []).map((item) => ({
-      tmdb_id: item.tmdb_id,
-      title: item.title || t('watchlist.noTitle'),
-      type: item.type,
-      poster_path: item.poster_path,
-      overview: item.overview || null,
-      tagline: item.tagline || null,
-      vote_average: item.vote_average || null,
-      providers: item.providers || [],
-      created_at: item.created_at,
-    }));
+    watchlistTitles.value = (response.watchlist || []).map((item) => {
+      // Log providers for debugging
+      if (import.meta.dev && item.providers && item.providers.length > 0) {
+        console.log(
+          `[watchlist.vue] Providers for ${item.title} (${item.tmdb_id}):`,
+          item.providers
+        );
+      }
+      return {
+        tmdb_id: item.tmdb_id,
+        title: item.title || t('watchlist.noTitle'),
+        type: item.type,
+        poster_path: item.poster_path,
+        overview: item.overview || null,
+        tagline: item.tagline || null,
+        vote_average: item.vote_average || null,
+        providers: item.providers || [],
+        created_at: item.created_at,
+      };
+    });
   } catch (error) {
     if (process.env.NODE_ENV === 'development') {
       console.error('Error fetching watchlist:', error);
@@ -387,15 +360,11 @@ watch(
 );
 
 onMounted(async () => {
-  // Ensure profile is loaded
-  await userStore.value.ensureProfile();
-
-  // Check onboarding status
-  if (!userStore.value.hasCompletedOnboarding) {
-    await navigateTo(routeWithLang('/onboarding'), { replace: true });
-    return;
-  }
-
+  // NOTE: Onboarding check is handled by auth middleware, not here
+  // This prevents duplicate redirects and race conditions during F5/refresh
+  // The middleware ensures profile is loaded and onboarding is checked before
+  // the page component mounts
+  
   // Profile is ready, show content
   isProfileReady.value = true;
 

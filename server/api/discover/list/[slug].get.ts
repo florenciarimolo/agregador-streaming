@@ -5,13 +5,18 @@
  * Only uses discover_lists, discover_list_items, and titles (join)
  */
 
-import { getRouterParams, getQuery } from 'h3';
+import { getRouterParams, getQuery, getRequestHeader } from 'h3';
 import {
   getDiscoverListBySlug,
   getDiscoverListItems,
 } from '@/composables/database/discoverLists';
 import { DEFAULT_LANGUAGE, toTMDBLanguageCode } from '@/constants/languages';
 import { createServerSupabaseClient } from '@/server/utils/supabase';
+import { TABLES } from '@/constants/db/tables';
+import { TITLES_COLUMNS } from '@/constants/db/columns';
+import { MEDIA_TYPE } from '@/constants/domain/mediaType';
+import type { MultiLanguageText } from '@/composables/database/titles';
+import { extractLangFromPath } from '@/composables/useRouteWithLang';
 
 export default defineEventHandler(async (event) => {
   try {
@@ -30,13 +35,38 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    // Get language from URL (route.params.lang) or query parameter, then default
+    // Get language from URL (route.params.lang), Referer header, or query parameter, then default
     const query = getQuery(event);
     let language = DEFAULT_LANGUAGE;
     let urlLangCode: string | null = null;
 
     // Priority 1: URL parameter (route.params.lang) - deterministic source of truth
-    const langFromUrl = params.lang as string | undefined;
+    let langFromUrl = params.lang as string | undefined;
+
+    // Priority 2: Extract from Referer header if not in params (for API routes without :lang)
+    if (!langFromUrl) {
+      try {
+        const referer = getRequestHeader(event, 'referer');
+        if (referer) {
+          try {
+            const refererUrl = new URL(referer);
+            const extractedLang = extractLangFromPath(refererUrl.pathname);
+            if (extractedLang) {
+              langFromUrl = extractedLang;
+            }
+          } catch {
+            // If URL parsing fails, try direct path extraction
+            const extractedLang = extractLangFromPath(referer);
+            if (extractedLang) {
+              langFromUrl = extractedLang;
+            }
+          }
+        }
+      } catch {
+        // If referer extraction fails, continue to next priority
+      }
+    }
+
     if (langFromUrl) {
       const normalizedLang = langFromUrl.toLowerCase();
       urlLangCode = normalizedLang;
@@ -47,7 +77,7 @@ export default defineEventHandler(async (event) => {
         language = toTMDBLanguageCode(i18nCode);
       }
     }
-    // Priority 2: Query parameter (fallback for API calls)
+    // Priority 3: Query parameter (fallback for API calls without Referer)
     else if (query.language && typeof query.language === 'string') {
       language = toTMDBLanguageCode(query.language);
       // Try to get URL code from query parameter first (if passed by client)
@@ -60,7 +90,7 @@ export default defineEventHandler(async (event) => {
         urlLangCode = getUrlCodeFromI18nCode(query.language) || null;
       }
     }
-    // Priority 3: Default (no cookies - language comes from URL only)
+    // Priority 4: Default (no cookies - language comes from URL only)
 
     // Get list by slug
     const { data: list, error: listError } = await getDiscoverListBySlug(
@@ -156,8 +186,69 @@ export default defineEventHandler(async (event) => {
           }
         }
 
+        // If overview is empty, fetch from TMDB as fallback (same logic as detail page)
+        let overview = item.overview;
+        if (!overview || overview.trim() === '') {
+          try {
+            const endpoint = item.type === 'movie' ? 'movies' : 'tvshows';
+            // Use urlLangCode if available, otherwise extract from language
+            const langParam =
+              urlLangCode || language.split('-')[0]?.toLowerCase() || 'es';
+            const tmdbResponse = await $fetch<{
+              overview?: string;
+            }>(`/api/tmdb/${endpoint}/${item.tmdb_id}`, {
+              query: {
+                lang: langParam,
+              },
+            });
+            if (tmdbResponse?.overview && tmdbResponse.overview.trim() !== '') {
+              overview = tmdbResponse.overview;
+
+              // Save overview to database in the correct language
+              // Get current overview JSONB from database
+              const { data: titleFromDb } = await supabase
+                .from(TABLES.TITLES)
+                .select(TITLES_COLUMNS.OVERVIEW)
+                .eq(TITLES_COLUMNS.TMDB_ID, item.tmdb_id)
+                .eq(
+                  TITLES_COLUMNS.TYPE,
+                  item.type === 'movie' ? MEDIA_TYPE.MOVIE : MEDIA_TYPE.TV
+                )
+                .maybeSingle();
+
+              const overviewJsonb =
+                (titleFromDb?.overview as MultiLanguageText | null) || {};
+              const updatedOverview: MultiLanguageText = {
+                ...overviewJsonb,
+                [language]: overview, // Save in ISO format (e.g., 'es-ES')
+              };
+
+              // Update database with new overview
+              await supabase
+                .from(TABLES.TITLES)
+                .update({
+                  [TITLES_COLUMNS.OVERVIEW]: updatedOverview,
+                })
+                .eq(TITLES_COLUMNS.TMDB_ID, item.tmdb_id)
+                .eq(
+                  TITLES_COLUMNS.TYPE,
+                  item.type === 'movie' ? MEDIA_TYPE.MOVIE : MEDIA_TYPE.TV
+                );
+            }
+          } catch (error) {
+            // Don't fail if overview can't be fetched from TMDB
+            if (process.env.NODE_ENV === 'development') {
+              console.error(
+                `Error fetching overview from TMDB for ${item.tmdb_id}:`,
+                error
+              );
+            }
+          }
+        }
+
         return {
           ...item,
+          overview,
           providers,
         };
       })

@@ -87,119 +87,61 @@
             </template>
           </slot>
         </div>
-        <!-- Show type badge (tag is shown in top bar for discover lists) -->
-        <Badge v-if="showType && !(isDiscoverList && tag)" :type="computedType" />
+        <!-- Show type badge or tag badge for discover lists -->
+        <Badge
+          v-if="showType && isDiscoverList && tag"
+          :label="capitalizeTag(tag)"
+          size="xs"
+        />
+        <Badge
+          v-else-if="showType && !(isDiscoverList && tag)"
+          :type="computedType"
+          size="xs"
+        />
       </div>
-
-      <!-- Top bar for discover lists: tag and actions on same line -->
-      <template v-if="isDiscoverList && tag">
-        <div class="flex overflow-visible absolute top-2 left-2 right-2 z-30 items-center justify-between pointer-events-none">
-          <Badge
-            :label="capitalizeTag(tag)"
-            size="sm"
-          />
-          <div class="pointer-events-auto">
-            <slot name="top-right-actions">
-              <!-- Empty default slot for discover lists -->
-            </slot>
-          </div>
-        </div>
-      </template>
 
       <!-- Top-right actions slot - Outside the link to prevent navigation -->
       <!-- Use pointer-events-none on container, pointer-events-auto on menu itself -->
-      <!-- Only show this for non-discover lists or discover lists without tag -->
       <div
-        v-if="!isDiscoverList || !tag"
         class="overflow-visible absolute top-2 right-2 z-30 pointer-events-none"
       >
         <div class="pointer-events-auto">
           <slot name="top-right-actions">
-          <!-- Default recommendation action menu if recommendation prop is provided -->
-          <template v-if="recommendation && showRecommendationActions">
-            <div class="overflow-visible">
-              <ActionMenu ref="dropdownRef" width="w-48" position="right">
-                <template #trigger>
-                  <IconButton
-                    :icon="IconMoreVertical"
-                    :aria-label="
-                      t('media.actionsMenuFor', { title: recommendation.title })
-                    "
-                    size="small"
-                    variant="default"
-                    custom-class="menu-button p-2 rounded-full bg-black/50 hover:bg-gray-700/80 backdrop-blur-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-black/50 [&>svg]:text-white"
-                  />
-                </template>
-                <div class="p-4">
-                  <!-- If title has a state, only show option to remove that state -->
-                  <!-- All remove actions use IconX -->
-                  <Button
-                    v-if="recommendation.liked"
-                    type="button"
-                    variant="ghost"
-                    size="small"
-                    custom-class="justify-start w-full text-left"
-                    @click.stop.prevent="handleAction('remove-liked')"
-                  >
-                    <template #icon>
-                      <IconX icon-class="w-4 h-4" />
-                    </template>
-                    {{ t('media.removeFromLiked') }}
-                  </Button>
-                  <Button
-                    v-else-if="recommendation.in_watchlist"
-                    type="button"
-                    variant="ghost"
-                    size="small"
-                    custom-class="justify-start w-full text-left"
-                    @click.stop.prevent="handleAction(TITLE_STATUS.WATCHLIST)"
-                  >
-                    <template #icon>
-                      <IconX icon-class="w-4 h-4" />
-                    </template>
-                    {{ t('media.removeFromWatchlist') }}
-                  </Button>
-                  <!-- If title has no state, show all options to add states -->
-                  <template v-else>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="small"
-                      custom-class="justify-start mb-2 w-full text-left"
-                      @click.stop.prevent="handleAction(TITLE_STATUS.SEEN)"
-                    >
-                      <template #icon>
-                        <IconCheck icon-class="w-4 h-4" />
-                      </template>
-                      {{ t('media.seen') }}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="small"
-                      custom-class="justify-start mb-2 w-full text-left"
-                      @click.stop.prevent="handleAction('liked')"
-                    >
-                      <template #icon>
-                        <IconHeart icon-class="w-4 h-4" />
-                      </template>
-                      {{ t('media.liked') }}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="small"
-                      custom-class="justify-start mb-2 w-full text-left"
-                      @click.stop.prevent="
-                        handleAction(TITLE_STATUS.NOT_INTERESTED)
+            <!-- Default recommendation action menu if recommendation prop is provided -->
+            <template v-if="recommendation && showRecommendationActions">
+              <div class="overflow-visible">
+                <ActionMenu ref="dropdownRef" width="w-48" position="right">
+                  <template #trigger>
+                    <IconButton
+                      :icon="IconMoreVertical"
+                      :aria-label="
+                        t('media.actionsMenuFor', {
+                          title: recommendation.title,
+                        })
                       "
+                      size="small"
+                      variant="default"
+                      custom-class="menu-button p-2 rounded-full bg-black/50 hover:bg-gray-700/80 backdrop-blur-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-black/50 [&>svg]:text-white"
+                    />
+                  </template>
+                  <div class="p-4">
+                    <!-- If title has a state, only show option to remove that state -->
+                    <!-- All remove actions use IconX -->
+                    <Button
+                      v-if="recommendation.liked"
+                      type="button"
+                      variant="ghost"
+                      size="small"
+                      custom-class="justify-start w-full text-left"
+                      @click.stop.prevent="handleAction('remove-liked')"
                     >
                       <template #icon>
                         <IconX icon-class="w-4 h-4" />
                       </template>
-                      {{ t('media.notInterested') }}
+                      {{ t('media.removeFromLiked') }}
                     </Button>
                     <Button
+                      v-else-if="recommendation.in_watchlist"
                       type="button"
                       variant="ghost"
                       size="small"
@@ -207,23 +149,80 @@
                       @click.stop.prevent="handleAction(TITLE_STATUS.WATCHLIST)"
                     >
                       <template #icon>
-                        <IconClock icon-class="w-4 h-4" />
+                        <IconX icon-class="w-4 h-4" />
                       </template>
-                      {{ t('media.watchLater') }}
+                      {{ t('media.removeFromWatchlist') }}
                     </Button>
-                  </template>
-                </div>
-              </ActionMenu>
-            </div>
-          </template>
-        </slot>
+                    <!-- If title has no state, show all options to add states -->
+                    <template v-else>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="small"
+                        custom-class="justify-start mb-2 w-full text-left"
+                        @click.stop.prevent="handleAction(TITLE_STATUS.SEEN)"
+                      >
+                        <template #icon>
+                          <IconCheck icon-class="w-4 h-4" />
+                        </template>
+                        {{ t('media.seen') }}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="small"
+                        custom-class="justify-start mb-2 w-full text-left"
+                        @click.stop.prevent="handleAction('liked')"
+                      >
+                        <template #icon>
+                          <IconHeart icon-class="w-4 h-4" />
+                        </template>
+                        {{ t('media.liked') }}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="small"
+                        custom-class="justify-start mb-2 w-full text-left"
+                        @click.stop.prevent="
+                          handleAction(TITLE_STATUS.NOT_INTERESTED)
+                        "
+                      >
+                        <template #icon>
+                          <IconX icon-class="w-4 h-4" />
+                        </template>
+                        {{ t('media.notInterested') }}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="small"
+                        custom-class="justify-start w-full text-left"
+                        @click.stop.prevent="
+                          handleAction(TITLE_STATUS.WATCHLIST)
+                        "
+                      >
+                        <template #icon>
+                          <IconClock icon-class="w-4 h-4" />
+                        </template>
+                        {{ t('media.watchLater') }}
+                      </Button>
+                    </template>
+                  </div>
+                </ActionMenu>
+              </div>
+            </template>
+          </slot>
         </div>
       </div>
 
       <!-- Informative icons overlay (only show if user has session and status is provided) -->
       <!-- Positioned to the left of actions menu to avoid overlap -->
       <div
-        v-if="hasSession && (isLiked || (isSeen && !isLiked) || isNotInterested || isInWatchlist)"
+        v-if="
+          hasSession &&
+          (isLiked || (isSeen && !isLiked) || isNotInterested || isInWatchlist)
+        "
         class="flex absolute top-2 right-12 gap-2 z-20"
       >
         <Tooltip v-if="isLiked" :text="$t('media.liked')">
@@ -247,7 +246,10 @@
             <IconX icon-class="w-5 h-5 text-white" />
           </div>
         </Tooltip>
-        <Tooltip v-if="isInWatchlist && !isLiked && !isSeen && !isNotInterested" :text="$t('media.watchLater')">
+        <Tooltip
+          v-if="isInWatchlist && !isLiked && !isSeen && !isNotInterested"
+          :text="$t('media.watchLater')"
+        >
           <div
             class="flex justify-center items-center w-8 h-8 rounded-full backdrop-blur-sm bg-primary-600/90"
           >
@@ -474,7 +476,9 @@ const handleAction = (action: TitleStatusType | 'liked' | 'remove-liked') => {
 };
 
 // Capitalize first letter of tag
-function capitalizeTag(tag: string | null | undefined | Record<string, string>): string {
+function capitalizeTag(
+  tag: string | null | undefined | Record<string, string>
+): string {
   if (!tag) return '';
   // Handle case where tag might be an object (defensive programming)
   // This should not happen if server extraction works correctly
@@ -499,19 +503,20 @@ function capitalizeTag(tag: string | null | undefined | Record<string, string>):
 function handleLinkClick(event: MouseEvent) {
   // Don't navigate if clicking on the action menu or its trigger
   const target = event.target as HTMLElement;
-  const actionMenuElement = target.closest('[data-action-menu]') || target.closest('.menu-button');
+  const actionMenuElement =
+    target.closest('[data-action-menu]') || target.closest('.menu-button');
   if (actionMenuElement) {
     event.preventDefault();
     event.stopPropagation();
     return;
   }
-  
+
   // If linkTo is '#', prevent navigation
   if (computedLinkTo.value === '#') {
     event.preventDefault();
     return;
   }
-  
+
   // If the event was already prevented (by ActionMenu or other handler),
   // manually navigate using navigateTo
   if (event.defaultPrevented) {

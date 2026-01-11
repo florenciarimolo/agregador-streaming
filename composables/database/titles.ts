@@ -308,23 +308,25 @@ export function getTitleOrOverviewInLanguage(
     }
   }
 
-  // If requested language is null AND current language is NOT the region's primary language
+  // If requested language is null/empty, try fallback
+  // First, try primary language if different from requested
   if (requestedLangCode !== primaryLangCode) {
-    // Try primary language
     const primaryText =
       textJsonb[primaryLanguageKey] || textJsonb[primaryLanguage];
     if (primaryText && primaryText.trim() !== '') {
       return primaryText;
     }
+  }
 
-    // If primary language is not English, try English
-    if (primaryLangCode !== 'en') {
-      const englishKeys = ['en-US', 'en-GB', 'en'];
-      for (const key of englishKeys) {
-        const englishText = textJsonb[key];
-        if (englishText && englishText.trim() !== '') {
-          return englishText;
-        }
+  // If primary language is not English, try English as fallback
+  // This applies even if requested language IS the primary language
+  // (e.g., if overview is empty in Spanish, try English)
+  if (primaryLangCode !== 'en') {
+    const englishKeys = ['en-US', 'en-GB', 'en'];
+    for (const key of englishKeys) {
+      const englishText = textJsonb[key];
+      if (englishText && englishText.trim() !== '') {
+        return englishText;
       }
     }
   }
@@ -873,6 +875,40 @@ export async function getTitlesByTmdbIds(
       }
     }
 
+    // Check if overview is empty and needs to be fetched from TMDB
+    // This is similar to extractTitleDataWithFallback logic
+    const hasExactOverviewLanguage =
+      overviewJsonb &&
+      typeof overviewJsonb === 'object' &&
+      overviewJsonb[language] !== undefined;
+    const needsOverviewFromTMDB =
+      !hasExactOverviewLanguage ||
+      !extractedOverview ||
+      extractedOverview.trim() === '';
+
+    if (needsOverviewFromTMDB) {
+      // Check if we already have it in the fallback list
+      const alreadyInFallback = titlesNeedingPrimaryLanguageFallback.some(
+        (t) => t.tmdb_id === title.tmdb_id
+      );
+      if (!alreadyInFallback) {
+        titlesNeedingPrimaryLanguageFallback.push({
+          tmdb_id: title.tmdb_id,
+          type: title.type,
+          needsOverview: true,
+        });
+      } else {
+        // Update existing entry to ensure needsOverview is true
+        const existingIndex = titlesNeedingPrimaryLanguageFallback.findIndex(
+          (t) => t.tmdb_id === title.tmdb_id
+        );
+        if (existingIndex !== -1) {
+          titlesNeedingPrimaryLanguageFallback[existingIndex].needsOverview =
+            true;
+        }
+      }
+    }
+
     return {
       ...title,
       title: extractedTitle,
@@ -899,32 +935,81 @@ export async function getTitlesByTmdbIds(
       );
     }
 
-    // Fetch primary language translations from TMDB in parallel
-    const fetchPrimaryLanguagePromises =
-      titlesNeedingPrimaryLanguageFallback.map(async (title) => {
+    // Fetch translations from TMDB in parallel
+    // If needsOverview is true, fetch in requested language first, then try English if empty
+    // Otherwise fetch primary language
+    const fetchLanguagePromises = titlesNeedingPrimaryLanguageFallback.map(
+      async (title) => {
         try {
           const endpoint = title.type === 'movie' ? 'movies' : 'tvshows';
-          await $fetch(`/api/tmdb/${endpoint}/${title.tmdb_id}`, {
-            query: {
-              language: primaryLanguageKey, // Fetch primary language specifically
-            },
-          });
+
+          if (title.needsOverview) {
+            // First, try requested language
+            const requestedResponse = await $fetch<{
+              overview?: string;
+            }>(`/api/tmdb/${endpoint}/${title.tmdb_id}`, {
+              query: {
+                language: language,
+              },
+            });
+
+            // If overview is still empty and primary language is not English, try English
+            if (
+              (!requestedResponse?.overview ||
+                requestedResponse.overview.trim() === '') &&
+              primaryLangCode !== 'en'
+            ) {
+              try {
+                const englishResponse = await $fetch<{
+                  overview?: string;
+                }>(`/api/tmdb/${endpoint}/${title.tmdb_id}`, {
+                  query: {
+                    language: 'en-US',
+                  },
+                });
+                // If English has overview, it will be saved by the endpoint
+                // The endpoint handles saving to DB automatically
+                if (import.meta.dev && englishResponse?.overview) {
+                  console.log(
+                    `[getTitlesByTmdbIds] Found overview in English for title ${title.tmdb_id}`
+                  );
+                }
+              } catch (englishErr) {
+                // Log but don't fail - English is just a fallback
+                if (import.meta.dev) {
+                  console.warn(
+                    `[getTitlesByTmdbIds] Error fetching English overview for ${title.tmdb_id}:`,
+                    englishErr
+                  );
+                }
+              }
+            }
+          } else {
+            // Fetch primary language for title fallback
+            await $fetch(`/api/tmdb/${endpoint}/${title.tmdb_id}`, {
+              query: {
+                language: primaryLanguageKey,
+              },
+            });
+          }
+
           if (import.meta.dev) {
             console.log(
-              `[getTitlesByTmdbIds] Successfully fetched primary language (${primaryLanguageKey}) for title ${title.tmdb_id} from TMDB`
+              `[getTitlesByTmdbIds] Successfully fetched language for title ${title.tmdb_id} from TMDB`
             );
           }
           return title.tmdb_id;
         } catch (err) {
           console.error(
-            `[getTitlesByTmdbIds] Error fetching primary language (${primaryLanguageKey}) for title ${title.tmdb_id} from TMDB:`,
+            `[getTitlesByTmdbIds] Error fetching language for title ${title.tmdb_id} from TMDB:`,
             err
           );
           return null;
         }
-      });
+      }
+    );
 
-    await Promise.all(fetchPrimaryLanguagePromises);
+    await Promise.all(fetchLanguagePromises);
 
     // Reload titles from database after fetching primary language
     const primaryLanguageTmdbIds = titlesNeedingPrimaryLanguageFallback.map(
@@ -944,15 +1029,15 @@ export async function getTitlesByTmdbIds(
       titlesWithLanguage.forEach((title, index) => {
         const reloaded = reloadedDataMap.get(title.tmdb_id);
         if (reloaded) {
-          // Re-extract with the updated JSONB that now includes primary language
+          // Re-extract with the updated JSONB that now includes the fetched language
           titlesWithLanguage[index] = {
             ...title,
-            title: getTitleInLanguage(
+            title: getTitleOrOverviewInLanguage(
               reloaded.title as MultiLanguageText,
               language,
               userRegion
             ),
-            overview: getTitleInLanguage(
+            overview: getTitleOrOverviewInLanguage(
               reloaded.overview as MultiLanguageText | null,
               language,
               userRegion

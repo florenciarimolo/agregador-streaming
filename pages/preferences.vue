@@ -18,320 +18,326 @@
           </SectionTitle>
 
           <!-- Content Preferences -->
-        <div class="space-y-6">
-          <!-- Region -->
-          <Card padding="lg">
-            <h2
-              class="mb-2 text-xl font-semibold text-gray-800 dark:text-gray-300"
-            >
-              {{ $t('preferences.content.region.title') }}
-            </h2>
-            <p class="mb-6 text-sm text-gray-600 dark:text-gray-400">
-              {{ $t('preferences.content.region.description') }}
-            </p>
-            <RegionSelector
-              v-model="contentPreferences.region"
-              @update:model-value="handleRegionChange"
-            />
-          </Card>
-
-          <!-- Included Providers -->
-          <Card padding="lg">
-            <h2
-              class="mb-2 text-xl font-semibold text-gray-800 dark:text-gray-300"
-            >
-              {{ $t('preferences.content.includedProviders.title') }}
-            </h2>
-            <p class="mb-6 text-sm text-gray-600 dark:text-gray-400">
-              {{ $t('preferences.content.includedProviders.description') }}
-            </p>
-
-            <!-- Provider Search -->
-            <ProviderSelector
-              v-model="selectedProviderForSelector"
-              :available-providers="availableProviders"
-              :selected-providers="selectedProviders"
-              :placeholder="
-                $t('preferences.content.includedProviders.searchPlaceholder')
-              "
-              :max-results="0"
-              @select="(provider: any) => addProvider(provider)"
-            />
-
-            <!-- Selected Providers List -->
-            <div v-if="selectedProviders.length > 0" class="my-4">
-              <p
-                class="mb-2 text-sm font-medium text-gray-800 dark:text-gray-300"
+          <div class="space-y-6">
+            <!-- Region -->
+            <Card padding="lg">
+              <h2
+                class="mb-2 text-xl font-semibold text-gray-800 dark:text-gray-300"
               >
-                {{ $t('preferences.content.includedProviders.selected') }}
-                ({{ selectedProviders.length }})
+                {{ $t('preferences.content.region.title') }}
+              </h2>
+              <p class="mb-6 text-sm text-gray-600 dark:text-gray-400">
+                {{ $t('preferences.content.region.description') }}
               </p>
-              <div class="flex flex-wrap gap-2">
-                <FilterPill
-                  v-for="provider in selectedProviders"
-                  :key="provider.provider_id"
-                  :label="provider.provider_name"
-                  :icon="
-                    provider.logo_path
-                      ? `https://image.tmdb.org/t/p/w45${provider.logo_path}`
-                      : undefined
-                  "
-                  :aria-label="
-                    $t('preferences.content.includedProviders.remove', {
-                      name: provider.provider_name,
-                    })
-                  "
-                  @remove="removeProvider(provider.provider_id)"
-                />
-              </div>
-            </div>
+              <RegionSelector
+                v-model="contentPreferences.region"
+                @update:model-value="handleRegionChange"
+              />
+            </Card>
 
-            <!-- Info Message -->
-            <p
-              v-if="selectedProviders.length === 0"
-              class="text-xs mt-2 italic text-gray-600 dark:text-gray-400"
-            >
-              {{ $t('preferences.content.includedProviders.allIncluded') }}
-            </p>
-          </Card>
-
-          <!-- Favorite Genres -->
-          <Card padding="lg">
-            <h2
-              class="mb-2 text-xl font-semibold text-gray-800 dark:text-gray-300"
-            >
-              {{ $t('preferences.content.favoriteGenres.title') }}
-            </h2>
-            <p class="mb-6 text-sm text-gray-600 dark:text-gray-400">
-              {{ $t('preferences.content.favoriteGenres.description') }}
-            </p>
-
-            <!-- Genre Search -->
-            <GenreSelector
-              v-model="selectedGenreForSelector"
-              :available-genres="availableGenres"
-              :selected-genres="selectedGenres"
-              @select="(genre: any) => addGenre(genre)"
-            />
-
-            <!-- Selected Genres List -->
-            <div v-if="selectedGenres.length > 0" class="my-4">
-              <p
-                class="mb-2 text-sm font-medium text-gray-800 dark:text-gray-300"
+            <!-- Included Providers -->
+            <Card padding="lg">
+              <h2
+                class="mb-2 text-xl font-semibold text-gray-800 dark:text-gray-300"
               >
-                {{ $t('preferences.content.favoriteGenres.selected') }}
-                ({{ selectedGenres.length }})
+                {{ $t('preferences.content.includedProviders.title') }}
+              </h2>
+              <p class="mb-6 text-sm text-gray-600 dark:text-gray-400">
+                {{ $t('preferences.content.includedProviders.description') }}
               </p>
-              <div class="flex flex-wrap gap-2">
-                <FilterPill
-                  v-for="genre in selectedGenres"
-                  :key="genre.id"
-                  :label="genre.name"
-                  :aria-label="
-                    $t('preferences.content.favoriteGenres.remove', {
-                      name: genre.name,
-                    })
-                  "
-                  @remove="removeGenre(genre.id)"
-                />
-              </div>
-            </div>
 
-            <!-- Info Message -->
-            <p
-              v-if="selectedGenres.length === 0"
-              class="text-xs mt-2 italic text-gray-600 dark:text-gray-400"
-            >
-              {{ $t('preferences.content.favoriteGenres.noneSelected') }}
-            </p>
-          </Card>
-
-          <!-- Exploration Mode -->
-          <Card padding="lg">
-            <h2
-              class="mb-2 text-xl font-semibold text-gray-800 dark:text-gray-300"
-            >
-              {{ $t('preferences.content.explorationMode.title') }}
-            </h2>
-            <p class="mb-6 text-sm text-gray-600 dark:text-gray-400">
-              {{ $t('preferences.content.explorationMode.description') }}
-            </p>
-
-            <!-- Radio Group -->
-            <div class="space-y-3">
-              <label
-                class="flex items-center gap-3 cursor-pointer"
-                @click="
-                  contentPreferences.exploration_mode = 'balanced';
-                  markContentPreferencesChanged();
+              <!-- Provider Search -->
+              <ProviderSelector
+                v-model="selectedProviderForSelector"
+                :available-providers="availableProviders"
+                :selected-providers="selectedProviders"
+                :placeholder="
+                  $t('preferences.content.includedProviders.searchPlaceholder')
                 "
+                :max-results="0"
+                @select="(provider: any) => addProvider(provider)"
+              />
+
+              <!-- Selected Providers List -->
+              <div v-if="selectedProviders.length > 0" class="my-4">
+                <p
+                  class="mb-2 text-sm font-medium text-gray-800 dark:text-gray-300"
+                >
+                  {{ $t('preferences.content.includedProviders.selected') }}
+                  ({{ selectedProviders.length }})
+                </p>
+                <div class="flex flex-wrap gap-2">
+                  <FilterPill
+                    v-for="provider in selectedProviders"
+                    :key="provider.provider_id"
+                    :label="provider.provider_name"
+                    :icon="
+                      provider.logo_path
+                        ? `https://image.tmdb.org/t/p/w45${provider.logo_path}`
+                        : undefined
+                    "
+                    :aria-label="
+                      $t('preferences.content.includedProviders.remove', {
+                        name: provider.provider_name,
+                      })
+                    "
+                    @remove="removeProvider(provider.provider_id)"
+                  />
+                </div>
+              </div>
+
+              <!-- Info Message -->
+              <p
+                v-if="selectedProviders.length === 0"
+                class="text-xs mt-2 italic text-gray-600 dark:text-gray-400"
               >
-                <input
-                  type="radio"
-                  class="custom-radio"
-                  name="exploration_mode"
-                  value="balanced"
-                  :checked="
-                    !contentPreferences.exploration_mode ||
-                    contentPreferences.exploration_mode === 'balanced'
-                  "
-                  @change="
+                {{ $t('preferences.content.includedProviders.allIncluded') }}
+              </p>
+            </Card>
+
+            <!-- Favorite Genres -->
+            <Card padding="lg">
+              <h2
+                class="mb-2 text-xl font-semibold text-gray-800 dark:text-gray-300"
+              >
+                {{ $t('preferences.content.favoriteGenres.title') }}
+              </h2>
+              <p class="mb-6 text-sm text-gray-600 dark:text-gray-400">
+                {{ $t('preferences.content.favoriteGenres.description') }}
+              </p>
+
+              <!-- Genre Search -->
+              <GenreSelector
+                v-model="selectedGenreForSelector"
+                :available-genres="availableGenres"
+                :selected-genres="selectedGenres"
+                @select="(genre: any) => addGenre(genre)"
+              />
+
+              <!-- Selected Genres List -->
+              <div v-if="selectedGenres.length > 0" class="my-4">
+                <p
+                  class="mb-2 text-sm font-medium text-gray-800 dark:text-gray-300"
+                >
+                  {{ $t('preferences.content.favoriteGenres.selected') }}
+                  ({{ selectedGenres.length }})
+                </p>
+                <div class="flex flex-wrap gap-2">
+                  <FilterPill
+                    v-for="genre in selectedGenres"
+                    :key="genre.id"
+                    :label="genre.name"
+                    :aria-label="
+                      $t('preferences.content.favoriteGenres.remove', {
+                        name: genre.name,
+                      })
+                    "
+                    @remove="removeGenre(genre.id)"
+                  />
+                </div>
+              </div>
+
+              <!-- Info Message -->
+              <p
+                v-if="selectedGenres.length === 0"
+                class="text-xs mt-2 italic text-gray-600 dark:text-gray-400"
+              >
+                {{ $t('preferences.content.favoriteGenres.noneSelected') }}
+              </p>
+            </Card>
+
+            <!-- Exploration Mode -->
+            <Card padding="lg">
+              <h2
+                class="mb-2 text-xl font-semibold text-gray-800 dark:text-gray-300"
+              >
+                {{ $t('preferences.content.explorationMode.title') }}
+              </h2>
+              <p class="mb-6 text-sm text-gray-600 dark:text-gray-400">
+                {{ $t('preferences.content.explorationMode.description') }}
+              </p>
+
+              <!-- Radio Group -->
+              <div class="space-y-3">
+                <label
+                  class="flex items-center gap-3 cursor-pointer"
+                  @click="
                     contentPreferences.exploration_mode = 'balanced';
                     markContentPreferencesChanged();
                   "
-                />
-                <span class="text-sm text-gray-800 dark:text-gray-300">
-                  {{ $t('preferences.content.explorationMode.balanced') }}
-                </span>
-              </label>
+                >
+                  <input
+                    type="radio"
+                    class="custom-radio"
+                    name="exploration_mode"
+                    value="balanced"
+                    :checked="
+                      !contentPreferences.exploration_mode ||
+                      contentPreferences.exploration_mode === 'balanced'
+                    "
+                    @change="
+                      contentPreferences.exploration_mode = 'balanced';
+                      markContentPreferencesChanged();
+                    "
+                  />
+                  <span class="text-sm text-gray-800 dark:text-gray-300">
+                    {{ $t('preferences.content.explorationMode.balanced') }}
+                  </span>
+                </label>
 
-              <label
-                class="flex items-center gap-3 cursor-pointer"
-                @click="
-                  contentPreferences.exploration_mode = 'similar';
-                  markContentPreferencesChanged();
-                "
-              >
-                <input
-                  type="radio"
-                  class="custom-radio"
-                  name="exploration_mode"
-                  value="similar"
-                  :checked="contentPreferences.exploration_mode === 'similar'"
-                  @change="
+                <label
+                  class="flex items-center gap-3 cursor-pointer"
+                  @click="
                     contentPreferences.exploration_mode = 'similar';
                     markContentPreferencesChanged();
                   "
-                />
-                <span class="text-sm text-gray-800 dark:text-gray-300">
-                  {{ $t('preferences.content.explorationMode.similar') }}
-                </span>
-              </label>
+                >
+                  <input
+                    type="radio"
+                    class="custom-radio"
+                    name="exploration_mode"
+                    value="similar"
+                    :checked="contentPreferences.exploration_mode === 'similar'"
+                    @change="
+                      contentPreferences.exploration_mode = 'similar';
+                      markContentPreferencesChanged();
+                    "
+                  />
+                  <span class="text-sm text-gray-800 dark:text-gray-300">
+                    {{ $t('preferences.content.explorationMode.similar') }}
+                  </span>
+                </label>
 
-              <label
-                class="flex items-center gap-3 cursor-pointer"
-                @click="
-                  contentPreferences.exploration_mode = 'surprise';
-                  markContentPreferencesChanged();
-                "
-              >
-                <input
-                  type="radio"
-                  class="custom-radio"
-                  name="exploration_mode"
-                  value="surprise"
-                  :checked="contentPreferences.exploration_mode === 'surprise'"
-                  @change="
+                <label
+                  class="flex items-center gap-3 cursor-pointer"
+                  @click="
                     contentPreferences.exploration_mode = 'surprise';
                     markContentPreferencesChanged();
                   "
-                />
-                <span class="text-sm text-gray-800 dark:text-gray-300">
-                  {{ $t('preferences.content.explorationMode.surprise') }}
-                </span>
-              </label>
-            </div>
-          </Card>
+                >
+                  <input
+                    type="radio"
+                    class="custom-radio"
+                    name="exploration_mode"
+                    value="surprise"
+                    :checked="
+                      contentPreferences.exploration_mode === 'surprise'
+                    "
+                    @change="
+                      contentPreferences.exploration_mode = 'surprise';
+                      markContentPreferencesChanged();
+                    "
+                  />
+                  <span class="text-sm text-gray-800 dark:text-gray-300">
+                    {{ $t('preferences.content.explorationMode.surprise') }}
+                  </span>
+                </label>
+              </div>
+            </Card>
 
-          <!-- Prioritize Content -->
-          <Card padding="lg">
-            <h2
-              class="mb-2 text-xl font-semibold text-gray-800 dark:text-gray-300"
-            >
-              {{ $t('preferences.content.prioritizeContent.title') }}
-            </h2>
-            <p class="mb-6 text-sm text-gray-600 dark:text-gray-400">
-              {{ $t('preferences.content.prioritizeContent.description') }}
-            </p>
-
-            <!-- Radio Group -->
-            <div class="space-y-3">
-              <label
-                class="flex items-center gap-3 cursor-pointer"
-                @click="
-                  contentPreferences.prioritize_content = 'new';
-                  markContentPreferencesChanged();
-                "
+            <!-- Prioritize Content -->
+            <Card padding="lg">
+              <h2
+                class="mb-2 text-xl font-semibold text-gray-800 dark:text-gray-300"
               >
-                <input
-                  type="radio"
-                  class="custom-radio"
-                  name="prioritize_content"
-                  value="new"
-                  :checked="
-                    !contentPreferences.prioritize_content ||
-                    contentPreferences.prioritize_content === 'new'
-                  "
-                  @change="
+                {{ $t('preferences.content.prioritizeContent.title') }}
+              </h2>
+              <p class="mb-6 text-sm text-gray-600 dark:text-gray-400">
+                {{ $t('preferences.content.prioritizeContent.description') }}
+              </p>
+
+              <!-- Radio Group -->
+              <div class="space-y-3">
+                <label
+                  class="flex items-center gap-3 cursor-pointer"
+                  @click="
                     contentPreferences.prioritize_content = 'new';
                     markContentPreferencesChanged();
                   "
-                />
-                <span class="text-sm text-gray-800 dark:text-gray-300">
-                  {{ $t('preferences.content.prioritizeContent.new') }}
-                </span>
-              </label>
+                >
+                  <input
+                    type="radio"
+                    class="custom-radio"
+                    name="prioritize_content"
+                    value="new"
+                    :checked="
+                      !contentPreferences.prioritize_content ||
+                      contentPreferences.prioritize_content === 'new'
+                    "
+                    @change="
+                      contentPreferences.prioritize_content = 'new';
+                      markContentPreferencesChanged();
+                    "
+                  />
+                  <span class="text-sm text-gray-800 dark:text-gray-300">
+                    {{ $t('preferences.content.prioritizeContent.new') }}
+                  </span>
+                </label>
 
-              <label
-                class="flex items-center gap-3 cursor-pointer"
-                @click="
-                  contentPreferences.prioritize_content = 'classics';
-                  markContentPreferencesChanged();
-                "
-              >
-                <input
-                  type="radio"
-                  class="custom-radio"
-                  name="prioritize_content"
-                  value="classics"
-                  :checked="contentPreferences.prioritize_content === 'classics'"
-                  @change="
+                <label
+                  class="flex items-center gap-3 cursor-pointer"
+                  @click="
                     contentPreferences.prioritize_content = 'classics';
                     markContentPreferencesChanged();
                   "
-                />
-                <span class="text-sm text-gray-800 dark:text-gray-300">
-                  {{ $t('preferences.content.prioritizeContent.classics') }}
-                </span>
-              </label>
+                >
+                  <input
+                    type="radio"
+                    class="custom-radio"
+                    name="prioritize_content"
+                    value="classics"
+                    :checked="
+                      contentPreferences.prioritize_content === 'classics'
+                    "
+                    @change="
+                      contentPreferences.prioritize_content = 'classics';
+                      markContentPreferencesChanged();
+                    "
+                  />
+                  <span class="text-sm text-gray-800 dark:text-gray-300">
+                    {{ $t('preferences.content.prioritizeContent.classics') }}
+                  </span>
+                </label>
 
-              <label
-                class="flex items-center gap-3 cursor-pointer"
-                @click="
-                  contentPreferences.prioritize_content = 'top_rated';
-                  markContentPreferencesChanged();
-                "
-              >
-                <input
-                  type="radio"
-                  class="custom-radio"
-                  name="prioritize_content"
-                  value="top_rated"
-                  :checked="contentPreferences.prioritize_content === 'top_rated'"
-                  @change="
+                <label
+                  class="flex items-center gap-3 cursor-pointer"
+                  @click="
                     contentPreferences.prioritize_content = 'top_rated';
                     markContentPreferencesChanged();
                   "
-                />
-                <span class="text-sm text-gray-800 dark:text-gray-300">
-                  {{ $t('preferences.content.prioritizeContent.topRated') }}
-                </span>
-              </label>
-            </div>
-          </Card>
+                >
+                  <input
+                    type="radio"
+                    class="custom-radio"
+                    name="prioritize_content"
+                    value="top_rated"
+                    :checked="
+                      contentPreferences.prioritize_content === 'top_rated'
+                    "
+                    @change="
+                      contentPreferences.prioritize_content = 'top_rated';
+                      markContentPreferencesChanged();
+                    "
+                  />
+                  <span class="text-sm text-gray-800 dark:text-gray-300">
+                    {{ $t('preferences.content.prioritizeContent.topRated') }}
+                  </span>
+                </label>
+              </div>
+            </Card>
 
-          <!-- Save Button -->
-          <div class="flex justify-end mt-6">
-            <Button
-              variant="primary"
-              size="small"
-              :disabled="!hasUnsavedContentChanges"
-              @click="saveContentPreferences"
-            >
-              {{ $t('common.save') }}
-            </Button>
+            <!-- Save Button -->
+            <div class="flex justify-end mt-6">
+              <Button
+                variant="primary"
+                size="small"
+                :disabled="!hasUnsavedContentChanges"
+                @click="saveContentPreferences"
+              >
+                {{ $t('common.save') }}
+              </Button>
+            </div>
           </div>
-        </div>
         </Section>
 
         <!-- Generating Recommendations Modal -->
@@ -427,7 +433,7 @@
           </div>
         </Modal>
       </div>
-      
+
       <!-- Toast - Always available, client-only to avoid hydration issues -->
       <ClientOnly>
         <Toast />
@@ -473,12 +479,15 @@ const userStore = computed(() => {
       ensureProfile: async () => {},
     };
   }
-  
+
   try {
     return useUserStore();
   } catch (error) {
     if (process.env.NODE_ENV === 'development') {
-      console.warn('[pages/preferences.vue] useUserStore not available:', error);
+      console.warn(
+        '[pages/preferences.vue] useUserStore not available:',
+        error
+      );
     }
     return {
       profile: null,
@@ -745,16 +754,20 @@ const fetchContentPreferences = async () => {
     if (response.success && response.preferences) {
       // Ensure region is always a valid string (never null or undefined)
       // If region is null/undefined in DB, it means user needs to set it (shouldn't happen after onboarding)
-      const region = response.preferences.region && typeof response.preferences.region === 'string' && response.preferences.region.length === 2
-        ? response.preferences.region
-        : undefined;
-      
+      const region =
+        response.preferences.region &&
+        typeof response.preferences.region === 'string' &&
+        response.preferences.region.length === 2
+          ? response.preferences.region
+          : undefined;
+
       contentPreferences.value = {
         favorite_genres: response.preferences.favorite_genres || [],
         included_providers: response.preferences.included_providers || [],
         region,
         exploration_mode: response.preferences.exploration_mode || undefined,
-        prioritize_content: response.preferences.prioritize_content || undefined,
+        prioritize_content:
+          response.preferences.prioritize_content || undefined,
       };
 
       // Map genres - wait for genres to be available if needed
@@ -801,8 +814,10 @@ const fetchContentPreferences = async () => {
           ? [...contentPreferences.value.included_providers]
           : [],
         region: contentPreferences.value.region || undefined,
-        exploration_mode: contentPreferences.value.exploration_mode || undefined,
-        prioritize_content: contentPreferences.value.prioritize_content || undefined,
+        exploration_mode:
+          contentPreferences.value.exploration_mode || undefined,
+        prioritize_content:
+          contentPreferences.value.prioritize_content || undefined,
       };
       savedSelectedGenres.value = [...selectedGenres.value];
       savedSelectedProviders.value = [...selectedProviders.value];
@@ -898,7 +913,7 @@ const handleRegionChange = async () => {
     selectedProviders.value = [];
     contentPreferences.value.included_providers = [];
   }
-  
+
   // Reset flag for the new region change - user hasn't selected providers yet
   providerSelectedAfterRegionChange.value = false;
 
@@ -906,7 +921,7 @@ const handleRegionChange = async () => {
   await refreshProviders();
 
   markContentPreferencesChanged();
-  
+
   // Note: populate-pool will be called when saving if region changed
   // This ensures the pool is regenerated with the new region
 };
@@ -945,7 +960,8 @@ const markContentPreferencesChanged = () => {
     ].sort(),
     region: savedContentPreferences.value.region || null,
     exploration_mode: savedContentPreferences.value.exploration_mode || null,
-    prioritize_content: savedContentPreferences.value.prioritize_content || null,
+    prioritize_content:
+      savedContentPreferences.value.prioritize_content || null,
   };
 
   // Deep comparison using JSON.stringify
@@ -966,8 +982,10 @@ const revertContentPreferencesChanges = () => {
       ...(savedContentPreferences.value.included_providers || []),
     ],
     region: savedContentPreferences.value.region || undefined,
-    exploration_mode: savedContentPreferences.value.exploration_mode || undefined,
-    prioritize_content: savedContentPreferences.value.prioritize_content || undefined,
+    exploration_mode:
+      savedContentPreferences.value.exploration_mode || undefined,
+    prioritize_content:
+      savedContentPreferences.value.prioritize_content || undefined,
   };
 
   // Revert selected items
@@ -986,7 +1004,7 @@ const saveContentPreferences = async () => {
   }
 
   // Check if region changed
-  const regionChanged = 
+  const regionChanged =
     savedContentPreferences.value?.region !== contentPreferences.value.region;
 
   // Only show confirmation modal if region changed
@@ -1011,7 +1029,11 @@ const confirmSaveContentPreferences = async () => {
   if (!id) return;
 
   // Validate that region is set (mandatory)
-  if (!contentPreferences.value.region || typeof contentPreferences.value.region !== 'string' || contentPreferences.value.region.length !== 2) {
+  if (
+    !contentPreferences.value.region ||
+    typeof contentPreferences.value.region !== 'string' ||
+    contentPreferences.value.region.length !== 2
+  ) {
     showToast(t('onboarding.regionRequired'), null, 5000);
     return;
   }
@@ -1043,11 +1065,16 @@ const confirmSaveContentPreferences = async () => {
           ? selectedProviders.value.map((p) => p.provider_id)
           : [], // Empty = all providers
       exploration_mode: contentPreferences.value.exploration_mode || undefined,
-      prioritize_content: contentPreferences.value.prioritize_content || undefined,
+      prioritize_content:
+        contentPreferences.value.prioritize_content || undefined,
     };
 
     // Only include region if it's a valid string (never null)
-    if (contentPreferences.value.region && typeof contentPreferences.value.region === 'string' && contentPreferences.value.region.length === 2) {
+    if (
+      contentPreferences.value.region &&
+      typeof contentPreferences.value.region === 'string' &&
+      contentPreferences.value.region.length === 2
+    ) {
       preferencesToSave.region = contentPreferences.value.region;
     }
 
@@ -1064,16 +1091,16 @@ const confirmSaveContentPreferences = async () => {
 
     if (response.success) {
       // Check if region changed
-      const regionChanged = 
+      const regionChanged =
         savedContentPreferences.value?.region !== preferencesToSave.region;
-      
+
       // IMPORTANT: Only regenerate pool if region changed
       // Genres and providers are filters only, they don't require pool regeneration
       if (regionChanged) {
         // Clear region cache so it's reloaded on next access
         const { clearRegionCache } = useUserRegion();
         clearRegionCache();
-        
+
         // Regenerate recommendation pool with loading modal (clear existing pool first)
         // Show modal and disable closing
         showGeneratingModal.value = true;
@@ -1114,8 +1141,10 @@ const confirmSaveContentPreferences = async () => {
           ...selectedProviders.value.map((p) => p.provider_id),
         ],
         region: contentPreferences.value.region || undefined,
-        exploration_mode: contentPreferences.value.exploration_mode || undefined,
-        prioritize_content: contentPreferences.value.prioritize_content || undefined,
+        exploration_mode:
+          contentPreferences.value.exploration_mode || undefined,
+        prioritize_content:
+          contentPreferences.value.prioritize_content || undefined,
       };
       // Update saved selected items for potential rollback
       savedSelectedGenres.value = [...selectedGenres.value];
@@ -1314,15 +1343,10 @@ watch(
 
 // Lifecycle
 onMounted(async () => {
-  // Ensure profile is loaded
-  await userStore.value.ensureProfile();
-
-  // Check onboarding status
-  if (!userStore.value?.hasCompletedOnboarding) {
-    const { routeWithLang } = useRouteWithLang();
-    await navigateTo(routeWithLang('/onboarding'), { replace: true });
-    return;
-  }
+  // NOTE: Onboarding check is handled by auth middleware, not here
+  // This prevents duplicate redirects and race conditions during F5/refresh
+  // The middleware ensures profile is loaded and onboarding is checked before
+  // the page component mounts
 
   // Profile is ready, show content
   isProfileReady.value = true;

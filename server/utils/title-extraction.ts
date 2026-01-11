@@ -92,7 +92,7 @@ export async function fetchOverviewWithPrimaryLanguageFallback(
     return overview;
   }
 
-  // Try fetching with primary language of region as fallback
+  // Try fetching with primary language of region as fallback, then English
   try {
     const { getPrimaryLanguageForRegion } =
       await import('@/utils/language-detection');
@@ -105,7 +105,7 @@ export async function fetchOverviewWithPrimaryLanguageFallback(
     const requestedLangCode = language.split('-')[0]?.toLowerCase() || '';
     const primaryLangCode = primaryLanguage.split('-')[0]?.toLowerCase() || '';
 
-    // Only fetch primary language if it's different from requested language
+    // Try primary language if it's different from requested language
     if (requestedLangCode !== primaryLangCode) {
       const primaryTmdbConfig = getTMDBConfig(
         primaryLanguageKey,
@@ -121,7 +121,7 @@ export async function fetchOverviewWithPrimaryLanguageFallback(
         },
       });
 
-      if (primaryResponse?.overview) {
+      if (primaryResponse?.overview && primaryResponse.overview.trim() !== '') {
         // Update database with primary language overview
         mergedOverviewJsonb[primaryLanguageKey] = primaryResponse.overview;
 
@@ -163,11 +163,67 @@ export async function fetchOverviewWithPrimaryLanguageFallback(
         return primaryResponse.overview;
       }
     }
+
+    // If primary language is not English, try English as final fallback
+    if (primaryLangCode !== 'en') {
+      const englishTmdbConfig = getTMDBConfig('en-US', region ?? undefined);
+      const englishResponse = await $fetch<{
+        overview?: string;
+      }>(`${englishTmdbConfig.baseUrl}${endpoint}`, {
+        query: {
+          api_key: englishTmdbConfig.apiKey,
+          language: englishTmdbConfig.language,
+          region: englishTmdbConfig.region,
+        },
+      });
+
+      if (englishResponse?.overview && englishResponse.overview.trim() !== '') {
+        // Update database with English overview
+        mergedOverviewJsonb['en-US'] = englishResponse.overview;
+
+        // Update database (async, don't wait)
+        supabase
+          .from(TABLES.TITLES)
+          .upsert(
+            {
+              tmdb_id: tmdbId,
+              type,
+              overview:
+                Object.keys(mergedOverviewJsonb).length > 0
+                  ? mergedOverviewJsonb
+                  : null,
+            },
+            {
+              onConflict: TITLES_COLUMNS.TMDB_ID,
+            }
+          )
+          .then(() => {
+            // Success - no action needed
+          })
+          .catch((error: unknown) => {
+            // Log but don't fail the request
+            if (import.meta.dev) {
+              console.error(
+                '[fetchOverviewWithPrimaryLanguageFallback] Error updating cache with English:',
+                error
+              );
+            }
+          }) as Promise<void>;
+
+        if (import.meta.dev) {
+          console.log(
+            `[fetchOverviewWithPrimaryLanguageFallback] Using English overview for ${tmdbId} as fallback`
+          );
+        }
+
+        return englishResponse.overview;
+      }
+    }
   } catch (primaryError) {
     // Log but don't fail the request
     if (import.meta.dev) {
       console.error(
-        '[fetchOverviewWithPrimaryLanguageFallback] Error fetching primary language overview:',
+        '[fetchOverviewWithPrimaryLanguageFallback] Error fetching fallback overview:',
         primaryError
       );
     }
@@ -396,8 +452,11 @@ export async function extractTitleDataWithFallback(
         if (tmdbOverview) updatedOverview[langKey] = tmdbOverview;
         if (tmdbPosterPath) updatedPosterPath[langKey] = tmdbPosterPath;
 
-        // If overview is still empty, try fetching with primary language of region as fallback
-        if (needsOverviewFallback) {
+        // If overview is still empty, try fetching with primary language of region as fallback, then English
+        if (
+          needsOverviewFallback &&
+          (!tmdbOverview || tmdbOverview.trim() === '')
+        ) {
           tmdbOverview = await fetchOverviewWithPrimaryLanguageFallback(
             tmdbOverview || '',
             tmdbId,

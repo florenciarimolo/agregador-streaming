@@ -3,16 +3,14 @@
     <PageContainer>
       <Section>
         <DiscoverListDetail
-          v-if="list"
-          :list="list"
+          v-if="list || isLoading"
+          :list="list || placeholderList"
           :items="items"
           :is-loading="isLoading"
         />
 
-        <Spinner v-else-if="isLoading" :message="$t('discover.loadingList')" />
-
         <EmptyState
-          v-else
+          v-else-if="!isLoading"
           :message="$t('discover.listNotFound')"
           icon="default"
         />
@@ -30,7 +28,6 @@ import AppShell from '@/components/layout/AppShell.vue';
 import PageContainer from '@/components/layout/PageContainer.vue';
 import Section from '@/components/layout/Section.vue';
 import DiscoverListDetail from '@/components/DiscoverListDetail.vue';
-import Spinner from '@/components/Spinner.vue';
 import EmptyState from '@/components/EmptyState.vue';
 import type {
   DiscoverList,
@@ -48,6 +45,19 @@ const { canonicalUrl } = useCanonical();
 const list = ref<DiscoverList | null>(null);
 const items = ref<DiscoverListItem[] | null>(null);
 const isLoading = ref(true);
+
+// Placeholder list for loading state (to show header while loading)
+const placeholderList = computed<DiscoverList>(() => ({
+  id: '',
+  slug: (route.params.slug as string) || '',
+  title: '',
+  description: null,
+  type: 'mixed',
+  is_public: true,
+  is_indexable: true,
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString(),
+}));
 
 const pageTitle = computed(() => {
   if (list.value) {
@@ -106,26 +116,17 @@ const loadList = async () => {
 
   isLoading.value = true;
   try {
-    // Get URL language code using useRouteWithLang composable (e.g., 'es', 'en', 'en-gb')
-    // This is needed for tag extraction from JSONB
-    const urlLangCode = lang.value;
-    
     // Pass current locale as query parameter to ensure correct language
-    // Also pass urlLangCode for tag extraction
+    // The server will extract urlLangCode from the Referer header (page URL)
     const queryParams = new URLSearchParams({
       language: locale.value,
     });
-    if (urlLangCode) {
-      queryParams.set('urlLang', urlLangCode);
-    }
-    
+
     const response = await $fetch<{
       success: boolean;
       list: DiscoverList;
       items: DiscoverListItem[];
-    }>(
-      `/api/discover/list/${slug}?${queryParams.toString()}`
-    );
+    }>(`/api/discover/list/${slug}?${queryParams.toString()}`);
 
     if (response.success) {
       list.value = response.list;

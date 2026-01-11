@@ -47,7 +47,7 @@
                 <div v-if="isLoading" class="flex flex-col gap-4">
                   <!-- Mosaic view skeletons -->
                   <div
-                    v-if="likedViewMode === 'mosaic'"
+                    v-if="viewMode === 'mosaic'"
                     class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
                   >
                     <SkeletonMediaCard
@@ -71,11 +71,11 @@
                   class="flex flex-col gap-4"
                 >
                   <div class="flex justify-end">
-                    <ViewModeSelector page-key="liked" />
+                    <ViewModeSelector page-key="lists" />
                   </div>
                   <!-- Mosaic view -->
                   <div
-                    v-if="likedViewMode === 'mosaic'"
+                    v-if="viewMode === 'mosaic'"
                     class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
                   >
                     <TitleCardMosaic
@@ -131,6 +131,7 @@
                       :vote-average="title.vote_average"
                       :type="title.type"
                       :tmdb-id="title.tmdb_id"
+                      :providers="title.providers"
                     >
                       <template #actions>
                         <Tooltip :text="$t('common.delete')">
@@ -164,7 +165,7 @@
                 <div v-if="isLoading" class="flex flex-col gap-4">
                   <!-- Mosaic view skeletons -->
                   <div
-                    v-if="seenViewMode === 'mosaic'"
+                    v-if="viewMode === 'mosaic'"
                     class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
                   >
                     <SkeletonMediaCard
@@ -188,14 +189,14 @@
                   class="flex flex-col gap-4"
                 >
                   <div class="flex justify-end">
-                    <ViewModeSelector page-key="seen" />
+                    <ViewModeSelector page-key="lists" />
                   </div>
                   <!-- Mosaic view -->
                   <div
-                    v-if="seenViewMode === 'mosaic'"
+                    v-if="viewMode === 'mosaic'"
                     class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
                   >
-                    <TitleCard
+                    <TitleCardMosaic
                       v-for="title in seenTitles"
                       :key="title.id"
                       :title="title.title"
@@ -209,50 +210,56 @@
                         $t('media.noPosterAvailableFor', { title: title.title })
                       "
                       :type="title.type"
+                      :vote-average="title.vote_average"
+                      :overview="title.overview"
+                      :providers="title.providers"
                       :aria-label="
                         $t('media.titleCardLabel', { title: title.title })
                       "
                     >
-                      <template #top-left-badges>
-                        <Tooltip :text="$t('media.liked')">
-                          <IconButton
-                            :aria-label="$t('media.liked')"
-                            size="small"
-                            variant="default"
-                            :custom-class="`p-2 rounded-full backdrop-blur-sm pointer-events-auto w-fit h-fit ${
-                              title.liked === true
-                                ? 'bg-primary-800 text-white border border-gray-700/50 dark:bg-primary-600/70 dark:border-primary-800 hover:bg-primary-900 dark:hover:bg-primary-600'
-                                : 'bg-black/50 hover:bg-primary-900 dark:hover:bg-primary-600'
-                            }`"
-                            @click.stop.prevent="handleAddToLiked(title)"
-                          >
-                            <IconHeartFilled
-                              v-if="title.liked === true"
-                              icon-class="w-4 h-4 text-white"
-                            />
-                            <IconHeart v-else icon-class="w-4 h-4 text-white" />
-                          </IconButton>
-                        </Tooltip>
+                      <template #actions>
+                        <div class="flex items-center gap-2">
+                          <Tooltip :text="$t('media.liked')">
+                            <IconButton
+                              :aria-label="$t('media.liked')"
+                              size="small"
+                              variant="default"
+                              :custom-class="`p-2 rounded-full backdrop-blur-sm pointer-events-auto w-fit h-fit ${
+                                title.liked === true
+                                  ? 'bg-primary-800 text-white border border-gray-700/50 dark:bg-primary-600/70 dark:border-primary-800 hover:bg-primary-900 dark:hover:bg-primary-600'
+                                  : 'bg-black/50 hover:bg-primary-900 dark:hover:bg-primary-600'
+                              }`"
+                              @click.stop.prevent="handleAddToLiked(title)"
+                            >
+                              <IconHeartFilled
+                                v-if="title.liked === true"
+                                icon-class="w-4 h-4 text-white"
+                              />
+                              <IconHeart
+                                v-else
+                                icon-class="w-4 h-4 text-white"
+                              />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip :text="$t('seen.removeFromList')">
+                            <IconButton
+                              :aria-label="$t('seen.removeFromList')"
+                              size="small"
+                              variant="default"
+                              custom-class="p-2 rounded-full backdrop-blur-sm pointer-events-auto w-fit h-fit bg-black/50 hover:bg-red-600/80 relative z-50"
+                              @click.stop.prevent="
+                                () => {
+                                  console.log('IconButton clicked', title);
+                                  handleRemoveSeen(title);
+                                }
+                              "
+                            >
+                              <IconX icon-class="w-4 h-4 text-white" />
+                            </IconButton>
+                          </Tooltip>
+                        </div>
                       </template>
-                      <template #top-right-actions>
-                        <Tooltip :text="$t('seen.removeFromList')">
-                          <IconButton
-                            :aria-label="$t('seen.removeFromList')"
-                            size="small"
-                            variant="default"
-                            custom-class="p-2 rounded-full backdrop-blur-sm pointer-events-auto w-fit h-fit bg-black/50 hover:bg-red-600/80 relative z-50"
-                            @click.stop.prevent="
-                              () => {
-                                console.log('IconButton clicked', title);
-                                handleRemoveSeen(title);
-                              }
-                            "
-                          >
-                            <IconX icon-class="w-4 h-4 text-white" />
-                          </IconButton>
-                        </Tooltip>
-                      </template>
-                    </TitleCard>
+                    </TitleCardMosaic>
                   </div>
                   <!-- List view -->
                   <div v-else class="space-y-4">
@@ -266,6 +273,7 @@
                       :vote-average="title.vote_average"
                       :type="title.type"
                       :tmdb-id="title.tmdb_id"
+                      :providers="title.providers"
                     >
                       <template #actions>
                         <div class="flex gap-2 items-center">
@@ -323,7 +331,7 @@
                 <div v-if="isLoading" class="flex flex-col gap-4">
                   <!-- Mosaic view skeletons -->
                   <div
-                    v-if="notInterestedViewMode === 'mosaic'"
+                    v-if="viewMode === 'mosaic'"
                     class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
                   >
                     <SkeletonMediaCard
@@ -347,14 +355,14 @@
                   class="flex flex-col gap-4"
                 >
                   <div class="flex justify-end">
-                    <ViewModeSelector page-key="not-interested" />
+                    <ViewModeSelector page-key="lists" />
                   </div>
                   <!-- Mosaic view -->
                   <div
-                    v-if="notInterestedViewMode === 'mosaic'"
+                    v-if="viewMode === 'mosaic'"
                     class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
                   >
-                    <TitleCard
+                    <TitleCardMosaic
                       v-for="title in notInterestedTitles"
                       :key="title.id"
                       :title="title.title"
@@ -368,11 +376,14 @@
                         $t('media.noPosterAvailableFor', { title: title.title })
                       "
                       :type="title.type"
+                      :vote-average="title.vote_average"
+                      :overview="title.overview"
+                      :providers="title.providers"
                       :aria-label="
                         $t('media.titleCardLabel', { title: title.title })
                       "
                     >
-                      <template #top-right-actions>
+                      <template #actions>
                         <Tooltip :text="$t('common.delete')">
                           <IconButton
                             :aria-label="$t('common.delete')"
@@ -390,7 +401,7 @@
                           </IconButton>
                         </Tooltip>
                       </template>
-                    </TitleCard>
+                    </TitleCardMosaic>
                   </div>
                   <!-- List view -->
                   <div v-else class="space-y-4">
@@ -404,6 +415,7 @@
                       :vote-average="title.vote_average"
                       :type="title.type"
                       :tmdb-id="title.tmdb_id"
+                      :providers="title.providers"
                     >
                       <template #actions>
                         <Tooltip :text="$t('common.delete')">
@@ -503,7 +515,6 @@ import {
 import { getSession } from '@/services/auth';
 import { useUserRegion } from '@/composables/useUserRegion';
 import TitleCardMosaic from '@/components/TitleCardMosaic.vue';
-import TitleCard from '@/components/TitleCard.vue';
 import IconButton from '@/components/ui/IconButton.vue';
 import IconHeart from '@/components/icons/IconHeart.vue';
 import IconHeartFilled from '@/components/icons/IconHeartFilled.vue';
@@ -565,10 +576,8 @@ const { t, locale } = useI18n();
 const { showToast } = useUndoToast();
 const { executeAction, executeLikedAction } = useTitleStatusAction();
 
-// View modes for each tab
-const { viewMode: likedViewMode } = useViewMode('liked');
-const { viewMode: seenViewMode } = useViewMode('seen');
-const { viewMode: notInterestedViewMode } = useViewMode('not-interested');
+// View mode shared across all tabs
+const { viewMode } = useViewMode('lists', 'mosaic');
 
 // Get app language for TMDB API calls
 const getAppLanguage = () => {
@@ -1529,15 +1538,10 @@ const handleRemoveNotInterested = async (title: {
 
 // Lifecycle
 onMounted(async () => {
-  // Ensure profile is loaded
-  await userStore.value.ensureProfile();
-
-  // Check onboarding status
-  if (!userStore.value.hasCompletedOnboarding) {
-    const { routeWithLang } = useRouteWithLang();
-    await navigateTo(routeWithLang('/onboarding'), { replace: true });
-    return;
-  }
+  // NOTE: Onboarding check is handled by auth middleware, not here
+  // This prevents duplicate redirects and race conditions during F5/refresh
+  // The middleware ensures profile is loaded and onboarding is checked before
+  // the page component mounts
 
   // Profile is ready, show content
   isProfileReady.value = true;

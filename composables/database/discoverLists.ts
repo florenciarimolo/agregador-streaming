@@ -279,6 +279,9 @@ export async function getDiscoverListItems(
         }
       }
 
+      // title.overview is already extracted by getTitlesByTmdbIds using getTitleOrOverviewInLanguage
+      // It should already have the correct language fallback applied
+      // Use the extracted overview as-is (it should already have fallback logic)
       return {
         id: item.id,
         discover_list_id: item.discover_list_id,

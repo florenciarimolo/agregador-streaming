@@ -8,6 +8,8 @@
     :no-image-aria-label="noImageAriaLabel"
     :type="type"
     :show-content="true"
+    :tag="tag"
+    :is-discover-list="isDiscoverList"
     :aria-label="ariaLabel"
   >
     <!-- Top-left: Rating Badge -->
@@ -75,6 +77,8 @@ interface Props {
   voteAverage?: number | null;
   overview?: string | null;
   providers?: Provider[];
+  tag?: string | null;
+  isDiscoverList?: boolean;
   ariaLabel?: string;
 }
 
@@ -87,6 +91,8 @@ const props = withDefaults(defineProps<Props>(), {
   voteAverage: null,
   overview: null,
   providers: undefined,
+  tag: null,
+  isDiscoverList: false,
   ariaLabel: undefined,
 });
 

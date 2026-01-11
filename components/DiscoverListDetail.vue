@@ -10,7 +10,7 @@
     </button>
 
     <!-- Header -->
-    <div>
+    <div v-if="list.title">
       <h1 class="text-3xl font-bold text-gray-800 dark:text-gray-300 mb-2">
         {{ list.title }}
       </h1>
@@ -50,7 +50,10 @@
     </Modal>
 
     <!-- View Mode Selector -->
-    <div v-if="items && items.length > 0" class="flex justify-end">
+    <div
+      v-if="(items && items.length > 0) || isLoading"
+      class="flex justify-end"
+    >
       <ViewModeSelector :page-key="`discover-${list.slug}`" />
     </div>
 
@@ -103,6 +106,8 @@
           :vote-average="item.vote_average || null"
           :overview="item.overview || null"
           :providers="item.providers"
+          :tag="item.tag || null"
+          :is-discover-list="true"
           :aria-label="$t('media.titleCardLabel', { title: item.title })"
         >
           <!-- Actions for logged users only -->
@@ -122,11 +127,14 @@
           :key="item.id"
           :title="item.title || ''"
           :poster-path="item.poster_path"
-          :tagline="item.tagline || item.tag || null"
+          :tagline="item.tagline || null"
+          :tag="item.tag || null"
           :overview="item.overview || null"
           :vote-average="item.vote_average || null"
           :type="item.type"
           :tmdb-id="item.tmdb_id"
+          :providers="item.providers"
+          :hide-type-badge="true"
         >
           <!-- Actions for logged users only -->
           <template v-if="isLoggedIn" #actions>

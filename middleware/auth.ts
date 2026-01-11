@@ -84,16 +84,35 @@ export default defineNuxtRouteMiddleware(
         const { data: sessionData } = await supabase.auth.getSession();
         if (sessionData?.session?.user) {
           userStore.setUser(sessionData.session.user);
-        }
-        // Mark as initialized after checking session
-        if (!userStore.authInitialized) {
-          userStore.setAuthInitialized(true);
+          // Only mark as initialized if we found a user
+          // This ensures initAuth() in app.vue can still run and set it properly
+          if (!userStore.authInitialized) {
+            userStore.setAuthInitialized(true);
+          }
+        } else {
+          // No session found - but don't mark as initialized yet
+          // Let initAuth() in app.vue handle the initialization
+          // This prevents premature redirects during F5/refresh
+          if (import.meta.dev) {
+            console.log(
+              '[AUTH TRACE] middleware no session found, waiting for initAuth()',
+              to.path
+            );
+          }
+          // Allow navigation to proceed - initAuth() will set authInitialized
+          return;
         }
       } catch {
-        // If session check fails, mark as initialized to avoid blocking
-        if (!userStore.authInitialized) {
-          userStore.setAuthInitialized(true);
+        // If session check fails, don't mark as initialized
+        // Let initAuth() handle it to avoid blocking or premature redirects
+        if (import.meta.dev) {
+          console.log(
+            '[AUTH TRACE] middleware session check failed, waiting for initAuth()',
+            to.path
+          );
         }
+        // Allow navigation to proceed - initAuth() will set authInitialized
+        return;
       }
     }
 
@@ -102,6 +121,7 @@ export default defineNuxtRouteMiddleware(
 
     // Protect routes: redirect unauthenticated users to home (with language)
     // Only redirect if auth is initialized AND there's no user
+    // CRITICAL: Only redirect if we're certain there's no user (authInitialized is true from initAuth)
     if (!currentUser && userStore.authInitialized) {
       if (import.meta.dev) {
         console.log(

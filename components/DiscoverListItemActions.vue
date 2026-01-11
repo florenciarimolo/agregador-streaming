@@ -7,7 +7,7 @@
           :aria-label="$t('media.actionsMenuFor', { title: item.title })"
           size="small"
           variant="default"
-          custom-class="menu-button p-1 rounded-full bg-black/50 hover:bg-gray-700/80 backdrop-blur-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-black/50 [&>svg]:text-white [&>svg]:w-3 [&>svg]:h-3"
+          custom-class="menu-button p-2 rounded-full bg-black/50 hover:bg-gray-700/80 backdrop-blur-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-black/50 [&>svg]:text-white"
         />
       </template>
       <div class="p-4">
@@ -28,10 +28,22 @@
             <!-- All remove actions use IconX -->
             <IconX v-if="menuAction.showRemove" icon-class="w-4 h-4" />
             <!-- Add actions keep their original icons -->
-            <IconCheck v-else-if="menuAction.icon === 'IconCheck'" icon-class="w-4 h-4" />
-            <IconHeart v-else-if="menuAction.icon === 'IconHeart'" icon-class="w-4 h-4" />
-            <IconClock v-else-if="menuAction.icon === 'IconClock'" icon-class="w-4 h-4" />
-            <IconX v-else-if="menuAction.icon === 'IconX'" icon-class="w-4 h-4" />
+            <IconCheck
+              v-else-if="menuAction.icon === 'IconCheck'"
+              icon-class="w-4 h-4"
+            />
+            <IconHeart
+              v-else-if="menuAction.icon === 'IconHeart'"
+              icon-class="w-4 h-4"
+            />
+            <IconClock
+              v-else-if="menuAction.icon === 'IconClock'"
+              icon-class="w-4 h-4"
+            />
+            <IconX
+              v-else-if="menuAction.icon === 'IconX'"
+              icon-class="w-4 h-4"
+            />
           </template>
           {{ $t(menuAction.label) }}
         </Button>
@@ -42,7 +54,10 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { useTitleMenuActions, type TitleStatusInfo } from '@/composables/useTitleMenuActions';
+import {
+  useTitleMenuActions,
+  type TitleStatusInfo,
+} from '@/composables/useTitleMenuActions';
 import type { DiscoverListItem } from '@/composables/database/discoverLists';
 import ActionMenu from './ui/ActionMenu.vue';
 import IconButton from './ui/IconButton.vue';
@@ -65,12 +80,9 @@ const emit = defineEmits<{
 }>();
 
 // Use the composable to determine which actions to show
-const { menuActions } = useTitleMenuActions(
-  computed(() => props.titleStatus)
-);
+const { menuActions } = useTitleMenuActions(computed(() => props.titleStatus));
 
 const handleMenuAction = (action: string) => {
   emit('action', props.item, action);
 };
 </script>
-
