@@ -220,9 +220,10 @@ export default defineEventHandler(async (event) => {
       });
 
       // Get tagline from DB or TMDB
-      const { getTitleInLanguage } = await import('@/services/titles');
+      const { getTaglineInLanguage } =
+        await import('@/composables/database/titles');
       let taglineFromDb = taglineJsonb
-        ? getTitleInLanguage(taglineJsonb, userLanguage, region)
+        ? getTaglineInLanguage(taglineJsonb, userLanguage, region)
         : null;
 
       // If tagline or status is missing in DB but exists in TMDB response, save it
@@ -234,7 +235,11 @@ export default defineEventHandler(async (event) => {
         needsUpdate.tagline = updatedTagline;
         taglineJsonb = updatedTagline;
         // Recalculate taglineFromDb after updating taglineJsonb
-        taglineFromDb = getTitleInLanguage(taglineJsonb, userLanguage, region);
+        taglineFromDb = getTaglineInLanguage(
+          taglineJsonb,
+          userLanguage,
+          region
+        );
       }
       if (!titleFromDb.status && fullTvShowResponse?.status) {
         needsUpdate[TITLES_COLUMNS.STATUS] = fullTvShowResponse.status;

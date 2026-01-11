@@ -7,11 +7,8 @@ import {
   getUserWatchlistTitles,
 } from '@/services/userTitleStatus';
 import { getUserActivity } from '@/services/activity';
-import {
-  getTitlesByTmdbIds,
-  getTitleInLanguage,
-  type MultiLanguageText,
-} from '@/services/titles';
+import { getTitlesByTmdbIds, type MultiLanguageText } from '@/services/titles';
+import { getTitleOrOverviewInLanguage } from '@/composables/database/titles';
 import { getUserTMDBParams } from '@/server/utils/user-tmdb';
 import { getUserIdFromEvent } from '@/server/utils/user-auth';
 import { TABLES } from '@/constants/db/tables';
@@ -84,17 +81,24 @@ export default defineEventHandler(async (event) => {
 
     // Extract language-specific text from JSONB and create map
     const titleMap = new Map(
-      titlesData?.map((t: { tmdb_id: number; title: unknown; overview: unknown }) => {
-        const titleWithLanguage = {
-          ...t,
-          title: getTitleInLanguage(t.title as MultiLanguageText, userLanguage),
-          overview: getTitleInLanguage(
-            t.overview as MultiLanguageText,
-            userLanguage
-          ),
-        };
-        return [t.tmdb_id, titleWithLanguage];
-      }) || []
+      titlesData?.map(
+        (t: { tmdb_id: number; title: unknown; overview: unknown }) => {
+          const titleWithLanguage = {
+            ...t,
+            title: getTitleOrOverviewInLanguage(
+              t.title as MultiLanguageText,
+              userLanguage,
+              null
+            ),
+            overview: getTitleOrOverviewInLanguage(
+              t.overview as MultiLanguageText,
+              userLanguage,
+              null
+            ),
+          };
+          return [t.tmdb_id, titleWithLanguage];
+        }
+      ) || []
     );
 
     // Format export data
@@ -110,14 +114,18 @@ export default defineEventHandler(async (event) => {
           ...s,
           title: titleMap.get(s.tmdb_id),
         })),
-        notInterested: (notInterestedStatuses.data || []).map((s: { tmdb_id: number }) => ({
-          ...s,
-          title: titleMap.get(s.tmdb_id),
-        })),
-        watchlist: (watchlistStatuses.data || []).map((s: { tmdb_id: number }) => ({
-          ...s,
-          title: titleMap.get(s.tmdb_id),
-        })),
+        notInterested: (notInterestedStatuses.data || []).map(
+          (s: { tmdb_id: number }) => ({
+            ...s,
+            title: titleMap.get(s.tmdb_id),
+          })
+        ),
+        watchlist: (watchlistStatuses.data || []).map(
+          (s: { tmdb_id: number }) => ({
+            ...s,
+            title: titleMap.get(s.tmdb_id),
+          })
+        ),
       },
       activity: activity.data || [],
       exportedAt: new Date().toISOString(),

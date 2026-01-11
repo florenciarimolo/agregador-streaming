@@ -342,6 +342,11 @@
     "medium": "Mitjà",
     "high": "Alt"
   },
+  "viewMode": {
+    "mosaic": "Vista de mosaic",
+    "list": "Vista de llista",
+    "selectView": "Seleccionar vista"
+  },
   "watchlist": {
     "title": "Watchlist",
     "description": "Pel·lícules i sèries que has desat per veure més endevant.",

@@ -15,9 +15,14 @@ import { MOOD } from '@/constants/domain/mood';
 import type { TitleData } from '@/services/recommendationPool';
 import type { MultiLanguageText } from '@/services/titles';
 import { getTitleInLanguage } from '@/services/titles';
+import {
+  getTaglineInLanguage,
+  getTitleOrOverviewInLanguage,
+} from '@/composables/database/titles';
 import { TABLES } from '@/constants/db/tables';
 import { TITLES_COLUMNS } from '@/constants/db/columns';
 import { safeError } from '@/server/utils/logger';
+import { getTMDBConfig } from '@/server/utils/config';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 /**
@@ -367,7 +372,12 @@ export async function getTitleData(
   language: string,
   region: string,
   supabase: SupabaseClient,
-  tmdbConfig: { baseUrl: string; apiKey: string; language: string; region: string },
+  tmdbConfig: {
+    baseUrl: string;
+    apiKey: string;
+    language: string;
+    region: string;
+  },
   errorPrefix: string = '[Recommendations]'
 ): Promise<TitleData | null> {
   // First try to get from titles table
@@ -380,6 +390,7 @@ export async function getTitleData(
 
   let titleJsonb: MultiLanguageText | null = null;
   let overviewJsonb: MultiLanguageText | null = null;
+  let taglineJsonb: MultiLanguageText | null = null;
   let posterPathJsonb: MultiLanguageText | null = null;
   let genresFromDb: Array<{ id: number; name: string }> | null = null;
 
@@ -387,6 +398,7 @@ export async function getTitleData(
   if (titleFromDb && !dbError) {
     titleJsonb = titleFromDb.title as MultiLanguageText;
     overviewJsonb = titleFromDb.overview as MultiLanguageText | null;
+    taglineJsonb = titleFromDb.tagline as MultiLanguageText | null;
     posterPathJsonb = titleFromDb.poster_path as MultiLanguageText | null;
     genresFromDb = titleFromDb.genres as Array<{
       id: number;
@@ -405,6 +417,10 @@ export async function getTitleData(
     overviewJsonb &&
     typeof overviewJsonb === 'object' &&
     overviewJsonb[language] !== undefined;
+  const hasExactTaglineLanguage =
+    taglineJsonb &&
+    typeof taglineJsonb === 'object' &&
+    taglineJsonb[language] !== undefined;
 
   if (import.meta.dev) {
     const availableLanguages = titleJsonb ? Object.keys(titleJsonb) : [];
@@ -415,18 +431,18 @@ export async function getTitleData(
   }
 
   // Extract text in user's language from titles table (may return fallback if language missing)
-  const extractedTitle = getTitleInLanguage(
+  // Use getTitleOrOverviewInLanguage for title and overview to follow specific fallback logic
+  const extractedTitle = getTitleOrOverviewInLanguage(
     titleJsonb,
     language,
-    region,
-    false
+    region
   );
-  const extractedOverview = getTitleInLanguage(
+  const extractedOverview = getTitleOrOverviewInLanguage(
     overviewJsonb,
     language,
-    region,
-    false
+    region
   );
+  const extractedTagline = getTaglineInLanguage(taglineJsonb, language, region);
   const extractedPosterPath = getTitleInLanguage(
     posterPathJsonb,
     language,
@@ -443,11 +459,16 @@ export async function getTitleData(
     !hasExactOverviewLanguage ||
     !extractedOverview ||
     extractedOverview.trim() === '';
+  const needsTaglineFallback =
+    !hasExactTaglineLanguage ||
+    !extractedTagline ||
+    extractedTagline.trim() === '';
   const needsFullFetch =
     !titleFromDb || needsTitleFallback || needsOverviewFallback;
 
   // If we have everything from titles table in the exact language, use it
   // IMPORTANT: Only use if we have the exact language (no fallbacks)
+  // BUT: Even if we have title and overview, if tagline is missing, we should try to fetch it
   if (
     !needsFullFetch &&
     hasExactLanguage &&
@@ -455,9 +476,94 @@ export async function getTitleData(
     extractedTitle &&
     extractedOverview
   ) {
+    // If tagline is missing, try to fetch it from TMDB with fallback
+    let finalTagline = extractedTagline || null;
+    if (needsTaglineFallback && titleFromDb) {
+      try {
+        const endpoint =
+          entry.type === MEDIA_TYPE.MOVIE
+            ? `/movie/${entry.tmdb_id}`
+            : `/tv/${entry.tmdb_id}`;
+        const { fetchTaglineWithPrimaryLanguageFallback } =
+          await import('@/server/utils/title-extraction');
+        const mergedTaglineJsonb: MultiLanguageText = {
+          ...(taglineJsonb || {}),
+        };
+
+        // First try to get tagline in requested language from TMDB
+        const tmdbConfig = getTMDBConfig(language, region);
+        const tmdbResponse = await $fetch<{
+          tagline?: string;
+        }>(`${tmdbConfig.baseUrl}${endpoint}`, {
+          query: {
+            api_key: tmdbConfig.apiKey,
+            language: tmdbConfig.language,
+            region: tmdbConfig.region,
+          },
+        }).catch(() => null);
+
+        let fetchedTagline = tmdbResponse?.tagline || '';
+
+        // If tagline in requested language is empty, try primary language fallback
+        if (!fetchedTagline || fetchedTagline.trim() === '') {
+          fetchedTagline = await fetchTaglineWithPrimaryLanguageFallback(
+            '',
+            entry.tmdb_id,
+            entry.type as typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV,
+            language,
+            region,
+            endpoint,
+            mergedTaglineJsonb,
+            supabase
+          );
+          // fetchTaglineWithPrimaryLanguageFallback already saves to database when fetching from primary language
+        } else {
+          // If we got tagline in requested language, add it to mergedTaglineJsonb
+          mergedTaglineJsonb[language] = fetchedTagline;
+        }
+
+        if (fetchedTagline && fetchedTagline.trim() !== '') {
+          finalTagline = fetchedTagline;
+
+          // Save tagline to database if we got it in requested language
+          // (fetchTaglineWithPrimaryLanguageFallback already saves when fetching from primary language)
+          if (tmdbResponse?.tagline && tmdbResponse.tagline.trim() !== '') {
+            await supabase
+              .from(TABLES.TITLES)
+              .update({
+                tagline: mergedTaglineJsonb,
+              })
+              .eq(TITLES_COLUMNS.TMDB_ID, entry.tmdb_id)
+              .eq(TITLES_COLUMNS.TYPE, entry.type)
+              .then(() => {
+                // Success - tagline saved
+              })
+              .catch((error: unknown) => {
+                // Log but don't fail the request
+                if (import.meta.dev) {
+                  console.error(
+                    `${errorPrefix} Error saving tagline to database:`,
+                    error
+                  );
+                }
+              });
+          }
+        }
+      } catch (error) {
+        // Silently fail - tagline is optional
+        if (import.meta.dev) {
+          console.error(
+            `${errorPrefix} Error fetching tagline for ${entry.tmdb_id}:`,
+            error
+          );
+        }
+      }
+    }
+
     return {
       title: extractedTitle,
       overview: extractedOverview,
+      tagline: finalTagline || null,
       poster_path: extractedPosterPath || null,
       backdrop_path: titleFromDb.backdrop_path || null,
       vote_average: titleFromDb.vote_average || null,
@@ -478,6 +584,7 @@ export async function getTitleData(
       title?: string;
       name?: string;
       overview?: string;
+      tagline?: string;
       poster_path?: string | null;
       backdrop_path?: string | null;
       vote_average?: number | null;
@@ -501,6 +608,9 @@ export async function getTitleData(
     const mergedOverviewJsonb: MultiLanguageText = {
       ...(overviewJsonb || {}),
     };
+    const mergedTaglineJsonb: MultiLanguageText = {
+      ...(taglineJsonb || {}),
+    };
     const mergedPosterPathJsonb: MultiLanguageText = {
       ...(posterPathJsonb || {}),
     };
@@ -508,12 +618,15 @@ export async function getTitleData(
     // Add TMDB data in ISO format (merge, don't overwrite existing languages)
     const titleText = tmdbResponse.title || tmdbResponse.name || '';
     let finalOverview = tmdbResponse.overview || '';
-    
+
     if (titleText) {
       mergedTitleJsonb[language] = titleText;
     }
     if (tmdbResponse.overview) {
       mergedOverviewJsonb[language] = tmdbResponse.overview;
+    }
+    if (tmdbResponse.tagline) {
+      mergedTaglineJsonb[language] = tmdbResponse.tagline;
     }
     if (tmdbResponse.poster_path) {
       mergedPosterPathJsonb[language] = tmdbResponse.poster_path;
@@ -521,7 +634,8 @@ export async function getTitleData(
 
     // If overview is still empty, try fetching with primary language of region as fallback
     if (needsOverviewFallback) {
-      const { fetchOverviewWithPrimaryLanguageFallback } = await import('@/server/utils/title-extraction');
+      const { fetchOverviewWithPrimaryLanguageFallback } =
+        await import('@/server/utils/title-extraction');
       finalOverview = await fetchOverviewWithPrimaryLanguageFallback(
         finalOverview,
         entry.tmdb_id,
@@ -534,6 +648,53 @@ export async function getTitleData(
       );
     }
 
+    // Extract tagline from TMDB response
+    let finalTagline = tmdbResponse.tagline || '';
+
+    // If tagline is still empty, try fetching with primary language of region as fallback
+    // Only if the requested language is not the primary language of the region
+    const needsTaglineFallback =
+      !hasExactTaglineLanguage ||
+      !extractedTagline ||
+      extractedTagline.trim() === '';
+
+    if (needsTaglineFallback && (!finalTagline || finalTagline.trim() === '')) {
+      const { fetchTaglineWithPrimaryLanguageFallback } =
+        await import('@/server/utils/title-extraction');
+      finalTagline = await fetchTaglineWithPrimaryLanguageFallback(
+        finalTagline,
+        entry.tmdb_id,
+        entry.type as typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV,
+        language,
+        region,
+        endpoint,
+        mergedTaglineJsonb,
+        supabase
+      );
+
+      // Update mergedTaglineJsonb with finalTagline if it was fetched from primary language
+      if (finalTagline && finalTagline.trim() !== '') {
+        const { getPrimaryLanguageForRegion } =
+          await import('@/utils/language-detection');
+        const { DEFAULT_LANGUAGE_ISO } = await import('@/constants/languages');
+        const primaryLanguage = region
+          ? getPrimaryLanguageForRegion(region)
+          : DEFAULT_LANGUAGE_ISO;
+        const primaryLanguageKey = `${primaryLanguage}-${region?.toUpperCase() || 'ES'}`;
+        const requestedLangCode = language.split('-')[0]?.toLowerCase() || '';
+        const primaryLangCode =
+          primaryLanguage.split('-')[0]?.toLowerCase() || '';
+
+        // Only update if we fetched from primary language (different from requested)
+        if (
+          requestedLangCode !== primaryLangCode &&
+          !mergedTaglineJsonb[primaryLanguageKey]
+        ) {
+          mergedTaglineJsonb[primaryLanguageKey] = finalTagline;
+        }
+      }
+    }
+
     // Update titles table with TMDB data
     // IMPORTANT: Use upsert to merge, preserving all existing language keys in JSONB
     // We do this synchronously to ensure data is saved before returning
@@ -542,7 +703,7 @@ export async function getTitleData(
       const { data: existingTitle } = await supabase
         .from(TABLES.TITLES)
         .select(
-          `${TITLES_COLUMNS.TITLE}, ${TITLES_COLUMNS.OVERVIEW}, ${TITLES_COLUMNS.POSTER_PATH}, ${TITLES_COLUMNS.GENRES}, ${TITLES_COLUMNS.BACKDROP_PATH}, ${TITLES_COLUMNS.VOTE_AVERAGE}, ${TITLES_COLUMNS.RELEASE_DATE}, ${TITLES_COLUMNS.FIRST_AIR_DATE}, ${TITLES_COLUMNS.STATUS}, ${TITLES_COLUMNS.RUNTIME}`
+          `${TITLES_COLUMNS.TITLE}, ${TITLES_COLUMNS.OVERVIEW}, ${TITLES_COLUMNS.TAGLINE}, ${TITLES_COLUMNS.POSTER_PATH}, ${TITLES_COLUMNS.GENRES}, ${TITLES_COLUMNS.BACKDROP_PATH}, ${TITLES_COLUMNS.VOTE_AVERAGE}, ${TITLES_COLUMNS.RELEASE_DATE}, ${TITLES_COLUMNS.FIRST_AIR_DATE}, ${TITLES_COLUMNS.STATUS}, ${TITLES_COLUMNS.RUNTIME}`
         )
         .eq(TITLES_COLUMNS.TMDB_ID, entry.tmdb_id)
         .eq(TITLES_COLUMNS.TYPE, entry.type)
@@ -561,13 +722,18 @@ export async function getTitleData(
             ...mergedOverviewJsonb,
           }
         : mergedOverviewJsonb;
-      const finalPosterPathJsonb: MultiLanguageText =
-        existingTitle?.poster_path
-          ? {
-              ...(existingTitle.poster_path as MultiLanguageText),
-              ...mergedPosterPathJsonb,
-            }
-          : mergedPosterPathJsonb;
+      const finalTaglineJsonb: MultiLanguageText = existingTitle?.tagline
+        ? {
+            ...(existingTitle.tagline as MultiLanguageText),
+            ...mergedTaglineJsonb,
+          }
+        : mergedTaglineJsonb;
+      const finalPosterPathJsonb: MultiLanguageText = existingTitle?.poster_path
+        ? {
+            ...(existingTitle.poster_path as MultiLanguageText),
+            ...mergedPosterPathJsonb,
+          }
+        : mergedPosterPathJsonb;
 
       if (import.meta.dev) {
         // eslint-disable-next-line no-console
@@ -576,54 +742,48 @@ export async function getTitleData(
         );
       }
 
-      const { error: upsertError } = await supabase
-        .from(TABLES.TITLES)
-        .upsert(
-          {
-            [TITLES_COLUMNS.TMDB_ID]: entry.tmdb_id,
-            [TITLES_COLUMNS.TYPE]: entry.type,
-            [TITLES_COLUMNS.TITLE]: finalTitleJsonb,
-            [TITLES_COLUMNS.OVERVIEW]:
-              Object.keys(finalOverviewJsonb).length > 0
-                ? finalOverviewJsonb
-                : null,
-            [TITLES_COLUMNS.POSTER_PATH]:
-              Object.keys(finalPosterPathJsonb).length > 0
-                ? finalPosterPathJsonb
-                : null,
-            [TITLES_COLUMNS.GENRES]:
-              (tmdbResponse.genres || []).length > 0
-                ? tmdbResponse.genres
-                : existingTitle?.genres || null,
-            [TITLES_COLUMNS.BACKDROP_PATH]:
-              tmdbResponse.backdrop_path ||
-              existingTitle?.backdrop_path ||
-              null,
-            [TITLES_COLUMNS.VOTE_AVERAGE]:
-              tmdbResponse.vote_average ??
-              existingTitle?.vote_average ??
-              null,
-            [TITLES_COLUMNS.RELEASE_DATE]:
-              tmdbResponse.release_date ||
-              existingTitle?.release_date ||
-              null,
-            [TITLES_COLUMNS.FIRST_AIR_DATE]:
-              tmdbResponse.first_air_date ||
-              existingTitle?.first_air_date ||
-              null,
-            [TITLES_COLUMNS.STATUS]:
-              tmdbResponse.status ||
-              existingTitle?.status ||
-              null,
-            [TITLES_COLUMNS.RUNTIME]:
-              entry.type === MEDIA_TYPE.MOVIE
-                ? (tmdbResponse.runtime || existingTitle?.runtime || null)
-                : null,
-          },
-          {
-            onConflict: TITLES_COLUMNS.TMDB_ID,
-          }
-        );
+      const { error: upsertError } = await supabase.from(TABLES.TITLES).upsert(
+        {
+          [TITLES_COLUMNS.TMDB_ID]: entry.tmdb_id,
+          [TITLES_COLUMNS.TYPE]: entry.type,
+          [TITLES_COLUMNS.TITLE]: finalTitleJsonb,
+          [TITLES_COLUMNS.OVERVIEW]:
+            Object.keys(finalOverviewJsonb).length > 0
+              ? finalOverviewJsonb
+              : null,
+          [TITLES_COLUMNS.TAGLINE]:
+            Object.keys(finalTaglineJsonb).length > 0
+              ? finalTaglineJsonb
+              : null,
+          [TITLES_COLUMNS.POSTER_PATH]:
+            Object.keys(finalPosterPathJsonb).length > 0
+              ? finalPosterPathJsonb
+              : null,
+          [TITLES_COLUMNS.GENRES]:
+            (tmdbResponse.genres || []).length > 0
+              ? tmdbResponse.genres
+              : existingTitle?.genres || null,
+          [TITLES_COLUMNS.BACKDROP_PATH]:
+            tmdbResponse.backdrop_path || existingTitle?.backdrop_path || null,
+          [TITLES_COLUMNS.VOTE_AVERAGE]:
+            tmdbResponse.vote_average ?? existingTitle?.vote_average ?? null,
+          [TITLES_COLUMNS.RELEASE_DATE]:
+            tmdbResponse.release_date || existingTitle?.release_date || null,
+          [TITLES_COLUMNS.FIRST_AIR_DATE]:
+            tmdbResponse.first_air_date ||
+            existingTitle?.first_air_date ||
+            null,
+          [TITLES_COLUMNS.STATUS]:
+            tmdbResponse.status || existingTitle?.status || null,
+          [TITLES_COLUMNS.RUNTIME]:
+            entry.type === MEDIA_TYPE.MOVIE
+              ? tmdbResponse.runtime || existingTitle?.runtime || null
+              : null,
+        },
+        {
+          onConflict: TITLES_COLUMNS.TMDB_ID,
+        }
+      );
 
       if (upsertError) {
         if (import.meta.dev) {
@@ -646,11 +806,18 @@ export async function getTitleData(
       }
     }
 
+    // Use finalTagline (which may have been fetched from primary language fallback)
+    // If finalTagline is empty, try extracting from merged data as fallback
+    const extractedTaglineFromTmdb =
+      finalTagline ||
+      getTaglineInLanguage(mergedTaglineJsonb, language, region);
+
     // Return title data for this request
     // Use finalOverview which may include primary language fallback
     return {
       title: titleText,
       overview: finalOverview,
+      tagline: extractedTaglineFromTmdb || null,
       poster_path: tmdbResponse.poster_path || null,
       backdrop_path: tmdbResponse.backdrop_path || null,
       vote_average: tmdbResponse.vote_average || null,
@@ -670,4 +837,3 @@ export async function getTitleData(
     return null;
   }
 }
-

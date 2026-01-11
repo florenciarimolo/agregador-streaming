@@ -17,6 +17,7 @@ export type RecommendationPoolSource =
 export type TitleData = {
   title: string; // Depende de idioma
   overview: string; // Depende de idioma
+  tagline?: string | null; // Depende de idioma
   poster_path: string | null; // NO depende de idioma
   backdrop_path: string | null; // NO depende de idioma
   vote_average: number | null; // NO depende de idioma

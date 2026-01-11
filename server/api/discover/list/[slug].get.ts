@@ -34,18 +34,19 @@ export default defineEventHandler(async (event) => {
     const query = getQuery(event);
     let language = DEFAULT_LANGUAGE;
     let urlLangCode: string | null = null;
-    
+
     // Priority 1: URL parameter (route.params.lang) - deterministic source of truth
     const langFromUrl = params.lang as string | undefined;
     if (langFromUrl) {
       const normalizedLang = langFromUrl.toLowerCase();
       urlLangCode = normalizedLang;
-      const { getI18nCodeFromUrlCode } = await import('@/composables/useLangFromUrl');
+      const { getI18nCodeFromUrlCode } =
+        await import('@/composables/useLangFromUrl');
       const i18nCode = getI18nCodeFromUrlCode(normalizedLang);
       if (i18nCode) {
         language = toTMDBLanguageCode(i18nCode);
       }
-    } 
+    }
     // Priority 2: Query parameter (fallback for API calls)
     else if (query.language && typeof query.language === 'string') {
       language = toTMDBLanguageCode(query.language);
@@ -54,7 +55,8 @@ export default defineEventHandler(async (event) => {
         urlLangCode = query.urlLang.toLowerCase();
       } else {
         // Fallback: Try to extract URL code from i18n code for tag extraction
-        const { getUrlCodeFromI18nCode } = await import('@/composables/useLangFromUrl');
+        const { getUrlCodeFromI18nCode } =
+          await import('@/composables/useLangFromUrl');
         urlLangCode = getUrlCodeFromI18nCode(query.language) || null;
       }
     }
@@ -83,7 +85,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // Get list items with title data
-    // CRITICAL: No region, no providers - Discover is 100% stable
+    // CRITICAL: No region - Discover is 100% stable
     // Pass urlLangCode to extract tag in correct language
     const { data: items, error: itemsError } = await getDiscoverListItems(
       list.id,
@@ -100,13 +102,74 @@ export default defineEventHandler(async (event) => {
       });
     }
 
+    // Fetch providers for each item
+    // Get user region for providers (fallback to ES)
+    const { getUserTMDBParams } = await import('@/server/utils/user-tmdb');
+    const { region } = await getUserTMDBParams(event);
+    const { getTMDBConfig } = await import('@/server/utils/config');
+    const tmdbConfig = getTMDBConfig(language, region || 'ES');
+
+    const itemsWithProviders = await Promise.all(
+      (items || []).map(async (item) => {
+        // Fetch providers from TMDB
+        let providers: Array<{
+          provider_id: number;
+          provider_name: string;
+          logo_path: string | null;
+        }> = [];
+        try {
+          const providerPath =
+            item.type === 'movie'
+              ? `/movie/${item.tmdb_id}/watch/providers`
+              : `/tv/${item.tmdb_id}/watch/providers`;
+          const providerResponse = await $fetch<{
+            results?: {
+              [key: string]: {
+                flatrate?: Array<{
+                  provider_id: number;
+                  provider_name: string;
+                  logo_path: string | null;
+                }>;
+              };
+            };
+          }>(`${tmdbConfig.baseUrl}${providerPath}`, {
+            query: {
+              api_key: tmdbConfig.apiKey,
+            },
+          });
+
+          // Use user's region for providers, fallback to ES
+          // IMPORTANT: Only use flatrate providers (streaming services)
+          const regionProviders =
+            providerResponse.results?.[region || 'ES'] ||
+            providerResponse.results?.ES;
+          if (regionProviders) {
+            providers = (regionProviders.flatrate || []).slice(0, 5);
+          }
+        } catch (error) {
+          // Don't fail if providers can't be fetched
+          if (process.env.NODE_ENV === 'development') {
+            console.error(
+              `Error fetching providers for ${item.tmdb_id}:`,
+              error
+            );
+          }
+        }
+
+        return {
+          ...item,
+          providers,
+        };
+      })
+    );
+
     // Set cache headers (content is stable, cacheable)
     setHeader(event, 'Cache-Control', 'public, max-age=3600'); // 1 hour
 
     return {
       success: true,
       list,
-      items: items || [],
+      items: itemsWithProviders,
     };
   } catch (error) {
     if (error && typeof error === 'object' && 'statusCode' in error) {

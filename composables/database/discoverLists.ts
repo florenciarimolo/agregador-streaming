@@ -9,8 +9,10 @@ import {
   DISCOVER_LISTS_COLUMNS,
   DISCOVER_LIST_ITEMS_COLUMNS,
   TITLES_COLUMNS,
+  USER_TITLE_STATUS_COLUMNS,
 } from '@/constants/db/columns';
-import { getTitleInLanguage, type MultiLanguageText } from './titles';
+import { TITLE_STATUS } from '@/constants/domain/titleStatus';
+import { getTitleOrOverviewInLanguage, type MultiLanguageText } from './titles';
 import { getTitlesByTmdbIds } from './titles';
 import { insertPoolEntries } from '@/services/recommendationPool';
 import type { RecommendationPoolSource } from '@/services/recommendationPool';
@@ -39,6 +41,13 @@ export interface DiscoverListItem {
   title?: string;
   poster_path?: string | null;
   overview?: string | null;
+  tagline?: string | null;
+  vote_average?: number | null;
+  providers?: Array<{
+    provider_id: number;
+    provider_name: string;
+    logo_path: string | null;
+  }>;
 }
 
 /**
@@ -76,18 +85,18 @@ export async function getDiscoverLists(
     }
 
     // Extract title and description from JSONB in requested language
+    // Use getTitleOrOverviewInLanguage for consistency with title/overview extraction
     const lists: DiscoverList[] = data.map((list) => {
       const titleJsonb = list.title as MultiLanguageText;
       const descriptionJsonb = list.description as MultiLanguageText | null;
 
-      const extractedTitle = getTitleInLanguage(
+      const extractedTitle = getTitleOrOverviewInLanguage(
         titleJsonb,
         language,
-        null,
-        false
+        null
       );
       const extractedDescription = descriptionJsonb
-        ? getTitleInLanguage(descriptionJsonb, language, null, false)
+        ? getTitleOrOverviewInLanguage(descriptionJsonb, language, null)
         : null;
 
       return {
@@ -141,17 +150,17 @@ export async function getDiscoverListBySlug(
     }
 
     // Extract title and description from JSONB in requested language
+    // Use getTitleOrOverviewInLanguage for consistency with title/overview extraction
     const titleJsonb = data.title as MultiLanguageText;
     const descriptionJsonb = data.description as MultiLanguageText | null;
 
-    const extractedTitle = getTitleInLanguage(
+    const extractedTitle = getTitleOrOverviewInLanguage(
       titleJsonb,
       language,
-      null,
-      false
+      null
     );
     const extractedDescription = descriptionJsonb
-      ? getTitleInLanguage(descriptionJsonb, language, null, false)
+      ? getTitleOrOverviewInLanguage(descriptionJsonb, language, null)
       : null;
 
     const list: DiscoverList = {
@@ -237,7 +246,11 @@ export async function getDiscoverListItems(
         // If urlLangCode is provided, extract the specific language tag
         if (urlLangCode) {
           const tagJsonb = item.tag as Record<string, string> | null;
-          if (tagJsonb && typeof tagJsonb === 'object' && !Array.isArray(tagJsonb)) {
+          if (
+            tagJsonb &&
+            typeof tagJsonb === 'object' &&
+            !Array.isArray(tagJsonb)
+          ) {
             // Extract tag using URL language code (es, ca, eu, gl, en, en-gb)
             extractedTag = tagJsonb[urlLangCode] || null;
             // Debug logging in development
@@ -276,6 +289,8 @@ export async function getDiscoverListItems(
         title: title?.title || undefined,
         poster_path: title?.poster_path || undefined,
         overview: title?.overview || undefined,
+        tagline: title?.tagline || undefined,
+        vote_average: title?.vote_average || undefined,
       };
     });
 
@@ -321,10 +336,13 @@ export async function insertDiscoverListIntoPool(
 
     // Get user exclusions (seen, not_interested)
     const { data: exclusions, error: exclusionsError } = await supabase
-      .from('user_title_status')
-      .select('tmdb_id')
-      .eq('user_id', userId)
-      .in('status', ['seen', 'not_interested']);
+      .from(TABLES.USER_TITLE_STATUS)
+      .select(USER_TITLE_STATUS_COLUMNS.TMDB_ID)
+      .eq(USER_TITLE_STATUS_COLUMNS.USER_ID, userId)
+      .in(USER_TITLE_STATUS_COLUMNS.STATUS, [
+        TITLE_STATUS.SEEN,
+        TITLE_STATUS.NOT_INTERESTED,
+      ]);
 
     if (exclusionsError) {
       console.error(
@@ -351,7 +369,9 @@ export async function insertDiscoverListIntoPool(
     const tmdbIds = itemsToInsert.map((item) => item.tmdb_id);
     const { data: titles, error: titlesError } = await supabase
       .from(TABLES.TITLES)
-      .select(`${TITLES_COLUMNS.TMDB_ID}, ${TITLES_COLUMNS.TYPE}, ${TITLES_COLUMNS.VOTE_AVERAGE}`)
+      .select(
+        `${TITLES_COLUMNS.TMDB_ID}, ${TITLES_COLUMNS.TYPE}, ${TITLES_COLUMNS.VOTE_AVERAGE}`
+      )
       .in(TITLES_COLUMNS.TMDB_ID, tmdbIds);
 
     if (titlesError) {

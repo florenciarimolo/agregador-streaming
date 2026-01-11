@@ -25,6 +25,9 @@ import ProductValueSection from '@/components/home/ProductValueSection.vue';
 import FaqSection from '@/components/home/FaqSection.vue';
 import FinalCtaSection from '@/components/home/FinalCtaSection.vue';
 import AnimatedBackground from '@/components/AnimatedBackground.vue';
+import RecommendationSection from '@/components/RecommendationSection.vue';
+import ViewModeSelector from '@/components/ViewModeSelector.vue';
+import { useViewMode } from '@/composables/useViewMode';
 import { getSession } from '@/services/auth';
 import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 
@@ -506,6 +509,9 @@ const hasRegion = computed(() => {
 // Only show when state is ready and there's no user
 const showHero = computed(() => isStateReady.value && !user.value);
 
+// View mode for recommendations (default: mosaic)
+const { viewMode } = useViewMode('home', 'mosaic');
+
 // Computed: Show recommendations section (user exists)
 // Only show when state is ready and user exists
 const showRecommendations = computed(() => isStateReady.value && !!user.value);
@@ -795,11 +801,14 @@ onMounted(() => {
                   (showRecommendationsList || (showSkeleton && loading))
                 "
               >
-                <SectionTitle
-                  :description="$t('home.recommendationsDescription')"
-                >
-                  {{ $t('home.recommendationsTitle') }}
-                </SectionTitle>
+                <div class="flex items-start justify-between gap-4">
+                  <SectionTitle
+                    :description="$t('home.recommendationsDescription')"
+                  >
+                    {{ $t('home.recommendationsTitle') }}
+                  </SectionTitle>
+                  <ViewModeSelector page-key="home" />
+                </div>
               </Section>
 
               <!-- Filters Section -->
@@ -966,6 +975,7 @@ onMounted(() => {
                   :loading-titles="loadingTitles"
                   :is-loading="false"
                   :fetching-replacement="fetchingReplacement"
+                  :view-mode="viewMode"
                   @mark-seen="handleTitleStatus($event, TITLE_STATUS.SEEN)"
                   @mark-not-interested="
                     handleTitleStatus($event, TITLE_STATUS.NOT_INTERESTED)

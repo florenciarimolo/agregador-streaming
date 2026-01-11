@@ -11,6 +11,7 @@ export type Recommendation = {
   type: 'movie' | 'tv';
   poster_path: string | null;
   overview: string | null;
+  tagline?: string | null;
   vote_average: number | null;
   genres: number[] | null;
   release_date: string | null;

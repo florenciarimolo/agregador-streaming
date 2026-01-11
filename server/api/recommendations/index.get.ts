@@ -358,6 +358,7 @@ export default defineEventHandler(async (event) => {
               type: entry.type as 'movie' | 'tv',
               poster_path: titleData.poster_path,
               overview: titleData.overview,
+              tagline: titleData.tagline || null,
               vote_average: titleData.vote_average,
               genres: titleData.genres.map((g: { id: number }) => g.id),
               release_date: titleData.release_date,

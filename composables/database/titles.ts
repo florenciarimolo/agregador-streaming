@@ -51,6 +51,298 @@ function normalizeLanguageCode(code: string, region?: string | null): string {
 }
 
 /**
+ * Extract tagline in the specified language from multi-language JSONB
+ * Follows specific fallback logic:
+ * 1. If tagline is null OR alphabet is not Latin AND current language is NOT the region's primary language:
+ *    - Try to get tagline in region's primary language
+ * 2. If tagline in region's primary language is null AND primary language is NOT English:
+ *    - Try to get tagline in English
+ * 3. NO fallback to any other available language (e.g., Catalan)
+ *
+ * @param taglineJsonb The multi-language JSONB object for tagline
+ * @param language The requested language code in ISO/TMDB format (e.g., 'es-ES', 'ca-ES', 'eu-ES', 'gl-ES', 'en-US')
+ * @param userRegion Optional user region to determine primary language fallback
+ * @returns The tagline in the requested language, or in primary language/English fallback, or empty string
+ */
+export function getTaglineInLanguage(
+  taglineJsonb: MultiLanguageText | null | undefined,
+  language: string,
+  userRegion?: string | null
+): string {
+  if (!taglineJsonb || typeof taglineJsonb !== 'object') {
+    return '';
+  }
+
+  // Normalize language to ISO/TMDB format
+  const normalizedLanguage = normalizeLanguageCode(language, userRegion);
+
+  // Determine primary language for region
+  const primaryLanguage = userRegion
+    ? getPrimaryLanguageForRegion(userRegion)
+    : DEFAULT_LANGUAGE_ISO; // Default to Spanish
+  const primaryLanguageKey = `${primaryLanguage}-${userRegion?.toUpperCase() || 'ES'}`;
+  const requestedLangCode = language.split('-')[0]?.toLowerCase() || '';
+  const primaryLangCode = primaryLanguage.split('-')[0]?.toLowerCase() || '';
+
+  // Try requested language first
+  const requestedText =
+    taglineJsonb[normalizedLanguage] || taglineJsonb[language];
+  if (requestedText && requestedText.trim() !== '') {
+    // Check if alphabet is non-Latin
+    const hasUnexpected = hasUnexpectedCharacters(
+      requestedText,
+      requestedLangCode
+    );
+
+    // If alphabet is non-Latin AND current language is NOT the region's primary language
+    if (hasUnexpected && requestedLangCode !== primaryLangCode) {
+      // Try primary language
+      const primaryText =
+        taglineJsonb[primaryLanguageKey] || taglineJsonb[primaryLanguage];
+      if (primaryText && primaryText.trim() !== '') {
+        return primaryText;
+      }
+
+      // If primary language is not English, try English
+      if (primaryLangCode !== 'en') {
+        const englishKeys = ['en-US', 'en-GB', 'en'];
+        for (const key of englishKeys) {
+          const englishText = taglineJsonb[key];
+          if (englishText && englishText.trim() !== '') {
+            return englishText;
+          }
+        }
+      }
+
+      // Return empty if no fallback found
+      return '';
+    }
+
+    // Return requested language if it's valid
+    return requestedText;
+  }
+
+  // Try legacy format (e.g., 'es' instead of 'es-ES')
+  const langCode = language.split('-')[0]?.toLowerCase() || '';
+  if (langCode && taglineJsonb[langCode]) {
+    const legacyText = taglineJsonb[langCode];
+    if (legacyText && legacyText.trim() !== '') {
+      // Check if alphabet is non-Latin
+      const hasUnexpected = hasUnexpectedCharacters(legacyText, langCode);
+
+      // If alphabet is non-Latin AND current language is NOT the region's primary language
+      if (hasUnexpected && requestedLangCode !== primaryLangCode) {
+        // Try primary language
+        const primaryText =
+          taglineJsonb[primaryLanguageKey] || taglineJsonb[primaryLanguage];
+        if (primaryText && primaryText.trim() !== '') {
+          return primaryText;
+        }
+
+        // If primary language is not English, try English
+        if (primaryLangCode !== 'en') {
+          const englishKeys = ['en-US', 'en-GB', 'en'];
+          for (const key of englishKeys) {
+            const englishText = taglineJsonb[key];
+            if (englishText && englishText.trim() !== '') {
+              return englishText;
+            }
+          }
+        }
+
+        return '';
+      }
+
+      return legacyText;
+    }
+  }
+
+  // If requested language is null AND current language is NOT the region's primary language
+  if (requestedLangCode !== primaryLangCode) {
+    // Try primary language
+    const primaryText =
+      taglineJsonb[primaryLanguageKey] || taglineJsonb[primaryLanguage];
+    if (primaryText && primaryText.trim() !== '') {
+      return primaryText;
+    }
+
+    // If primary language is not English, try English
+    if (primaryLangCode !== 'en') {
+      const englishKeys = ['en-US', 'en-GB', 'en'];
+      for (const key of englishKeys) {
+        const englishText = taglineJsonb[key];
+        if (englishText && englishText.trim() !== '') {
+          return englishText;
+        }
+      }
+    }
+  }
+
+  // If requested language IS the primary language, try primary language first
+  if (requestedLangCode === primaryLangCode) {
+    const primaryText =
+      taglineJsonb[primaryLanguageKey] || taglineJsonb[primaryLanguage];
+    if (primaryText && primaryText.trim() !== '') {
+      return primaryText;
+    }
+
+    // If primary language is not English and primary language tagline is null, try English
+    if (primaryLangCode !== 'en') {
+      const englishKeys = ['en-US', 'en-GB', 'en'];
+      for (const key of englishKeys) {
+        const englishText = taglineJsonb[key];
+        if (englishText && englishText.trim() !== '') {
+          return englishText;
+        }
+      }
+    }
+  }
+
+  // No fallback to any other language - return empty
+  return '';
+}
+
+/**
+ * Extract title or overview in the specified language from multi-language JSONB
+ * Follows specific fallback logic:
+ * 1. If text is null OR alphabet is not Latin AND current language is NOT the region's primary language:
+ *    - Try to get text in region's primary language
+ * 2. If text in region's primary language is null AND primary language is NOT English:
+ *    - Try to get text in English
+ * 3. NO fallback to any other available language (e.g., Catalan)
+ *
+ * @param textJsonb The multi-language JSONB object for title or overview
+ * @param language The requested language code in ISO/TMDB format (e.g., 'es-ES', 'ca-ES', 'eu-ES', 'gl-ES', 'en-US')
+ * @param userRegion Optional user region to determine primary language fallback
+ * @returns The text in the requested language, or in primary language/English fallback, or empty string
+ */
+export function getTitleOrOverviewInLanguage(
+  textJsonb: MultiLanguageText | null | undefined,
+  language: string,
+  userRegion?: string | null
+): string {
+  if (!textJsonb || typeof textJsonb !== 'object') {
+    return '';
+  }
+
+  // Normalize language to ISO/TMDB format
+  const normalizedLanguage = normalizeLanguageCode(language, userRegion);
+
+  // Determine primary language for region
+  const primaryLanguage = userRegion
+    ? getPrimaryLanguageForRegion(userRegion)
+    : DEFAULT_LANGUAGE_ISO; // Default to Spanish
+  const primaryLanguageKey = `${primaryLanguage}-${userRegion?.toUpperCase() || 'ES'}`;
+  const requestedLangCode = language.split('-')[0]?.toLowerCase() || '';
+  const primaryLangCode = primaryLanguage.split('-')[0]?.toLowerCase() || '';
+
+  // Try requested language first
+  const requestedText = textJsonb[normalizedLanguage] || textJsonb[language];
+  if (requestedText && requestedText.trim() !== '') {
+    // Check if alphabet is non-Latin
+    const hasUnexpected = hasUnexpectedCharacters(
+      requestedText,
+      requestedLangCode
+    );
+
+    // If alphabet is non-Latin AND current language is NOT the region's primary language
+    if (hasUnexpected && requestedLangCode !== primaryLangCode) {
+      // Try primary language
+      const primaryText =
+        textJsonb[primaryLanguageKey] || textJsonb[primaryLanguage];
+      if (primaryText && primaryText.trim() !== '') {
+        return primaryText;
+      }
+
+      // If primary language is not English, try English
+      if (primaryLangCode !== 'en') {
+        const englishKeys = ['en-US', 'en-GB', 'en'];
+        for (const key of englishKeys) {
+          const englishText = textJsonb[key];
+          if (englishText && englishText.trim() !== '') {
+            return englishText;
+          }
+        }
+      }
+
+      // Return empty if no fallback found
+      return '';
+    }
+
+    // Return requested language if it's valid
+    return requestedText;
+  }
+
+  // Try legacy format (e.g., 'es' instead of 'es-ES')
+  const langCode = language.split('-')[0]?.toLowerCase() || '';
+  if (langCode && textJsonb[langCode]) {
+    const legacyText = textJsonb[langCode];
+    if (legacyText && legacyText.trim() !== '') {
+      // Check if alphabet is non-Latin
+      const hasUnexpected = hasUnexpectedCharacters(legacyText, langCode);
+
+      // If alphabet is non-Latin AND current language is NOT the region's primary language
+      if (hasUnexpected && requestedLangCode !== primaryLangCode) {
+        // Try primary language
+        const primaryText =
+          textJsonb[primaryLanguageKey] || textJsonb[primaryLanguage];
+        if (primaryText && primaryText.trim() !== '') {
+          return primaryText;
+        }
+
+        // If primary language is not English, try English
+        if (primaryLangCode !== 'en') {
+          const englishKeys = ['en-US', 'en-GB', 'en'];
+          for (const key of englishKeys) {
+            const englishText = textJsonb[key];
+            if (englishText && englishText.trim() !== '') {
+              return englishText;
+            }
+          }
+        }
+
+        return '';
+      }
+
+      return legacyText;
+    }
+  }
+
+  // If requested language is null AND current language is NOT the region's primary language
+  if (requestedLangCode !== primaryLangCode) {
+    // Try primary language
+    const primaryText =
+      textJsonb[primaryLanguageKey] || textJsonb[primaryLanguage];
+    if (primaryText && primaryText.trim() !== '') {
+      return primaryText;
+    }
+
+    // If primary language is not English, try English
+    if (primaryLangCode !== 'en') {
+      const englishKeys = ['en-US', 'en-GB', 'en'];
+      for (const key of englishKeys) {
+        const englishText = textJsonb[key];
+        if (englishText && englishText.trim() !== '') {
+          return englishText;
+        }
+      }
+    }
+  }
+
+  // If requested language IS the primary language, return it if available
+  if (requestedLangCode === primaryLangCode) {
+    const primaryText =
+      textJsonb[primaryLanguageKey] || textJsonb[primaryLanguage];
+    if (primaryText && primaryText.trim() !== '') {
+      return primaryText;
+    }
+  }
+
+  // No fallback to any other language - return empty
+  return '';
+}
+
+/**
  * Extract text in the specified language from multi-language JSONB
  * Falls back to 'es-ES' if language not available
  * If the title contains unexpected characters (non-Latin for ES region languages),
@@ -230,7 +522,7 @@ export async function insertTitle(data: InsertTitleData) {
       [TITLES_COLUMNS.GENRES]: data.genres || null,
       [TITLES_COLUMNS.VOTE_AVERAGE]: data.vote_average || null,
     })
-    .select('id')
+    .select(TITLES_COLUMNS.ID)
     .single();
 }
 
@@ -281,7 +573,9 @@ export async function getTitlesByTmdbIds(
 
   const result = await supabase
     .from(TABLES.TITLES)
-    .select('id, title, type, poster_path, tmdb_id, overview, genres')
+    .select(
+      `${TITLES_COLUMNS.ID}, ${TITLES_COLUMNS.TITLE}, ${TITLES_COLUMNS.TYPE}, ${TITLES_COLUMNS.POSTER_PATH}, ${TITLES_COLUMNS.TMDB_ID}, ${TITLES_COLUMNS.OVERVIEW}, ${TITLES_COLUMNS.VOTE_AVERAGE}, ${TITLES_COLUMNS.GENRES}`
+    )
     .in(TITLES_COLUMNS.TMDB_ID, tmdbIds);
 
   let { data } = result;
@@ -347,7 +641,9 @@ export async function getTitlesByTmdbIds(
     // Reload titles from database after fetching from TMDB
     const { data: reloadedData, error: reloadError } = await supabase
       .from(TABLES.TITLES)
-      .select('id, title, type, poster_path, tmdb_id, overview, genres')
+      .select(
+        `${TITLES_COLUMNS.ID}, ${TITLES_COLUMNS.TITLE}, ${TITLES_COLUMNS.TYPE}, ${TITLES_COLUMNS.POSTER_PATH}, ${TITLES_COLUMNS.TMDB_ID}, ${TITLES_COLUMNS.OVERVIEW}, ${TITLES_COLUMNS.GENRES}`
+      )
       .in(TITLES_COLUMNS.TMDB_ID, tmdbIds);
 
     if (reloadError) {
@@ -494,7 +790,9 @@ export async function getTitlesByTmdbIds(
     if (updatedTmdbIds.length > 0) {
       const { data: updatedData, error: reloadError } = await supabase
         .from(TABLES.TITLES)
-        .select('id, title, type, poster_path, tmdb_id, overview, genres')
+        .select(
+          `${TITLES_COLUMNS.ID}, ${TITLES_COLUMNS.TITLE}, ${TITLES_COLUMNS.TYPE}, ${TITLES_COLUMNS.POSTER_PATH}, ${TITLES_COLUMNS.TMDB_ID}, ${TITLES_COLUMNS.OVERVIEW}, ${TITLES_COLUMNS.VOTE_AVERAGE}, ${TITLES_COLUMNS.GENRES}`
+        )
         .in(TITLES_COLUMNS.TMDB_ID, updatedTmdbIds);
 
       if (!reloadError && updatedData) {
@@ -532,11 +830,22 @@ export async function getTitlesByTmdbIds(
   const titlesWithLanguage = data.map((title) => {
     const titleJsonb = title.title as MultiLanguageText;
     const overviewJsonb = title.overview as MultiLanguageText | null;
+    const taglineJsonb = title.tagline as MultiLanguageText | null;
 
     // Extract title first
-    const extractedTitle = getTitleInLanguage(titleJsonb, language, userRegion);
-    const extractedOverview = getTitleInLanguage(
+    // Use getTitleOrOverviewInLanguage for title and overview to follow specific fallback logic
+    const extractedTitle = getTitleOrOverviewInLanguage(
+      titleJsonb,
+      language,
+      userRegion
+    );
+    const extractedOverview = getTitleOrOverviewInLanguage(
       overviewJsonb,
+      language,
+      userRegion
+    );
+    const extractedTagline = getTaglineInLanguage(
+      taglineJsonb,
       language,
       userRegion
     );
@@ -568,6 +877,7 @@ export async function getTitlesByTmdbIds(
       ...title,
       title: extractedTitle,
       overview: extractedOverview,
+      tagline: extractedTagline,
       poster_path: getTitleInLanguage(
         title.poster_path as MultiLanguageText | null,
         language,
@@ -622,7 +932,9 @@ export async function getTitlesByTmdbIds(
     );
     const { data: reloadedData, error: reloadError } = await supabase
       .from(TABLES.TITLES)
-      .select('id, title, type, poster_path, tmdb_id, overview, genres')
+      .select(
+        `${TITLES_COLUMNS.ID}, ${TITLES_COLUMNS.TITLE}, ${TITLES_COLUMNS.TYPE}, ${TITLES_COLUMNS.POSTER_PATH}, ${TITLES_COLUMNS.TMDB_ID}, ${TITLES_COLUMNS.OVERVIEW}, ${TITLES_COLUMNS.GENRES}`
+      )
       .in(TITLES_COLUMNS.TMDB_ID, primaryLanguageTmdbIds);
 
     if (!reloadError && reloadedData) {
@@ -772,14 +1084,23 @@ export async function getTitleByTmdbIdWithLanguage(
   }
 
   // Extract language-specific text
-  const titleText = getTitleInLanguage(titleJsonb, language, userRegion);
+  // Use getTitleOrOverviewInLanguage for title and overview to follow specific fallback logic
+  const titleText = getTitleOrOverviewInLanguage(
+    titleJsonb,
+    language,
+    userRegion
+  );
   const posterPathText = getTitleInLanguage(
     posterPathJsonb,
     language,
     userRegion,
     true // isImagePath = true - don't check language for image paths
   );
-  const overviewText = getTitleInLanguage(overviewJsonb, language, userRegion);
+  const overviewText = getTitleOrOverviewInLanguage(
+    overviewJsonb,
+    language,
+    userRegion
+  );
 
   return {
     data: {

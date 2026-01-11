@@ -342,6 +342,11 @@
     "medium": "Ertaina",
     "high": "Altua"
   },
+  "viewMode": {
+    "mosaic": "Mosaiko ikuspegia",
+    "list": "Zerrenda ikuspegia",
+    "selectView": "Ikuspegia hautatu"
+  },
   "watchlist": {
     "title": "Watchlist",
     "description": "Filmak eta telesailak geroago ikusteko gordeta dituzunak.",

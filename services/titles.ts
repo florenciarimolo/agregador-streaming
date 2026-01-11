@@ -39,22 +39,19 @@ export interface InsertTitleData {
  * Normalize language code to ISO/TMDB format (e.g., 'ca' -> 'ca-ES', 'es' -> 'es-ES')
  * This ensures consistent format throughout the application
  */
-function normalizeLanguageCode(
-  code: string,
-  region?: string | null
-): string {
+function normalizeLanguageCode(code: string, region?: string | null): string {
   if (!code) return '';
-  
+
   // If already in ISO format (contains '-'), return as is
   if (code.includes('-')) {
     return code;
   }
-  
+
   // Convert legacy format to ISO format
   // Default region is 'ES' for Spanish languages, 'US' for English
   const defaultRegion = code === 'en' ? 'US' : 'ES';
   const normalizedRegion = region?.toUpperCase() || defaultRegion;
-  
+
   return `${code}-${normalizedRegion}`;
 }
 
@@ -63,7 +60,7 @@ function normalizeLanguageCode(
  * Falls back to 'es-ES' if language not available
  * If the title contains unexpected characters (non-Latin for ES region languages),
  * falls back to Spanish (primary language of ES region)
- * 
+ *
  * IMPORTANT: Always uses ISO/TMDB format (e.g., 'ca-ES') as standard.
  * Legacy format (e.g., 'ca') is supported for backward compatibility but will be migrated.
  *
@@ -83,7 +80,7 @@ export function getTitleInLanguage(
 
   // Normalize language to ISO/TMDB format (standard format)
   const normalizedLanguage = normalizeLanguageCode(language, userRegion);
-  
+
   // Determine primary language for region
   const primaryLanguage = userRegion
     ? getPrimaryLanguageForRegion(userRegion)
@@ -99,14 +96,15 @@ export function getTitleInLanguage(
   const shouldCheckAlphabet =
     !isImagePath &&
     requestedLangCode !== primaryLangCode &&
-    LATIN_SCRIPT_LANGUAGE_ISO_CODES.includes(requestedLangCode as typeof LATIN_SCRIPT_LANGUAGE_ISO_CODES[number]) &&
+    LATIN_SCRIPT_LANGUAGE_ISO_CODES.includes(
+      requestedLangCode as (typeof LATIN_SCRIPT_LANGUAGE_ISO_CODES)[number]
+    ) &&
     (userRegion?.toUpperCase() === 'ES' || !userRegion);
 
   // Try requested language first (using ISO/TMDB format - standard)
   // First try normalized format, then try original format (in case it's already normalized)
   const titleText = titleJsonb[normalizedLanguage] || titleJsonb[language];
   if (titleText) {
-
     // Check alphabet if conditions are met
     if (shouldCheckAlphabet) {
       const hasUnexpected = hasUnexpectedCharacters(
@@ -197,7 +195,9 @@ export function getTitleInLanguage(
   if (firstKey) {
     const fallbackText = titleJsonb[firstKey];
     const fallbackLangCode = firstKey.split('-')[0]?.toLowerCase() || '';
-    const isFallbackLatin = LATIN_SCRIPT_LANGUAGE_ISO_CODES.includes(fallbackLangCode as typeof LATIN_SCRIPT_LANGUAGE_ISO_CODES[number]);
+    const isFallbackLatin = LATIN_SCRIPT_LANGUAGE_ISO_CODES.includes(
+      fallbackLangCode as (typeof LATIN_SCRIPT_LANGUAGE_ISO_CODES)[number]
+    );
 
     // If we're expecting Latin but the fallback is non-Latin, check for non-Latin characters
     if (shouldCheckAlphabet && !isFallbackLatin) {
@@ -273,6 +273,10 @@ export async function getTitlesByTmdbIds(
 ) {
   const supabase = useSupabaseClient();
 
+  // Import functions for title/overview/tagline extraction at the start
+  const { getTitleOrOverviewInLanguage, getTaglineInLanguage } =
+    await import('@/composables/database/titles');
+
   if (import.meta.dev) {
     console.log(
       '[getTitlesByTmdbIds] Fetching titles for tmdbIds:',
@@ -284,7 +288,9 @@ export async function getTitlesByTmdbIds(
 
   const result = await supabase
     .from(TABLES.TITLES)
-    .select('id, title, type, poster_path, tmdb_id, overview, genres')
+    .select(
+      'id, title, type, poster_path, tmdb_id, overview, tagline, vote_average, genres'
+    )
     .in(TITLES_COLUMNS.TMDB_ID, tmdbIds);
 
   let { data } = result;
@@ -423,66 +429,74 @@ export async function getTitlesByTmdbIds(
     hasPosterPathLanguage: boolean;
   }> = [];
 
-  data.forEach((title: { title: unknown; overview: unknown; poster_path: unknown; tmdb_id: number; type: string }) => {
-    const titleJsonb = title.title as MultiLanguageText;
-    const overviewJsonb = title.overview as MultiLanguageText | null;
-    const posterPathJsonb = title.poster_path as MultiLanguageText | null;
+  data.forEach(
+    (title: {
+      title: unknown;
+      overview: unknown;
+      poster_path: unknown;
+      tmdb_id: number;
+      type: string;
+    }) => {
+      const titleJsonb = title.title as MultiLanguageText;
+      const overviewJsonb = title.overview as MultiLanguageText | null;
+      const posterPathJsonb = title.poster_path as MultiLanguageText | null;
 
-    // Check if language is missing
-    const hasTitleLanguage = Boolean(
-      titleJsonb && typeof titleJsonb === 'object' && titleJsonb[language]
-    );
-    const hasOverviewLanguage = Boolean(
-      overviewJsonb &&
-      typeof overviewJsonb === 'object' &&
-      overviewJsonb[language]
-    );
-    const hasPosterPathLanguage = Boolean(
-      posterPathJsonb &&
-      typeof posterPathJsonb === 'object' &&
-      posterPathJsonb[language]
-    );
+      // Check if language is missing
+      const hasTitleLanguage = Boolean(
+        titleJsonb && typeof titleJsonb === 'object' && titleJsonb[language]
+      );
+      const hasOverviewLanguage = Boolean(
+        overviewJsonb &&
+        typeof overviewJsonb === 'object' &&
+        overviewJsonb[language]
+      );
+      const hasPosterPathLanguage = Boolean(
+        posterPathJsonb &&
+        typeof posterPathJsonb === 'object' &&
+        posterPathJsonb[language]
+      );
 
-    // If language is missing, fetch from TMDB and update
-    if (!hasTitleLanguage || !hasOverviewLanguage || !hasPosterPathLanguage) {
-      titlesNeedingUpdate.push({
-        title,
-        titleJsonb,
-        overviewJsonb,
-        posterPathJsonb,
-        hasTitleLanguage,
-        hasOverviewLanguage,
-        hasPosterPathLanguage,
-      });
-
-      const updatePromise = $fetch<{
-        success: boolean;
-        title?: string;
-        overview?: string;
-        poster_path?: string;
-      }>('/api/titles/update-language', {
-        method: 'POST',
-        body: {
-          tmdb_id: title.tmdb_id,
-          type: title.type,
-        },
-      })
-        .then((response) => ({
-          tmdb_id: title.tmdb_id,
-          title: response.title,
-          overview: response.overview,
-          poster_path: response.poster_path,
-        }))
-        .catch((err) => {
-          console.error(
-            `Error updating language for title ${title.tmdb_id}:`,
-            err
-          );
-          return { tmdb_id: title.tmdb_id };
+      // If language is missing, fetch from TMDB and update
+      if (!hasTitleLanguage || !hasOverviewLanguage || !hasPosterPathLanguage) {
+        titlesNeedingUpdate.push({
+          title,
+          titleJsonb,
+          overviewJsonb,
+          posterPathJsonb,
+          hasTitleLanguage,
+          hasOverviewLanguage,
+          hasPosterPathLanguage,
         });
-      updatePromises.push(updatePromise);
+
+        const updatePromise = $fetch<{
+          success: boolean;
+          title?: string;
+          overview?: string;
+          poster_path?: string;
+        }>('/api/titles/update-language', {
+          method: 'POST',
+          body: {
+            tmdb_id: title.tmdb_id,
+            type: title.type,
+          },
+        })
+          .then((response) => ({
+            tmdb_id: title.tmdb_id,
+            title: response.title,
+            overview: response.overview,
+            poster_path: response.poster_path,
+          }))
+          .catch((err) => {
+            console.error(
+              `Error updating language for title ${title.tmdb_id}:`,
+              err
+            );
+            return { tmdb_id: title.tmdb_id };
+          });
+        updatePromises.push(updatePromise);
+      }
     }
-  });
+  );
 
   // Wait for all updates to complete
   if (updatePromises.length > 0) {
@@ -497,12 +511,16 @@ export async function getTitlesByTmdbIds(
     if (updatedTmdbIds.length > 0) {
       const { data: updatedData, error: reloadError } = await supabase
         .from(TABLES.TITLES)
-        .select('id, title, type, poster_path, tmdb_id, overview, genres')
+        .select(
+          'id, title, type, poster_path, tmdb_id, overview, tagline, vote_average, genres'
+        )
         .in(TITLES_COLUMNS.TMDB_ID, updatedTmdbIds);
 
       if (!reloadError && updatedData) {
         // Update the data array with the reloaded data
-        const updatedDataMap = new Map(updatedData.map((t: { tmdb_id: number }) => [t.tmdb_id, t]));
+        const updatedDataMap = new Map(
+          updatedData.map((t: { tmdb_id: number }) => [t.tmdb_id, t])
+        );
 
         data.forEach((title: { tmdb_id: number }, index: number) => {
           const updated = updatedDataMap.get(title.tmdb_id);
@@ -532,53 +550,76 @@ export async function getTitlesByTmdbIds(
     needsOverview: boolean; // If overview is empty in preferred language, also fetch it
   }> = [];
 
-  const titlesWithLanguage = data.map((title: { title: unknown; overview: unknown; poster_path: unknown; tmdb_id: number; type: string }) => {
-    const titleJsonb = title.title as MultiLanguageText;
-    const overviewJsonb = title.overview as MultiLanguageText | null;
+  const titlesWithLanguage = data.map(
+    (title: {
+      title: unknown;
+      overview: unknown;
+      tagline: unknown;
+      poster_path: unknown;
+      tmdb_id: number;
+      type: string;
+      vote_average: number | null;
+    }) => {
+      const titleJsonb = title.title as MultiLanguageText;
+      const overviewJsonb = title.overview as MultiLanguageText | null;
+      const taglineJsonb = title.tagline as MultiLanguageText | null;
 
-    // Extract title first
-    const extractedTitle = getTitleInLanguage(titleJsonb, language, userRegion);
-    const extractedOverview = getTitleInLanguage(
-      overviewJsonb,
-      language,
-      userRegion
-    );
-
-    // Check if title is empty (signals need to fetch primary language from TMDB)
-    // This happens when getTitleInLanguage detects non-Latin alphabet but primary language not found
-    if (extractedTitle === '' && requestedLangCode !== primaryLangCode) {
-      // Check if we have primary language in the JSONB
-      const hasPrimaryLanguage =
-        titleJsonb[primaryLanguageKey] ||
-        titleJsonb[primaryLanguage] ||
-        Object.keys(titleJsonb).some((k) =>
-          k.startsWith(`${primaryLanguage}-`)
-        );
-
-      if (!hasPrimaryLanguage) {
-        // Need to fetch primary language from TMDB
-        // Also check if overview is empty in preferred language
-        const needsOverview = !extractedOverview || extractedOverview === '';
-        titlesNeedingPrimaryLanguageFallback.push({
-          tmdb_id: title.tmdb_id,
-          type: title.type,
-          needsOverview,
-        });
-      }
-    }
-
-    return {
-      ...title,
-      title: extractedTitle,
-      overview: extractedOverview,
-      poster_path: getTitleInLanguage(
-        title.poster_path as MultiLanguageText | null,
+      // Extract title first
+      // Use getTitleOrOverviewInLanguage for title and overview to follow specific fallback logic
+      const extractedTitle = getTitleOrOverviewInLanguage(
+        titleJsonb,
         language,
-        userRegion,
-        true // isImagePath = true - don't check language for image paths
-      ),
-    };
-  });
+        userRegion
+      );
+      const extractedOverview = getTitleOrOverviewInLanguage(
+        overviewJsonb,
+        language,
+        userRegion
+      );
+      // Use getTaglineInLanguage for tagline to follow specific fallback logic
+      const extractedTagline = getTaglineInLanguage(
+        taglineJsonb,
+        language,
+        userRegion
+      );
+
+      // Check if title is empty (signals need to fetch primary language from TMDB)
+      // This happens when getTitleInLanguage detects non-Latin alphabet but primary language not found
+      if (extractedTitle === '' && requestedLangCode !== primaryLangCode) {
+        // Check if we have primary language in the JSONB
+        const hasPrimaryLanguage =
+          titleJsonb[primaryLanguageKey] ||
+          titleJsonb[primaryLanguage] ||
+          Object.keys(titleJsonb).some((k) =>
+            k.startsWith(`${primaryLanguage}-`)
+          );
+
+        if (!hasPrimaryLanguage) {
+          // Need to fetch primary language from TMDB
+          // Also check if overview is empty in preferred language
+          const needsOverview = !extractedOverview || extractedOverview === '';
+          titlesNeedingPrimaryLanguageFallback.push({
+            tmdb_id: title.tmdb_id,
+            type: title.type,
+            needsOverview,
+          });
+        }
+      }
+
+      return {
+        ...title,
+        title: extractedTitle,
+        overview: extractedOverview,
+        tagline: extractedTagline,
+        poster_path: getTitleInLanguage(
+          title.poster_path as MultiLanguageText | null,
+          language,
+          userRegion,
+          true // isImagePath = true - don't check language for image paths
+        ),
+      };
+    }
+  );
 
   // If we have titles needing primary language fallback, fetch them from TMDB
   if (titlesNeedingPrimaryLanguageFallback.length > 0) {
@@ -630,33 +671,39 @@ export async function getTitlesByTmdbIds(
 
     if (!reloadError && reloadedData) {
       // Update the titlesWithLanguage array with the reloaded data
-      const reloadedDataMap = new Map(reloadedData.map((t: { tmdb_id: number }) => [t.tmdb_id, t]));
+      const reloadedDataMap = new Map(
+        reloadedData.map((t: { tmdb_id: number }) => [t.tmdb_id, t])
+      );
 
-      titlesWithLanguage.forEach((title: { tmdb_id: number }, index: number) => {
-        const reloaded = reloadedDataMap.get(title.tmdb_id) as { title: unknown; overview: unknown; poster_path: unknown } | undefined;
-        if (reloaded) {
-          // Re-extract with the updated JSONB that now includes primary language
-          titlesWithLanguage[index] = {
-            ...title,
-            title: getTitleInLanguage(
-              reloaded.title as MultiLanguageText,
-              language,
-              userRegion
-            ),
-            overview: getTitleInLanguage(
-              reloaded.overview as MultiLanguageText | null,
-              language,
-              userRegion
-            ),
-            poster_path: getTitleInLanguage(
-              reloaded.poster_path as MultiLanguageText | null,
-              language,
-              userRegion,
-              true
-            ),
-          };
+      titlesWithLanguage.forEach(
+        (title: { tmdb_id: number }, index: number) => {
+          const reloaded = reloadedDataMap.get(title.tmdb_id) as
+            | { title: unknown; overview: unknown; poster_path: unknown }
+            | undefined;
+          if (reloaded) {
+            // Re-extract with the updated JSONB that now includes primary language
+            titlesWithLanguage[index] = {
+              ...title,
+              title: getTitleInLanguage(
+                reloaded.title as MultiLanguageText,
+                language,
+                userRegion
+              ),
+              overview: getTitleInLanguage(
+                reloaded.overview as MultiLanguageText | null,
+                language,
+                userRegion
+              ),
+              poster_path: getTitleInLanguage(
+                reloaded.poster_path as MultiLanguageText | null,
+                language,
+                userRegion,
+                true
+              ),
+            };
+          }
         }
-      });
+      );
     }
   }
 
@@ -775,14 +822,25 @@ export async function getTitleByTmdbIdWithLanguage(
   }
 
   // Extract language-specific text
-  const titleText = getTitleInLanguage(titleJsonb, language, userRegion);
+  // Use getTitleOrOverviewInLanguage for title and overview to follow specific fallback logic
+  const { getTitleOrOverviewInLanguage } =
+    await import('@/composables/database/titles');
+  const titleText = getTitleOrOverviewInLanguage(
+    titleJsonb,
+    language,
+    userRegion
+  );
   const posterPathText = getTitleInLanguage(
     posterPathJsonb,
     language,
     userRegion,
     true // isImagePath = true - don't check language for image paths
   );
-  const overviewText = getTitleInLanguage(overviewJsonb, language, userRegion);
+  const overviewText = getTitleOrOverviewInLanguage(
+    overviewJsonb,
+    language,
+    userRegion
+  );
 
   return {
     data: {
@@ -804,15 +862,16 @@ export async function updateTitleVideos(
   type: typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV,
   videos: MultiLanguageVideos,
   videosUpdatedAt: Date,
-  supabaseClient?: ReturnType<typeof import('@supabase/supabase-js').createClient>
+  supabaseClient?: ReturnType<
+    typeof import('@supabase/supabase-js').createClient
+  >
 ): Promise<void> {
   const supabase = supabaseClient || useSupabaseClient();
   const updateData: {
     [TITLES_COLUMNS.VIDEOS]: MultiLanguageVideos | Record<string, never>;
     [TITLES_COLUMNS.VIDEOS_UPDATED_AT]: string;
   } = {
-    [TITLES_COLUMNS.VIDEOS]:
-      Object.keys(videos).length > 0 ? videos : {},
+    [TITLES_COLUMNS.VIDEOS]: Object.keys(videos).length > 0 ? videos : {},
     [TITLES_COLUMNS.VIDEOS_UPDATED_AT]: videosUpdatedAt.toISOString(),
   };
   const { error } = await supabase
@@ -826,4 +885,3 @@ export async function updateTitleVideos(
     throw error;
   }
 }
-

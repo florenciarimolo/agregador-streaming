@@ -107,7 +107,10 @@ export async function fetchOverviewWithPrimaryLanguageFallback(
 
     // Only fetch primary language if it's different from requested language
     if (requestedLangCode !== primaryLangCode) {
-      const primaryTmdbConfig = getTMDBConfig(primaryLanguageKey, region ?? undefined);
+      const primaryTmdbConfig = getTMDBConfig(
+        primaryLanguageKey,
+        region ?? undefined
+      );
       const primaryResponse = await $fetch<{
         overview?: string;
       }>(`${primaryTmdbConfig.baseUrl}${endpoint}`, {
@@ -172,6 +175,111 @@ export async function fetchOverviewWithPrimaryLanguageFallback(
 
   // Return empty string if no fallback found
   return overview || '';
+}
+
+/**
+ * Fetch tagline with primary language fallback
+ * If tagline is empty and language is not the primary language of region,
+ * fetch it from TMDB in the primary language of the region
+ */
+export async function fetchTaglineWithPrimaryLanguageFallback(
+  tagline: string,
+  tmdbId: number,
+  type: typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV,
+  language: string,
+  region: string | null,
+  endpoint: string,
+  mergedTaglineJsonb: MultiLanguageText,
+  supabase: SupabaseClient
+): Promise<string> {
+  // If tagline is not empty, return it
+  if (tagline && tagline.trim() !== '') {
+    return tagline;
+  }
+
+  // Try fetching with primary language of region as fallback
+  try {
+    const { getPrimaryLanguageForRegion } =
+      await import('@/utils/language-detection');
+    const { DEFAULT_LANGUAGE_ISO } = await import('@/constants/languages');
+
+    const primaryLanguage = region
+      ? getPrimaryLanguageForRegion(region)
+      : DEFAULT_LANGUAGE_ISO;
+    const primaryLanguageKey = `${primaryLanguage}-${region?.toUpperCase() || 'ES'}`;
+    const requestedLangCode = language.split('-')[0]?.toLowerCase() || '';
+    const primaryLangCode = primaryLanguage.split('-')[0]?.toLowerCase() || '';
+
+    // Only fetch primary language if it's different from requested language
+    if (requestedLangCode !== primaryLangCode) {
+      const primaryTmdbConfig = getTMDBConfig(
+        primaryLanguageKey,
+        region ?? undefined
+      );
+      const primaryResponse = await $fetch<{
+        tagline?: string;
+      }>(`${primaryTmdbConfig.baseUrl}${endpoint}`, {
+        query: {
+          api_key: primaryTmdbConfig.apiKey,
+          language: primaryTmdbConfig.language,
+          region: primaryTmdbConfig.region,
+        },
+      });
+
+      if (primaryResponse?.tagline) {
+        // Update database with primary language tagline
+        mergedTaglineJsonb[primaryLanguageKey] = primaryResponse.tagline;
+
+        // Update database (async, don't wait)
+        supabase
+          .from(TABLES.TITLES)
+          .upsert(
+            {
+              tmdb_id: tmdbId,
+              type,
+              tagline:
+                Object.keys(mergedTaglineJsonb).length > 0
+                  ? mergedTaglineJsonb
+                  : null,
+            },
+            {
+              onConflict: TITLES_COLUMNS.TMDB_ID,
+            }
+          )
+          .then(() => {
+            // Success - no action needed
+          })
+          .catch((error: unknown) => {
+            // Log but don't fail the request
+            if (import.meta.dev) {
+              console.error(
+                '[fetchTaglineWithPrimaryLanguageFallback] Error updating cache with primary language:',
+                error
+              );
+            }
+          }) as Promise<void>;
+
+        if (import.meta.dev) {
+          console.log(
+            `[fetchTaglineWithPrimaryLanguageFallback] Using primary language (${primaryLanguageKey}) tagline for ${tmdbId} as fallback`
+          );
+        }
+
+        return primaryResponse.tagline;
+      }
+    }
+  } catch (primaryError) {
+    // Log but don't fail the request
+    if (import.meta.dev) {
+      console.error(
+        '[fetchTaglineWithPrimaryLanguageFallback] Error fetching primary language tagline:',
+        primaryError
+      );
+    }
+  }
+
+  // Return empty string if no fallback found
+  return tagline || '';
 }
 
 /**

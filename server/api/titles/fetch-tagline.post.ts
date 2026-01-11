@@ -33,8 +33,21 @@ export default defineEventHandler(async (event) => {
     }
 
     // Get user preferences for language
-    const { language: userLanguage, region } = await getUserTMDBParams(event);
-    const tmdbConfig = getTMDBConfig(userLanguage, region);
+    let userLanguage: string;
+    let region: string | null;
+    try {
+      const params = await getUserTMDBParams(event);
+      userLanguage = params.language;
+      region = params.region || null;
+    } catch (error) {
+      // Fallback to defaults if getUserTMDBParams fails
+      if (import.meta.dev) {
+        console.error('[fetch-tagline] Error getting user TMDB params:', error);
+      }
+      userLanguage = 'es-ES';
+      region = 'ES';
+    }
+    const tmdbConfig = getTMDBConfig(userLanguage, region || undefined);
 
     // Connect to Supabase
     const supabaseKey =
@@ -70,7 +83,7 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    // Check if tagline already exists
+    // Check if tagline already exists in requested language
     const existingTagline = titleFromDb.tagline as MultiLanguageText | null;
     const hasTaglineInLanguage =
       existingTagline &&
@@ -79,7 +92,7 @@ export default defineEventHandler(async (event) => {
       existingTagline[userLanguage].trim() !== '';
 
     if (hasTaglineInLanguage) {
-      // Tagline already exists, return it
+      // Tagline already exists in requested language, return it
       return {
         success: true,
         tagline: existingTagline,
@@ -87,8 +100,11 @@ export default defineEventHandler(async (event) => {
       };
     }
 
-    // Fetch tagline from TMDB
-    const endpoint = type === MEDIA_TYPE.MOVIE ? `/movie/${tmdb_id}` : `/tv/${tmdb_id}`;
+    // Use the same fallback logic as recommendations
+    const endpoint =
+      type === MEDIA_TYPE.MOVIE ? `/movie/${tmdb_id}` : `/tv/${tmdb_id}`;
+
+    // First try to fetch in requested language
     const tmdbResponse = await $fetch<{
       tagline?: string;
     }>(`${tmdbConfig.baseUrl}${endpoint}`, {
@@ -99,50 +115,96 @@ export default defineEventHandler(async (event) => {
       },
     }).catch(() => null);
 
-    if (!tmdbResponse || !tmdbResponse.tagline || tmdbResponse.tagline.trim() === '') {
+    let finalTagline = tmdbResponse?.tagline || '';
+    const mergedTaglineJsonb: MultiLanguageText = {
+      ...(existingTagline || {}),
+    };
+
+    // If tagline is still empty, try fetching with primary language of region as fallback
+    if (!finalTagline || finalTagline.trim() === '') {
+      try {
+        const { fetchTaglineWithPrimaryLanguageFallback } =
+          await import('@/server/utils/title-extraction');
+        finalTagline = await fetchTaglineWithPrimaryLanguageFallback(
+          finalTagline,
+          tmdb_id,
+          type as typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV,
+          userLanguage,
+          region || null,
+          endpoint,
+          mergedTaglineJsonb,
+          supabase
+        );
+      } catch (fallbackError) {
+        // Log but don't fail - fallback is optional
+        if (import.meta.dev) {
+          console.error(
+            '[fetch-tagline] Error in fetchTaglineWithPrimaryLanguageFallback:',
+            fallbackError
+          );
+        }
+        // Continue with empty finalTagline
+      }
+    }
+
+    // If we got tagline from requested language, add it to mergedTaglineJsonb
+    if (tmdbResponse?.tagline && tmdbResponse.tagline.trim() !== '') {
+      mergedTaglineJsonb[userLanguage] = tmdbResponse.tagline;
+    }
+
+    // Update database with tagline (either from requested language or primary language fallback)
+    if (finalTagline && finalTagline.trim() !== '') {
+      const { error: updateError } = await supabase
+        .from(TABLES.TITLES)
+        .update({
+          tagline: mergedTaglineJsonb,
+        })
+        .eq(TITLES_COLUMNS.TMDB_ID, tmdb_id)
+        .eq(TITLES_COLUMNS.TYPE, type);
+
+      if (updateError) {
+        throw createError({
+          statusCode: 500,
+          statusMessage: 'Error updating tagline in database',
+          data: updateError,
+        });
+      }
+
       return {
-        success: false,
-        message: 'Tagline not available in TMDB',
-        tagline: null,
+        success: true,
+        tagline: mergedTaglineJsonb,
+        message: 'Tagline fetched and saved successfully',
       };
     }
 
-    // Update database with tagline
-    const updatedTagline: MultiLanguageText = {
-      ...(existingTagline || {}),
-      [userLanguage]: tmdbResponse.tagline,
-    };
-
-    const { error: updateError } = await supabase
-      .from(TABLES.TITLES)
-      .update({
-        tagline: updatedTagline,
-      })
-      .eq(TITLES_COLUMNS.TMDB_ID, tmdb_id)
-      .eq(TITLES_COLUMNS.TYPE, type);
-
-    if (updateError) {
-      throw createError({
-        statusCode: 500,
-        statusMessage: 'Error updating tagline in database',
-        data: updateError,
-      });
+    // If tagline was not found in TMDB, but we have existing tagline in database (e.g., in English),
+    // return it so the client can use getTaglineInLanguage to extract it with fallback
+    if (existingTagline && typeof existingTagline === 'object') {
+      return {
+        success: true,
+        tagline: existingTagline,
+        message:
+          'Tagline not available in requested language, but exists in database',
+      };
     }
 
     return {
-      success: true,
-      tagline: updatedTagline,
-      message: 'Tagline fetched and saved successfully',
+      success: false,
+      message: 'Tagline not available in TMDB or database',
+      tagline: null,
     };
   } catch (error) {
     if (error && typeof error === 'object' && 'statusCode' in error) {
       throw error;
     }
+    // Log the full error for debugging
+    if (import.meta.dev) {
+      console.error('[fetch-tagline] Error:', error);
+    }
     throw createError({
       statusCode: 500,
       statusMessage: 'Error fetching tagline',
-      data: error,
+      data: error instanceof Error ? error.message : String(error),
     });
   }
 });
-

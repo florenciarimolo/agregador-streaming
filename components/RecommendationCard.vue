@@ -1,5 +1,5 @@
 <template>
-  <TitleCard
+  <TitleCardMosaic
     :title="props.title.title"
     :poster-path="props.title.poster_path"
     :link-to="linkTo"
@@ -9,27 +9,13 @@
       $t('media.noPosterAvailableFor', { title: props.title.title })
     "
     :type="props.title.type"
-    :show-content="true"
+    :vote-average="props.title.vote_average"
+    :overview="props.title.overview"
+    :providers="props.title.providers"
     :aria-label="$t('media.recommendationLabel', { title: props.title.title })"
   >
-    <!-- Top-left: Rating Badge and Watchlist Badge -->
-    <template #top-left-badges>
-      <RatingBadge
-        v-if="props.title.vote_average"
-        :rating="props.title.vote_average"
-      />
-      <div
-        v-if="props.title.in_watchlist"
-        class="p-2 rounded-full backdrop-blur-sm bg-primary/80"
-        :class="props.title.vote_average ? 'mt-2' : ''"
-        :title="$t('media.savedWatchlist')"
-      >
-        <IconClock icon-class="w-4 h-4 text-white" />
-      </div>
-    </template>
-
     <!-- Top-right: Actions Menu -->
-    <template #top-right-actions>
+    <template #actions>
       <div class="overflow-visible">
         <ActionMenu ref="dropdownRef" width="w-48" position="right">
           <template #trigger>
@@ -128,46 +114,13 @@
       </div>
     </template>
 
-    <!-- Content: Custom content with overview and providers -->
-    <template #content>
-      <!-- EXPLANATION (si existe) -->
-      <p
-        v-if="explanationText"
-        class="mb-2 text-xs text-gray-500 dark:text-gray-400"
-      >
+    <!-- EXPLANATION (si existe) - Mostrar antes del contenido estándar -->
+    <template v-if="explanationText" #explanation>
+      <p class="mb-2 text-xs text-gray-500 dark:text-gray-400">
         {{ explanationText }}
       </p>
-
-      <!-- Overview -->
-      <p
-        v-if="props.title.overview"
-        class="mb-3 text-xs text-gray-800 dark:text-gray-300 line-clamp-3"
-      >
-        {{ props.title.overview }}
-      </p>
-      <p v-else class="mb-3 text-xs italic text-gray-700 dark:text-gray-300">
-        {{ $t('media.noDescriptionAvailable') }}
-      </p>
-
-      <!-- Providers (logos only, no names) -->
-      <div
-        v-if="props.title.providers && props.title.providers.length > 0"
-        class="flex flex-wrap gap-2"
-      >
-        <img
-          v-for="provider in providersWithLogos"
-          :key="provider.provider_id"
-          :src="`https://image.tmdb.org/t/p/w45${provider.logo_path}`"
-          :alt="provider.provider_name"
-          class="object-contain w-4 h-4 md:w-8 md:h-8 rounded"
-          :title="provider.provider_name"
-        />
-      </div>
-      <div v-else class="text-xs italic text-gray-700 dark:text-gray-300">
-        {{ $t('media.noPlatforms') }}
-      </div>
     </template>
-  </TitleCard>
+  </TitleCardMosaic>
 </template>
 
 <script setup lang="ts">
@@ -187,7 +140,7 @@ import type { Recommendation } from '@/types/Recommendation';
 import IconButton from '@/components/ui/IconButton.vue';
 import Button from '@/components/ui/Button.vue';
 import ActionMenu from '@/components/ui/ActionMenu.vue';
-import TitleCard from './TitleCard.vue';
+import TitleCardMosaic from './TitleCardMosaic.vue';
 
 interface Props {
   title: Recommendation;
@@ -242,13 +195,5 @@ const explanationText = computed(() => {
 
   // If translation doesn't exist, return null (fallback handled by server)
   return translated !== translationKey ? translated : null;
-});
-
-// Filter providers that have logos
-const providersWithLogos = computed(() => {
-  if (!props.title.providers) return [];
-  return props.title.providers
-    .filter((provider) => provider.logo_path)
-    .slice(0, 6);
 });
 </script>

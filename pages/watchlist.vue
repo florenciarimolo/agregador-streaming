@@ -2,15 +2,21 @@
   <AppShell>
     <PageContainer>
       <div class="w-full pt-6 pb-6">
-        <div class="mb-8">
-          <h2
-            class="mb-2 text-h2 font-bold text-gray-800 dark:text-gray-300 font-heading"
-          >
-            {{ $t('watchlist.title') }}
-          </h2>
-          <p class="text-gray-800 dark:text-gray-300">
-            {{ $t('watchlist.description') }}
-          </p>
+        <div class="mb-8 flex items-start justify-between gap-4">
+          <div>
+            <h2
+              class="mb-2 text-h2 font-bold text-gray-800 dark:text-gray-300 font-heading"
+            >
+              {{ $t('watchlist.title') }}
+            </h2>
+            <p class="text-gray-800 dark:text-gray-300">
+              {{ $t('watchlist.description') }}
+            </p>
+          </div>
+          <ViewModeSelector
+            v-if="watchlistTitles.length > 0"
+            page-key="watchlist"
+          />
         </div>
 
         <!-- Show loading while checking profile -->
@@ -28,13 +34,27 @@
           <Toast />
 
           <!-- Loading State -->
-          <div v-if="isLoading" class="py-12 text-center">
+          <!-- Loading skeletons -->
+          <div v-if="isLoading" class="space-y-4">
+            <!-- Mosaic view skeletons -->
             <div
-              class="mx-auto mb-4 w-12 h-12 rounded-full border-b-2 animate-spin border-primary"
-            ></div>
-            <p class="text-gray-800 dark:text-gray-300">
-              {{ $t('watchlist.loading') }}
-            </p>
+              v-if="viewMode === 'mosaic'"
+              class="watchlist-grid grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
+            >
+              <SkeletonMediaCard
+                v-for="i in 8"
+                :key="`skeleton-watchlist-${i}`"
+                :show-rating="i % 3 !== 0"
+              />
+            </div>
+            <!-- List view skeletons -->
+            <div v-else class="space-y-4">
+              <SkeletonListItem
+                v-for="i in 8"
+                :key="`skeleton-watchlist-list-${i}`"
+                :show-rating="i % 3 !== 0"
+              />
+            </div>
           </div>
 
           <!-- Content -->
@@ -47,11 +67,12 @@
               :cta-action="goToRecommendations"
             />
 
+            <!-- Mosaic view -->
             <div
-              v-else
+              v-if="viewMode === 'mosaic'"
               class="watchlist-grid grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
             >
-              <TitleCard
+              <TitleCardMosaic
                 v-for="title in watchlistTitles"
                 :key="`watchlist-${title.tmdb_id}`"
                 :title="title.title"
@@ -65,10 +86,13 @@
                   $t('media.noPosterAvailableFor', { title: title.title })
                 "
                 :type="title.type"
+                :vote-average="title.vote_average"
+                :overview="title.overview"
+                :providers="title.providers"
                 :aria-label="$t('media.titleCardLabel', { title: title.title })"
               >
                 <!-- Top-right: Remove Button -->
-                <template #top-right-actions>
+                <template #actions>
                   <Tooltip :text="$t('watchlist.removeTooltip')">
                     <IconButton
                       :aria-label="
@@ -83,7 +107,37 @@
                     </IconButton>
                   </Tooltip>
                 </template>
-              </TitleCard>
+              </TitleCardMosaic>
+            </div>
+            <!-- List view -->
+            <div v-else class="space-y-4">
+              <TitleListItem
+                v-for="title in watchlistTitles"
+                :key="`watchlist-list-${title.tmdb_id}`"
+                :title="title.title"
+                :poster-path="title.poster_path"
+                :tagline="title.tagline"
+                :overview="title.overview"
+                :vote-average="title.vote_average"
+                :type="title.type"
+                :tmdb-id="title.tmdb_id"
+              >
+                <template #actions>
+                  <Tooltip :text="$t('watchlist.removeTooltip')">
+                    <IconButton
+                      :aria-label="
+                        $t('watchlist.removeTitle', { title: title.title })
+                      "
+                      size="small"
+                      variant="default"
+                      custom-class="p-2 rounded-full backdrop-blur-sm pointer-events-auto w-fit h-fit bg-black/50 hover:bg-red-600/80"
+                      @click.stop.prevent="handleRemoveTitle(title)"
+                    >
+                      <IconX icon-class="w-4 h-4 text-white" />
+                    </IconButton>
+                  </Tooltip>
+                </template>
+              </TitleListItem>
             </div>
           </div>
         </div>
@@ -105,10 +159,15 @@ import Toast from '@/components/ui/Toast.vue';
 import IconButton from '@/components/ui/IconButton.vue';
 import AppShell from '@/components/layout/AppShell.vue';
 import PageContainer from '@/components/layout/PageContainer.vue';
-import TitleCard from '@/components/TitleCard.vue';
+import TitleCardMosaic from '@/components/TitleCardMosaic.vue';
 import IconX from '@/components/icons/IconX.vue';
 import Tooltip from '@/components/ui/Tooltip.vue';
 import EmptyState from '@/components/EmptyState.vue';
+import ViewModeSelector from '@/components/ViewModeSelector.vue';
+import TitleListItem from '@/components/TitleListItem.vue';
+import SkeletonMediaCard from '@/components/SkeletonMediaCard.vue';
+import SkeletonListItem from '@/components/SkeletonListItem.vue';
+import { useViewMode } from '@/composables/useViewMode';
 
 const { t, locale } = useI18n();
 
@@ -170,6 +229,14 @@ type WatchlistTitle = {
   title: string;
   type: typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV;
   poster_path: string | null;
+  overview?: string | null;
+  tagline?: string | null;
+  vote_average?: number | null;
+  providers?: Array<{
+    provider_id: number;
+    provider_name: string;
+    logo_path: string | null;
+  }>;
   created_at: string;
 };
 
@@ -178,6 +245,14 @@ type WatchlistResponseItem = {
   title: string;
   type: typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV;
   poster_path: string | null;
+  overview?: string | null;
+  tagline?: string | null;
+  vote_average?: number | null;
+  providers?: Array<{
+    provider_id: number;
+    provider_name: string;
+    logo_path: string | null;
+  }>;
   created_at: string;
 };
 
@@ -187,6 +262,8 @@ const isRemoving = ref(false);
 const { executeAction } = useTitleStatusAction();
 const { showToast } = useUndoToast();
 const { routeWithLang } = useRouteWithLang();
+// View mode for watchlist
+const { viewMode } = useViewMode('watchlist');
 // Profile ready flag - controls main render, separate from isLoading
 const isProfileReady = ref(false);
 
@@ -217,6 +294,10 @@ const fetchWatchlist = async () => {
       title: item.title || t('watchlist.noTitle'),
       type: item.type,
       poster_path: item.poster_path,
+      overview: item.overview || null,
+      tagline: item.tagline || null,
+      vote_average: item.vote_average || null,
+      providers: item.providers || [],
       created_at: item.created_at,
     }));
   } catch (error) {

@@ -340,6 +340,11 @@
     "medium": "Medium",
     "high": "High"
   },
+  "viewMode": {
+    "mosaic": "Mosaic view",
+    "list": "List view",
+    "selectView": "Select view"
+  },
   "watchlist": {
     "title": "Watchlist",
     "description": "Movies and TV shows you've saved to watch later.",

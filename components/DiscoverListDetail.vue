@@ -49,54 +49,96 @@
       <AuthForm in-modal @success="showAuthForm = false" @signup="() => {}" />
     </Modal>
 
-    <!-- Titles Grid -->
-    <div
-      v-if="items && items.length > 0"
-      class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
-    >
-      <TitleCard
-        v-for="item in items"
-        :key="item.id"
-        :title="item.title || ''"
-        :poster-path="item.poster_path"
-        :link-to="
-          routeWithLang(
-            `/${item.type === MEDIA_TYPE.MOVIE ? 'movie' : 'tv-show'}/${item.tmdb_id}`
-          )
-        "
-        :link-aria-label="$t('media.viewDetailsOf', { title: item.title })"
-        :image-alt="$t('media.posterOf', { title: item.title })"
-        :no-image-aria-label="
-          $t('media.noPosterAvailableFor', { title: item.title })
-        "
-        :type="item.type"
-        :show-type="false"
-        :aria-label="$t('media.titleCardLabel', { title: item.title })"
-        :is-liked="titleStatuses.get(item.tmdb_id)?.liked || false"
-        :is-seen="
-          titleStatuses.get(item.tmdb_id)?.status === TITLE_STATUS.SEEN || false
-        "
-        :is-not-interested="
-          titleStatuses.get(item.tmdb_id)?.status ===
-            TITLE_STATUS.NOT_INTERESTED || false
-        "
-        :is-in-watchlist="
-          titleStatuses.get(item.tmdb_id)?.status === TITLE_STATUS.WATCHLIST ||
-          false
-        "
-        :tag="typeof item.tag === 'string' ? item.tag : null"
-        :is-discover-list="true"
-      >
-        <!-- Actions for logged users only -->
-        <template v-if="isLoggedIn" #top-right-actions>
-          <DiscoverListItemActions
-            :item="item"
-            :title-status="getItemStatus(item.tmdb_id)"
-            @action="handleAction"
-          />
-        </template>
-      </TitleCard>
+    <!-- View Mode Selector -->
+    <div v-if="items && items.length > 0" class="flex justify-end">
+      <ViewModeSelector :page-key="`discover-${list.slug}`" />
     </div>
+
+    <!-- Loading skeletons -->
+    <div v-if="isLoading" class="space-y-4">
+      <!-- Mosaic view skeletons -->
+      <div
+        v-if="viewMode === 'mosaic'"
+        class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
+      >
+        <SkeletonMediaCard
+          v-for="i in 8"
+          :key="`skeleton-discover-${i}`"
+          :show-rating="i % 3 !== 0"
+        />
+      </div>
+      <!-- List view skeletons -->
+      <div v-else class="space-y-4">
+        <SkeletonListItem
+          v-for="i in 8"
+          :key="`skeleton-discover-list-${i}`"
+          :show-rating="i % 3 !== 0"
+        />
+      </div>
+    </div>
+
+    <!-- Titles Grid/List -->
+    <template v-else-if="items && items.length > 0">
+      <!-- Mosaic view -->
+      <div
+        v-if="viewMode === 'mosaic'"
+        class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
+      >
+        <TitleCardMosaic
+          v-for="item in items"
+          :key="item.id"
+          :title="item.title || ''"
+          :poster-path="item.poster_path"
+          :link-to="
+            routeWithLang(
+              `/${item.type === MEDIA_TYPE.MOVIE ? 'movie' : 'tv-show'}/${item.tmdb_id}`
+            )
+          "
+          :link-aria-label="$t('media.viewDetailsOf', { title: item.title })"
+          :image-alt="$t('media.posterOf', { title: item.title })"
+          :no-image-aria-label="
+            $t('media.noPosterAvailableFor', { title: item.title })
+          "
+          :type="item.type"
+          :vote-average="item.vote_average || null"
+          :overview="item.overview || null"
+          :providers="item.providers"
+          :aria-label="$t('media.titleCardLabel', { title: item.title })"
+        >
+          <!-- Actions for logged users only -->
+          <template v-if="isLoggedIn" #actions>
+            <DiscoverListItemActions
+              :item="item"
+              :title-status="getItemStatus(item.tmdb_id)"
+              @action="handleAction"
+            />
+          </template>
+        </TitleCardMosaic>
+      </div>
+      <!-- List view -->
+      <div v-else class="space-y-4">
+        <TitleListItem
+          v-for="item in items"
+          :key="item.id"
+          :title="item.title || ''"
+          :poster-path="item.poster_path"
+          :tagline="item.tagline || item.tag || null"
+          :overview="item.overview || null"
+          :vote-average="item.vote_average || null"
+          :type="item.type"
+          :tmdb-id="item.tmdb_id"
+        >
+          <!-- Actions for logged users only -->
+          <template v-if="isLoggedIn" #actions>
+            <DiscoverListItemActions
+              :item="item"
+              :title-status="getItemStatus(item.tmdb_id)"
+              @action="handleAction"
+            />
+          </template>
+        </TitleListItem>
+      </div>
+    </template>
 
     <!-- Empty State -->
     <EmptyState
@@ -116,9 +158,13 @@ import type {
   DiscoverList,
   DiscoverListItem,
 } from '@/composables/database/discoverLists';
-import TitleCard from './TitleCard.vue';
+import TitleCardMosaic from './TitleCardMosaic.vue';
+import TitleListItem from './TitleListItem.vue';
 import SeedListButton from './SeedListButton.vue';
 import DiscoverListItemActions from './DiscoverListItemActions.vue';
+import ViewModeSelector from './ViewModeSelector.vue';
+import SkeletonMediaCard from './SkeletonMediaCard.vue';
+import SkeletonListItem from './SkeletonListItem.vue';
 import Button from './ui/Button.vue';
 import Modal from './ui/Modal.vue';
 import AuthForm from './AuthForm.vue';
@@ -128,6 +174,7 @@ import { getSession } from '@/services/auth';
 import { getUserLikedTitle, getTitleStatus } from '@/services/userTitleStatus';
 import { useTitleStatusAction } from '@/composables/useTitleStatusAction';
 import { useRouteWithLang } from '@/composables/useRouteWithLang';
+import { useViewMode } from '@/composables/useViewMode';
 import { useSupabaseUser } from '#imports';
 
 const router = useRouter();
@@ -140,6 +187,9 @@ interface Props {
 }
 
 const props = defineProps<Props>();
+
+// View mode for discover list
+const { viewMode } = useViewMode(`discover-${props.list.slug}`);
 
 const user = useSupabaseUser();
 const isLoggedIn = computed(() => !!user.value);

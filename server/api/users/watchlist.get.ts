@@ -4,11 +4,15 @@ import { getUserIdFromEvent } from '@/server/utils/user-auth';
 import { devLog, devError, devWarn, safeError } from '@/server/utils/logger';
 import { TITLE_STATUS } from '@/constants/domain/titleStatus';
 import { TABLES } from '@/constants/db/tables';
-import { USER_TITLE_STATUS_COLUMNS, TITLES_COLUMNS } from '@/constants/db/columns';
 import {
-  getTitleInLanguage,
-  type MultiLanguageText,
-} from '@/services/titles';
+  USER_TITLE_STATUS_COLUMNS,
+  TITLES_COLUMNS,
+} from '@/constants/db/columns';
+import { getTitleInLanguage, type MultiLanguageText } from '@/services/titles';
+import {
+  getTaglineInLanguage,
+  getTitleOrOverviewInLanguage,
+} from '@/composables/database/titles';
 import { getTMDBConfig } from '@/server/utils/config';
 import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 
@@ -143,8 +147,7 @@ export default defineEventHandler(async (event) => {
         if (!type) return null;
 
         try {
-          const endpoint =
-            type === 'movie' ? MEDIA_TYPE.MOVIE : MEDIA_TYPE.TV;
+          const endpoint = type === 'movie' ? MEDIA_TYPE.MOVIE : MEDIA_TYPE.TV;
           await $fetch(`${tmdbConfig.baseUrl}/${endpoint}/${tmdbId}`, {
             query: {
               api_key: tmdbConfig.apiKey,
@@ -169,7 +172,7 @@ export default defineEventHandler(async (event) => {
       const { data: reloadedData } = await supabase
         .from(TABLES.TITLES)
         .select(
-          `${TITLES_COLUMNS.ID}, ${TITLES_COLUMNS.TITLE}, ${TITLES_COLUMNS.TYPE}, ${TITLES_COLUMNS.POSTER_PATH}, ${TITLES_COLUMNS.TMDB_ID}, ${TITLES_COLUMNS.OVERVIEW}, ${TITLES_COLUMNS.GENRES}`
+          `${TITLES_COLUMNS.ID}, ${TITLES_COLUMNS.TITLE}, ${TITLES_COLUMNS.TYPE}, ${TITLES_COLUMNS.POSTER_PATH}, ${TITLES_COLUMNS.TMDB_ID}, ${TITLES_COLUMNS.OVERVIEW}, ${TITLES_COLUMNS.TAGLINE}, ${TITLES_COLUMNS.VOTE_AVERAGE}, ${TITLES_COLUMNS.GENRES}`
         )
         .in(TITLES_COLUMNS.TMDB_ID, tmdbIds);
 
@@ -179,40 +182,190 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    // Extract titles with alphabet detection
-    const watchlist = titlesData.map(
-      (title: {
-        tmdb_id: number;
-        title: unknown;
-        type: string;
-        poster_path: unknown;
-      }) => {
-        const titleJsonb = title.title as MultiLanguageText;
-        const posterPathJsonb = title.poster_path as MultiLanguageText | null;
+    // Extract titles with alphabet detection and fetch providers
+    const watchlist = await Promise.all(
+      titlesData.map(
+        async (title: {
+          tmdb_id: number;
+          title: unknown;
+          type: string;
+          poster_path: unknown;
+          overview: unknown;
+          tagline: unknown;
+          vote_average: number | null;
+        }) => {
+          const titleJsonb = title.title as MultiLanguageText;
+          const posterPathJsonb = title.poster_path as MultiLanguageText | null;
+          const overviewJsonb = title.overview as MultiLanguageText | null;
+          const taglineJsonb = title.tagline as MultiLanguageText | null;
 
-        // Use getTitleInLanguage which includes alphabet detection
-        const extractedTitle = getTitleInLanguage(
-          titleJsonb,
-          language,
-          region,
-          false
-        );
-        const extractedPosterPath = getTitleInLanguage(
-          posterPathJsonb,
-          language,
-          region,
-          true // isImagePath = true
-        );
+          // Use getTitleOrOverviewInLanguage for title and overview to follow specific fallback logic
+          const extractedTitle = getTitleOrOverviewInLanguage(
+            titleJsonb,
+            language,
+            region
+          );
+          const extractedPosterPath = getTitleInLanguage(
+            posterPathJsonb,
+            language,
+            region,
+            true // isImagePath = true
+          );
+          const extractedOverview = getTitleOrOverviewInLanguage(
+            overviewJsonb,
+            language,
+            region
+          );
+          let extractedTagline = getTaglineInLanguage(
+            taglineJsonb,
+            language,
+            region
+          );
 
-        return {
-          tmdb_id: title.tmdb_id,
-          title: extractedTitle || '',
-          type: title.type,
-          poster_path: extractedPosterPath || null,
-          created_at:
-            createdAtMap.get(title.tmdb_id) || new Date().toISOString(),
-        };
-      }
+          // If tagline is empty, try to fetch it from TMDB with fallback
+          if (!extractedTagline || extractedTagline.trim() === '') {
+            try {
+              const endpoint =
+                title.type === MEDIA_TYPE.MOVIE
+                  ? `/movie/${title.tmdb_id}`
+                  : `/tv/${title.tmdb_id}`;
+              const { fetchTaglineWithPrimaryLanguageFallback } =
+                await import('@/server/utils/title-extraction');
+              const mergedTaglineJsonb: MultiLanguageText = {
+                ...(taglineJsonb || {}),
+              };
+
+              // First try to get tagline in requested language from TMDB
+              const tmdbResponse = await $fetch<{
+                tagline?: string;
+              }>(`${tmdbConfig.baseUrl}${endpoint}`, {
+                query: {
+                  api_key: tmdbConfig.apiKey,
+                  language: tmdbConfig.language,
+                  region: tmdbConfig.region,
+                },
+              }).catch(() => null);
+
+              let fetchedTagline = tmdbResponse?.tagline || '';
+
+              // If tagline in requested language is empty, try primary language fallback
+              if (!fetchedTagline || fetchedTagline.trim() === '') {
+                fetchedTagline = await fetchTaglineWithPrimaryLanguageFallback(
+                  '',
+                  title.tmdb_id,
+                  title.type as typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV,
+                  language,
+                  region,
+                  endpoint,
+                  mergedTaglineJsonb,
+                  supabase
+                );
+              } else {
+                // If we got tagline in requested language, add it to mergedTaglineJsonb
+                mergedTaglineJsonb[language] = fetchedTagline;
+              }
+
+              if (fetchedTagline && fetchedTagline.trim() !== '') {
+                extractedTagline = fetchedTagline;
+
+                // Save tagline to database
+                // fetchTaglineWithPrimaryLanguageFallback already saves when fetching from primary language
+                // but we need to save when fetching from requested language
+                if (
+                  tmdbResponse?.tagline &&
+                  tmdbResponse.tagline.trim() !== ''
+                ) {
+                  await supabase
+                    .from(TABLES.TITLES)
+                    .update({
+                      tagline: mergedTaglineJsonb,
+                    })
+                    .eq(TITLES_COLUMNS.TMDB_ID, title.tmdb_id)
+                    .eq(TITLES_COLUMNS.TYPE, title.type)
+                    .then(() => {
+                      // Success - tagline saved
+                    })
+                    .catch((error: unknown) => {
+                      // Log but don't fail the request
+                      if (import.meta.dev) {
+                        console.error(
+                          `Error saving tagline to database for ${title.tmdb_id}:`,
+                          error
+                        );
+                      }
+                    });
+                }
+              }
+            } catch (error) {
+              // Silently fail - tagline is optional
+              if (import.meta.dev) {
+                console.error(
+                  `Error fetching tagline for ${title.tmdb_id}:`,
+                  error
+                );
+              }
+            }
+          }
+
+          // Fetch providers from TMDB
+          let providers: Array<{
+            provider_id: number;
+            provider_name: string;
+            logo_path: string | null;
+          }> = [];
+          try {
+            const providerPath =
+              title.type === MEDIA_TYPE.MOVIE
+                ? `/movie/${title.tmdb_id}/watch/providers`
+                : `/tv/${title.tmdb_id}/watch/providers`;
+            const providerResponse = await $fetch<{
+              results?: {
+                [key: string]: {
+                  flatrate?: Array<{
+                    provider_id: number;
+                    provider_name: string;
+                    logo_path: string | null;
+                  }>;
+                };
+              };
+            }>(`${tmdbConfig.baseUrl}${providerPath}`, {
+              query: {
+                api_key: tmdbConfig.apiKey,
+              },
+            });
+
+            // Use user's region for providers, fallback to ES
+            // IMPORTANT: Only use flatrate providers (streaming services)
+            const regionProviders =
+              providerResponse.results?.[region] ||
+              providerResponse.results?.ES;
+            if (regionProviders) {
+              providers = (regionProviders.flatrate || []).slice(0, 5);
+            }
+          } catch (error) {
+            // Don't fail if providers can't be fetched
+            if (process.env.NODE_ENV === 'development') {
+              console.error(
+                `Error fetching providers for ${title.tmdb_id}:`,
+                error
+              );
+            }
+          }
+
+          return {
+            tmdb_id: title.tmdb_id,
+            title: extractedTitle || '',
+            type: title.type,
+            poster_path: extractedPosterPath || null,
+            overview: extractedOverview || null,
+            tagline: extractedTagline || null,
+            vote_average: title.vote_average || null,
+            providers,
+            created_at:
+              createdAtMap.get(title.tmdb_id) || new Date().toISOString(),
+          };
+        }
+      )
     );
 
     return {
@@ -220,13 +373,18 @@ export default defineEventHandler(async (event) => {
     };
   } catch (error: unknown) {
     // Log the full error for debugging
-    safeError('[User Watchlist] Unexpected error in watchlist endpoint', error, {
-      userId,
-      errorType: error instanceof Error ? error.constructor.name : typeof error,
-      errorMessage: error instanceof Error ? error.message : String(error),
-      errorStack: error instanceof Error ? error.stack : undefined,
-    });
-    
+    safeError(
+      '[User Watchlist] Unexpected error in watchlist endpoint',
+      error,
+      {
+        userId,
+        errorType:
+          error instanceof Error ? error.constructor.name : typeof error,
+        errorMessage: error instanceof Error ? error.message : String(error),
+        errorStack: error instanceof Error ? error.stack : undefined,
+      }
+    );
+
     const errorMessage =
       error instanceof Error
         ? error.message

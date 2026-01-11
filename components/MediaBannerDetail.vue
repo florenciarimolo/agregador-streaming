@@ -822,9 +822,10 @@ import { getUserLikedTitle, getTitleStatus } from '@/services/userTitleStatus';
 import { useRouter } from 'vue-router';
 import Section from '@/components/layout/Section.vue';
 import { useUserRegion } from '@/composables/useUserRegion';
-import { getTitleInLanguage, type MultiLanguageText } from '@/services/titles';
+import { type MultiLanguageText } from '@/services/titles';
 import { useCurrentLanguage } from '@/composables/useCurrentLanguage';
 import { useRouteWithLang } from '@/composables/useRouteWithLang';
+import { useFetchTagline } from '@/composables/useFetchTagline';
 
 const props = defineProps({
   media: {
@@ -883,9 +884,8 @@ const alternativeTitles = computed(() => {
   return [];
 });
 
-// Local ref for tagline that can be updated reactively
-// Initialize from props, but will be updated reactively when props change
-const localTagline = computed(() => {
+// Use the reusable composable to fetch tagline from TMDB if missing
+const initialTagline = computed(() => {
   return (
     (
       mediaWithProviders.value as Movie & {
@@ -895,112 +895,14 @@ const localTagline = computed(() => {
   );
 });
 
-// Extract tagline with language fallback (same logic as overview)
-// CRITICAL: This computed depends on both localTagline (from props) and currentLanguage
-// When language changes, currentLanguage.value.i18nCode changes, which reactivates this computed
-// When data refreshes, localTagline changes (from props), which also reactivates this computed
-const tagline = computed(() => {
-  const taglineData = localTagline.value;
+const tmdbIdComputed = computed(() => mediaWithProviders.value.id);
+const typeComputed = computed(() => props.mediaType);
 
-  if (!taglineData) {
-    return '';
-  }
-
-  // If tagline is a MultiLanguageText object, use getTitleInLanguage
-  if (typeof taglineData === 'object' && taglineData !== null) {
-    return getTitleInLanguage(
-      taglineData as MultiLanguageText,
-      currentLanguage.value.i18nCode,
-      userRegion.value
-    );
-  }
-
-  // If tagline is a string, return it directly
-  return taglineData;
-});
-
-// Helper function to check if tagline exists in current language
-// This checks directly in the MultiLanguageText object without fallback
-const hasTaglineInCurrentLanguage = (
-  taglineData: string | MultiLanguageText | null | undefined
-): boolean => {
-  if (!taglineData) {
-    return false;
-  }
-
-  // If tagline is a string, check if it's not empty
-  if (typeof taglineData === 'string') {
-    return taglineData.trim() !== '';
-  }
-
-  // If tagline is a MultiLanguageText object, check if current language exists
-  if (typeof taglineData === 'object' && taglineData !== null) {
-    const currentI18nCode = currentLanguage.value.i18nCode;
-    const langCode = currentI18nCode.split('-')[0]?.toLowerCase() || '';
-    const normalizedRegion = userRegion.value?.toUpperCase() || 'ES';
-    const normalizedLanguage = `${langCode}-${normalizedRegion}`;
-
-    // Check ISO format (e.g., 'es-ES')
-    if (
-      taglineData[normalizedLanguage] &&
-      taglineData[normalizedLanguage].trim() !== ''
-    ) {
-      return true;
-    }
-
-    // Check original i18n code format (in case it's already normalized)
-    if (
-      taglineData[currentI18nCode] &&
-      taglineData[currentI18nCode].trim() !== ''
-    ) {
-      return true;
-    }
-
-    // Check legacy format (e.g., 'es')
-    if (taglineData[langCode] && taglineData[langCode].trim() !== '') {
-      return true;
-    }
-  }
-
-  return false;
-};
-
-// Check if tagline is missing and fetch it from TMDB
-const fetchTaglineIfMissing = async () => {
-  // Check if tagline exists in current language (without fallback)
-  if (hasTaglineInCurrentLanguage(localTagline.value)) {
-    return; // Tagline already exists in current language
-  }
-
-  try {
-    // Fetch tagline from API with current language from URL
-    const response = await $fetch<{
-      success: boolean;
-      tagline?: MultiLanguageText | null;
-      message?: string;
-    }>('/api/titles/fetch-tagline', {
-      method: 'POST',
-      query: {
-        lang: currentLangUrlCode.value,
-      },
-      body: {
-        tmdb_id: mediaWithProviders.value.id,
-        type: props.mediaType,
-      },
-    });
-
-    if (response.success && response.tagline) {
-      // Update the local tagline ref with the new tagline
-      // This will trigger a reactive update in the tagline computed
-      localTagline.value = response.tagline;
-    }
-  } catch (error) {
-    // Silently fail - tagline is optional
-    if (import.meta.dev) {
-      console.error('[MediaBannerDetail] Error fetching tagline:', error);
-    }
-  }
-};
+const { tagline, fetchTaglineIfMissing } = useFetchTagline(
+  initialTagline,
+  tmdbIdComputed,
+  typeComputed
+);
 
 const isMobile = ref(false);
 const dropdownRef = ref<InstanceType<typeof ActionMenu> | null>(null);

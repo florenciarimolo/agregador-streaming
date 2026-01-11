@@ -203,9 +203,10 @@ export default defineEventHandler(async (event) => {
       });
 
       // Get tagline from DB or TMDB
-      const { getTitleInLanguage } = await import('@/services/titles');
+      const { getTaglineInLanguage } =
+        await import('@/composables/database/titles');
       let taglineFromDb = taglineJsonb
-        ? getTitleInLanguage(taglineJsonb, userLanguage, region)
+        ? getTaglineInLanguage(taglineJsonb, userLanguage, region)
         : null;
 
       // If tagline, status, or runtime is missing in DB but exists in TMDB response, save it
@@ -217,7 +218,11 @@ export default defineEventHandler(async (event) => {
         needsUpdate.tagline = updatedTagline;
         taglineJsonb = updatedTagline;
         // Recalculate taglineFromDb after updating taglineJsonb
-        taglineFromDb = getTitleInLanguage(taglineJsonb, userLanguage, region);
+        taglineFromDb = getTaglineInLanguage(
+          taglineJsonb,
+          userLanguage,
+          region
+        );
       }
       if (!titleFromDb.status && fullMovieResponse?.status) {
         needsUpdate[TITLES_COLUMNS.STATUS] = fullMovieResponse.status;
@@ -328,7 +333,7 @@ export default defineEventHandler(async (event) => {
     let releaseDate: string | null = null;
     let voteAverage: number | null = null;
     let status: string | null = null;
-    let runtime: number | null = null;
+    const runtime: number | null = null;
     let genres: Array<{ id: number; name: string }> = [];
 
     languageResults.forEach(({ lang, data }) => {

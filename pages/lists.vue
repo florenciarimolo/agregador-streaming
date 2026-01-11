@@ -43,52 +43,110 @@
             <template #default="{ activeTab: currentTab }">
               <!-- Liked Tab -->
               <div v-if="currentTab === LIST_TAB.LIKED">
-                <Spinner
-                  v-if="isLoading"
-                  :message="$t('preferences.loading')"
-                />
+                <!-- Loading skeletons -->
+                <div v-if="isLoading" class="flex flex-col gap-4">
+                  <!-- Mosaic view skeletons -->
+                  <div
+                    v-if="likedViewMode === 'mosaic'"
+                    class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
+                  >
+                    <SkeletonMediaCard
+                      v-for="i in 8"
+                      :key="`skeleton-liked-${i}`"
+                      :show-rating="i % 3 !== 0"
+                    />
+                  </div>
+                  <!-- List view skeletons -->
+                  <div v-else class="space-y-4">
+                    <SkeletonListItem
+                      v-for="i in 8"
+                      :key="`skeleton-liked-list-${i}`"
+                      :show-rating="i % 3 !== 0"
+                    />
+                  </div>
+                </div>
 
                 <div
                   v-else-if="likedTitles.length > 0"
-                  class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
+                  class="flex flex-col gap-4"
                 >
-                  <TitleCard
-                    v-for="title in likedTitles"
-                    :key="title.id"
-                    :title="title.title"
-                    :poster-path="title.poster_path"
-                    :link-to="getTitleLink(title.type, title.tmdb_id)"
-                    :link-aria-label="
-                      $t('media.viewDetailsOf', { title: title.title })
-                    "
-                    :image-alt="$t('media.posterOf', { title: title.title })"
-                    :no-image-aria-label="
-                      $t('media.noPosterAvailableFor', { title: title.title })
-                    "
-                    :type="title.type"
-                    :aria-label="
-                      $t('media.titleCardLabel', { title: title.title })
-                    "
+                  <div class="flex justify-end">
+                    <ViewModeSelector page-key="liked" />
+                  </div>
+                  <!-- Mosaic view -->
+                  <div
+                    v-if="likedViewMode === 'mosaic'"
+                    class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
                   >
-                    <template #top-right-actions>
-                      <Tooltip :text="$t('common.delete')">
-                        <IconButton
-                          :aria-label="$t('common.delete')"
-                          size="small"
-                          variant="default"
-                          custom-class="p-2 rounded-full backdrop-blur-sm pointer-events-auto w-fit h-fit bg-black/50 hover:bg-red-600/80 relative z-50"
-                          @click.stop.prevent="
-                            () => {
-                              console.log('IconButton clicked', title);
-                              handleRemoveLikedClick(title);
-                            }
-                          "
-                        >
-                          <IconX icon-class="w-4 h-4 text-white" />
-                        </IconButton>
-                      </Tooltip>
-                    </template>
-                  </TitleCard>
+                    <TitleCardMosaic
+                      v-for="title in likedTitles"
+                      :key="title.id"
+                      :title="title.title"
+                      :poster-path="title.poster_path"
+                      :link-to="getTitleLink(title.type, title.tmdb_id)"
+                      :link-aria-label="
+                        $t('media.viewDetailsOf', { title: title.title })
+                      "
+                      :image-alt="$t('media.posterOf', { title: title.title })"
+                      :no-image-aria-label="
+                        $t('media.noPosterAvailableFor', { title: title.title })
+                      "
+                      :type="title.type"
+                      :vote-average="title.vote_average"
+                      :overview="title.overview"
+                      :providers="title.providers"
+                      :aria-label="
+                        $t('media.titleCardLabel', { title: title.title })
+                      "
+                    >
+                      <template #actions>
+                        <Tooltip :text="$t('common.delete')">
+                          <IconButton
+                            :aria-label="$t('common.delete')"
+                            size="small"
+                            variant="default"
+                            custom-class="p-2 rounded-full backdrop-blur-sm pointer-events-auto w-fit h-fit bg-black/50 hover:bg-red-600/80 relative z-50"
+                            @click.stop.prevent="
+                              () => {
+                                console.log('IconButton clicked', title);
+                                handleRemoveLikedClick(title);
+                              }
+                            "
+                          >
+                            <IconX icon-class="w-4 h-4 text-white" />
+                          </IconButton>
+                        </Tooltip>
+                      </template>
+                    </TitleCardMosaic>
+                  </div>
+                  <!-- List view -->
+                  <div v-else class="space-y-4">
+                    <TitleListItem
+                      v-for="title in likedTitles"
+                      :key="`liked-list-${title.id}`"
+                      :title="title.title"
+                      :poster-path="title.poster_path"
+                      :tagline="title.tagline"
+                      :overview="title.overview"
+                      :vote-average="title.vote_average"
+                      :type="title.type"
+                      :tmdb-id="title.tmdb_id"
+                    >
+                      <template #actions>
+                        <Tooltip :text="$t('common.delete')">
+                          <IconButton
+                            :aria-label="$t('common.delete')"
+                            size="small"
+                            variant="default"
+                            custom-class="p-2 rounded-full backdrop-blur-sm pointer-events-auto w-fit h-fit bg-black/50 hover:bg-red-600/80"
+                            @click.stop.prevent="handleRemoveLikedClick(title)"
+                          >
+                            <IconX icon-class="w-4 h-4 text-white" />
+                          </IconButton>
+                        </Tooltip>
+                      </template>
+                    </TitleListItem>
+                  </div>
                 </div>
 
                 <EmptyState
@@ -102,70 +160,152 @@
 
               <!-- Seen Tab -->
               <div v-if="currentTab === LIST_TAB.SEEN">
-                <Spinner v-if="isLoading" :message="$t('seen.loading')" />
+                <!-- Loading skeletons -->
+                <div v-if="isLoading" class="flex flex-col gap-4">
+                  <!-- Mosaic view skeletons -->
+                  <div
+                    v-if="seenViewMode === 'mosaic'"
+                    class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
+                  >
+                    <SkeletonMediaCard
+                      v-for="i in 8"
+                      :key="`skeleton-seen-${i}`"
+                      :show-rating="i % 3 !== 0"
+                    />
+                  </div>
+                  <!-- List view skeletons -->
+                  <div v-else class="space-y-4">
+                    <SkeletonListItem
+                      v-for="i in 8"
+                      :key="`skeleton-seen-list-${i}`"
+                      :show-rating="i % 3 !== 0"
+                    />
+                  </div>
+                </div>
 
                 <div
                   v-else-if="seenTitles.length > 0"
-                  class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
+                  class="flex flex-col gap-4"
                 >
-                  <TitleCard
-                    v-for="title in seenTitles"
-                    :key="title.id"
-                    :title="title.title"
-                    :poster-path="title.poster_path"
-                    :link-to="getTitleLink(title.type, title.tmdb_id)"
-                    :link-aria-label="
-                      $t('media.viewDetailsOf', { title: title.title })
-                    "
-                    :image-alt="$t('media.posterOf', { title: title.title })"
-                    :no-image-aria-label="
-                      $t('media.noPosterAvailableFor', { title: title.title })
-                    "
-                    :type="title.type"
-                    :aria-label="
-                      $t('media.titleCardLabel', { title: title.title })
-                    "
+                  <div class="flex justify-end">
+                    <ViewModeSelector page-key="seen" />
+                  </div>
+                  <!-- Mosaic view -->
+                  <div
+                    v-if="seenViewMode === 'mosaic'"
+                    class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
                   >
-                    <template #top-left-badges>
-                      <Tooltip :text="$t('media.liked')">
-                        <IconButton
-                          :aria-label="$t('media.liked')"
-                          size="small"
-                          variant="default"
-                          :custom-class="`p-2 rounded-full backdrop-blur-sm pointer-events-auto w-fit h-fit ${
-                            title.liked === true
-                              ? 'bg-primary-800 text-white border border-gray-700/50 dark:bg-primary-600/70 dark:border-primary-800 hover:bg-primary-900 dark:hover:bg-primary-600'
-                              : 'bg-black/50 hover:bg-primary-900 dark:hover:bg-primary-600'
-                          }`"
-                          @click.stop.prevent="handleAddToLiked(title)"
-                        >
-                          <IconHeartFilled
-                            v-if="title.liked === true"
-                            icon-class="w-4 h-4 text-white"
-                          />
-                          <IconHeart v-else icon-class="w-4 h-4 text-white" />
-                        </IconButton>
-                      </Tooltip>
-                    </template>
-                    <template #top-right-actions>
-                      <Tooltip :text="$t('seen.removeFromList')">
-                        <IconButton
-                          :aria-label="$t('seen.removeFromList')"
-                          size="small"
-                          variant="default"
-                          custom-class="p-2 rounded-full backdrop-blur-sm pointer-events-auto w-fit h-fit bg-black/50 hover:bg-red-600/80 relative z-50"
-                          @click.stop.prevent="
-                            () => {
-                              console.log('IconButton clicked', title);
-                              handleRemoveSeen(title);
-                            }
-                          "
-                        >
-                          <IconX icon-class="w-4 h-4 text-white" />
-                        </IconButton>
-                      </Tooltip>
-                    </template>
-                  </TitleCard>
+                    <TitleCard
+                      v-for="title in seenTitles"
+                      :key="title.id"
+                      :title="title.title"
+                      :poster-path="title.poster_path"
+                      :link-to="getTitleLink(title.type, title.tmdb_id)"
+                      :link-aria-label="
+                        $t('media.viewDetailsOf', { title: title.title })
+                      "
+                      :image-alt="$t('media.posterOf', { title: title.title })"
+                      :no-image-aria-label="
+                        $t('media.noPosterAvailableFor', { title: title.title })
+                      "
+                      :type="title.type"
+                      :aria-label="
+                        $t('media.titleCardLabel', { title: title.title })
+                      "
+                    >
+                      <template #top-left-badges>
+                        <Tooltip :text="$t('media.liked')">
+                          <IconButton
+                            :aria-label="$t('media.liked')"
+                            size="small"
+                            variant="default"
+                            :custom-class="`p-2 rounded-full backdrop-blur-sm pointer-events-auto w-fit h-fit ${
+                              title.liked === true
+                                ? 'bg-primary-800 text-white border border-gray-700/50 dark:bg-primary-600/70 dark:border-primary-800 hover:bg-primary-900 dark:hover:bg-primary-600'
+                                : 'bg-black/50 hover:bg-primary-900 dark:hover:bg-primary-600'
+                            }`"
+                            @click.stop.prevent="handleAddToLiked(title)"
+                          >
+                            <IconHeartFilled
+                              v-if="title.liked === true"
+                              icon-class="w-4 h-4 text-white"
+                            />
+                            <IconHeart v-else icon-class="w-4 h-4 text-white" />
+                          </IconButton>
+                        </Tooltip>
+                      </template>
+                      <template #top-right-actions>
+                        <Tooltip :text="$t('seen.removeFromList')">
+                          <IconButton
+                            :aria-label="$t('seen.removeFromList')"
+                            size="small"
+                            variant="default"
+                            custom-class="p-2 rounded-full backdrop-blur-sm pointer-events-auto w-fit h-fit bg-black/50 hover:bg-red-600/80 relative z-50"
+                            @click.stop.prevent="
+                              () => {
+                                console.log('IconButton clicked', title);
+                                handleRemoveSeen(title);
+                              }
+                            "
+                          >
+                            <IconX icon-class="w-4 h-4 text-white" />
+                          </IconButton>
+                        </Tooltip>
+                      </template>
+                    </TitleCard>
+                  </div>
+                  <!-- List view -->
+                  <div v-else class="space-y-4">
+                    <TitleListItem
+                      v-for="title in seenTitles"
+                      :key="`seen-list-${title.id}`"
+                      :title="title.title"
+                      :poster-path="title.poster_path"
+                      :tagline="title.tagline"
+                      :overview="title.overview"
+                      :vote-average="title.vote_average"
+                      :type="title.type"
+                      :tmdb-id="title.tmdb_id"
+                    >
+                      <template #actions>
+                        <div class="flex gap-2 items-center">
+                          <Tooltip :text="$t('media.liked')">
+                            <IconButton
+                              :aria-label="$t('media.liked')"
+                              size="small"
+                              variant="default"
+                              :custom-class="`p-2 rounded-full backdrop-blur-sm pointer-events-auto w-fit h-fit ${
+                                title.liked === true
+                                  ? 'bg-primary-800 text-white border border-gray-700/50 dark:bg-primary-600/70 dark:border-primary-800 hover:bg-primary-900 dark:hover:bg-primary-600'
+                                  : 'bg-black/50 hover:bg-primary-900 dark:hover:bg-primary-600'
+                              }`"
+                              @click.stop.prevent="handleAddToLiked(title)"
+                            >
+                              <IconHeartFilled
+                                v-if="title.liked === true"
+                                icon-class="w-4 h-4 text-white"
+                              />
+                              <IconHeart
+                                v-else
+                                icon-class="w-4 h-4 text-white"
+                              />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip :text="$t('seen.removeFromList')">
+                            <IconButton
+                              :aria-label="$t('seen.removeFromList')"
+                              size="small"
+                              variant="default"
+                              custom-class="p-2 rounded-full backdrop-blur-sm pointer-events-auto w-fit h-fit bg-black/50 hover:bg-red-600/80"
+                              @click.stop.prevent="handleRemoveSeen(title)"
+                            >
+                              <IconX icon-class="w-4 h-4 text-white" />
+                            </IconButton>
+                          </Tooltip>
+                        </div>
+                      </template>
+                    </TitleListItem>
+                  </div>
                 </div>
 
                 <EmptyState
@@ -179,52 +319,109 @@
 
               <!-- Not Interested Tab -->
               <div v-if="currentTab === LIST_TAB.NOT_INTERESTED">
-                <Spinner
-                  v-if="isLoading"
-                  :message="$t('notInterested.loading')"
-                />
+                <!-- Loading skeletons -->
+                <div v-if="isLoading" class="flex flex-col gap-4">
+                  <!-- Mosaic view skeletons -->
+                  <div
+                    v-if="notInterestedViewMode === 'mosaic'"
+                    class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
+                  >
+                    <SkeletonMediaCard
+                      v-for="i in 8"
+                      :key="`skeleton-not-interested-${i}`"
+                      :show-rating="i % 3 !== 0"
+                    />
+                  </div>
+                  <!-- List view skeletons -->
+                  <div v-else class="space-y-4">
+                    <SkeletonListItem
+                      v-for="i in 8"
+                      :key="`skeleton-not-interested-list-${i}`"
+                      :show-rating="i % 3 !== 0"
+                    />
+                  </div>
+                </div>
 
                 <div
                   v-else-if="notInterestedTitles.length > 0"
-                  class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
+                  class="flex flex-col gap-4"
                 >
-                  <TitleCard
-                    v-for="title in notInterestedTitles"
-                    :key="title.id"
-                    :title="title.title"
-                    :poster-path="title.poster_path"
-                    :link-to="getTitleLink(title.type, title.tmdb_id)"
-                    :link-aria-label="
-                      $t('media.viewDetailsOf', { title: title.title })
-                    "
-                    :image-alt="$t('media.posterOf', { title: title.title })"
-                    :no-image-aria-label="
-                      $t('media.noPosterAvailableFor', { title: title.title })
-                    "
-                    :type="title.type"
-                    :aria-label="
-                      $t('media.titleCardLabel', { title: title.title })
-                    "
+                  <div class="flex justify-end">
+                    <ViewModeSelector page-key="not-interested" />
+                  </div>
+                  <!-- Mosaic view -->
+                  <div
+                    v-if="notInterestedViewMode === 'mosaic'"
+                    class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
                   >
-                    <template #top-right-actions>
-                      <Tooltip :text="$t('common.delete')">
-                        <IconButton
-                          :aria-label="$t('common.delete')"
-                          size="small"
-                          variant="default"
-                          custom-class="p-2 rounded-full backdrop-blur-sm pointer-events-auto w-fit h-fit bg-black/50 hover:bg-red-600/80 relative z-50"
-                          @click.stop.prevent="
-                            () => {
-                              console.log('IconButton clicked', title);
-                              handleRemoveNotInterested(title);
-                            }
-                          "
-                        >
-                          <IconX icon-class="w-4 h-4 text-white" />
-                        </IconButton>
-                      </Tooltip>
-                    </template>
-                  </TitleCard>
+                    <TitleCard
+                      v-for="title in notInterestedTitles"
+                      :key="title.id"
+                      :title="title.title"
+                      :poster-path="title.poster_path"
+                      :link-to="getTitleLink(title.type, title.tmdb_id)"
+                      :link-aria-label="
+                        $t('media.viewDetailsOf', { title: title.title })
+                      "
+                      :image-alt="$t('media.posterOf', { title: title.title })"
+                      :no-image-aria-label="
+                        $t('media.noPosterAvailableFor', { title: title.title })
+                      "
+                      :type="title.type"
+                      :aria-label="
+                        $t('media.titleCardLabel', { title: title.title })
+                      "
+                    >
+                      <template #top-right-actions>
+                        <Tooltip :text="$t('common.delete')">
+                          <IconButton
+                            :aria-label="$t('common.delete')"
+                            size="small"
+                            variant="default"
+                            custom-class="p-2 rounded-full backdrop-blur-sm pointer-events-auto w-fit h-fit bg-black/50 hover:bg-red-600/80 relative z-50"
+                            @click.stop.prevent="
+                              () => {
+                                console.log('IconButton clicked', title);
+                                handleRemoveNotInterested(title);
+                              }
+                            "
+                          >
+                            <IconX icon-class="w-4 h-4 text-white" />
+                          </IconButton>
+                        </Tooltip>
+                      </template>
+                    </TitleCard>
+                  </div>
+                  <!-- List view -->
+                  <div v-else class="space-y-4">
+                    <TitleListItem
+                      v-for="title in notInterestedTitles"
+                      :key="`not-interested-list-${title.id}`"
+                      :title="title.title"
+                      :poster-path="title.poster_path"
+                      :tagline="title.tagline"
+                      :overview="title.overview"
+                      :vote-average="title.vote_average"
+                      :type="title.type"
+                      :tmdb-id="title.tmdb_id"
+                    >
+                      <template #actions>
+                        <Tooltip :text="$t('common.delete')">
+                          <IconButton
+                            :aria-label="$t('common.delete')"
+                            size="small"
+                            variant="default"
+                            custom-class="p-2 rounded-full backdrop-blur-sm pointer-events-auto w-fit h-fit bg-black/50 hover:bg-red-600/80"
+                            @click.stop.prevent="
+                              handleRemoveNotInterested(title)
+                            "
+                          >
+                            <IconX icon-class="w-4 h-4 text-white" />
+                          </IconButton>
+                        </Tooltip>
+                      </template>
+                    </TitleListItem>
+                  </div>
                 </div>
 
                 <EmptyState
@@ -305,6 +502,7 @@ import {
 } from '@/services/titles';
 import { getSession } from '@/services/auth';
 import { useUserRegion } from '@/composables/useUserRegion';
+import TitleCardMosaic from '@/components/TitleCardMosaic.vue';
 import TitleCard from '@/components/TitleCard.vue';
 import IconButton from '@/components/ui/IconButton.vue';
 import IconHeart from '@/components/icons/IconHeart.vue';
@@ -316,6 +514,11 @@ import Spinner from '@/components/Spinner.vue';
 import Toast from '@/components/ui/Toast.vue';
 import Section from '@/components/layout/Section.vue';
 import SectionTitle from '@/components/layout/SectionTitle.vue';
+import ViewModeSelector from '@/components/ViewModeSelector.vue';
+import TitleListItem from '@/components/TitleListItem.vue';
+import SkeletonMediaCard from '@/components/SkeletonMediaCard.vue';
+import SkeletonListItem from '@/components/SkeletonListItem.vue';
+import { useViewMode } from '@/composables/useViewMode';
 import { useUndoToast } from '@/composables/useUndoToast';
 import { useRouteWithLang } from '@/composables/useRouteWithLang';
 import { useTitleStatusAction } from '@/composables/useTitleStatusAction';
@@ -328,10 +531,44 @@ import { LIST_TAB, type ListTab } from '@/constants/domain/listTab';
 const currentUser = useSupabaseUser();
 
 // Get userStore - it must exist at this point
-const userStore = useUserStore();
+// Safely get userStore - it may not be available immediately after Pinia initialization
+// Use a computed to lazy-load the store, but only on client side
+const userStore = computed(() => {
+  // Only try to get store on client side
+  if (import.meta.server) {
+    return {
+      profile: null,
+      authInitialized: false,
+      hasCompletedOnboarding: false,
+      likesCount: 0,
+      hasLikes: false,
+    };
+  }
+
+  try {
+    return useUserStore();
+  } catch (error) {
+    // If store is not available, return a fallback object
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('[pages/lists.vue] useUserStore not available:', error);
+    }
+    return {
+      profile: null,
+      authInitialized: false,
+      hasCompletedOnboarding: false,
+      likesCount: 0,
+      hasLikes: false,
+    };
+  }
+});
 const { t, locale } = useI18n();
 const { showToast } = useUndoToast();
 const { executeAction, executeLikedAction } = useTitleStatusAction();
+
+// View modes for each tab
+const { viewMode: likedViewMode } = useViewMode('liked');
+const { viewMode: seenViewMode } = useViewMode('seen');
+const { viewMode: notInterestedViewMode } = useViewMode('not-interested');
 
 // Get app language for TMDB API calls
 const getAppLanguage = () => {
@@ -361,6 +598,14 @@ const likedTitles = ref<
     title: string;
     type: typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV;
     poster_path: string | null;
+    overview?: string | null;
+    tagline?: string | null;
+    vote_average?: number | null;
+    providers?: Array<{
+      provider_id: number;
+      provider_name: string;
+      logo_path: string | null;
+    }>;
     tmdb_id: number;
   }>
 >([]);
@@ -370,6 +615,14 @@ const seenTitles = ref<
     title: string;
     type: typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV;
     poster_path: string | null;
+    overview?: string | null;
+    tagline?: string | null;
+    vote_average?: number | null;
+    providers?: Array<{
+      provider_id: number;
+      provider_name: string;
+      logo_path: string | null;
+    }>;
     tmdb_id: number;
     liked?: boolean;
   }>
@@ -380,6 +633,14 @@ const notInterestedTitles = ref<
     title: string;
     type: typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV;
     poster_path: string | null;
+    overview?: string | null;
+    tagline?: string | null;
+    vote_average?: number | null;
+    providers?: Array<{
+      provider_id: number;
+      provider_name: string;
+      logo_path: string | null;
+    }>;
     tmdb_id: number;
   }>
 >([]);
@@ -480,6 +741,72 @@ const goToRecommendations = () => {
 
 // Use composable for user region (has cache, avoids duplicate API calls)
 const { getUserRegion } = useUserRegion();
+
+// Helper function to fetch providers for titles
+const fetchProvidersForTitles = async (
+  titles: Array<{
+    tmdb_id: number;
+    type: typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV;
+    providers?: Array<{
+      provider_id: number;
+      provider_name: string;
+      logo_path: string | null;
+    }>;
+  }>
+) => {
+  if (titles.length === 0) return;
+
+  try {
+    const region = contentPreferences.value.region || 'ES';
+    const providerPromises = titles.map(async (title) => {
+      try {
+        const endpoint =
+          title.type === MEDIA_TYPE.MOVIE
+            ? `/api/tmdb/movies/${title.tmdb_id}/providers`
+            : `/api/tmdb/tvshows/${title.tmdb_id}/providers`;
+
+        const providerData = await $fetch<{
+          flatrate?: Array<{
+            provider_id: number;
+            provider_name: string;
+            logo_path: string | null;
+          }>;
+        }>(endpoint);
+
+        return {
+          tmdb_id: title.tmdb_id,
+          providers: (providerData.flatrate || []).slice(0, 5),
+        };
+      } catch (error) {
+        if (process.env.NODE_ENV === 'development') {
+          console.error(
+            `Error fetching providers for ${title.tmdb_id}:`,
+            error
+          );
+        }
+        return {
+          tmdb_id: title.tmdb_id,
+          providers: [],
+        };
+      }
+    });
+
+    const providerResults = await Promise.all(providerPromises);
+    const providerMap = new Map(
+      providerResults.map((r) => [r.tmdb_id, r.providers])
+    );
+
+    // Update titles with providers
+    titles.forEach((title) => {
+      const providers = providerMap.get(title.tmdb_id) || [];
+      title.providers = providers;
+    });
+  } catch (error) {
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Error fetching providers for titles:', error);
+    }
+  }
+};
 
 // Fetch content preferences region only (for API calls)
 const fetchContentPreferencesRegion = async () => {
@@ -603,10 +930,17 @@ const fetchLikedTitles = async () => {
           title: title.title,
           type: title.type,
           poster_path: title.poster_path,
+          overview: title.overview || null,
+          tagline: title.tagline || null,
+          vote_average: title.vote_average || null,
+          providers: [],
           tmdb_id: title.tmdb_id,
         };
       })
       .filter((t): t is NonNullable<typeof t> => t !== null);
+
+    // Fetch providers for all titles in parallel
+    await fetchProvidersForTitles(likedTitles.value);
   } catch {
     // Error handled silently
   }
@@ -650,11 +984,18 @@ const fetchSeenTitles = async () => {
           title: title.title,
           type: title.type,
           poster_path: title.poster_path,
+          overview: title.overview || null,
+          tagline: title.tagline || null,
+          vote_average: title.vote_average || null,
+          providers: [],
           tmdb_id: title.tmdb_id,
           liked: isLiked,
         };
       })
       .filter((t): t is NonNullable<typeof t> => t !== null);
+
+    // Fetch providers for all titles in parallel
+    await fetchProvidersForTitles(seenTitles.value);
   } catch {
     // Error handled silently
   }
@@ -699,10 +1040,17 @@ const fetchNotInterestedTitles = async () => {
           title: title.title,
           type: title.type,
           poster_path: title.poster_path,
+          overview: title.overview || null,
+          tagline: title.tagline || null,
+          vote_average: title.vote_average || null,
+          providers: [],
           tmdb_id: title.tmdb_id,
         };
       })
       .filter((t): t is NonNullable<typeof t> => t !== null);
+
+    // Fetch providers for all titles in parallel
+    await fetchProvidersForTitles(notInterestedTitles.value);
   } catch {
     // Error handled silently
   }
@@ -747,6 +1095,9 @@ const fetchWatchlistTitles = async () => {
           title: title.title,
           type: title.type,
           poster_path: title.poster_path,
+          overview: title.overview || null,
+          tagline: title.tagline || null,
+          vote_average: title.vote_average || null,
           tmdb_id: title.tmdb_id,
         };
       })
@@ -770,7 +1121,7 @@ const handleRemoveLikedClick = async (title: {
     if (error) throw error;
 
     likedTitles.value = likedTitles.value.filter((t) => t.id !== title.id);
-    await userStore.fetchProfile();
+    await userStore.value.fetchProfile();
 
     // Regenerate recommendation pool in background
     try {
@@ -951,6 +1302,9 @@ const handleAddToLiked = async (title: {
           title: titleData.title,
           type: titleData.type,
           poster_path: titleData.poster_path,
+          overview: titleData.overview || null,
+          tagline: titleData.tagline || null,
+          vote_average: titleData.vote_average || null,
           tmdb_id: titleData.tmdb_id,
         });
 
@@ -967,7 +1321,7 @@ const handleAddToLiked = async (title: {
         }
       }
 
-      await userStore.fetchProfile();
+      await userStore.value.fetchProfile();
       // Refresh seen titles to ensure all titles have the correct liked status
       await fetchSeenTitles();
 
@@ -1176,10 +1530,10 @@ const handleRemoveNotInterested = async (title: {
 // Lifecycle
 onMounted(async () => {
   // Ensure profile is loaded
-  await userStore.ensureProfile();
+  await userStore.value.ensureProfile();
 
   // Check onboarding status
-  if (!userStore.hasCompletedOnboarding) {
+  if (!userStore.value.hasCompletedOnboarding) {
     const { routeWithLang } = useRouteWithLang();
     await navigateTo(routeWithLang('/onboarding'), { replace: true });
     return;
