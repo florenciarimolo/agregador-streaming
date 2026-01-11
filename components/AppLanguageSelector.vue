@@ -346,24 +346,13 @@ const selectedLanguage = computed({
         return;
       }
 
-      // Get current path without language prefix
-      const pathWithoutLang = getPathWithoutLang(route.path);
-
-      // Build new path with new language prefix
-      const newPath = `/${newLangUrlCode}${pathWithoutLang === '/' ? '' : pathWithoutLang}`;
-
-      // Preserve query string if present
-      const queryString = route.fullPath.includes('?')
-        ? route.fullPath.substring(route.fullPath.indexOf('?'))
-        : '';
-
-      const newFullPath = `${newPath}${queryString}`;
-
-      // CRITICAL: Only navigate - do NOT call setLocale() here
-      // The middleware/sync-lang.ts will automatically synchronize i18n.locale
-      // with route.params.lang after navigation. This ensures deterministic behavior
-      // and prevents race conditions.
-      await router.push(newFullPath);
+      // CRITICAL: Use setLocale() to change language - this will:
+      // 1. Update i18n.locale to the new language
+      // 2. Navigate to the correct URL with the language prefix (with strategy: 'prefix')
+      // 3. Load the correct translation file automatically
+      // With skipSettingLocaleOnNavigate: false, setLocale() handles everything automatically
+      // The URL will be updated to match the new language, making it the source of truth
+      await setLocale(newLangUrlCode as UrlLanguageCode);
 
       // Notify regions composable about app language change
       // Use i18n code for regions (they expect i18n format)

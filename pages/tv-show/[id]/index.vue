@@ -153,7 +153,6 @@ import Section from '@/components/layout/Section.vue';
 import Alert from '@/components/ui/Alert.vue';
 
 const route = useRoute();
-const { locale } = useI18n();
 const { getUserRegion } = useUserRegion();
 const userRegion = ref<string | null>(null);
 const { lang } = useRouteWithLang();
@@ -181,17 +180,19 @@ const {
   query: { lang: currentLangUrlCode },
 });
 
-// Watch for locale changes and refresh all data
+// Watch for language changes in URL and refresh all data
+// CRITICAL: Watch lang.value (from route.params.lang) instead of locale.value
+// The URL is the source of truth for language
 watch(
-  () => locale.value,
-  async (newLocale, oldLocale) => {
-    if (newLocale && oldLocale && newLocale !== oldLocale) {
+  () => lang.value,
+  async (newLang, oldLang) => {
+    if (newLang && oldLang && newLang !== oldLang) {
       if (import.meta.dev) {
         console.log(
-          '[tv-show/[id]/index.vue] Language changed, refreshing TV show data:',
+          '[tv-show/[id]/index.vue] Language changed in URL, refreshing TV show data:',
           {
-            oldLocale,
-            newLocale,
+            oldLang,
+            newLang,
           }
         );
       }

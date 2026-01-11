@@ -59,7 +59,6 @@ import Alert from '@/components/ui/Alert.vue';
 
 const route = useRoute();
 const movieId = route.params.id as string;
-const { locale } = useI18n();
 const { lang } = useRouteWithLang();
 
 // Get current language URL code for API calls
@@ -95,17 +94,19 @@ const {
   query: { lang: currentLangUrlCode },
 });
 
-// Watch for locale changes and refresh all data
+// Watch for language changes in URL and refresh all data
+// CRITICAL: Watch lang.value (from route.params.lang) instead of locale.value
+// The URL is the source of truth for language
 watch(
-  () => locale.value,
-  async (newLocale, oldLocale) => {
-    if (newLocale && oldLocale && newLocale !== oldLocale) {
+  () => lang.value,
+  async (newLang, oldLang) => {
+    if (newLang && oldLang && newLang !== oldLang) {
       if (import.meta.dev) {
         console.log(
-          '[movie/[id].vue] Language changed, refreshing movie data:',
+          '[movie/[id].vue] Language changed in URL, refreshing movie data:',
           {
-            oldLocale,
-            newLocale,
+            oldLang,
+            newLang,
           }
         );
       }

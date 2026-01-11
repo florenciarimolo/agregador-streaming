@@ -180,7 +180,7 @@ export default defineNuxtConfig({
     vueI18n: 'i18n/i18n.config.ts',
     detectBrowserLanguage: false, // Disabled - we handle / redirect manually in legacy-redirect middleware
     rootRedirect: null, // Disabled - we handle / redirect manually in legacy-redirect middleware
-    skipSettingLocaleOnNavigate: true, // Disabled - we handle locale setting manually in sync-lang middleware
+    skipSettingLocaleOnNavigate: false, // Enable automatic locale sync from URL - the middleware ensures it matches
   },
 
   app: {
