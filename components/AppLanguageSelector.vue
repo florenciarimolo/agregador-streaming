@@ -322,13 +322,15 @@ const selectedLanguage = computed({
             `Invalid i18n code: ${i18nCode}. Falling back to default`
           );
         }
-        // Use default language if invalid - convert i18n code to URL code for setLocale
+        // Use default language if invalid - navigate to default language URL
         const defaultUrlCode = getUrlCodeFromI18nCode(getDefaultI18nCode());
-        if (
-          defaultUrlCode &&
-          VALID_URL_CODES.includes(defaultUrlCode as UrlLanguageCode)
-        ) {
-          await setLocale(defaultUrlCode as UrlLanguageCode);
+        if (defaultUrlCode) {
+          const pathWithoutLang = getPathWithoutLang(route.path);
+          const defaultPath = `/${defaultUrlCode}${pathWithoutLang === '/' ? '' : pathWithoutLang}`;
+          const queryString = route.fullPath.includes('?')
+            ? route.fullPath.substring(route.fullPath.indexOf('?'))
+            : '';
+          await router.push(`${defaultPath}${queryString}`);
         }
         return;
       }
@@ -357,14 +359,10 @@ const selectedLanguage = computed({
 
       const newFullPath = `${newPath}${queryString}`;
 
-      // Use setLocale to properly change the language
-      // This will save to cookies automatically via nuxt.config.ts
-      // setLocale expects URL code (e.g., 'es', 'en'), not i18n code (e.g., 'es-ES', 'en-US')
-      if (VALID_URL_CODES.includes(newLangUrlCode as UrlLanguageCode)) {
-        await setLocale(newLangUrlCode as UrlLanguageCode);
-      }
-
-      // Navigate to new path with language prefix
+      // CRITICAL: Only navigate - do NOT call setLocale() here
+      // The middleware/sync-lang.ts will automatically synchronize i18n.locale
+      // with route.params.lang after navigation. This ensures deterministic behavior
+      // and prevents race conditions.
       await router.push(newFullPath);
 
       // Notify regions composable about app language change
@@ -377,20 +375,10 @@ const selectedLanguage = computed({
         notifyAppLanguageChange(i18nCode);
       }
     } catch (error) {
-      // Fallback to direct assignment if setLocale fails
+      // Log error but don't try to set locale directly
+      // The middleware will handle synchronization after navigation
       if (process.env.NODE_ENV === 'development') {
-        console.warn('Error setting locale:', error);
-      }
-      // Use validated code or default - convert to URL code for locale.value
-      const fallbackI18nCode = isValidI18nCode(i18nCode)
-        ? i18nCode
-        : getDefaultI18nCode();
-      const fallbackUrlCode = getUrlCodeFromI18nCode(fallbackI18nCode);
-      if (
-        fallbackUrlCode &&
-        VALID_URL_CODES.includes(fallbackUrlCode as UrlLanguageCode)
-      ) {
-        locale.value = fallbackUrlCode as UrlLanguageCode;
+        console.error('Error changing language:', error);
       }
     }
   },
