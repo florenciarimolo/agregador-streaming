@@ -125,7 +125,6 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import RatingBadge from './RatingBadge.vue';
 import IconMoreVertical from './icons/IconMoreVertical.vue';
 import IconClock from './icons/IconClock.vue';
 import IconCheck from './icons/IconCheck.vue';

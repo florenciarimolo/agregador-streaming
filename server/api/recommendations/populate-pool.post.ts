@@ -20,7 +20,7 @@ import {
   TITLES_COLUMNS,
   USER_TITLE_STATUS_COLUMNS,
 } from '@/constants/db/columns';
-import { getTitleInLanguage, type MultiLanguageText } from '@/services/titles';
+import type { MultiLanguageText } from '@/services/titles';
 import { getTitleOrOverviewInLanguage } from '@/composables/database/titles';
 import { getPrimaryLanguageForRegion } from '@/utils/language-detection';
 

@@ -42,7 +42,5 @@ interface Props {
 
 const props = defineProps<Props>();
 
-const { viewMode, setViewMode, isListView, isMosaicView } = useViewMode(
-  props.pageKey
-);
+const { setViewMode, isListView, isMosaicView } = useViewMode(props.pageKey);
 </script>

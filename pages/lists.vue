@@ -521,7 +521,6 @@ import IconHeartFilled from '@/components/icons/IconHeartFilled.vue';
 import IconX from '@/components/icons/IconX.vue';
 import Tooltip from '@/components/ui/Tooltip.vue';
 import EmptyState from '@/components/EmptyState.vue';
-import Spinner from '@/components/Spinner.vue';
 import Toast from '@/components/ui/Toast.vue';
 import Section from '@/components/layout/Section.vue';
 import SectionTitle from '@/components/layout/SectionTitle.vue';
@@ -766,7 +765,6 @@ const fetchProvidersForTitles = async (
   if (titles.length === 0) return;
 
   try {
-    const region = contentPreferences.value.region || 'ES';
     const providerPromises = titles.map(async (title) => {
       try {
         const endpoint =

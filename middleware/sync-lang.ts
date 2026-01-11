@@ -17,7 +17,6 @@
  */
 
 import { VALID_URL_CODES } from '@/constants/urlLanguageCodes';
-import { nextTick } from 'vue';
 
 export default defineNuxtRouteMiddleware(async (to) => {
   // Only run on client side (i18n is client-side only in this setup)
@@ -27,7 +26,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
 
   try {
     const route = to;
-    const { locale, setLocale, finalizePendingLocaleChange } = useI18n();
+    const { locale, setLocale } = useI18n();
 
     // Get language from URL (source of truth)
     const langFromUrl = route.params?.lang as string | undefined;
@@ -43,7 +42,11 @@ export default defineNuxtRouteMiddleware(async (to) => {
     const normalizedLangFromUrl = langFromUrl.toLowerCase();
 
     // Validate language code
-    if (!VALID_URL_CODES.includes(normalizedLangFromUrl as any)) {
+    if (
+      !VALID_URL_CODES.includes(
+        normalizedLangFromUrl as (typeof VALID_URL_CODES)[number]
+      )
+    ) {
       // Invalid language code - let other middleware handle 404
       if (process.env.NODE_ENV === 'development') {
         console.warn(
@@ -71,7 +74,10 @@ export default defineNuxtRouteMiddleware(async (to) => {
       await setLocale(normalizedLangFromUrl);
 
       // Verify synchronization (safety check)
-      if (locale.value !== normalizedLangFromUrl && process.env.NODE_ENV === 'development') {
+      if (
+        locale.value !== normalizedLangFromUrl &&
+        process.env.NODE_ENV === 'development'
+      ) {
         console.warn(
           `[sync-lang] WARNING: Failed to synchronize locale. Expected: ${normalizedLangFromUrl}, Got: ${locale.value}`
         );

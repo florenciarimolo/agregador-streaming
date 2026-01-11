@@ -23,7 +23,6 @@
 import { ref, onMounted, computed, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
-import { useRouteWithLang } from '@/composables/useRouteWithLang';
 import AppShell from '@/components/layout/AppShell.vue';
 import PageContainer from '@/components/layout/PageContainer.vue';
 import Section from '@/components/layout/Section.vue';
@@ -36,7 +35,6 @@ import type {
 
 const { t, locale } = useI18n();
 const route = useRoute();
-const { lang } = useRouteWithLang();
 
 // SEO: hreflang and canonical
 const { hreflangLinks } = useHreflang();

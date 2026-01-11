@@ -775,15 +775,7 @@
 <script setup lang="ts">
 import RatingBadge from './RatingBadge.vue';
 import type { Media } from '@/types/Media';
-import {
-  computed,
-  nextTick,
-  onMounted,
-  onUnmounted,
-  PropType,
-  ref,
-  watch,
-} from 'vue';
+import { computed, nextTick, onMounted, onUnmounted, PropType, ref } from 'vue';
 import { formatDateByRegion } from '@/utils/formatDate';
 import type { Genre } from '@/types/Genre';
 import ProviderList from './ProviderList.vue';
@@ -823,7 +815,6 @@ import { useRouter } from 'vue-router';
 import Section from '@/components/layout/Section.vue';
 import { useUserRegion } from '@/composables/useUserRegion';
 import { type MultiLanguageText } from '@/services/titles';
-import { useCurrentLanguage } from '@/composables/useCurrentLanguage';
 import { useRouteWithLang } from '@/composables/useRouteWithLang';
 import { useFetchTagline } from '@/composables/useFetchTagline';
 
@@ -914,8 +905,6 @@ const isNotInterested = ref(false);
 const router = useRouter();
 const { getUserRegion } = useUserRegion();
 const userRegion = ref<string | null>(null);
-const { currentLanguage } = useCurrentLanguage();
-const { lang: currentLangUrlCode } = useRouteWithLang();
 
 // Check if user has session
 const user = useSupabaseUser();

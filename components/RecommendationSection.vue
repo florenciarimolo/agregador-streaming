@@ -120,6 +120,8 @@ const props = withDefaults(
     viewMode?: 'mosaic' | 'list';
   }>(),
   {
+    description: undefined,
+    loadingTitles: undefined,
     viewMode: 'mosaic',
   }
 );

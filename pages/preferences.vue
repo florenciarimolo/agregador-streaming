@@ -461,42 +461,11 @@ import ProviderSelector from '@/components/ProviderSelector.vue';
 import FilterPill from '@/components/ui/FilterPill.vue';
 import { useUndoToast } from '@/composables/useUndoToast';
 import { DEFAULT_LANGUAGE, toTMDBLanguageCode } from '@/constants/languages';
-import { useUserStore } from '@/stores/user';
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore - Auto-imported
 const currentUser = useSupabaseUser();
 
-// Safely get userStore - it may not be available immediately after Pinia initialization
-// Use a computed to lazy-load the store, but only on client side
-const userStore = computed(() => {
-  // Only try to get store on client side
-  if (import.meta.server) {
-    return {
-      profile: null,
-      authInitialized: false,
-      hasCompletedOnboarding: false,
-      ensureProfile: async () => {},
-    };
-  }
-
-  try {
-    return useUserStore();
-  } catch (error) {
-    if (process.env.NODE_ENV === 'development') {
-      console.warn(
-        '[pages/preferences.vue] useUserStore not available:',
-        error
-      );
-    }
-    return {
-      profile: null,
-      authInitialized: false,
-      hasCompletedOnboarding: false,
-      ensureProfile: async () => {},
-    };
-  }
-});
 const { t, locale } = useI18n();
 const { showToast } = useUndoToast();
 

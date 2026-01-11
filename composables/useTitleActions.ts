@@ -148,9 +148,6 @@ export const useTitleActions = (
     const originalTitleIndexInAll = allRecommendations.value.findIndex(
       (r: Recommendation) => r.tmdb_id === title.tmdb_id
     );
-    const originalTitleIndexInFiltered = recommendations.value.findIndex(
-      (r: Recommendation) => r.tmdb_id === title.tmdb_id
-    );
     const originalTitle =
       originalTitleIndexInAll !== -1
         ? { ...allRecommendations.value[originalTitleIndexInAll] }
