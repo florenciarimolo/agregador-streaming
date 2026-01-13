@@ -40,68 +40,45 @@
 
             <div
               v-if="seasonWithProviders?.episodes?.length"
-              class="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3"
+              class="space-y-4"
             >
-              <article
+              <ListItemBase
                 v-for="episode in seasonWithProviders.episodes"
                 :key="episode.id"
-                class="overflow-hidden bg-white/60 dark:bg-gray-900/40 backdrop-blur-xl border border-gray-300/50 dark:border-white/10 rounded-3xl group hover:border-primary-800 dark:hover:border-primary-600/50 transition-colors shadow-lg"
+                :title="episode.name"
+                :poster-path="episode.still_path"
+                :overview="episode.overview"
+                :vote-average="episode.vote_average"
+                :tmdb-id="episode.id"
+                :hide-type-badge="true"
+                :aria-label="$t('media.viewDetailsOf', { title: episode.name })"
+                :link-aria-label="$t('media.viewDetailsOf', { title: episode.name })"
+                :image-alt="$t('media.posterOf', { title: episode.name })"
+                :no-image-aria-label="
+                  $t('media.noPosterAvailableFor', { title: episode.name })
+                "
               >
-                <div class="relative bg-gray-700 aspect-video">
-                  <img
-                    v-if="episode.still_path"
-                    :src="`https://image.tmdb.org/t/p/w500${episode.still_path}`"
-                    :alt="episode.name"
-                    class="object-contain w-full h-full rounded-t-3xl max-h-[400px] lg:max-h-[500px]"
-                  />
-                  <div
-                    v-else
-                    class="flex items-center justify-center h-full dark:text-gray-400 text-gray-500"
-                  >
-                    <span class="text-4xl">📺</span>
-                  </div>
-                  <!-- RatingBadge - top right -->
-                  <div class="absolute top-2 right-2 z-10">
-                    <RatingBadge :rating="episode.vote_average" />
-                  </div>
-                </div>
-                <div class="p-4">
-                  <div class="flex flex-col gap-3 mb-3">
-                    <!-- Episode name -->
-                    <h4
-                      class="font-semibold dark:text-gray-300 text-gray-800 text-sm md:text-base"
-                    >
-                      {{ episode.name }}
-                    </h4>
-                    <!-- Date -->
+                <template #actions>
+                  <!-- Additional episode info: Date and Duration -->
+                  <div class="flex flex-col gap-2 items-end">
                     <div
-                      class="flex items-center gap-2 dark:text-gray-300 text-gray-800 text-xs md:text-sm"
+                      class="flex items-center gap-2 dark:text-gray-300 text-gray-800 text-xs"
                     >
-                      <IconCalendar icon-class="w-3 h-3 md:w-4 md:h-4" />
-                      <span class="truncate">{{
+                      <IconCalendar icon-class="w-3 h-3" />
+                      <span>{{
                         formatDateByRegion(episode.air_date, userRegion, t)
                       }}</span>
                     </div>
-                    <!-- Duration -->
                     <div
                       v-if="episode.runtime"
-                      class="flex items-center gap-2 dark:text-gray-300 text-gray-800 text-xs md:text-sm"
+                      class="flex items-center gap-2 dark:text-gray-300 text-gray-800 text-xs"
                     >
-                      <IconClock icon-class="w-3 h-3 md:w-4 md:h-4" />
-                      <span class="truncate">{{ episode.runtime }} min</span>
+                      <IconClock icon-class="w-3 h-3" />
+                      <span>{{ episode.runtime }} min</span>
                     </div>
                   </div>
-                  <p
-                    :class="[
-                      'text-sm dark:text-gray-300 text-gray-700 line-clamp-3',
-                      { italic: !episode.overview },
-                    ]"
-                    >{{
-                      episode.overview || $t('media.noDescriptionAvailable')
-                    }}</p
-                  >
-                </div>
-              </article>
+                </template>
+              </ListItemBase>
             </div>
 
             <!-- Empty state -->
@@ -131,10 +108,10 @@ import AppShell from '@/components/layout/AppShell.vue';
 import PageContainer from '@/components/layout/PageContainer.vue';
 import Section from '@/components/layout/Section.vue';
 import SectionTitle from '@/components/layout/SectionTitle.vue';
-import RatingBadge from '@/components/RatingBadge.vue';
 import Alert from '@/components/ui/Alert.vue';
 import IconCalendar from '@/components/icons/IconCalendar.vue';
 import IconClock from '@/components/icons/IconClock.vue';
+import ListItemBase from '@/components/ListItemBase.vue';
 import { formatDateByRegion } from '@/utils/formatDate';
 import { useUserRegion } from '@/composables/useUserRegion';
 
@@ -275,3 +252,4 @@ onMounted(async () => {
   line-clamp: 3;
 }
 </style>
+

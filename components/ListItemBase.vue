@@ -10,15 +10,19 @@
     <!-- Mobile: 3 filas (1 columna) -->
     <!-- Desktop: 1 fila (3 columnas) -->
     <div class="flex flex-col md:flex-row gap-4 p-4">
-      <!-- Fila 1 (móvil): 3 columnas (Imagen, Título/Tag/Tagline, Rating/Menu/Badge) -->
+      <!-- Fila 1 (móvil): 2 columnas (Imagen, Rating/Menu/Badge) -->
       <!-- Desktop: Columna 1 (Imagen) -->
-      <div class="flex flex-row gap-4 md:flex-col md:flex-shrink-0">
+      <div class="flex flex-row justify-between gap-4 md:flex-col md:flex-shrink-0">
         <!-- Imagen -->
         <div class="flex-shrink-0">
-          <nuxt-link
-            :to="linkTo"
+          <component
+            :is="linkTo ? 'nuxt-link' : 'div'"
+            :to="linkTo || undefined"
             :aria-label="linkAriaLabel"
-            class="group relative block overflow-hidden rounded-2xl bg-gray-800 aspect-[2/3] w-24 md:w-32 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+            :class="[
+              'group relative block overflow-hidden rounded-2xl bg-gray-800 aspect-[2/3] w-20 md:w-32',
+              linkTo ? 'focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2' : '',
+            ]"
           >
             <!-- Image or Placeholder -->
             <div class="overflow-hidden w-full h-full rounded-2xl">
@@ -48,46 +52,47 @@
                 {{ $t('media.viewDetails') }}
               </p>
             </div>
-          </nuxt-link>
+          </component>
         </div>
 
-        <!-- Título, tag y tagline (móvil: columna 2) -->
-        <div class="flex-1 flex flex-col gap-1 min-w-0 md:hidden">
-          <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-300">
-            <nuxt-link
-              :to="linkTo"
-              class="hover:text-primary-800 dark:hover:text-primary-400 transition-colors"
-            >
-              {{ title }}
-            </nuxt-link>
-          </h3>
-          <!-- Tag (solo para discover lists) -->
-          <Badge
-            v-if="tag"
-            :label="capitalizeTag(tag)"
-            size="sm"
-            class="self-start mt-1"
-          />
-          <p
-            v-if="displayTagline"
-            class="text-sm italic text-gray-600 dark:text-gray-400 mt-1"
-          >
-            {{ displayTagline }}
-          </p>
-        </div>
-
-        <!-- RatingBadge, acciones y Badge de tipo (móvil: columna 3) -->
+        <!-- RatingBadge, acciones y Badge de tipo (móvil: columna 2) -->
         <div class="flex-shrink-0 flex flex-col gap-2 items-end md:hidden">
-          <!-- RatingBadge y acciones en la misma fila -->
+          <!-- RatingBadge -->
           <div class="flex items-center gap-2">
             <RatingBadge v-if="voteAverage" :rating="voteAverage" />
-            <!-- Slot para acciones (menú o botón de eliminar) -->
-            <div class="overflow-visible">
-              <slot name="actions" />
-            </div>
+          </div>
+          <!-- Slot para acciones (menú o botón de eliminar, o info adicional como fecha/duración) -->
+          <div class="overflow-visible flex flex-col items-end gap-2">
+            <slot name="actions" />
           </div>
           <Badge v-if="type && !hideTypeBadge" :type="type" />
         </div>
+      </div>
+
+      <!-- Fila 2 (móvil): Título/Tag/Tagline (nueva línea) -->
+      <div class="flex flex-col gap-1 min-w-0 md:hidden">
+        <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-300">
+          <component
+            :is="linkTo ? 'nuxt-link' : 'span'"
+            :to="linkTo || undefined"
+            :class="linkTo ? 'hover:text-primary-800 dark:hover:text-primary-400 transition-colors' : ''"
+          >
+            {{ title }}
+          </component>
+        </h3>
+        <!-- Tag (solo para discover lists) -->
+        <Badge
+          v-if="tag"
+          :label="capitalizeTag(tag)"
+          size="sm"
+          class="self-start mt-1"
+        />
+        <p
+          v-if="displayTagline"
+          class="text-sm italic text-gray-600 dark:text-gray-400 mt-1"
+        >
+          {{ displayTagline }}
+        </p>
       </div>
 
       <!-- Desktop: Columna 2 (Título/Tag/Tagline, Overview, Providers) -->
@@ -117,7 +122,7 @@
         </div>
         <p
           v-if="overview"
-          class="text-sm text-gray-700 dark:text-gray-300 line-clamp-3"
+          class="text-sm text-gray-700 dark:text-gray-300"
         >
           {{ overview }}
         </p>
@@ -150,7 +155,7 @@
       <div class="md:hidden">
         <p
           v-if="overview"
-          class="text-sm text-gray-700 dark:text-gray-300 line-clamp-3"
+          class="text-sm text-gray-700 dark:text-gray-300"
         >
           {{ overview }}
         </p>
@@ -184,13 +189,13 @@
 
       <!-- Desktop: Columna 3 (Rating/Menu/Badge) -->
       <div class="hidden md:flex flex-shrink-0 flex-col gap-2 items-end">
-        <!-- RatingBadge y acciones en la misma fila -->
+        <!-- RatingBadge -->
         <div class="flex items-center gap-2">
           <RatingBadge v-if="voteAverage" :rating="voteAverage" />
-          <!-- Slot para acciones (menú o botón de eliminar) -->
-          <div class="overflow-visible">
-            <slot name="actions" />
-          </div>
+        </div>
+        <!-- Slot para acciones (menú o botón de eliminar, o info adicional como fecha/duración) -->
+        <div class="overflow-visible flex flex-col items-end gap-2">
+          <slot name="actions" />
         </div>
         <Badge v-if="type && !hideTypeBadge" :type="type" />
       </div>
@@ -257,7 +262,9 @@ const mediaType = computed(() =>
 );
 
 // Computed link with language prefix
+// If type is not provided, don't create a link (for episodes, etc.)
 const linkTo = computed(() => {
+  if (!props.type) return '';
   return routeWithLang(`/${mediaType.value}/${props.tmdbId}`);
 });
 
