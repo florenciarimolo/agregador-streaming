@@ -10,6 +10,10 @@ import { SEASONS_COLUMNS } from '@/constants/db/columns';
 import { upsertSeason } from '@/services/seasons';
 import { $fetch } from 'ofetch';
 import type { MultiLanguageText } from '@/services/titles';
+import {
+  getAirDateFromSeasonOrEpisode,
+  fetchSeasonAirDate,
+} from '@/server/utils/season-air-date';
 
 /**
  * TMDB season structure from /tv/{id} response
@@ -245,17 +249,11 @@ export async function syncSeasonsFromTVShow(
           },
         });
 
-        // If air_date is null, try to get it from the first episode
-        let finalAirDate = seasonResponse.air_date;
-        if (!finalAirDate && seasonResponse.episodes && seasonResponse.episodes.length > 0) {
-          // Find the first episode with an air_date
-          const firstEpisodeWithDate = seasonResponse.episodes.find(
-            (ep) => ep.air_date && ep.air_date.trim() !== ''
-          );
-          if (firstEpisodeWithDate?.air_date) {
-            finalAirDate = firstEpisodeWithDate.air_date;
-          }
-        }
+        // Get air_date from season response or first episode
+        const finalAirDate = getAirDateFromSeasonOrEpisode(
+          seasonResponse.air_date,
+          seasonResponse.episodes
+        );
 
         // Calculate episode_count from episodes array
         const episodeCount = seasonResponse.episodes?.length || null;
@@ -328,17 +326,11 @@ export async function syncSeasonsFromTVShow(
           },
         });
 
-        // If air_date is null, try to get it from the first episode
-        let finalAirDate = seasonResponse.air_date;
-        if (!finalAirDate && seasonResponse.episodes && seasonResponse.episodes.length > 0) {
-          // Find the first episode with an air_date
-          const firstEpisodeWithDate = seasonResponse.episodes.find(
-            (ep) => ep.air_date && ep.air_date.trim() !== ''
-          );
-          if (firstEpisodeWithDate?.air_date) {
-            finalAirDate = firstEpisodeWithDate.air_date;
-          }
-        }
+        // Get air_date from season response or first episode
+        const finalAirDate = getAirDateFromSeasonOrEpisode(
+          seasonResponse.air_date,
+          seasonResponse.episodes
+        );
 
         // Calculate episode_count from episodes array
         const episodeCount = seasonResponse.episodes?.length || null;

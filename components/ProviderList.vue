@@ -30,7 +30,7 @@ import {
   generateProviderSearchUrl,
   getFallbackSearchUrl,
 } from '@/utils/providerLinks';
-import { MEDIA_TYPE, type MediaType } from '@/constants/domain/mediaType';
+import type { MediaType } from '@/constants/domain/mediaType';
 import { useUserRegion } from '@/composables/useUserRegion';
 
 const props = defineProps({
@@ -91,17 +91,6 @@ const _getProviderUrl = (providerName: string): string => {
 // Use composable for user region (cache included)
 const { getUserRegion } = useUserRegion();
 
-// Cache for Spanish title (key: "tmdbId-type")
-const spanishTitleCache = useState<Record<string, string | null>>(
-  'spanish-title-cache',
-  () => ({})
-);
-
-// Loading promises to prevent concurrent API calls (key: "tmdbId-type")
-const spanishTitleLoadingPromises = useState<
-  Record<string, Promise<string | null>>
->('spanish-title-loading-promises', () => ({}));
-
 // Pre-fetch URLs for async providers
 onMounted(async () => {
   if (!props.mediaTitle) return;
@@ -109,53 +98,8 @@ onMounted(async () => {
   // Get user region from composable (uses cache)
   const userRegion = (await getUserRegion()) || 'ES';
 
-  // Convert MEDIA_TYPE to 'movie' | 'tv' for database
-  const mediaTypeForDb: 'movie' | 'tv' =
-    props.mediaType === MEDIA_TYPE.MOVIE ? 'movie' : 'tv';
-
-  // Fetch Spanish title ONCE before the loop (if needed and not cached)
-  let spanishTitle: string | null = null;
-  const cacheKey = `${props.tmdbId}-${mediaTypeForDb}`;
-
-  if (userRegion === 'ES' && props.tmdbId && mediaTypeForDb) {
-    // Check cache first
-    if (spanishTitleCache.value[cacheKey] !== undefined) {
-      spanishTitle = spanishTitleCache.value[cacheKey];
-    } else if (cacheKey in spanishTitleLoadingPromises.value) {
-      // If already loading, wait for existing promise
-      spanishTitle = await spanishTitleLoadingPromises.value[cacheKey];
-    } else {
-      // Create new promise for this fetch
-      const fetchPromise = (async () => {
-        try {
-          const response = await $fetch<{ title: string | null }>(
-            `/api/titles/spanish-title?tmdb_id=${props.tmdbId}&type=${mediaTypeForDb}`
-          );
-          const title = response.title || null;
-          spanishTitleCache.value[cacheKey] = title;
-          // Clear loading promise after completion
-          delete spanishTitleLoadingPromises.value[cacheKey];
-          return title;
-        } catch (error) {
-          console.error(
-            'Error fetching Spanish title for provider link:',
-            error
-          );
-          const title = null;
-          spanishTitleCache.value[cacheKey] = title;
-          // Clear loading promise after completion
-          delete spanishTitleLoadingPromises.value[cacheKey];
-          return title;
-        }
-      })();
-
-      // Store promise so other concurrent calls can wait for it
-      spanishTitleLoadingPromises.value[cacheKey] = fetchPromise;
-      spanishTitle = await fetchPromise;
-    }
-  }
-
-  // Generate URLs for all providers (using cached Spanish title)
+  // Generate URLs for all providers using the title in the user's current language
+  // mediaTitle is already in the user's current language from the API response
   for (const provider of props.mediaProviderPropList) {
     const providerName = provider.provider_name;
 
@@ -170,8 +114,7 @@ onMounted(async () => {
             ? props.alternativeTitles
             : undefined,
           props.mediaType,
-          userRegion,
-          spanishTitle // Pass cached Spanish title
+          userRegion
         );
         if (url) {
           providerUrls.value[providerName] = url;
@@ -190,8 +133,7 @@ onMounted(async () => {
             ? props.alternativeTitles
             : undefined,
           props.mediaType,
-          userRegion,
-          spanishTitle // Pass cached Spanish title
+          userRegion
         );
         if (url) {
           providerUrls.value[providerName] = url;

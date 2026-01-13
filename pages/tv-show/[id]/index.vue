@@ -133,6 +133,7 @@ import { useRoute } from 'vue-router';
 import { useFetch, useSeoMeta, useHead } from 'nuxt/app';
 import { computed, onMounted, watch, ref } from 'vue';
 import { useRouteWithLang } from '@/composables/useRouteWithLang';
+import { useUserRegion } from '@/composables/useUserRegion';
 
 import type { TVShow } from '@/types/TVShow';
 import { formatDateByRegion } from '@/utils/formatDate';

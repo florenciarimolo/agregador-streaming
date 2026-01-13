@@ -74,11 +74,7 @@
         >
           <div
             class="relative w-full lg:max-w-80 lg:w-80 flex-shrink-0 lg:aspect-[2/3]"
-            style="
-              filter: drop-shadow(0 10px 15px -3px rgb(0 0 0 / 0.1))
-                drop-shadow(0 4px 6px -4px rgb(0 0 0 / 0.1))
-                drop-shadow(0 0 20px rgb(var(--color-primary) / 0.3));
-            "
+            :style="posterFilterStyle"
           >
             <div
               v-if="season?.poster_path"
@@ -355,6 +351,12 @@ const sectionStyle = computed(() => ({
   backgroundImage: isMobile.value ? '' : `url(${backgroundImage.value})`,
   backgroundSize: isMobile.value ? 'contain' : 'cover',
   backgroundPosition: isMobile.value ? 'center' : 'center',
+}));
+
+// Poster filter style - use computed to avoid hydration mismatch with CSS variables
+// Primary color: #21186E = rgb(33, 24, 110)
+const posterFilterStyle = computed(() => ({
+  filter: 'drop-shadow(0 10px 15px -3px rgb(0 0 0 / 0.1)) drop-shadow(0 4px 6px -4px rgb(0 0 0 / 0.1)) drop-shadow(0 0 20px rgb(33 24 110 / 0.3))',
 }));
 
 // Extract tagline with language fallback (same logic as overview)

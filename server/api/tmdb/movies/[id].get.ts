@@ -239,6 +239,15 @@ export default defineEventHandler(async (event) => {
           .eq(TITLES_COLUMNS.TYPE, MEDIA_TYPE.MOVIE);
       }
 
+      // Extract Spanish title for provider links (if available)
+      const { getTitleInLanguage } = await import('@/services/titles');
+      const { LanguageIsoCode } = await import('@/constants/languages');
+      const spanishTitleFromDb = getTitleInLanguage(
+        titleJsonb,
+        LanguageIsoCode.SPANISH,
+        region
+      );
+
       // Map DB title to Movie format
       // IMPORTANT: Use extracted data (from titles table or TMDB) - it already handles language correctly
       // Don't use fullMovieResponse as fallback since extractTitleDataWithFallback already fetches from TMDB if needed
@@ -249,6 +258,7 @@ export default defineEventHandler(async (event) => {
         poster_path: string | null;
         tagline?: string | MultiLanguageText;
         genre_ids?: number[];
+        spanish_title?: string | null;
       } = {
         id: titleFromDb.tmdb_id,
         title: extracted.title || '',
@@ -271,6 +281,7 @@ export default defineEventHandler(async (event) => {
         // CRITICAL: Return MultiLanguageText object, not extracted string
         // The component will extract the correct language using getTitleInLanguage
         tagline: taglineJsonb || undefined,
+        spanish_title: spanishTitleFromDb || null,
       };
 
       // Add providers if available
@@ -392,9 +403,21 @@ export default defineEventHandler(async (event) => {
       });
     }
 
+    // Extract Spanish title for provider links (if available)
+    const { getTitleInLanguage: getTitleInLanguageForResponse } =
+      await import('@/services/titles');
+    const { LanguageIsoCode: LanguageIsoCodeForResponse } =
+      await import('@/constants/languages');
+    const spanishTitleFromMultiLang = getTitleInLanguageForResponse(
+      titleMultiLang,
+      LanguageIsoCodeForResponse.SPANISH,
+      region
+    );
+
     // Include tagline and runtime in response (as MultiLanguageText object)
     const response: Partial<Movie> & {
       tagline?: string | MultiLanguageText;
+      spanish_title?: string | null;
     } = {
       ...userLangData,
       runtime: runtime || undefined,
@@ -404,6 +427,7 @@ export default defineEventHandler(async (event) => {
         Object.keys(taglineMultiLang).length > 0
           ? taglineMultiLang
           : userLangData.tagline || undefined,
+      spanish_title: spanishTitleFromMultiLang || null,
     };
 
     return response;

@@ -35,6 +35,7 @@ async function updateMissingSeasonData(
     season_number: number;
     name: string;
     episode_count?: number;
+    overview?: string;
   }>,
   userLanguage: string,
   region: string | null,
@@ -57,6 +58,10 @@ async function updateMissingSeasonData(
     season: Season;
     episodeCount: number;
   }> = [];
+  const seasonsNeedingOverviewUpdate: Array<{
+    season: Season;
+    tmdbSeason: { season_number: number; overview?: string };
+  }> = [];
 
   for (const season of seasonsFromDb) {
     const tmdbSeason = tmdbSeasons.find(
@@ -78,7 +83,7 @@ async function updateMissingSeasonData(
     // Check missing name language
     const { data: seasonData } = await supabase
       .from(TABLES.SEASONS)
-      .select(SEASONS_COLUMNS.NAME)
+      .select(`${SEASONS_COLUMNS.NAME}, ${SEASONS_COLUMNS.OVERVIEW}`)
       .eq(SEASONS_COLUMNS.TV_TMDB_ID, tmdbId)
       .eq(SEASONS_COLUMNS.SEASON_NUMBER, season.season_number)
       .maybeSingle();
@@ -89,15 +94,41 @@ async function updateMissingSeasonData(
     if (!hasExactLanguage && tmdbSeason?.name) {
       seasonsNeedingNameUpdate.push({ season, tmdbSeason });
     }
+
+    // Check missing overview language
+    const overviewJsonb = safeGetMultiLanguageText(seasonData?.overview);
+    const hasExactOverviewLanguage =
+      overviewJsonb && overviewJsonb[userLanguage] !== undefined;
+
+    if (
+      !hasExactOverviewLanguage &&
+      tmdbSeason?.overview &&
+      tmdbSeason.overview.trim() !== ''
+    ) {
+      seasonsNeedingOverviewUpdate.push({ season, tmdbSeason });
+    }
   }
 
   // Update episode counts
   for (const { season, episodeCount } of seasonsNeedingEpisodeCountUpdate) {
+    // Preserve existing poster_path when updating episode_count
+    const { data: currentSeasonData } = await supabase
+      .from(TABLES.SEASONS)
+      .select(SEASONS_COLUMNS.POSTER_PATH)
+      .eq(SEASONS_COLUMNS.TV_TMDB_ID, tmdbId)
+      .eq(SEASONS_COLUMNS.SEASON_NUMBER, season.season_number)
+      .maybeSingle();
+
+    const existingPosterPath = safeGetMultiLanguageText(
+      currentSeasonData?.poster_path
+    );
+
     await upsertSeason(
       {
         tv_tmdb_id: tmdbId,
         season_number: season.season_number,
         tmdb_season_id: season.id,
+        poster_path: existingPosterPath,
         episode_count: episodeCount,
       },
       supabase
@@ -109,7 +140,7 @@ async function updateMissingSeasonData(
   for (const { season, tmdbSeason } of seasonsNeedingNameUpdate) {
     const { data: currentSeasonData } = await supabase
       .from(TABLES.SEASONS)
-      .select(SEASONS_COLUMNS.NAME)
+      .select(`${SEASONS_COLUMNS.NAME}, ${SEASONS_COLUMNS.POSTER_PATH}`)
       .eq(SEASONS_COLUMNS.TV_TMDB_ID, tmdbId)
       .eq(SEASONS_COLUMNS.SEASON_NUMBER, season.season_number)
       .maybeSingle();
@@ -121,12 +152,52 @@ async function updateMissingSeasonData(
       [userLanguage]: tmdbSeason.name,
     };
 
+    // Preserve existing poster_path when updating name
+    const existingPosterPath = safeGetMultiLanguageText(
+      currentSeasonData?.poster_path
+    );
+
     await upsertSeason(
       {
         tv_tmdb_id: tmdbId,
         season_number: season.season_number,
         tmdb_season_id: season.id,
         name: updatedNameJsonb,
+        poster_path: existingPosterPath,
+      },
+      supabase
+    );
+    needsRefetch = true;
+  }
+
+  // Update overviews
+  for (const { season, tmdbSeason } of seasonsNeedingOverviewUpdate) {
+    const { data: currentSeasonData } = await supabase
+      .from(TABLES.SEASONS)
+      .select(`${SEASONS_COLUMNS.OVERVIEW}, ${SEASONS_COLUMNS.POSTER_PATH}`)
+      .eq(SEASONS_COLUMNS.TV_TMDB_ID, tmdbId)
+      .eq(SEASONS_COLUMNS.SEASON_NUMBER, season.season_number)
+      .maybeSingle();
+
+    const currentOverviewJsonb =
+      safeGetMultiLanguageText(currentSeasonData?.overview) || {};
+    const updatedOverviewJsonb: MultiLanguageText = {
+      ...currentOverviewJsonb,
+      [userLanguage]: tmdbSeason.overview || '',
+    };
+
+    // Preserve existing poster_path when updating overview
+    const existingPosterPath = safeGetMultiLanguageText(
+      currentSeasonData?.poster_path
+    );
+
+    await upsertSeason(
+      {
+        tv_tmdb_id: tmdbId,
+        season_number: season.season_number,
+        tmdb_season_id: season.id,
+        overview: updatedOverviewJsonb,
+        poster_path: existingPosterPath,
       },
       supabase
     );
@@ -387,6 +458,15 @@ export default defineEventHandler(async (event) => {
           .eq(TITLES_COLUMNS.TYPE, MEDIA_TYPE.TV);
       }
 
+      // Extract Spanish title for provider links (if available)
+      const { getTitleInLanguage } = await import('@/services/titles');
+      const { LanguageIsoCode } = await import('@/constants/languages');
+      const spanishTitleFromDb = getTitleInLanguage(
+        titleJsonb,
+        LanguageIsoCode.SPANISH,
+        region
+      );
+
       // Build TVShow response from database and TMDB data
       const tvShow: Partial<TVShow> & {
         id: number;
@@ -400,6 +480,7 @@ export default defineEventHandler(async (event) => {
         in_production: boolean;
         tagline?: string | MultiLanguageText;
         genre_ids?: number[];
+        spanish_title?: string | null;
       } = {
         id: titleFromDb.tmdb_id,
         name: extracted.title || '',
@@ -420,6 +501,7 @@ export default defineEventHandler(async (event) => {
           | TmdbStatusType
           | undefined,
         tagline: taglineJsonb || undefined,
+        spanish_title: spanishTitleFromDb || null,
       };
 
       // Add providers if available
@@ -482,10 +564,104 @@ export default defineEventHandler(async (event) => {
           )
         : seasonsFromDb;
 
-      tvShow.seasons =
-        finalSeasons.length > 0
-          ? finalSeasons
-          : fullTvShowResponse?.seasons || [];
+      // Update missing data in database and return stored data
+      if (finalSeasons.length > 0 && fullTvShowResponse?.seasons) {
+        const tmdbSeasons = fullTvShowResponse.seasons;
+        const { getSeasonsByTvTmdbId } = await import('@/services/seasons');
+        let needsRefetch = false;
+
+        // Update missing season data using shared utility
+        const { updateMissingSeasonFields } =
+          await import('@/server/utils/season-update');
+        for (const dbSeason of finalSeasons) {
+          const tmdbSeason = tmdbSeasons.find(
+            (s) => s.season_number === dbSeason.season_number
+          );
+
+          if (!tmdbSeason) continue;
+
+          const wasUpdated = await updateMissingSeasonFields(
+            tmdbId,
+            dbSeason.season_number,
+            {
+              name: dbSeason.name,
+              poster_path: dbSeason.poster_path,
+              vote_average: dbSeason.vote_average,
+              overview: dbSeason.overview,
+              air_date: dbSeason.air_date,
+              episode_count: dbSeason.episode_count,
+            },
+            {
+              id: tmdbSeason.id || dbSeason.id,
+              name: tmdbSeason.name,
+              season_number: tmdbSeason.season_number,
+              overview: tmdbSeason.overview,
+              air_date: tmdbSeason.air_date,
+              poster_path: tmdbSeason.poster_path,
+              vote_average: tmdbSeason.vote_average,
+              episode_count: tmdbSeason.episode_count,
+            },
+            userLanguage,
+            supabase,
+            region
+          );
+
+          if (wasUpdated) {
+            needsRefetch = true;
+          }
+        }
+
+        // Re-fetch from database if we made updates
+        if (needsRefetch) {
+          const updatedSeasons = await getSeasonsByTvTmdbId(
+            tmdbId,
+            supabase,
+            userLanguage,
+            region
+          );
+          tvShow.seasons =
+            updatedSeasons.length > 0 ? updatedSeasons : finalSeasons;
+        } else {
+          tvShow.seasons = finalSeasons;
+        }
+      } else if (finalSeasons.length > 0) {
+        // Return database seasons
+        tvShow.seasons = finalSeasons;
+      } else if (
+        fullTvShowResponse?.seasons &&
+        fullTvShowResponse.seasons.length > 0
+      ) {
+        // If no database seasons, sync TMDB seasons to database first, then return stored data
+        const { syncSeasonsFromTVShow } =
+          await import('@/server/utils/season-sync');
+        await syncSeasonsFromTVShow(
+          tmdbId,
+          fullTvShowResponse.seasons.map((s) => ({
+            id: s.id || 0,
+            name: s.name || '',
+            season_number: s.season_number || 0,
+            overview: s.overview || '',
+            air_date: s.air_date || '',
+            poster_path: s.poster_path || null,
+            vote_average: s.vote_average || 0,
+            episode_count: s.episode_count,
+          })),
+          supabase,
+          tmdbConfig
+        );
+
+        // Re-fetch from database to return stored data
+        const { getSeasonsByTvTmdbId } = await import('@/services/seasons');
+        const storedSeasons = await getSeasonsByTvTmdbId(
+          tmdbId,
+          supabase,
+          userLanguage,
+          region
+        );
+        tvShow.seasons = storedSeasons.length > 0 ? storedSeasons : [];
+      } else {
+        tvShow.seasons = [];
+      }
 
       return tvShow;
     }
@@ -652,10 +828,112 @@ export default defineEventHandler(async (event) => {
           )
         : seasonsFromDb;
 
+      // Update missing data (name, poster_path, vote_average) and return stored data
+      let storedSeasons = finalSeasons;
+      if (finalSeasons.length > 0 && fullTvShowResponse?.seasons) {
+        const tmdbSeasons = fullTvShowResponse.seasons;
+        const { getSeasonsByTvTmdbId } = await import('@/services/seasons');
+        let needsRefetch = false;
+
+        // Update missing season data using shared utility
+        const { updateMissingSeasonFields } =
+          await import('@/server/utils/season-update');
+        for (const dbSeason of finalSeasons) {
+          const tmdbSeason = tmdbSeasons.find(
+            (s) => s.season_number === dbSeason.season_number
+          );
+
+          if (!tmdbSeason) continue;
+
+          const wasUpdated = await updateMissingSeasonFields(
+            tmdbId,
+            dbSeason.season_number,
+            {
+              name: dbSeason.name,
+              poster_path: dbSeason.poster_path,
+              vote_average: dbSeason.vote_average,
+              overview: dbSeason.overview,
+              air_date: dbSeason.air_date,
+              episode_count: dbSeason.episode_count,
+            },
+            {
+              id: tmdbSeason.id || dbSeason.id,
+              name: tmdbSeason.name,
+              season_number: tmdbSeason.season_number,
+              overview: tmdbSeason.overview,
+              air_date: tmdbSeason.air_date,
+              poster_path: tmdbSeason.poster_path,
+              vote_average: tmdbSeason.vote_average,
+              episode_count: tmdbSeason.episode_count,
+            },
+            userLanguage,
+            supabase,
+            region
+          );
+
+          if (wasUpdated) {
+            needsRefetch = true;
+          }
+        }
+
+        if (needsRefetch) {
+          storedSeasons = await getSeasonsByTvTmdbId(
+            tmdbId,
+            supabase,
+            userLanguage,
+            region
+          );
+        }
+      } else if (
+        !finalSeasons.length &&
+        fullTvShowResponse?.seasons &&
+        fullTvShowResponse.seasons.length > 0
+      ) {
+        // If no database seasons, sync TMDB seasons to database first
+        const { syncSeasonsFromTVShow } =
+          await import('@/server/utils/season-sync');
+        await syncSeasonsFromTVShow(
+          tmdbId,
+          fullTvShowResponse.seasons.map((s) => ({
+            id: s.id || 0,
+            name: s.name || '',
+            season_number: s.season_number || 0,
+            overview: s.overview || '',
+            air_date: s.air_date || '',
+            poster_path: s.poster_path || null,
+            vote_average: s.vote_average || 0,
+            episode_count: s.episode_count,
+          })),
+          supabase,
+          tmdbConfig
+        );
+
+        // Re-fetch from database to return stored data
+        const { getSeasonsByTvTmdbId } = await import('@/services/seasons');
+        storedSeasons = await getSeasonsByTvTmdbId(
+          tmdbId,
+          supabase,
+          userLanguage,
+          region
+        );
+      }
+
+      // Extract Spanish title for provider links (if available)
+      const { getTitleInLanguage: getTitleInLanguageForResponse } =
+        await import('@/services/titles');
+      const { LanguageIsoCode: LanguageIsoCodeForResponse } =
+        await import('@/constants/languages');
+      const spanishTitleFromMultiLang = getTitleInLanguageForResponse(
+        titleMultiLang,
+        LanguageIsoCodeForResponse.SPANISH,
+        region
+      );
+
       // Include tagline in response (as MultiLanguageText object)
       const response: Partial<TVShow> & {
         tagline?: string | MultiLanguageText;
         seasons?: Season[];
+        spanish_title?: string | null;
       } = {
         ...userLangData,
         backdrop_path: (userLangData.backdrop_path || '') as string,
@@ -667,10 +945,8 @@ export default defineEventHandler(async (event) => {
           Object.keys(taglineMultiLang).length > 0
             ? taglineMultiLang
             : userLangData.tagline || undefined,
-        seasons:
-          finalSeasons.length > 0
-            ? finalSeasons
-            : fullTvShowResponse?.seasons || [],
+        seasons: storedSeasons, // Always return stored database data
+        spanish_title: spanishTitleFromMultiLang || null,
       };
 
       return response;

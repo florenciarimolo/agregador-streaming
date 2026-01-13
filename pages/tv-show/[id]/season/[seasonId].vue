@@ -69,7 +69,7 @@
                   <div class="flex flex-col gap-3 mb-3">
                     <!-- Episode name -->
                     <h4
-                      class="font-semibold dark:text-gray-300 text-gray-800 text-sm md:text-base line-clamp-1"
+                      class="font-semibold dark:text-gray-300 text-gray-800 text-sm md:text-base"
                     >
                       {{ episode.name }}
                     </h4>

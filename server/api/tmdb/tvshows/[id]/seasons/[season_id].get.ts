@@ -1,6 +1,4 @@
 import type { Season } from '@/types/TVShow';
-import type { MultiLanguageText } from '@/services/titles';
-import { updateMissingLanguageValue } from '@/services/titles';
 import { getTMDBConfig } from '@/server/utils/config';
 import { getUserTMDBParams } from '@/server/utils/user-tmdb';
 import { getPrimaryLanguageForRegion } from '@/utils/language-detection';
@@ -12,7 +10,6 @@ import {
 } from 'h3';
 import { DEFAULT_LANGUAGE_ISO } from '@/constants/languages';
 import { createServerSupabaseClient } from '@/server/utils/supabase';
-import { upsertSeason } from '@/services/seasons';
 
 export default defineEventHandler(
   async (event: H3Event<EventHandlerRequest>) => {
@@ -109,13 +106,14 @@ export default defineEventHandler(
         });
       }
 
-      // Get season from database to check if we need to fetch episode_count or poster_path
+      // Get season from database to check for missing data
       const runtimeConfig = useRuntimeConfig();
       const supabase = createServerSupabaseClient(runtimeConfig);
       const tvTmdbId = parseInt(id, 10);
       const seasonNumber = parseInt(season_id, 10);
 
       const { getSeasonByTmdbIds } = await import('@/services/seasons');
+
       const seasonFromDb = await getSeasonByTmdbIds(
         tvTmdbId,
         seasonNumber,
@@ -124,94 +122,69 @@ export default defineEventHandler(
         region
       );
 
-      // Check if episode_count is null in database
-      let needsEpisodeCountUpdate = false;
-      let episodeCount: number | null = null;
+      // Calculate episode_count from episodes array if available
+      const episodeCount =
+        response.episodes && response.episodes.length > 0
+          ? response.episodes.length
+          : null;
 
-      if (!seasonFromDb?.episode_count && response.episodes) {
-        // Calculate episode_count from episodes array
-        episodeCount = response.episodes.length;
-        needsEpisodeCountUpdate = true;
+      // Update missing season data using shared utility
+      // The utility will handle getting air_date from first episode if needed
+      const { updateMissingSeasonFields } = await import(
+        '@/server/utils/season-update'
+      );
+      await updateMissingSeasonFields(
+        tvTmdbId,
+        seasonNumber,
+        seasonFromDb
+          ? {
+              name: seasonFromDb.name,
+              poster_path: seasonFromDb.poster_path,
+              vote_average: seasonFromDb.vote_average,
+              overview: seasonFromDb.overview,
+              air_date: seasonFromDb.air_date,
+              episode_count: seasonFromDb.episode_count,
+            }
+          : null,
+        {
+          id: response.id,
+          name: response.name,
+          season_number: seasonNumber,
+          overview: response.overview,
+          air_date: response.air_date,
+          poster_path: response.poster_path,
+          vote_average: response.vote_average,
+          episode_count: episodeCount ?? response.episode_count,
+          // Pass episodes array so utility can get air_date from first episode if needed
+          episodes: response.episodes?.map((ep) => ({
+            air_date: ep.air_date,
+          })),
+        },
+        language,
+        supabase,
+        region
+      );
+
+      // Always return stored data from database (source of truth)
+      const seasonFromDbAfterUpdate = await getSeasonByTmdbIds(
+        tvTmdbId,
+        seasonNumber,
+        supabase,
+        language,
+        region
+      );
+
+      // Build response using database data as source of truth
+      // Only use TMDB data for fields not stored in database (like episodes)
+      if (seasonFromDbAfterUpdate) {
+        return {
+          ...seasonFromDbAfterUpdate,
+          episodes: response.episodes, // Episodes are not stored in DB, use TMDB
+          vote_count: response.vote_count, // vote_count is not stored in DB
+        };
       }
 
-      // If air_date is null, try to get it from the first episode
-      let finalAirDate = response.air_date;
-      let needsAirDateUpdate = false;
-      if (!finalAirDate && response.episodes && response.episodes.length > 0) {
-        // Find the first episode with an air_date
-        const firstEpisodeWithDate = response.episodes.find(
-          (ep) => ep.air_date && ep.air_date.trim() !== ''
-        );
-        if (firstEpisodeWithDate?.air_date) {
-          finalAirDate = firstEpisodeWithDate.air_date;
-          // Update response with the date from first episode
-          response.air_date = finalAirDate;
-          needsAirDateUpdate = true;
-        }
-      }
-
-      // Check if poster_path is missing in current language
-      let needsPosterPathUpdate = false;
-      let posterPathJsonb: MultiLanguageText | null = null;
-      if (response.poster_path) {
-        // Get current poster_path from database
-        const { data: seasonData } = await supabase
-          .from('seasons')
-          .select('poster_path')
-          .eq('tv_tmdb_id', tvTmdbId)
-          .eq('season_number', seasonNumber)
-          .maybeSingle();
-
-        const updatedPosterPath = updateMissingLanguageValue(
-          seasonData?.poster_path,
-          response.poster_path,
-          language,
-          region,
-          true // isImagePath
-        );
-
-        if (updatedPosterPath) {
-          posterPathJsonb = updatedPosterPath;
-          needsPosterPathUpdate = true;
-        }
-      }
-
-      // Update database if we have data to save
-      if (
-        needsEpisodeCountUpdate ||
-        needsAirDateUpdate ||
-        needsPosterPathUpdate
-      ) {
-        try {
-          await upsertSeason(
-            {
-              tv_tmdb_id: tvTmdbId,
-              season_number: seasonNumber,
-              tmdb_season_id: response.id,
-              name: response.name || null,
-              air_date: needsAirDateUpdate ? finalAirDate : undefined,
-              poster_path: needsPosterPathUpdate
-                ? posterPathJsonb
-                : undefined,
-              vote_average: response.vote_average || null,
-              episode_count: needsEpisodeCountUpdate ? episodeCount : undefined,
-            },
-            supabase
-          );
-        } catch (dbError) {
-          // Log error but don't fail the request
-          console.error(
-            `[Season] Error saving season data to database:`,
-            dbError
-          );
-        }
-      }
-
-      // Set episode_count in response if we calculated it
-      if (episodeCount !== null) {
-        response.episode_count = episodeCount;
-      }
-
+      // Fallback to TMDB response if database doesn't have the season
       return response;
     } catch (error) {
       throw createError({

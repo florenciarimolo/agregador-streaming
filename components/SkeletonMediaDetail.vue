@@ -6,11 +6,7 @@
       <!-- Poster skeleton -->
       <div
         class="relative w-full max-w-80 lg:w-80 flex-shrink-0 lg:aspect-[2/3]"
-        style="
-          filter: drop-shadow(0 10px 15px -3px rgb(0 0 0 / 0.1))
-            drop-shadow(0 4px 6px -4px rgb(0 0 0 / 0.1))
-            drop-shadow(0 0 20px rgb(var(--color-primary) / 0.3));
-        "
+        style="filter: drop-shadow(0 10px 15px -3px rgb(0 0 0 / 0.1)) drop-shadow(0 4px 6px -4px rgb(0 0 0 / 0.1)) drop-shadow(0 0 20px rgb(33 24 110 / 0.3))"
       >
         <div
           class="relative overflow-hidden rounded-3xl w-full max-h-[400px] lg:h-full lg:max-h-[500px] skeleton-shimmer"

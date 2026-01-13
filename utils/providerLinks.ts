@@ -228,31 +228,19 @@ async function fetchAtresPlayerUrl(query: string): Promise<string | null> {
  * @param originalTitle Original title (usually English)
  * @param alternativeTitles Alternative titles array
  * @param mediaType Type of media (movie or tv)
- * @param region User's region (e.g., 'ES', 'US'). If 'ES', will use Spanish title for providers
- * @param spanishTitle Optional pre-fetched Spanish title (to avoid duplicate API calls)
  */
 export async function generateProviderSearchUrl(
   providerName: string,
   mediaTitle: string,
   originalTitle?: string,
   alternativeTitles?: Array<{ title: string; type: string }>,
-  mediaType?: MediaType,
-  region?: string,
-  spanishTitle?: string | null
+  mediaType?: MediaType
 ): Promise<string | null> {
   const provider = getProviderLink(providerName);
   if (!provider) return null;
 
-  // If region is ES, use Spanish title (pre-fetched and passed as parameter)
-  // This avoids duplicate API calls when generating URLs for multiple providers
-  let titleToUse = mediaTitle;
-  if (region === 'ES' && spanishTitle !== undefined) {
-    // Use pre-fetched Spanish title if available
-    if (spanishTitle) {
-      titleToUse = spanishTitle;
-    }
-    // If spanishTitle is null, it means it was fetched but not found, so keep mediaTitle
-  }
+  // Use the title in the user's current language (mediaTitle is already localized)
+  const titleToUse = mediaTitle;
 
   // Special handling for Atres Player
   if (providerName === 'Atres Player' || providerName === 'atresplayer') {
