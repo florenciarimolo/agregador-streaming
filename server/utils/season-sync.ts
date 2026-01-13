@@ -307,7 +307,14 @@ export async function syncSeasonsFromTVShow(
         // If we found a date or episode_count, update the season in the database
         if (finalAirDate || episodeCount !== null) {
           // Keep existing name JSONB and merge with new name from TMDB if available
-          const existingNameJsonb = existingSeason.name as MultiLanguageText | null;
+          // Safely get existing name JSONB - ensure it's an object, not a string
+          const existingNameJsonbRaw = existingSeason.name;
+          const existingNameJsonb: MultiLanguageText | null =
+            existingNameJsonbRaw &&
+            typeof existingNameJsonbRaw === 'object' &&
+            !Array.isArray(existingNameJsonbRaw)
+              ? (existingNameJsonbRaw as MultiLanguageText)
+              : null;
           let updatedNameJsonb = existingNameJsonb;
           if (seasonResponse.name && tmdbConfig?.language) {
             updatedNameJsonb = {

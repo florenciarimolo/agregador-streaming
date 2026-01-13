@@ -2,6 +2,7 @@ import { getTMDBConfig } from '@/server/utils/config';
 import { getUserTMDBParams } from '@/server/utils/user-tmdb';
 import { createError, defineEventHandler } from 'h3';
 import { createClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { TITLES_COLUMNS, SEASONS_COLUMNS } from '@/constants/db/columns';
 import { TABLES } from '@/constants/db/tables';
 import { type MultiLanguageText } from '@/services/titles';
@@ -9,6 +10,133 @@ import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 import type { TVShow, Season } from '@/types/TVShow';
 import type { TmdbStatusType } from '@/types/enums/TmdbStatus';
 import { LanguageIsoCode, extractLanguageCode } from '@/constants/languages';
+
+/**
+ * Safely extract MultiLanguageText from database value
+ * Prevents spreading strings which would create numeric keys
+ */
+function safeGetMultiLanguageText(value: unknown): MultiLanguageText | null {
+  if (value && typeof value === 'object' && !Array.isArray(value)) {
+    return value as MultiLanguageText;
+  }
+  return null;
+}
+
+/**
+ * Update missing season names and episode counts
+ */
+async function updateMissingSeasonData(
+  tmdbId: number,
+  seasonsFromDb: Season[],
+  tmdbSeasons: Array<{
+    season_number: number;
+    name: string;
+    episode_count?: number;
+  }>,
+  userLanguage: string,
+  region: string | null,
+  supabase: SupabaseClient
+): Promise<Season[]> {
+  if (seasonsFromDb.length === 0 || !tmdbSeasons.length) {
+    return seasonsFromDb;
+  }
+
+  const { upsertSeason } = await import('@/services/seasons');
+  const { getSeasonsByTvTmdbId } = await import('@/services/seasons');
+  let needsRefetch = false;
+
+  // Find seasons needing updates
+  const seasonsNeedingNameUpdate: Array<{
+    season: Season;
+    tmdbSeason: { season_number: number; name: string };
+  }> = [];
+  const seasonsNeedingEpisodeCountUpdate: Array<{
+    season: Season;
+    episodeCount: number;
+  }> = [];
+
+  for (const season of seasonsFromDb) {
+    const tmdbSeason = tmdbSeasons.find(
+      (s) => s.season_number === season.season_number
+    );
+
+    // Check missing episode_count
+    if (
+      (season.episode_count === null || season.episode_count === undefined) &&
+      tmdbSeason?.episode_count !== null &&
+      tmdbSeason?.episode_count !== undefined
+    ) {
+      seasonsNeedingEpisodeCountUpdate.push({
+        season,
+        episodeCount: tmdbSeason.episode_count,
+      });
+    }
+
+    // Check missing name language
+    const { data: seasonData } = await supabase
+      .from(TABLES.SEASONS)
+      .select(SEASONS_COLUMNS.NAME)
+      .eq(SEASONS_COLUMNS.TV_TMDB_ID, tmdbId)
+      .eq(SEASONS_COLUMNS.SEASON_NUMBER, season.season_number)
+      .maybeSingle();
+
+    const nameJsonb = safeGetMultiLanguageText(seasonData?.name);
+    const hasExactLanguage = nameJsonb && nameJsonb[userLanguage] !== undefined;
+
+    if (!hasExactLanguage && tmdbSeason?.name) {
+      seasonsNeedingNameUpdate.push({ season, tmdbSeason });
+    }
+  }
+
+  // Update episode counts
+  for (const { season, episodeCount } of seasonsNeedingEpisodeCountUpdate) {
+    await upsertSeason(
+      {
+        tv_tmdb_id: tmdbId,
+        season_number: season.season_number,
+        tmdb_season_id: season.id,
+        episode_count: episodeCount,
+      },
+      supabase
+    );
+    needsRefetch = true;
+  }
+
+  // Update names
+  for (const { season, tmdbSeason } of seasonsNeedingNameUpdate) {
+    const { data: currentSeasonData } = await supabase
+      .from(TABLES.SEASONS)
+      .select(SEASONS_COLUMNS.NAME)
+      .eq(SEASONS_COLUMNS.TV_TMDB_ID, tmdbId)
+      .eq(SEASONS_COLUMNS.SEASON_NUMBER, season.season_number)
+      .maybeSingle();
+
+    const currentNameJsonb =
+      safeGetMultiLanguageText(currentSeasonData?.name) || {};
+    const updatedNameJsonb: MultiLanguageText = {
+      ...currentNameJsonb,
+      [userLanguage]: tmdbSeason.name,
+    };
+
+    await upsertSeason(
+      {
+        tv_tmdb_id: tmdbId,
+        season_number: season.season_number,
+        tmdb_season_id: season.id,
+        name: updatedNameJsonb,
+      },
+      supabase
+    );
+    needsRefetch = true;
+  }
+
+  // Re-fetch if we made updates
+  if (needsRefetch) {
+    return await getSeasonsByTvTmdbId(tmdbId, supabase, userLanguage, region);
+  }
+
+  return seasonsFromDb;
+}
 
 export default defineEventHandler(async (event) => {
   try {
@@ -58,21 +186,12 @@ export default defineEventHandler(async (event) => {
       let posterPathJsonb = titleFromDb.poster_path as MultiLanguageText | null;
       let taglineJsonb = titleFromDb.tagline as MultiLanguageText | null;
 
-      // Check which languages we already have
+      // Find missing languages
       const existingLanguages = new Set<string>();
       if (titleJsonb && typeof titleJsonb === 'object') {
         Object.keys(titleJsonb).forEach((lang) => existingLanguages.add(lang));
       }
-
-      // Check if we need to fetch missing languages
-      // IMPORTANT: Use SUPPORTED_LANGUAGE_CODES (ISO format: 'es-ES', 'ca-ES') not ISO_CODES (legacy: 'es', 'ca')
-      // This ensures all data is stored in ISO format (xx-XX) consistently
-      const { SUPPORTED_LANGUAGE_CODES } =
-        await import('@/constants/languages');
-      const supportedLanguagesList = SUPPORTED_LANGUAGE_CODES.map(
-        (code) => code
-      );
-      const missingLanguages = supportedLanguagesList.filter(
+      const missingLanguages = supportedLanguages.filter(
         (lang) => !existingLanguages.has(lang)
       );
 
@@ -105,21 +224,18 @@ export default defineEventHandler(async (event) => {
         const languageResults = await Promise.all(languagePromises);
 
         // Build updated multi-language JSONB objects
-        // IMPORTANT: Use lang (ISO format) as key, not legacy format
         const updatedTitle = { ...(titleJsonb || {}) };
         const updatedOverview = { ...(overviewJsonb || {}) };
         const updatedPosterPath = { ...(posterPathJsonb || {}) };
         const updatedTagline = { ...(taglineJsonb || {}) };
 
-        languageResults.forEach(({ lang, data }) => {
-          if (data) {
-            // lang is in ISO format (e.g., 'ca-ES'), use it directly as key
-            if (data.name) updatedTitle[lang] = data.name;
-            if (data.overview) updatedOverview[lang] = data.overview || '';
-            if (data.poster_path) updatedPosterPath[lang] = data.poster_path;
-            if (data.tagline) updatedTagline[lang] = data.tagline;
-          }
-        });
+        for (const { lang, data } of languageResults) {
+          if (!data) continue;
+          if (data.name) updatedTitle[lang] = data.name;
+          if (data.overview) updatedOverview[lang] = data.overview || '';
+          if (data.poster_path) updatedPosterPath[lang] = data.poster_path;
+          if (data.tagline) updatedTagline[lang] = data.tagline;
+        }
 
         // Update database with all languages
         await supabase
@@ -253,9 +369,7 @@ export default defineEventHandler(async (event) => {
           .eq(TITLES_COLUMNS.TYPE, MEDIA_TYPE.TV);
       }
 
-      // Map DB title to TVShow format
-      // IMPORTANT: Use extracted data (from titles table or TMDB) - it already handles language correctly
-      // Don't use fullTvShowResponse as fallback since extractTitleDataWithFallback already fetches from TMDB if needed
+      // Build TVShow response from database and TMDB data
       const tvShow: Partial<TVShow> & {
         id: number;
         name: string;
@@ -284,11 +398,9 @@ export default defineEventHandler(async (event) => {
         number_of_seasons: fullTvShowResponse?.number_of_seasons || 0,
         number_of_episodes: fullTvShowResponse?.number_of_episodes,
         in_production: fullTvShowResponse?.in_production || false,
-        status:
-          ((titleFromDb.status || savedStatus) as TmdbStatusType | undefined) ||
-          undefined, // Use saved value if we just saved it
-        // CRITICAL: Return MultiLanguageText object, not extracted string
-        // The component will extract the correct language using getTitleInLanguage
+        status: (titleFromDb.status || savedStatus) as
+          | TmdbStatusType
+          | undefined,
         tagline: taglineJsonb || undefined,
       };
 
@@ -340,140 +452,22 @@ export default defineEventHandler(async (event) => {
         region
       );
 
-      // Check if we need to fetch missing season names in user's language or episode_count
-      // Reuse fullTvShowResponse.seasons if available (already fetched with user's language)
-      if (seasonsFromDb.length > 0 && fullTvShowResponse?.seasons) {
-        // Check which seasons need updates (missing language names or episode_count)
-        const seasonsNeedingNameUpdate: Array<{
-          season: Season;
-          tmdbSeason: { season_number: number; name: string };
-        }> = [];
-        const seasonsNeedingEpisodeCountUpdate: Array<{
-          season: Season;
-          episodeCount: number;
-        }> = [];
-
-        for (const season of seasonsFromDb) {
-          // Check if episode_count is missing in DB
-          if (
-            (season.episode_count === null ||
-              season.episode_count === undefined) &&
-            fullTvShowResponse.seasons
-          ) {
-            const tmdbSeason = fullTvShowResponse.seasons.find(
-              (s) => s.season_number === season.season_number
-            );
-            if (
-              tmdbSeason?.episode_count !== null &&
-              tmdbSeason?.episode_count !== undefined
-            ) {
-              seasonsNeedingEpisodeCountUpdate.push({
-                season,
-                episodeCount: tmdbSeason.episode_count,
-              });
-            }
-          }
-
-          // Check if name language is missing
-          const { data: seasonData } = await supabase
-            .from(TABLES.SEASONS)
-            .select(SEASONS_COLUMNS.NAME)
-            .eq(SEASONS_COLUMNS.TV_TMDB_ID, tmdbId)
-            .eq(SEASONS_COLUMNS.SEASON_NUMBER, season.season_number)
-            .maybeSingle();
-
-          const nameJsonb = seasonData?.name as MultiLanguageText | null;
-          const hasExactLanguage =
-            nameJsonb &&
-            typeof nameJsonb === 'object' &&
-            nameJsonb[userLanguage] !== undefined;
-
-          if (!hasExactLanguage) {
-            const tmdbSeason = fullTvShowResponse.seasons.find(
-              (s) => s.season_number === season.season_number
-            );
-            if (tmdbSeason?.name) {
-              seasonsNeedingNameUpdate.push({ season, tmdbSeason });
-            }
-          }
-        }
-
-        // Update seasons with missing episode_count in DB
-        if (seasonsNeedingEpisodeCountUpdate.length > 0) {
-          const { upsertSeason } = await import('@/services/seasons');
-          for (const {
-            season,
-            episodeCount,
-          } of seasonsNeedingEpisodeCountUpdate) {
-            await upsertSeason(
-              {
-                tv_tmdb_id: tmdbId,
-                season_number: season.season_number,
-                tmdb_season_id: season.id,
-                episode_count: episodeCount,
-              },
-              supabase
-            );
-          }
-        }
-
-        // Update seasons with missing language names
-        if (seasonsNeedingNameUpdate.length > 0) {
-          const { upsertSeason } = await import('@/services/seasons');
-          for (const { season, tmdbSeason } of seasonsNeedingNameUpdate) {
-            // Get current name JSONB
-            const { data: currentSeasonData } = await supabase
-              .from(TABLES.SEASONS)
-              .select(SEASONS_COLUMNS.NAME)
-              .eq(SEASONS_COLUMNS.TV_TMDB_ID, tmdbId)
-              .eq(SEASONS_COLUMNS.SEASON_NUMBER, season.season_number)
-              .maybeSingle();
-
-            const currentNameJsonb =
-              (currentSeasonData?.name as MultiLanguageText) || {};
-            const updatedNameJsonb: MultiLanguageText = {
-              ...currentNameJsonb,
-              [userLanguage]: tmdbSeason.name,
-            };
-
-            await upsertSeason(
-              {
-                tv_tmdb_id: tmdbId,
-                season_number: season.season_number,
-                tmdb_season_id: season.id,
-                name: updatedNameJsonb,
-              },
-              supabase
-            );
-          }
-        }
-
-        // Re-fetch seasons from DB (source of truth) after updates
-        if (
-          seasonsNeedingEpisodeCountUpdate.length > 0 ||
-          seasonsNeedingNameUpdate.length > 0
-        ) {
-          const updatedSeasons = await getSeasonsByTvTmdbId(
+      // Update missing season names and episode counts
+      const finalSeasons = fullTvShowResponse?.seasons
+        ? await updateMissingSeasonData(
             tmdbId,
-            supabase,
+            seasonsFromDb,
+            fullTvShowResponse.seasons,
             userLanguage,
-            region
-          );
-          tvShow.seasons =
-            updatedSeasons.length > 0
-              ? updatedSeasons
-              : fullTvShowResponse?.seasons || [];
-        } else {
-          // All seasons are up to date, use seasons from DB
-          tvShow.seasons = seasonsFromDb;
-        }
-      } else {
-        // Use seasons from DB or fallback to TMDB response
-        tvShow.seasons =
-          seasonsFromDb.length > 0
-            ? seasonsFromDb
-            : fullTvShowResponse?.seasons || [];
-      }
+            region,
+            supabase
+          )
+        : seasonsFromDb;
+
+      tvShow.seasons =
+        finalSeasons.length > 0
+          ? finalSeasons
+          : fullTvShowResponse?.seasons || [];
 
       return tvShow;
     }
@@ -511,7 +505,6 @@ export default defineEventHandler(async (event) => {
     const languageResults = await Promise.all(languagePromises);
 
     // Build multi-language JSONB objects
-    // IMPORTANT: Use lang (ISO format) as key, not legacy format
     const titleMultiLang: MultiLanguageText = {};
     const overviewMultiLang: MultiLanguageText = {};
     const posterPathMultiLang: MultiLanguageText = {};
@@ -522,23 +515,21 @@ export default defineEventHandler(async (event) => {
     let status: string | null = null;
     let genres: Array<{ id: number; name: string }> = [];
 
-    languageResults.forEach(({ lang, data }) => {
-      if (data) {
-        // lang is in ISO format (e.g., 'ca-ES'), use it directly as key
-        if (data.name) titleMultiLang[lang] = data.name;
-        if (data.overview) overviewMultiLang[lang] = data.overview;
-        if (data.poster_path) posterPathMultiLang[lang] = data.poster_path;
-        if (data.tagline) taglineMultiLang[lang] = data.tagline;
-        // Use first successful response for non-language fields
-        if (!backdropPath && data.backdrop_path)
-          backdropPath = data.backdrop_path;
-        if (!firstAirDate && data.first_air_date)
-          firstAirDate = data.first_air_date;
-        if (!voteAverage && data.vote_average) voteAverage = data.vote_average;
-        if (!status && data.status) status = data.status;
-        if (genres.length === 0 && data.genres) genres = data.genres;
-      }
-    });
+    for (const { lang, data } of languageResults) {
+      if (!data) continue;
+      if (data.name) titleMultiLang[lang] = data.name;
+      if (data.overview) overviewMultiLang[lang] = data.overview;
+      if (data.poster_path) posterPathMultiLang[lang] = data.poster_path;
+      if (data.tagline) taglineMultiLang[lang] = data.tagline;
+      // Use first successful response for non-language fields
+      if (!backdropPath && data.backdrop_path)
+        backdropPath = data.backdrop_path;
+      if (!firstAirDate && data.first_air_date)
+        firstAirDate = data.first_air_date;
+      if (!voteAverage && data.vote_average) voteAverage = data.vote_average;
+      if (!status && data.status) status = data.status;
+      if (genres.length === 0 && data.genres) genres = data.genres;
+    }
 
     // Save to database if we got at least one language
     if (Object.keys(titleMultiLang).length > 0) {
@@ -578,9 +569,7 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    // Sync seasons from TMDB response to database
-    // Fetch full TV show data to get seasons array
-    // Reuse tmdbConfig already declared above
+    // Sync seasons from TMDB
     try {
       const fullTvShowResponse = await $fetch<{
         seasons?: Array<{
@@ -633,128 +622,17 @@ export default defineEventHandler(async (event) => {
         region
       );
 
-      // Check if we need to fetch missing season names in user's language or episode_count
-      // Reuse fullTvShowResponse.seasons if available (already fetched with user's language)
-      let finalSeasons = seasonsFromDb;
-      if (seasonsFromDb.length > 0 && fullTvShowResponse?.seasons) {
-        // Check which seasons need updates (missing language names or episode_count)
-        const seasonsNeedingNameUpdate: Array<{
-          season: Season;
-          tmdbSeason: { season_number: number; name: string };
-        }> = [];
-        const seasonsNeedingEpisodeCountUpdate: Array<{
-          season: Season;
-          episodeCount: number;
-        }> = [];
-
-        for (const season of seasonsFromDb) {
-          // Check if episode_count is missing in DB
-          if (
-            (season.episode_count === null ||
-              season.episode_count === undefined) &&
-            fullTvShowResponse.seasons
-          ) {
-            const tmdbSeason = fullTvShowResponse.seasons.find(
-              (s) => s.season_number === season.season_number
-            );
-            if (
-              tmdbSeason?.episode_count !== null &&
-              tmdbSeason?.episode_count !== undefined
-            ) {
-              seasonsNeedingEpisodeCountUpdate.push({
-                season,
-                episodeCount: tmdbSeason.episode_count,
-              });
-            }
-          }
-
-          // Check if name language is missing
-          const { data: seasonData } = await supabase
-            .from(TABLES.SEASONS)
-            .select(SEASONS_COLUMNS.NAME)
-            .eq(SEASONS_COLUMNS.TV_TMDB_ID, tmdbId)
-            .eq(SEASONS_COLUMNS.SEASON_NUMBER, season.season_number)
-            .maybeSingle();
-
-          const nameJsonb = seasonData?.name as MultiLanguageText | null;
-          const hasExactLanguage =
-            nameJsonb &&
-            typeof nameJsonb === 'object' &&
-            nameJsonb[userLanguage] !== undefined;
-
-          if (!hasExactLanguage) {
-            const tmdbSeason = fullTvShowResponse.seasons.find(
-              (s) => s.season_number === season.season_number
-            );
-            if (tmdbSeason?.name) {
-              seasonsNeedingNameUpdate.push({ season, tmdbSeason });
-            }
-          }
-        }
-
-        // Update seasons with missing episode_count in DB
-        if (seasonsNeedingEpisodeCountUpdate.length > 0) {
-          const { upsertSeason } = await import('@/services/seasons');
-          for (const {
-            season,
-            episodeCount,
-          } of seasonsNeedingEpisodeCountUpdate) {
-            await upsertSeason(
-              {
-                tv_tmdb_id: tmdbId,
-                season_number: season.season_number,
-                tmdb_season_id: season.id,
-                episode_count: episodeCount,
-              },
-              supabase
-            );
-          }
-        }
-
-        // Update seasons with missing language names
-        if (seasonsNeedingNameUpdate.length > 0) {
-          const { upsertSeason } = await import('@/services/seasons');
-          for (const { season, tmdbSeason } of seasonsNeedingNameUpdate) {
-            // Get current name JSONB
-            const { data: currentSeasonData } = await supabase
-              .from(TABLES.SEASONS)
-              .select(SEASONS_COLUMNS.NAME)
-              .eq(SEASONS_COLUMNS.TV_TMDB_ID, tmdbId)
-              .eq(SEASONS_COLUMNS.SEASON_NUMBER, season.season_number)
-              .maybeSingle();
-
-            const currentNameJsonb =
-              (currentSeasonData?.name as MultiLanguageText) || {};
-            const updatedNameJsonb: MultiLanguageText = {
-              ...currentNameJsonb,
-              [userLanguage]: tmdbSeason.name,
-            };
-
-            await upsertSeason(
-              {
-                tv_tmdb_id: tmdbId,
-                season_number: season.season_number,
-                tmdb_season_id: season.id,
-                name: updatedNameJsonb,
-              },
-              supabase
-            );
-          }
-        }
-
-        // Re-fetch seasons from DB (source of truth) after updates
-        if (
-          seasonsNeedingEpisodeCountUpdate.length > 0 ||
-          seasonsNeedingNameUpdate.length > 0
-        ) {
-          finalSeasons = await getSeasonsByTvTmdbId(
+      // Update missing season names and episode counts
+      const finalSeasons = fullTvShowResponse?.seasons
+        ? await updateMissingSeasonData(
             tmdbId,
-            supabase,
+            seasonsFromDb,
+            fullTvShowResponse.seasons,
             userLanguage,
-            region
-          );
-        }
-      }
+            region,
+            supabase
+          )
+        : seasonsFromDb;
 
       // Include tagline in response (as MultiLanguageText object)
       const response: Partial<TVShow> & {
@@ -784,7 +662,7 @@ export default defineEventHandler(async (event) => {
         console.error('[TV Show] Error syncing seasons:', syncError);
       }
 
-      // Still return response even if season sync failed
+      // Return response even if season sync failed
       const response: Partial<TVShow> & {
         tagline?: string | MultiLanguageText;
       } = {
@@ -792,8 +670,6 @@ export default defineEventHandler(async (event) => {
         backdrop_path: (userLangData.backdrop_path || '') as string,
         status:
           (userLangData.status as TmdbStatusType | undefined) || undefined,
-        // CRITICAL: Return MultiLanguageText object, not extracted string
-        // The component will extract the correct language using getTitleInLanguage
         tagline:
           Object.keys(taglineMultiLang).length > 0
             ? taglineMultiLang
