@@ -195,13 +195,26 @@
             </ActionMenu>
           </div>
         </div>
-        <!-- Title - separate line below top row -->
-        <div class="absolute left-4 top-20 right-4 z-20">
+        <!-- Title and Tagline - vertically centered container -->
+        <div
+          v-if="
+            mediaWithProviders.title ||
+            (mediaWithProviders as any).name ||
+            tagline
+          "
+          class="flex absolute inset-0 z-20 flex-col justify-center items-start gap-2 px-4"
+        >
           <h1
             class="text-lg sm:text-xl font-bold text-white uppercase break-words line-clamp-2"
           >
             {{ mediaWithProviders.title || (mediaWithProviders as any).name }}
           </h1>
+          <p
+            v-if="tagline"
+            class="text-sm sm:text-base italic text-white/90 break-words"
+          >
+            {{ tagline }}
+          </p>
         </div>
         <!-- Informative icons overlay (only show if user has session) -->
         <div
@@ -236,12 +249,6 @@
               <IconClock icon-class="w-5 h-5 text-white" />
             </div>
           </Tooltip>
-        </div>
-        <!-- Tagline - below title with spacing -->
-        <div v-if="tagline" class="absolute left-4 bottom-6 right-4 z-20">
-          <p class="text-sm sm:text-base italic text-white/90 break-words">
-            {{ tagline }}
-          </p>
         </div>
       </div>
     </div>

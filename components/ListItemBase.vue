@@ -20,7 +20,8 @@
             :to="linkTo || undefined"
             :aria-label="linkAriaLabel"
             :class="[
-              'group relative block overflow-hidden rounded-2xl bg-gray-800 aspect-[2/3] w-20 md:w-32',
+              linkTo ? 'group relative' : 'relative',
+              'block overflow-hidden rounded-2xl bg-gray-800 aspect-[2/3] w-20 md:w-24',
               linkTo ? 'focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2' : '',
             ]"
           >
@@ -30,7 +31,10 @@
                 v-if="posterPath"
                 :src="`https://image.tmdb.org/t/p/w500${posterPath}`"
                 :alt="imageAlt"
-                class="object-cover w-full h-full transition-transform duration-300 group-hover:scale-105"
+                :class="[
+                  'object-cover w-full h-full',
+                  linkTo ? 'transition-transform duration-300 group-hover:scale-105' : '',
+                ]"
                 loading="lazy"
                 decoding="async"
               />
@@ -44,8 +48,9 @@
               </div>
             </div>
 
-            <!-- Hover Overlay -->
+            <!-- Hover Overlay (only shown when there's a link) -->
             <div
+              v-if="linkTo"
               class="flex absolute bottom-0 left-0 flex-col justify-center items-center px-4 w-full h-full opacity-0 backdrop-blur-md transition-all duration-300 pointer-events-none group-hover:opacity-100 dark:bg-black/80 bg-white/80 rounded-2xl"
             >
               <p class="font-semibold text-gray-800 dark:text-gray-300">
@@ -96,7 +101,7 @@
       </div>
 
       <!-- Desktop: Columna 2 (Título/Tag/Tagline, Overview, Providers) -->
-      <div class="hidden md:flex flex-1 flex-col gap-2 min-w-0">
+      <div class="hidden md:flex flex-1 flex-col justify-between gap-2 min-w-0">
         <div>
           <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-300">
             <nuxt-link

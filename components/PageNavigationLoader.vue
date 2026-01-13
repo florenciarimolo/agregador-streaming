@@ -23,10 +23,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, nextTick } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 
 const router = useRouter();
+const route = useRoute();
 const isLoading = ref(false);
 
 const startLoading = () => {
@@ -66,6 +67,27 @@ onMounted(() => {
   router.onError(() => {
     stopLoading();
   });
+
+  // Also watch for route changes (handles browser back/forward and Nuxt navigation)
+  // This ensures loading shows even if router hooks don't fire
+  watch(
+    () => route.path,
+    (newPath, oldPath) => {
+      if (newPath !== oldPath && oldPath) {
+        startLoading();
+        // Stop loading after page is ready
+        nextTick(() => {
+          if (typeof window !== 'undefined') {
+            window.setTimeout(() => {
+              stopLoading();
+            }, 500);
+          } else {
+            stopLoading();
+          }
+        });
+      }
+    }
+  );
 });
 
 onUnmounted(() => {

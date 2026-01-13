@@ -3,25 +3,25 @@
     <!-- Mobile: Full width image right after navbar -->
     <div
       v-if="season?.poster_path"
-      class="lg:hidden w-screen -mx-4 md:-mx-6 -mt-4"
+      class="-mx-4 -mt-4 w-screen lg:hidden md:-mx-6"
     >
       <div class="relative w-full aspect-[16/9] p-4 pt-6">
         <img
           :src="`https://image.tmdb.org/t/p/w780${season.poster_path}`"
           :alt="season.name"
-          class="absolute inset-0 w-full h-full object-cover z-0"
+          class="object-cover absolute inset-0 z-0 w-full h-full"
         />
         <!-- Gradient overlay: black to transparent left to right -->
         <div
-          class="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent z-0"
+          class="absolute inset-0 z-0 bg-gradient-to-r to-transparent from-black/60 via-black/30"
         ></div>
         <!-- Top row: Back button, Rating - aligned horizontally -->
         <div
-          class="absolute top-6 left-4 right-4 flex items-center justify-between gap-4 z-20"
+          class="flex absolute right-4 left-4 top-6 z-20 gap-4 justify-between items-center"
         >
           <!-- Back button - left -->
           <button
-            class="inline-flex items-center gap-2 text-sm font-medium text-white transition-opacity hover:opacity-80 flex-shrink-0"
+            class="inline-flex flex-shrink-0 gap-2 items-center text-sm font-medium text-white transition-opacity hover:opacity-80"
             @click="handleBack"
           >
             <IconArrowLeft icon-class="w-4 h-4" />
@@ -36,21 +36,21 @@
             />
           </div>
         </div>
-        <!-- Title - separate line below top row -->
+        <!-- Title and Tagline - vertically centered container -->
         <div
-          v-if="season?.name"
-          class="absolute left-4 top-20 right-4 z-20"
+          v-if="season?.name || tagline"
+          class="flex absolute inset-0 z-20 flex-col gap-2 justify-center items-start px-4"
         >
-          <h1 class="text-lg sm:text-xl font-bold text-white uppercase break-words line-clamp-2">
+          <h1
+            v-if="season?.name"
+            class="text-lg font-bold text-white uppercase break-words sm:text-xl line-clamp-2"
+          >
             {{ season.name }}
           </h1>
-        </div>
-        <!-- Tagline - below title with spacing -->
-        <div
-          v-if="tagline"
-          class="absolute left-4 bottom-6 right-4 z-20"
-        >
-          <p class="text-sm sm:text-base italic text-white/90 break-words">
+          <p
+            v-if="tagline"
+            class="text-sm italic break-words sm:text-base text-white/90"
+          >
             {{ tagline }}
           </p>
         </div>
@@ -58,19 +58,19 @@
     </div>
     <Section>
       <section
-        class="relative flex flex-col items-center justify-between gap-16 pb-8 dark:text-gray-300 text-gray-800 w-full flex-shrink-0 min-h-[400px] lg:flex-row lg:items-start lg:p-16 lg:bg-gray-100/80 dark:lg:bg-gray-900/40 lg:backdrop-blur-xl lg:border lg:gap-14 rounded-3xl lg:border-gray-300/50 lg:dark:border-primary-800 lg:shadow-lg lg:shadow-primary/20 py-16"
+        class="relative flex flex-col items-center justify-between gap-16 pb-8 dark:text-gray-300 text-gray-800 w-full flex-shrink-0 min-h-[400px] lg:flex-row lg:items-start lg:p-16 lg:bg-gray-100/80 dark:lg:bg-gray-900/40 lg:backdrop-blur-xl lg:border lg:gap-14 rounded-3xl lg:border-gray-300/50 lg:dark:border-primary-800 lg:shadow-lg lg:shadow-primary/20"
       >
         <div
-          class="absolute inset-0 z-0 hidden lg:block rounded-3xl"
+          class="hidden absolute inset-0 z-0 rounded-3xl lg:block"
           :style="sectionStyle"
         ></div>
         <div
-          class="absolute z-0 hidden lg:block rounded-3xl bg-gray-100/90 dark:bg-gray-900/90"
+          class="hidden absolute z-0 rounded-3xl lg:block bg-gray-100/90 dark:bg-gray-900/90"
           style="top: 0px; right: 0px; bottom: 0px; left: 0px"
         ></div>
         <!-- Left column: Image + Providers -->
         <div
-          class="hidden lg:flex flex-col gap-14 lg:max-w-80 lg:w-80 flex-shrink-0 relative z-10"
+          class="hidden relative z-10 flex-col flex-shrink-0 gap-14 lg:flex lg:max-w-80 lg:w-80"
         >
           <div
             class="relative w-full lg:max-w-80 lg:w-80 flex-shrink-0 lg:aspect-[2/3]"
@@ -83,7 +83,7 @@
               <img
                 :src="`https://image.tmdb.org/t/p/w780${season.poster_path}`"
                 :alt="season.name"
-                class="w-full h-full object-cover rounded-3xl"
+                class="object-cover w-full h-full rounded-3xl"
               />
             </div>
           </div>
@@ -117,7 +117,7 @@
                 :tmdb-id="tmdbId"
               />
             </section>
-            <section v-else class="dark:text-gray-400 text-gray-600">
+            <section v-else class="text-gray-600 dark:text-gray-400">
               <p class="italic">{{ $t('media.noPlatforms') }}</p>
             </section>
           </section>
@@ -126,30 +126,30 @@
         <div
           class="z-10 relative flex flex-col flex-1 gap-6 rounded-lg w-full flex-shrink-0 min-h-[300px]"
         >
-          <div class="text-left relative flex-row">
+          <div class="relative flex-row text-left">
             <button
-              class="hidden lg:inline-flex items-center gap-2 mb-4 text-sm font-medium dark:text-gray-300 text-gray-700 hover:dark:text-white hover:text-gray-900 transition-colors"
+              class="hidden gap-2 items-center mb-4 text-sm font-medium text-gray-700 transition-colors lg:inline-flex dark:text-gray-300 hover:dark:text-white hover:text-gray-900"
               @click="handleBack"
             >
               <IconArrowLeft icon-class="w-4 h-4" />
               {{ $t('media.backToSeries') }}
             </button>
             <div
-              class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2 w-full"
+              class="flex flex-col gap-2 w-full lg:flex-row lg:items-center lg:justify-between"
             >
               <!-- Title with Rating inline on desktop large -->
               <div
-                class="flex items-center gap-3 flex-wrap xl:flex-nowrap xl:flex-1"
+                class="flex flex-wrap gap-3 items-center xl:flex-nowrap xl:flex-1"
               >
-                <div class="hidden lg:flex flex-col gap-2 xl:flex-1">
+                <div class="hidden flex-col gap-2 lg:flex xl:flex-1">
                   <h1
-                    class="text-4xl font-bold dark:text-gray-300 text-gray-800 break-words uppercase"
+                    class="text-4xl font-bold text-gray-800 uppercase break-words dark:text-gray-300"
                   >
                     {{ season?.name }}
                   </h1>
                   <p
                     v-if="tagline"
-                    class="text-base italic text-gray-700 dark:text-gray-400 break-words"
+                    class="text-base italic text-gray-700 break-words dark:text-gray-400"
                   >
                     {{ tagline }}
                   </p>
@@ -164,7 +164,7 @@
               </div>
               <!-- Rating row (mobile/tablet only, hidden on desktop large) -->
               <div
-                class="hidden lg:flex items-center gap-3 flex-shrink-0 xl:hidden"
+                class="hidden flex-shrink-0 gap-3 items-center lg:flex xl:hidden"
               >
                 <RatingBadge
                   v-if="season?.vote_average"
@@ -182,7 +182,7 @@
             >{{ season?.overview || $t('media.noDescriptionAvailable') }}</p
           >
           <div
-            class="mt-2 flex items-center gap-2 dark:text-gray-300 text-gray-800"
+            class="flex gap-2 items-center mt-2 text-gray-800 dark:text-gray-300"
           >
             <IconCalendar icon-class="w-5 h-5" />
             <span
@@ -194,7 +194,7 @@
               }}</span
             >
           </div>
-          <div class="flex items-center gap-2 dark:text-gray-300 text-gray-800">
+          <div class="flex gap-2 items-center text-gray-800 dark:text-gray-300">
             <IconEpisodes icon-class="w-5 h-5" />
             <span>{{
               $t(
@@ -251,7 +251,7 @@
                 :tmdb-id="tmdbId"
               />
             </section>
-            <section v-else class="dark:text-gray-400 text-gray-600">
+            <section v-else class="text-gray-600 dark:text-gray-400">
               <p class="italic">{{ $t('media.noPlatforms') }}</p>
             </section>
           </section>
@@ -356,7 +356,8 @@ const sectionStyle = computed(() => ({
 // Poster filter style - use computed to avoid hydration mismatch with CSS variables
 // Primary color: #21186E = rgb(33, 24, 110)
 const posterFilterStyle = computed(() => ({
-  filter: 'drop-shadow(0 10px 15px -3px rgb(0 0 0 / 0.1)) drop-shadow(0 4px 6px -4px rgb(0 0 0 / 0.1)) drop-shadow(0 0 20px rgb(33 24 110 / 0.3))',
+  filter:
+    'drop-shadow(0 10px 15px -3px rgb(0 0 0 / 0.1)) drop-shadow(0 4px 6px -4px rgb(0 0 0 / 0.1)) drop-shadow(0 0 20px rgb(33 24 110 / 0.3))',
 }));
 
 // Extract tagline with language fallback (same logic as overview)

@@ -43,9 +43,9 @@
               class="space-y-4"
             >
               <ListItemBase
-                v-for="episode in seasonWithProviders.episodes"
+                v-for="(episode, index) in seasonWithProviders.episodes"
                 :key="episode.id"
-                :title="episode.name"
+                :title="`${index + 1}. ${episode.name}`"
                 :poster-path="episode.still_path"
                 :overview="episode.overview"
                 :vote-average="episode.vote_average"
