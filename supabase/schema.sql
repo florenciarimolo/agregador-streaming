@@ -53,7 +53,7 @@ CREATE TABLE IF NOT EXISTS public.seasons (
   tmdb_season_id BIGINT NOT NULL,
   name JSONB, -- Multi-language in ISO format: {"es-ES": "...", "ca-ES": "...", "eu-ES": "...", "gl-ES": "...", "en-US": "..."}
   air_date DATE,
-  poster_path TEXT,
+  poster_path JSONB, -- Multi-language in ISO format: {"es-ES": "...", "ca-ES": "...", "eu-ES": "...", "gl-ES": "...", "en-US": "..."}
   vote_average NUMERIC(3, 1),
   overview JSONB, -- Multi-language in ISO format: {"es-ES": "...", "ca-ES": "...", "eu-ES": "...", "gl-ES": "...", "en-US": "..."}
   videos JSONB, -- Multi-language videos: {[lang: string]: Array<{key, site, type, published_at, official}>}

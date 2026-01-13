@@ -5,7 +5,10 @@ import { createClient } from '@supabase/supabase-js';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { TITLES_COLUMNS, SEASONS_COLUMNS } from '@/constants/db/columns';
 import { TABLES } from '@/constants/db/tables';
-import { type MultiLanguageText } from '@/services/titles';
+import {
+  type MultiLanguageText,
+  updateMissingLanguageValue,
+} from '@/services/titles';
 import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 import type { TVShow, Season } from '@/types/TVShow';
 import type { TmdbStatusType } from '@/types/enums/TmdbStatus';
@@ -342,9 +345,24 @@ export default defineEventHandler(async (event) => {
         ? getTaglineInLanguage(taglineJsonb, userLanguage, region)
         : null;
 
-      // If tagline or status is missing in DB but exists in TMDB response, save it
+      // Update missing tagline, poster_path, or status from TMDB
       const needsUpdate: Record<string, unknown> = {};
       let savedStatus: string | undefined = undefined;
+
+      // Check if poster_path is missing in current language
+      const updatedPosterPath = updateMissingLanguageValue(
+        posterPathJsonb,
+        fullTvShowResponse?.poster_path,
+        userLanguage,
+        region,
+        true // isImagePath
+      );
+
+      if (updatedPosterPath) {
+        needsUpdate.poster_path = updatedPosterPath;
+        posterPathJsonb = updatedPosterPath;
+      }
+
       if (!taglineFromDb && fullTvShowResponse?.tagline) {
         const updatedTagline: MultiLanguageText = { ...(taglineJsonb || {}) };
         updatedTagline[userLanguage] = fullTvShowResponse.tagline;

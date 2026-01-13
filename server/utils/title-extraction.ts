@@ -378,6 +378,10 @@ export async function extractTitleDataWithFallback(
     overviewJsonb &&
     typeof overviewJsonb === 'object' &&
     overviewJsonb[language] !== undefined;
+  const hasExactPosterPathLanguage =
+    posterPathJsonb &&
+    typeof posterPathJsonb === 'object' &&
+    posterPathJsonb[language] !== undefined;
 
   // Extract text in user's preferred language (may return fallback if language missing)
   const extractedTitle = extractFromTitleData(
@@ -408,13 +412,17 @@ export async function extractTitleDataWithFallback(
     !hasExactOverviewLanguage ||
     !extractedOverview ||
     extractedOverview.trim() === '';
+  const needsPosterPathFallback =
+    !hasExactPosterPathLanguage ||
+    !extractedPosterPath ||
+    extractedPosterPath.trim() === '';
 
   let tmdbTitle: string | null = null;
   let tmdbOverview: string | null = null;
   let tmdbPosterPath: string | null = null;
 
   // Fetch from TMDB if needed
-  if (needsTitleFallback || needsOverviewFallback) {
+  if (needsTitleFallback || needsOverviewFallback || needsPosterPathFallback) {
     try {
       const tmdbConfig = getTMDBConfig(language, region);
       const endpoint =
@@ -527,7 +535,7 @@ export async function extractTitleDataWithFallback(
   return {
     title: hasExactLanguage ? extractedTitle : tmdbTitle || '',
     overview: finalOverview,
-    poster_path: hasExactLanguage
+    poster_path: hasExactPosterPathLanguage
       ? extractedPosterPath
       : tmdbPosterPath || null,
   };

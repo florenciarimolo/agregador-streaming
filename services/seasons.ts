@@ -38,14 +38,24 @@ export async function getSeasonByTmdbIds(
     return null;
   }
 
-  // Extract name from JSONB if language provided, otherwise use empty string
+  // Extract name and poster_path from JSONB if language provided
   const nameJsonb = data.name as MultiLanguageText | null;
+  const posterPathJsonb = data.poster_path as MultiLanguageText | null;
   let name = '';
-  
+  let posterPath: string | null = null;
+
   if (language) {
     // First try to get name in requested language
     name = getTitleInLanguage(nameJsonb, language, userRegion);
-    
+
+    // Extract poster_path in requested language (isImagePath = true)
+    posterPath = getTitleInLanguage(
+      posterPathJsonb,
+      language,
+      userRegion,
+      true // isImagePath
+    );
+
     // If name is empty/null and requested language is not primary language of region,
     // fallback to primary language of region
     if (!name && userRegion) {
@@ -53,10 +63,27 @@ export async function getSeasonByTmdbIds(
       const primaryLanguageKey = `${primaryLanguage}-${userRegion.toUpperCase()}`;
       const requestedLangCode = language.split('-')[0]?.toLowerCase() || '';
       const primaryLangCode = primaryLanguage.split('-')[0]?.toLowerCase() || '';
-      
+
       // Only use primary language fallback if requested language is not primary
       if (requestedLangCode !== primaryLangCode) {
         name = getTitleInLanguage(nameJsonb, primaryLanguageKey, userRegion);
+        // Also try poster_path in primary language if not found
+        if (!posterPath) {
+          posterPath = getTitleInLanguage(
+            posterPathJsonb,
+            primaryLanguageKey,
+            userRegion,
+            true // isImagePath
+          );
+        }
+      }
+    }
+  } else {
+    // If no language provided, try to get first available value (for backward compatibility)
+    if (posterPathJsonb && typeof posterPathJsonb === 'object') {
+      const firstKey = Object.keys(posterPathJsonb)[0];
+      if (firstKey) {
+        posterPath = posterPathJsonb[firstKey] || null;
       }
     }
   }
@@ -68,7 +95,7 @@ export async function getSeasonByTmdbIds(
     season_number: data.season_number,
     overview: '', // Will be extracted from JSONB by caller
     air_date: data.air_date || '',
-    poster_path: data.poster_path || null,
+    poster_path: posterPath,
     vote_average: data.vote_average || 0,
     episode_count: data.episode_count || undefined,
   };
@@ -84,13 +111,23 @@ export async function upsertSeason(
     tmdb_season_id: number;
     name?: MultiLanguageText | null;
     air_date?: string | null;
-    poster_path?: string | null;
+    poster_path?: MultiLanguageText | string | null;
     vote_average?: number | null;
     overview?: MultiLanguageText | null;
     episode_count?: number | null;
   },
   supabaseClient: SupabaseClient
 ): Promise<Season | null> {
+  // Handle poster_path: accept MultiLanguageText (JSONB) or null
+  // String values should be converted to MultiLanguageText by caller
+  const posterPathJsonb: MultiLanguageText | null =
+    seasonData.poster_path &&
+    typeof seasonData.poster_path === 'object' &&
+    !Array.isArray(seasonData.poster_path) &&
+    Object.keys(seasonData.poster_path).length > 0
+      ? (seasonData.poster_path as MultiLanguageText)
+      : null;
+
   const { data, error } = await supabaseClient
     .from(TABLES.SEASONS)
     .upsert(
@@ -103,7 +140,7 @@ export async function upsertSeason(
             ? seasonData.name
             : null,
         [SEASONS_COLUMNS.AIR_DATE]: seasonData.air_date || null,
-        [SEASONS_COLUMNS.POSTER_PATH]: seasonData.poster_path || null,
+        [SEASONS_COLUMNS.POSTER_PATH]: posterPathJsonb,
         [SEASONS_COLUMNS.VOTE_AVERAGE]: seasonData.vote_average || null,
         [SEASONS_COLUMNS.OVERVIEW]:
           seasonData.overview && Object.keys(seasonData.overview).length > 0
@@ -161,13 +198,23 @@ export async function getSeasonsByTvTmdbId(
 
   // Map database rows to Season type
   return data.map((row) => {
-    // Extract name from JSONB if language provided, otherwise use empty string
+    // Extract name and poster_path from JSONB if language provided
     const nameJsonb = row.name as MultiLanguageText | null;
+    const posterPathJsonb = row.poster_path as MultiLanguageText | null;
     let name = '';
-    
+    let posterPath: string | null = null;
+
     if (language) {
       // First try to get name in requested language
       name = getTitleInLanguage(nameJsonb, language, userRegion);
+
+      // Extract poster_path in requested language (isImagePath = true)
+      posterPath = getTitleInLanguage(
+        posterPathJsonb,
+        language,
+        userRegion,
+        true // isImagePath
+      );
       
       // If name is empty/null and requested language is not primary language of region,
       // fallback to primary language of region
@@ -176,10 +223,27 @@ export async function getSeasonsByTvTmdbId(
         const primaryLanguageKey = `${primaryLanguage}-${userRegion.toUpperCase()}`;
         const requestedLangCode = language.split('-')[0]?.toLowerCase() || '';
         const primaryLangCode = primaryLanguage.split('-')[0]?.toLowerCase() || '';
-        
+
         // Only use primary language fallback if requested language is not primary
         if (requestedLangCode !== primaryLangCode) {
           name = getTitleInLanguage(nameJsonb, primaryLanguageKey, userRegion);
+          // Also try poster_path in primary language if not found
+          if (!posterPath) {
+            posterPath = getTitleInLanguage(
+              posterPathJsonb,
+              primaryLanguageKey,
+              userRegion,
+              true // isImagePath
+            );
+          }
+        }
+      }
+    } else {
+      // If no language provided, try to get first available value (for backward compatibility)
+      if (posterPathJsonb && typeof posterPathJsonb === 'object') {
+        const firstKey = Object.keys(posterPathJsonb)[0];
+        if (firstKey) {
+          posterPath = posterPathJsonb[firstKey] || null;
         }
       }
     }
@@ -190,7 +254,7 @@ export async function getSeasonsByTvTmdbId(
       season_number: row.season_number,
       overview: '', // Will be extracted from JSONB by caller if needed
       air_date: row.air_date || '',
-      poster_path: row.poster_path || null,
+      poster_path: posterPath,
       vote_average: row.vote_average || 0,
       episode_count: row.episode_count || undefined,
     };

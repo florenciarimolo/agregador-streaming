@@ -27,6 +27,8 @@ import FinalCtaSection from '@/components/home/FinalCtaSection.vue';
 import AnimatedBackground from '@/components/AnimatedBackground.vue';
 import RecommendationSection from '@/components/RecommendationSection.vue';
 import ViewModeSelector from '@/components/ViewModeSelector.vue';
+import SkeletonMediaCard from '@/components/SkeletonMediaCard.vue';
+import SkeletonListItem from '@/components/SkeletonListItem.vue';
 import { useViewMode } from '@/composables/useViewMode';
 import { VIEW_MODE } from '@/constants/domain/viewMode';
 import { getSession } from '@/services/auth';
@@ -854,7 +856,9 @@ onMounted(() => {
 
               <!-- Skeleton loading (also show while filters are loading) -->
               <Section v-if="(showSkeleton && loading) || filtersLoading">
+                <!-- Mosaic view skeletons -->
                 <div
+                  v-if="viewMode === VIEW_MODE.MOSAIC"
                   class="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-6 overflow-visible"
                 >
                   <SkeletonMediaCard
@@ -862,6 +866,14 @@ onMounted(() => {
                     :key="`skeleton-${i}`"
                     :show-rating="i % 3 !== 0"
                     :show-watchlist="i % 4 === 0"
+                  />
+                </div>
+                <!-- List view skeletons -->
+                <div v-else class="space-y-4">
+                  <SkeletonListItem
+                    v-for="i in 20"
+                    :key="`skeleton-list-${i}`"
+                    :show-rating="i % 3 !== 0"
                   />
                 </div>
               </Section>

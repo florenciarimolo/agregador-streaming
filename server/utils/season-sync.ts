@@ -84,20 +84,54 @@ export async function syncSeasonsFromTVShow(
     (s) => s.episode_count === null || s.episode_count === undefined
   ) || [];
 
-  // If no seasons to create and no existing seasons with null dates/episode_count, return early
+  // Find existing seasons missing poster_path in current language
+  const existingSeasonsMissingPosterPath: Array<{
+    season: typeof existingSeasons[0];
+    tmdbSeason: TMDBSeason;
+  }> = [];
+  if (tmdbConfig?.language && existingSeasons) {
+    for (const existingSeason of existingSeasons) {
+      const tmdbSeason = tmdbSeasons.find(
+        (s) => s.season_number === existingSeason.season_number
+      );
+      if (tmdbSeason && tmdbSeason.poster_path) {
+        // Check if poster_path is missing in current language
+        const posterPathJsonb = existingSeason.poster_path as MultiLanguageText | null;
+        const hasPosterPathInLanguage =
+          posterPathJsonb &&
+          typeof posterPathJsonb === 'object' &&
+          !Array.isArray(posterPathJsonb) &&
+          posterPathJsonb[tmdbConfig.language] !== undefined;
+        if (!hasPosterPathInLanguage) {
+          existingSeasonsMissingPosterPath.push({
+            season: existingSeason,
+            tmdbSeason,
+          });
+        }
+      }
+    }
+  }
+
+  // If no seasons to create and no existing seasons with null dates/episode_count/poster_path, return early
   if (
     seasonsToCreate.length === 0 &&
     existingSeasonsWithNullDate.length === 0 &&
-    existingSeasonsWithNullEpisodeCount.length === 0
+    existingSeasonsWithNullEpisodeCount.length === 0 &&
+    existingSeasonsMissingPosterPath.length === 0
   ) {
     return;
   }
 
   // Prepare seasons for upsert
-  // Convert name to JSONB format with language from tmdbConfig
+  // Convert name and poster_path to JSONB format with language from tmdbConfig
   const seasonsToUpsert = seasonsToCreate.map((tmdbSeason) => {
     const nameJsonb: MultiLanguageText | null = tmdbSeason.name && tmdbConfig?.language
       ? { [tmdbConfig.language]: tmdbSeason.name }
+      : null;
+
+    // Convert poster_path string to MultiLanguageText JSONB format
+    const posterPathJsonb: MultiLanguageText | null = tmdbSeason.poster_path && tmdbConfig?.language
+      ? { [tmdbConfig.language]: tmdbSeason.poster_path }
       : null;
 
     return {
@@ -106,7 +140,7 @@ export async function syncSeasonsFromTVShow(
       [SEASONS_COLUMNS.TMDB_SEASON_ID]: tmdbSeason.id,
       [SEASONS_COLUMNS.NAME]: nameJsonb,
       [SEASONS_COLUMNS.AIR_DATE]: tmdbSeason.air_date || null,
-      [SEASONS_COLUMNS.POSTER_PATH]: tmdbSeason.poster_path || null,
+      [SEASONS_COLUMNS.POSTER_PATH]: posterPathJsonb,
       [SEASONS_COLUMNS.VOTE_AVERAGE]: tmdbSeason.vote_average || null,
       [SEASONS_COLUMNS.EPISODE_COUNT]: tmdbSeason.episode_count ?? null,
       // overview and videos remain null (never fetched) until accessed on-demand
@@ -232,6 +266,11 @@ export async function syncSeasonsFromTVShow(
           const nameJsonb: MultiLanguageText | null = seasonResponse.name && tmdbConfig?.language
             ? { [tmdbConfig.language]: seasonResponse.name }
             : null;
+          // Convert poster_path string to MultiLanguageText JSONB format
+          const posterPathJsonb: MultiLanguageText | null = season.poster_path && tmdbConfig?.language
+            ? { [tmdbConfig.language]: season.poster_path }
+            : null;
+
           await upsertSeason(
             {
               tv_tmdb_id: tvTmdbId,
@@ -239,7 +278,7 @@ export async function syncSeasonsFromTVShow(
               tmdb_season_id: season.id,
               name: nameJsonb,
               air_date: finalAirDate || undefined,
-              poster_path: season.poster_path || null,
+              poster_path: posterPathJsonb,
               vote_average: season.vote_average || null,
               episode_count: episodeCount,
             },
@@ -322,6 +361,44 @@ export async function syncSeasonsFromTVShow(
               [tmdbConfig.language]: seasonResponse.name,
             };
           }
+
+          // Check if poster_path needs updating (get from original TMDB seasons array)
+          const tmdbSeason = tmdbSeasons.find(
+            (s) => s.season_number === existingSeason.season_number
+          );
+          let updatedPosterPathJsonb: MultiLanguageText | null = null;
+          if (tmdbSeason?.poster_path && tmdbConfig?.language) {
+            // Safely get existing poster_path JSONB
+            const existingPosterPathJsonbRaw = existingSeason.poster_path;
+            const existingPosterPathJsonb: MultiLanguageText | null =
+              existingPosterPathJsonbRaw &&
+              typeof existingPosterPathJsonbRaw === 'object' &&
+              !Array.isArray(existingPosterPathJsonbRaw)
+                ? (existingPosterPathJsonbRaw as MultiLanguageText)
+                : null;
+            // Check if poster_path is missing in current language
+            const hasPosterPathInLanguage =
+              existingPosterPathJsonb &&
+              existingPosterPathJsonb[tmdbConfig.language] !== undefined;
+            if (!hasPosterPathInLanguage) {
+              updatedPosterPathJsonb = {
+                ...(existingPosterPathJsonb || {}),
+                [tmdbConfig.language]: tmdbSeason.poster_path,
+              };
+            } else {
+              updatedPosterPathJsonb = existingPosterPathJsonb;
+            }
+          } else {
+            // Preserve existing poster_path if no update needed
+            const existingPosterPathJsonbRaw = existingSeason.poster_path;
+            updatedPosterPathJsonb =
+              existingPosterPathJsonbRaw &&
+              typeof existingPosterPathJsonbRaw === 'object' &&
+              !Array.isArray(existingPosterPathJsonbRaw)
+                ? (existingPosterPathJsonbRaw as MultiLanguageText)
+                : null;
+          }
+
           await upsertSeason(
             {
               tv_tmdb_id: tvTmdbId,
@@ -329,7 +406,7 @@ export async function syncSeasonsFromTVShow(
               tmdb_season_id: existingSeason.tmdb_season_id,
               name: updatedNameJsonb,
               air_date: finalAirDate || undefined,
-              poster_path: existingSeason.poster_path || null,
+              poster_path: updatedPosterPathJsonb,
               vote_average: existingSeason.vote_average || null,
               episode_count: episodeCount,
             },
@@ -355,6 +432,63 @@ export async function syncSeasonsFromTVShow(
           console.error(
             `[syncSeasonsFromTVShow] Error fetching air_date from first episode for existing season ${existingSeason.season_number}:`,
             episodeError
+          );
+        }
+      }
+    }
+
+    // Update existing seasons missing poster_path in current language
+    for (const { season, tmdbSeason } of existingSeasonsMissingPosterPath) {
+      try {
+        // Safely get existing poster_path JSONB - ensure it's an object, not a string
+        const existingPosterPathJsonbRaw = season.poster_path;
+        const existingPosterPathJsonb: MultiLanguageText | null =
+          existingPosterPathJsonbRaw &&
+          typeof existingPosterPathJsonbRaw === 'object' &&
+          !Array.isArray(existingPosterPathJsonbRaw)
+            ? (existingPosterPathJsonbRaw as MultiLanguageText)
+            : null;
+
+        // Merge with new poster_path from TMDB
+        const updatedPosterPathJsonb: MultiLanguageText = {
+          ...(existingPosterPathJsonb || {}),
+          [tmdbConfig.language]: tmdbSeason.poster_path,
+        };
+
+        // Keep existing name JSONB
+        const existingNameJsonbRaw = season.name;
+        const existingNameJsonb: MultiLanguageText | null =
+          existingNameJsonbRaw &&
+          typeof existingNameJsonbRaw === 'object' &&
+          !Array.isArray(existingNameJsonbRaw)
+            ? (existingNameJsonbRaw as MultiLanguageText)
+            : null;
+
+        await upsertSeason(
+          {
+            tv_tmdb_id: tvTmdbId,
+            season_number: season.season_number,
+            tmdb_season_id: season.tmdb_season_id,
+            name: existingNameJsonb,
+            air_date: season.air_date || undefined,
+            poster_path: updatedPosterPathJsonb,
+            vote_average: season.vote_average || null,
+            episode_count: season.episode_count ?? undefined,
+          },
+          supabase
+        );
+
+        if (import.meta.dev) {
+          console.log(
+            `[syncSeasonsFromTVShow] Updated poster_path for existing season ${season.season_number} in language ${tmdbConfig.language}`
+          );
+        }
+      } catch (posterError) {
+        // Log error but don't fail the sync
+        if (import.meta.dev) {
+          console.error(
+            `[syncSeasonsFromTVShow] Error updating poster_path for existing season ${season.season_number}:`,
+            posterError
           );
         }
       }

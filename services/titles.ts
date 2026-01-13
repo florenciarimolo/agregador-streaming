@@ -217,6 +217,55 @@ export function getTitleInLanguage(
 }
 
 /**
+ * Update MultiLanguageText JSONB with missing language value
+ * Returns updated JSONB if value is missing, null if no update needed
+ * @param currentJsonb Current MultiLanguageText from database (can be null, string, or object)
+ * @param newValue New value to add for the language
+ * @param language Language code in ISO format (e.g., 'ca-ES', 'es-ES')
+ * @param region User region for language extraction
+ * @param isImagePath Whether this is an image path (affects language extraction)
+ * @returns Updated MultiLanguageText or null if no update needed
+ */
+export function updateMissingLanguageValue(
+  currentJsonb: unknown,
+  newValue: string | null | undefined,
+  language: string,
+  region?: string | null,
+  isImagePath: boolean = false
+): MultiLanguageText | null {
+  if (!newValue) {
+    return null;
+  }
+
+  // Safely extract current JSONB
+  const current: MultiLanguageText | null =
+    currentJsonb &&
+    typeof currentJsonb === 'object' &&
+    !Array.isArray(currentJsonb)
+      ? (currentJsonb as MultiLanguageText)
+      : null;
+
+  // Check if value already exists in current language
+  const existingValue = getTitleInLanguage(
+    current,
+    language,
+    region,
+    isImagePath
+  );
+
+  // If value already exists, no update needed
+  if (existingValue) {
+    return null;
+  }
+
+  // Create updated JSONB with new language value
+  return {
+    ...(current || {}),
+    [language]: newValue,
+  };
+}
+
+/**
  * Insert a new title into the database
  */
 export async function insertTitle(data: InsertTitleData) {

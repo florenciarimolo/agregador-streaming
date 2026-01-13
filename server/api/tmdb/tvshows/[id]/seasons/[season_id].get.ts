@@ -1,4 +1,6 @@
 import type { Season } from '@/types/TVShow';
+import type { MultiLanguageText } from '@/services/titles';
+import { updateMissingLanguageValue } from '@/services/titles';
 import { getTMDBConfig } from '@/server/utils/config';
 import { getUserTMDBParams } from '@/server/utils/user-tmdb';
 import { getPrimaryLanguageForRegion } from '@/utils/language-detection';
@@ -107,14 +109,20 @@ export default defineEventHandler(
         });
       }
 
-      // Get season from database to check if we need to fetch episode_count
+      // Get season from database to check if we need to fetch episode_count or poster_path
       const runtimeConfig = useRuntimeConfig();
       const supabase = createServerSupabaseClient(runtimeConfig);
       const tvTmdbId = parseInt(id, 10);
       const seasonNumber = parseInt(season_id, 10);
 
       const { getSeasonByTmdbIds } = await import('@/services/seasons');
-      const seasonFromDb = await getSeasonByTmdbIds(tvTmdbId, seasonNumber, supabase);
+      const seasonFromDb = await getSeasonByTmdbIds(
+        tvTmdbId,
+        seasonNumber,
+        supabase,
+        language,
+        region
+      );
 
       // Check if episode_count is null in database
       let needsEpisodeCountUpdate = false;
@@ -142,8 +150,38 @@ export default defineEventHandler(
         }
       }
 
+      // Check if poster_path is missing in current language
+      let needsPosterPathUpdate = false;
+      let posterPathJsonb: MultiLanguageText | null = null;
+      if (response.poster_path) {
+        // Get current poster_path from database
+        const { data: seasonData } = await supabase
+          .from('seasons')
+          .select('poster_path')
+          .eq('tv_tmdb_id', tvTmdbId)
+          .eq('season_number', seasonNumber)
+          .maybeSingle();
+
+        const updatedPosterPath = updateMissingLanguageValue(
+          seasonData?.poster_path,
+          response.poster_path,
+          language,
+          region,
+          true // isImagePath
+        );
+
+        if (updatedPosterPath) {
+          posterPathJsonb = updatedPosterPath;
+          needsPosterPathUpdate = true;
+        }
+      }
+
       // Update database if we have data to save
-      if (needsEpisodeCountUpdate || needsAirDateUpdate) {
+      if (
+        needsEpisodeCountUpdate ||
+        needsAirDateUpdate ||
+        needsPosterPathUpdate
+      ) {
         try {
           await upsertSeason(
             {
@@ -152,7 +190,9 @@ export default defineEventHandler(
               tmdb_season_id: response.id,
               name: response.name || null,
               air_date: needsAirDateUpdate ? finalAirDate : undefined,
-              poster_path: response.poster_path || null,
+              poster_path: needsPosterPathUpdate
+                ? posterPathJsonb
+                : undefined,
               vote_average: response.vote_average || null,
               episode_count: needsEpisodeCountUpdate ? episodeCount : undefined,
             },
