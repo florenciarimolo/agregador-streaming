@@ -9,20 +9,24 @@
   >
     <!-- Mobile: 3 filas (1 columna) -->
     <!-- Desktop: 1 fila (3 columnas) -->
-    <div class="flex flex-col md:flex-row gap-4 p-4">
+    <div class="flex flex-col gap-4 p-4 md:flex-row">
       <!-- Fila 1 (móvil): 2 columnas (Imagen, Rating/Menu/Badge) -->
       <!-- Desktop: Columna 1 (Imagen) -->
-      <div class="flex flex-row justify-between gap-4 md:flex-col md:flex-shrink-0">
+      <div
+        class="flex flex-row gap-4 justify-between md:flex-col md:flex-shrink-0"
+      >
         <!-- Imagen -->
         <div class="flex-shrink-0">
           <component
-            :is="linkTo ? 'nuxt-link' : 'div'"
-            :to="linkTo || undefined"
+            :is="computedLinkTo ? 'nuxt-link' : 'div'"
+            :to="computedLinkTo || undefined"
             :aria-label="linkAriaLabel"
             :class="[
-              linkTo ? 'group relative' : 'relative',
+              computedLinkTo ? 'group relative cursor-pointer' : 'relative',
               'block overflow-hidden rounded-2xl bg-gray-800 aspect-[2/3] w-20 md:w-24',
-              linkTo ? 'focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2' : '',
+              computedLinkTo
+                ? 'focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2'
+                : '',
             ]"
           >
             <!-- Image or Placeholder -->
@@ -33,7 +37,9 @@
                 :alt="imageAlt"
                 :class="[
                   'object-cover w-full h-full',
-                  linkTo ? 'transition-transform duration-300 group-hover:scale-105' : '',
+                  computedLinkTo
+                    ? 'transition-transform duration-300 group-hover:scale-105'
+                    : '',
                 ]"
                 loading="lazy"
                 decoding="async"
@@ -50,10 +56,12 @@
 
             <!-- Hover Overlay (only shown when there's a link) -->
             <div
-              v-if="linkTo"
-              class="flex absolute bottom-0 left-0 flex-col justify-center items-center px-4 w-full h-full opacity-0 backdrop-blur-md transition-all duration-300 pointer-events-none group-hover:opacity-100 dark:bg-black/80 bg-white/80 rounded-2xl"
+              v-if="computedLinkTo"
+              class="flex absolute bottom-0 left-0 flex-col justify-center items-center px-4 w-full h-full rounded-2xl opacity-0 backdrop-blur-md transition-all duration-300 pointer-events-none group-hover:opacity-100 dark:bg-black/80 bg-white/80"
             >
-              <p class="font-semibold text-gray-800 dark:text-gray-300">
+              <p
+                class="text-xs font-semibold text-center text-gray-800 dark:text-gray-300"
+              >
                 {{ $t('media.viewDetails') }}
               </p>
             </div>
@@ -61,14 +69,14 @@
         </div>
 
         <!-- RatingBadge, acciones y Badge de tipo (móvil: columna 2) -->
-        <div class="flex-shrink-0 flex flex-col gap-2 items-end md:hidden">
-          <!-- RatingBadge -->
-          <div class="flex items-center gap-2">
+        <div class="flex flex-col flex-shrink-0 gap-2 items-end md:hidden">
+          <!-- RatingBadge and Actions in the same row -->
+          <div class="flex gap-2 items-center">
             <RatingBadge v-if="voteAverage" :rating="voteAverage" />
-          </div>
-          <!-- Slot para acciones (menú o botón de eliminar, o info adicional como fecha/duración) -->
-          <div class="overflow-visible flex flex-col items-end gap-2">
-            <slot name="actions" />
+            <!-- Slot para acciones (menú o botón de eliminar, o info adicional como fecha/duración) -->
+            <div class="flex overflow-visible items-end">
+              <slot name="actions" />
+            </div>
           </div>
           <Badge v-if="type && !hideTypeBadge" :type="type" />
         </div>
@@ -78,9 +86,13 @@
       <div class="flex flex-col gap-1 min-w-0 md:hidden">
         <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-300">
           <component
-            :is="linkTo ? 'nuxt-link' : 'span'"
-            :to="linkTo || undefined"
-            :class="linkTo ? 'hover:text-primary-800 dark:hover:text-primary-400 transition-colors' : ''"
+            :is="computedLinkTo ? 'nuxt-link' : 'span'"
+            :to="computedLinkTo || undefined"
+            :class="
+              computedLinkTo
+                ? 'hover:text-primary-800 dark:hover:text-primary-400 transition-colors'
+                : ''
+            "
           >
             {{ title }}
           </component>
@@ -94,19 +106,19 @@
         />
         <p
           v-if="displayTagline"
-          class="text-sm italic text-gray-600 dark:text-gray-400 mt-1"
+          class="mt-1 text-sm italic text-gray-600 dark:text-gray-400"
         >
           {{ displayTagline }}
         </p>
       </div>
 
       <!-- Desktop: Columna 2 (Título/Tag/Tagline, Overview, Providers) -->
-      <div class="hidden md:flex flex-1 flex-col justify-between gap-2 min-w-0">
+      <div class="hidden flex-col flex-1 gap-2 justify-center min-w-0 md:flex">
         <div>
           <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-300">
             <nuxt-link
-              :to="linkTo"
-              class="hover:text-primary-800 dark:hover:text-primary-400 transition-colors"
+              :to="computedLinkTo"
+              class="transition-colors hover:text-primary-800 dark:hover:text-primary-400"
             >
               {{ title }}
             </nuxt-link>
@@ -120,14 +132,17 @@
           />
           <p
             v-if="displayTagline"
-            class="text-sm italic text-gray-600 dark:text-gray-400 mt-1"
+            class="mt-1 text-sm italic text-gray-600 dark:text-gray-400"
           >
             {{ displayTagline }}
           </p>
         </div>
         <p
           v-if="overview"
-          class="text-sm text-gray-700 dark:text-gray-300"
+          :class="[
+            'text-sm text-gray-700 dark:text-gray-300',
+            truncateOverview ? 'line-clamp-3' : '',
+          ]"
         >
           {{ overview }}
         </p>
@@ -144,13 +159,13 @@
             :key="provider.provider_id"
             :src="`https://image.tmdb.org/t/p/w45${provider.logo_path}`"
             :alt="provider.provider_name"
-            class="object-contain w-4 h-4 md:w-6 md:h-6 rounded"
+            class="object-contain w-4 h-4 rounded md:w-6 md:h-6"
             :title="provider.provider_name"
           />
         </div>
         <div
           v-else-if="providers !== undefined"
-          class="text-xs italic text-gray-600 dark:text-gray-400 mt-2"
+          class="mt-2 text-xs italic text-gray-600 dark:text-gray-400"
         >
           {{ $t('media.noPlatforms') }}
         </div>
@@ -160,7 +175,10 @@
       <div class="md:hidden">
         <p
           v-if="overview"
-          class="text-sm text-gray-700 dark:text-gray-300"
+          :class="[
+            'text-sm text-gray-700 dark:text-gray-300',
+            truncateOverview ? 'line-clamp-3' : '',
+          ]"
         >
           {{ overview }}
         </p>
@@ -193,14 +211,14 @@
       </div>
 
       <!-- Desktop: Columna 3 (Rating/Menu/Badge) -->
-      <div class="hidden md:flex flex-shrink-0 flex-col gap-2 items-end">
-        <!-- RatingBadge -->
-        <div class="flex items-center gap-2">
+      <div class="hidden flex-col flex-shrink-0 gap-2 items-end md:flex">
+        <!-- RatingBadge and Actions in the same row -->
+        <div class="flex gap-2 items-center">
           <RatingBadge v-if="voteAverage" :rating="voteAverage" />
-        </div>
-        <!-- Slot para acciones (menú o botón de eliminar, o info adicional como fecha/duración) -->
-        <div class="overflow-visible flex flex-col items-end gap-2">
-          <slot name="actions" />
+          <!-- Slot para acciones (menú o botón de eliminar, o info adicional como fecha/duración) -->
+          <div class="flex overflow-visible items-end">
+            <slot name="actions" />
+          </div>
         </div>
         <Badge v-if="type && !hideTypeBadge" :type="type" />
       </div>
@@ -243,6 +261,8 @@ interface Props {
   linkAriaLabel?: string;
   imageAlt?: string;
   noImageAriaLabel?: string;
+  linkTo?: string; // Optional custom link that overrides the computed link
+  truncateOverview?: boolean; // Whether to truncate the overview with line-clamp
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -258,6 +278,8 @@ const props = withDefaults(defineProps<Props>(), {
   linkAriaLabel: undefined,
   imageAlt: undefined,
   noImageAriaLabel: undefined,
+  linkTo: undefined,
+  truncateOverview: false,
 });
 
 const { routeWithLang } = useRouteWithLang();
@@ -267,8 +289,10 @@ const mediaType = computed(() =>
 );
 
 // Computed link with language prefix
-// If type is not provided, don't create a link (for episodes, etc.)
-const linkTo = computed(() => {
+// If custom linkTo is provided, use it; otherwise compute from type and tmdbId
+// If type is not provided and no custom link, don't create a link (for episodes, etc.)
+const computedLinkTo = computed(() => {
+  if (props.linkTo !== undefined) return props.linkTo;
   if (!props.type) return '';
   return routeWithLang(`/${mediaType.value}/${props.tmdbId}`);
 });

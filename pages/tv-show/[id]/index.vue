@@ -45,18 +45,22 @@
                 />
               </div>
             </div>
-            <div
-              class="relative grid grid-cols-2 gap-4 justify-items-stretch lg:grid-cols-4 xl:grid-cols-5 mt-4"
-            >
-              <TitleCard
+            <div class="flex flex-col gap-4 mt-4">
+              <ListItemBase
                 v-for="season in tvShowWithProviders.seasons"
                 :key="season.id"
                 :title="season.name"
                 :poster-path="season.poster_path"
+                :overview="season.overview"
+                :vote-average="season.vote_average"
+                :tmdb-id="season.id"
                 :link-to="
                   routeWithLang(
                     `/tv-show/${tvShowId}/season/${season.season_number}`
                   )
+                "
+                :aria-label="
+                  $t('media.viewDetailsOf', { title: season.name })
                 "
                 :link-aria-label="
                   $t('media.viewDetailsOf', { title: season.name })
@@ -65,34 +69,17 @@
                 :no-image-aria-label="
                   $t('media.noPosterAvailableFor', { title: season.name })
                 "
-                :show-content="true"
-                :show-type="false"
-                :hover-text="$t('media.viewEpisodes')"
-                custom-class="shadow-lg hover:border-primary-800 dark:hover:border-primary-600/50"
+                :hide-type-badge="true"
+                :truncate-overview="true"
               >
-                <!-- RatingBadge - top right -->
-                <template #top-right-actions>
-                  <RatingBadge
-                    v-if="season.vote_average"
-                    :rating="season.vote_average"
-                  />
-                </template>
-
-                <!-- Content: Season name, Date and episode count -->
-                <template #content>
-                  <div class="flex flex-col gap-3">
-                    <!-- Season name as text -->
-                    <h4
-                      class="font-semibold dark:text-gray-300 text-gray-800 text-sm md:text-base line-clamp-2"
-                    >
-                      {{ season.name }}
-                    </h4>
+                <template #actions>
+                  <!-- Additional season info: Date and Episode count -->
+                  <div class="flex flex-col gap-2 items-end">
                     <div
-                      class="flex items-center gap-2 dark:text-gray-300 text-gray-800 text-xs md:text-sm"
+                      class="flex items-center gap-2 dark:text-gray-300 text-gray-800 text-xs"
                     >
-                      <IconCalendar icon-class="w-3 h-3 md:w-4 md:h-4" />
+                      <IconCalendar icon-class="w-3 h-3" />
                       <span
-                        class="truncate"
                         :class="{
                           italic:
                             !season.air_date || season.air_date.trim() === '',
@@ -103,10 +90,10 @@
                       >
                     </div>
                     <div
-                      class="flex items-center gap-2 dark:text-gray-300 text-gray-800 text-xs md:text-sm"
+                      class="flex items-center gap-2 dark:text-gray-300 text-gray-800 text-xs"
                     >
-                      <IconEpisodes icon-class="w-3 h-3 md:w-4 md:h-4" />
-                      <span class="truncate">{{
+                      <IconEpisodes icon-class="w-3 h-3" />
+                      <span>{{
                         $t(
                           (season.episode_count || 0) === 1
                             ? 'media.episodesCount_one'
@@ -119,7 +106,7 @@
                     </div>
                   </div>
                 </template>
-              </TitleCard>
+              </ListItemBase>
             </div>
           </Section>
         </template>
@@ -145,7 +132,7 @@ import IconCalendar from '@/components/icons/IconCalendar.vue';
 import IconEpisodes from '@/components/icons/IconEpisodes.vue';
 import RatingBadge from '@/components/RatingBadge.vue';
 import Badge from '@/components/Badge.vue';
-import TitleCard from '@/components/TitleCard.vue';
+import ListItemBase from '@/components/ListItemBase.vue';
 import { useTVShowSchema } from '@/composables/useSchemaOrg';
 import { getTVShowSeoExperience } from '@/composables/useSeoExperience';
 import AppShell from '@/components/layout/AppShell.vue';
