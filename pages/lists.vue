@@ -47,7 +47,7 @@
                 <div v-if="isLoading" class="flex flex-col gap-4">
                   <!-- Mosaic view skeletons -->
                   <div
-                    v-if="viewMode === 'mosaic'"
+                    v-if="viewMode === VIEW_MODE.MOSAIC"
                     class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
                   >
                     <SkeletonMediaCard
@@ -75,7 +75,7 @@
                   </div>
                   <!-- Mosaic view -->
                   <div
-                    v-if="viewMode === 'mosaic'"
+                    v-if="viewMode === VIEW_MODE.MOSAIC"
                     class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
                   >
                     <TitleCardMosaic
@@ -165,7 +165,7 @@
                 <div v-if="isLoading" class="flex flex-col gap-4">
                   <!-- Mosaic view skeletons -->
                   <div
-                    v-if="viewMode === 'mosaic'"
+                    v-if="viewMode === VIEW_MODE.MOSAIC"
                     class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
                   >
                     <SkeletonMediaCard
@@ -193,7 +193,7 @@
                   </div>
                   <!-- Mosaic view -->
                   <div
-                    v-if="viewMode === 'mosaic'"
+                    v-if="viewMode === VIEW_MODE.MOSAIC"
                     class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
                   >
                     <TitleCardMosaic
@@ -331,7 +331,7 @@
                 <div v-if="isLoading" class="flex flex-col gap-4">
                   <!-- Mosaic view skeletons -->
                   <div
-                    v-if="viewMode === 'mosaic'"
+                    v-if="viewMode === VIEW_MODE.MOSAIC"
                     class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
                   >
                     <SkeletonMediaCard
@@ -359,7 +359,7 @@
                   </div>
                   <!-- Mosaic view -->
                   <div
-                    v-if="viewMode === 'mosaic'"
+                    v-if="viewMode === VIEW_MODE.MOSAIC"
                     class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
                   >
                     <TitleCardMosaic
@@ -529,6 +529,7 @@ import TitleListItem from '@/components/TitleListItem.vue';
 import SkeletonMediaCard from '@/components/SkeletonMediaCard.vue';
 import SkeletonListItem from '@/components/SkeletonListItem.vue';
 import { useViewMode } from '@/composables/useViewMode';
+import { VIEW_MODE } from '@/constants/domain/viewMode';
 import { useUndoToast } from '@/composables/useUndoToast';
 import { useRouteWithLang } from '@/composables/useRouteWithLang';
 import { useTitleStatusAction } from '@/composables/useTitleStatusAction';
@@ -576,7 +577,7 @@ const { showToast } = useUndoToast();
 const { executeAction, executeLikedAction } = useTitleStatusAction();
 
 // View mode shared across all tabs
-const { viewMode } = useViewMode('lists', 'mosaic');
+const { viewMode } = useViewMode('lists', VIEW_MODE.MOSAIC);
 
 // Get app language for TMDB API calls
 const getAppLanguage = () => {

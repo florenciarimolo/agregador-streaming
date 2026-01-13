@@ -1,12 +1,14 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
-
-export type ViewMode = 'mosaic' | 'list';
+import { VIEW_MODE, type ViewMode } from '@/constants/domain/viewMode';
 
 /**
  * Composable to manage view mode (mosaic/list) with localStorage persistence
  * Each page has its own independent preference
  */
-export function useViewMode(pageKey: string, defaultMode: ViewMode = 'list') {
+export function useViewMode(
+  pageKey: string,
+  defaultMode: ViewMode = VIEW_MODE.LIST
+) {
   const STORAGE_KEY = `viewMode_${pageKey}`;
   const DEFAULT_VIEW_MODE: ViewMode = defaultMode;
 
@@ -15,7 +17,10 @@ export function useViewMode(pageKey: string, defaultMode: ViewMode = 'list') {
     if (import.meta.client && typeof window !== 'undefined') {
       try {
         const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored === 'mosaic' || stored === 'list') {
+        if (
+          stored === VIEW_MODE.MOSAIC ||
+          stored === VIEW_MODE.LIST
+        ) {
           return stored as ViewMode;
         }
       } catch (error) {
@@ -61,7 +66,10 @@ export function useViewMode(pageKey: string, defaultMode: ViewMode = 'list') {
   const handleStorageChange = (e: StorageEvent | CustomEvent) => {
     if (e instanceof StorageEvent) {
       if (e.key === STORAGE_KEY && e.newValue) {
-        if (e.newValue === 'mosaic' || e.newValue === 'list') {
+        if (
+          e.newValue === VIEW_MODE.MOSAIC ||
+          e.newValue === VIEW_MODE.LIST
+        ) {
           viewMode.value = e.newValue as ViewMode;
         }
       }
@@ -83,7 +91,10 @@ export function useViewMode(pageKey: string, defaultMode: ViewMode = 'list') {
       // Also poll localStorage periodically as a fallback
       intervalId = setInterval(() => {
         const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored === 'mosaic' || stored === 'list') {
+        if (
+          stored === VIEW_MODE.MOSAIC ||
+          stored === VIEW_MODE.LIST
+        ) {
           if (viewMode.value !== stored) {
             viewMode.value = stored as ViewMode;
           }
@@ -103,8 +114,8 @@ export function useViewMode(pageKey: string, defaultMode: ViewMode = 'list') {
   /**
    * Computed properties for convenience
    */
-  const isListView = computed(() => viewMode.value === 'list');
-  const isMosaicView = computed(() => viewMode.value === 'mosaic');
+  const isListView = computed(() => viewMode.value === VIEW_MODE.LIST);
+  const isMosaicView = computed(() => viewMode.value === VIEW_MODE.MOSAIC);
 
   return {
     viewMode,

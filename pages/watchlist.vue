@@ -38,7 +38,7 @@
           <div v-if="isLoading" class="space-y-4">
             <!-- Mosaic view skeletons -->
             <div
-              v-if="viewMode === 'mosaic'"
+              v-if="viewMode === VIEW_MODE.MOSAIC"
               class="watchlist-grid grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
             >
               <SkeletonMediaCard
@@ -69,7 +69,7 @@
 
             <!-- Mosaic view -->
             <div
-              v-if="viewMode === 'mosaic'"
+              v-if="viewMode === VIEW_MODE.MOSAIC"
               class="watchlist-grid grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
             >
               <TitleCardMosaic
@@ -168,6 +168,7 @@ import TitleListItem from '@/components/TitleListItem.vue';
 import SkeletonMediaCard from '@/components/SkeletonMediaCard.vue';
 import SkeletonListItem from '@/components/SkeletonListItem.vue';
 import { useViewMode } from '@/composables/useViewMode';
+import { VIEW_MODE } from '@/constants/domain/viewMode';
 
 const { t, locale } = useI18n();
 

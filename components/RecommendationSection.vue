@@ -10,7 +10,7 @@
     <!-- Show skeletons when filter is loading -->
     <div v-if="isFilterLoading" class="space-y-4 md:space-y-8">
       <!-- Mosaic view skeletons -->
-      <template v-if="viewMode === 'mosaic'">
+      <template v-if="viewMode === VIEW_MODE.MOSAIC">
         <!-- First row: full row -->
         <div
           class="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-6 overflow-visible"
@@ -50,7 +50,7 @@
     <template v-else>
       <!-- Mosaic view -->
       <div
-        v-if="viewMode === 'mosaic'"
+        v-if="viewMode === VIEW_MODE.MOSAIC"
         class="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-6 overflow-visible"
       >
         <RecommendationCard
@@ -103,6 +103,8 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import type { Recommendation } from '@/types/Recommendation';
+import type { ViewMode } from '@/constants/domain/viewMode';
+import { VIEW_MODE } from '@/constants/domain/viewMode';
 import SectionTitle from '@/components/layout/SectionTitle.vue';
 import SkeletonMediaCard from '@/components/SkeletonMediaCard.vue';
 import SkeletonListItem from '@/components/SkeletonListItem.vue';
@@ -117,12 +119,12 @@ const props = withDefaults(
     loadingTitles?: Set<number>; // Still passed but not used for UI loading state
     isLoading?: boolean; // For filter changes
     fetchingReplacement?: boolean; // When fetching a replacement title
-    viewMode?: 'mosaic' | 'list';
+    viewMode?: ViewMode;
   }>(),
   {
     description: undefined,
     loadingTitles: undefined,
-    viewMode: 'mosaic',
+    viewMode: VIEW_MODE.LIST,
   }
 );
 

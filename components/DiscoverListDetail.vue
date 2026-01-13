@@ -61,7 +61,7 @@
     <div v-if="isLoading" class="space-y-4">
       <!-- Mosaic view skeletons -->
       <div
-        v-if="viewMode === 'mosaic'"
+        v-if="viewMode === VIEW_MODE.MOSAIC"
         class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
       >
         <SkeletonMediaCard
@@ -84,7 +84,7 @@
     <template v-else-if="items && items.length > 0">
       <!-- Mosaic view -->
       <div
-        v-if="viewMode === 'mosaic'"
+        v-if="viewMode === VIEW_MODE.MOSAIC"
         class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
       >
         <TitleCardMosaic
@@ -183,6 +183,7 @@ import { getUserLikedTitle, getTitleStatus } from '@/services/userTitleStatus';
 import { useTitleStatusAction } from '@/composables/useTitleStatusAction';
 import { useRouteWithLang } from '@/composables/useRouteWithLang';
 import { useViewMode } from '@/composables/useViewMode';
+import { VIEW_MODE } from '@/constants/domain/viewMode';
 import { useSupabaseUser } from '#imports';
 
 const router = useRouter();

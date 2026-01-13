@@ -28,6 +28,7 @@ import AnimatedBackground from '@/components/AnimatedBackground.vue';
 import RecommendationSection from '@/components/RecommendationSection.vue';
 import ViewModeSelector from '@/components/ViewModeSelector.vue';
 import { useViewMode } from '@/composables/useViewMode';
+import { VIEW_MODE } from '@/constants/domain/viewMode';
 import { getSession } from '@/services/auth';
 import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 
@@ -509,8 +510,8 @@ const hasRegion = computed(() => {
 // Only show when state is ready and there's no user
 const showHero = computed(() => isStateReady.value && !user.value);
 
-// View mode for recommendations (default: mosaic)
-const { viewMode } = useViewMode('home', 'mosaic');
+// View mode for recommendations (default: list)
+const { viewMode } = useViewMode('home', VIEW_MODE.LIST);
 
 // Computed: Show recommendations section (user exists)
 // Only show when state is ready and user exists

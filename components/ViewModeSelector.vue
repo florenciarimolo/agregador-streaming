@@ -11,7 +11,7 @@
           ? 'bg-primary-800 text-white dark:bg-primary'
           : 'text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700',
       ]"
-      @click="setViewMode('mosaic')"
+      @click="setViewMode(VIEW_MODE.MOSAIC)"
     >
       <IconGrid icon-class="w-4 h-4" />
     </button>
@@ -24,7 +24,7 @@
           ? 'bg-primary-800 text-white dark:bg-primary'
           : 'text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700',
       ]"
-      @click="setViewMode('list')"
+      @click="setViewMode(VIEW_MODE.LIST)"
     >
       <IconList icon-class="w-4 h-4" />
     </button>
@@ -33,6 +33,7 @@
 
 <script setup lang="ts">
 import { useViewMode } from '@/composables/useViewMode';
+import { VIEW_MODE } from '@/constants/domain/viewMode';
 import IconGrid from '@/components/icons/IconGrid.vue';
 import IconList from '@/components/icons/IconList.vue';
 
