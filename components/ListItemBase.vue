@@ -28,6 +28,7 @@
                 ? 'focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2'
                 : '',
             ]"
+            @click="handleImageClick"
           >
             <!-- Image or Placeholder -->
             <div class="overflow-hidden w-full h-full rounded-2xl">
@@ -325,6 +326,28 @@ const providersWithLogos = computed(() => {
   if (!props.providers) return [];
   return props.providers.filter((provider) => provider.logo_path).slice(0, 6);
 });
+
+// Handle image click to ensure navigation works
+function handleImageClick(event: MouseEvent) {
+  // Only handle if there's a link
+  if (!computedLinkTo.value) return;
+
+  // If linkTo is '#', prevent navigation
+  if (computedLinkTo.value === '#') {
+    event.preventDefault();
+    return;
+  }
+
+  // If the event was already prevented, manually navigate
+  if (event.defaultPrevented) {
+    event.stopPropagation();
+    const linkPath = computedLinkTo.value;
+    if (linkPath && linkPath !== '#') {
+      navigateTo(linkPath);
+    }
+  }
+  // Otherwise, let nuxt-link handle it normally
+}
 
 onMounted(async () => {
   // Only fetch tagline if type is provided
