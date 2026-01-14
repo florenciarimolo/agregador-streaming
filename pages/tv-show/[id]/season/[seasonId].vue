@@ -38,10 +38,7 @@
           <Section>
             <SectionTitle>{{ $t('media.episodes') }}</SectionTitle>
 
-            <div
-              v-if="seasonWithProviders?.episodes?.length"
-              class="space-y-4"
-            >
+            <div v-if="seasonWithProviders?.episodes?.length" class="space-y-4">
               <ListItemBase
                 v-for="(episode, index) in seasonWithProviders.episodes"
                 :key="episode.id"
@@ -51,8 +48,11 @@
                 :vote-average="episode.vote_average"
                 :tmdb-id="episode.id"
                 :hide-type-badge="true"
+                :show-overview="true"
                 :aria-label="$t('media.viewDetailsOf', { title: episode.name })"
-                :link-aria-label="$t('media.viewDetailsOf', { title: episode.name })"
+                :link-aria-label="
+                  $t('media.viewDetailsOf', { title: episode.name })
+                "
                 :image-alt="$t('media.posterOf', { title: episode.name })"
                 :no-image-aria-label="
                   $t('media.noPosterAvailableFor', { title: episode.name })
@@ -143,9 +143,12 @@ const {
   pending: seasonPending,
   error: seasonError,
   refresh: refreshSeasonData,
-} = await useFetch<Season>(`/api/tmdb/tvshows/${seriesId}/seasons/${seasonId}`, {
-  query: { lang: currentLangUrlCode },
-});
+} = await useFetch<Season>(
+  `/api/tmdb/tvshows/${seriesId}/seasons/${seasonId}`,
+  {
+    query: { lang: currentLangUrlCode },
+  }
+);
 
 const isLoading = computed(
   () =>
@@ -252,4 +255,3 @@ onMounted(async () => {
   line-clamp: 3;
 }
 </style>
-
