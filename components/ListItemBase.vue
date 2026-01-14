@@ -138,7 +138,7 @@
           </p>
         </div>
         <p
-          v-if="overview"
+          v-if="showOverview && overview"
           :class="[
             'text-sm text-gray-700 dark:text-gray-300',
             truncateOverview ? 'line-clamp-3' : '',
@@ -146,7 +146,10 @@
         >
           {{ overview }}
         </p>
-        <p v-else class="text-sm italic text-gray-600 dark:text-gray-400">
+        <p
+          v-else-if="showOverview"
+          class="text-sm italic text-gray-600 dark:text-gray-400"
+        >
           {{ $t('media.noDescriptionAvailable') }}
         </p>
         <!-- Providers (logos only, no names) -->
@@ -174,7 +177,7 @@
       <!-- Fila 2 (móvil): Overview -->
       <div class="md:hidden">
         <p
-          v-if="overview"
+          v-if="showOverview && overview"
           :class="[
             'text-sm text-gray-700 dark:text-gray-300',
             truncateOverview ? 'line-clamp-3' : '',
@@ -182,7 +185,10 @@
         >
           {{ overview }}
         </p>
-        <p v-else class="text-sm italic text-gray-600 dark:text-gray-400">
+        <p
+          v-else-if="showOverview"
+          class="text-sm italic text-gray-600 dark:text-gray-400"
+        >
           {{ $t('media.noDescriptionAvailable') }}
         </p>
       </div>
@@ -257,6 +263,7 @@ interface Props {
   tmdbId: number;
   providers?: Provider[];
   hideTypeBadge?: boolean;
+  showOverview?: boolean;
   ariaLabel?: string;
   linkAriaLabel?: string;
   imageAlt?: string;
@@ -274,6 +281,7 @@ const props = withDefaults(defineProps<Props>(), {
   type: undefined,
   providers: undefined,
   hideTypeBadge: false,
+  showOverview: false,
   ariaLabel: undefined,
   linkAriaLabel: undefined,
   imageAlt: undefined,

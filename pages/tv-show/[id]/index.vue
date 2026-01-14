@@ -54,14 +54,13 @@
                 :overview="season.overview"
                 :vote-average="season.vote_average"
                 :tmdb-id="season.id"
+                :show-overview="true"
                 :link-to="
                   routeWithLang(
                     `/tv-show/${tvShowId}/season/${season.season_number}`
                   )
                 "
-                :aria-label="
-                  $t('media.viewDetailsOf', { title: season.name })
-                "
+                :aria-label="$t('media.viewDetailsOf', { title: season.name })"
                 :link-aria-label="
                   $t('media.viewDetailsOf', { title: season.name })
                 "
