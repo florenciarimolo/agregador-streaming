@@ -10,10 +10,7 @@ import { SEASONS_COLUMNS } from '@/constants/db/columns';
 import { upsertSeason } from '@/services/seasons';
 import { $fetch } from 'ofetch';
 import type { MultiLanguageText } from '@/services/titles';
-import {
-  getAirDateFromSeasonOrEpisode,
-  fetchSeasonAirDate,
-} from '@/server/utils/season-air-date';
+import { getAirDateFromSeasonOrEpisode } from '@/server/utils/season-air-date';
 
 /**
  * TMDB season structure from /tv/{id} response

@@ -130,7 +130,6 @@ import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 import type { Media } from '@/types/Media';
 import IconCalendar from '@/components/icons/IconCalendar.vue';
 import IconEpisodes from '@/components/icons/IconEpisodes.vue';
-import RatingBadge from '@/components/RatingBadge.vue';
 import Badge from '@/components/Badge.vue';
 import ListItemBase from '@/components/ListItemBase.vue';
 import { useTVShowSchema } from '@/composables/useSchemaOrg';

@@ -192,13 +192,15 @@ export default defineEventHandler(async (event) => {
     const watchlist = await Promise.all(
       titlesData.map(
         async (title: {
-          tmdb_id: number;
+          id: unknown;
           title: unknown;
           type: string;
           poster_path: unknown;
+          tmdb_id: number;
           overview: unknown;
-          tagline: unknown;
-          vote_average: number | null;
+          genres: unknown;
+          tagline?: unknown;
+          vote_average?: number | null;
         }) => {
           const titleJsonb = title.title as MultiLanguageText;
           const posterPathJsonb = title.poster_path as MultiLanguageText | null;
@@ -281,25 +283,24 @@ export default defineEventHandler(async (event) => {
                   tmdbResponse?.tagline &&
                   tmdbResponse.tagline.trim() !== ''
                 ) {
-                  await supabase
-                    .from(TABLES.TITLES)
-                    .update({
-                      tagline: mergedTaglineJsonb,
-                    })
-                    .eq(TITLES_COLUMNS.TMDB_ID, title.tmdb_id)
-                    .eq(TITLES_COLUMNS.TYPE, title.type)
-                    .then(() => {
-                      // Success - tagline saved
-                    })
-                    .catch((error: unknown) => {
-                      // Log but don't fail the request
-                      if (import.meta.dev) {
-                        console.error(
-                          `Error saving tagline to database for ${title.tmdb_id}:`,
-                          error
-                        );
-                      }
-                    });
+                  try {
+                    await supabase
+                      .from(TABLES.TITLES)
+                      .update({
+                        tagline: mergedTaglineJsonb,
+                      })
+                      .eq(TITLES_COLUMNS.TMDB_ID, title.tmdb_id)
+                      .eq(TITLES_COLUMNS.TYPE, title.type);
+                    // Success - tagline saved
+                  } catch (error: unknown) {
+                    // Log but don't fail the request
+                    if (import.meta.dev) {
+                      console.error(
+                        `Error saving tagline to database for ${title.tmdb_id}:`,
+                        error
+                      );
+                    }
+                  }
                 }
               }
             } catch (error) {
