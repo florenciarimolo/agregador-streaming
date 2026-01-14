@@ -4,6 +4,7 @@ import { LanguageCode, toTMDBLanguageCode } from '@/constants/languages';
 import { extractLangFromPath } from '@/composables/useRouteWithLang';
 import { getUserIdFromEvent } from '@/server/utils/user-auth';
 import { getUserPreferencesServer } from '@/server/utils/user-preferences';
+import { DEFAULT_REGION } from '@/constants/regions';
 
 /**
  * Get user's language and region preferences for TMDB API calls by userId
@@ -15,7 +16,7 @@ export async function getUserTMDBParamsByUserId(userId: string): Promise<{
 }> {
   const defaults = {
     language: LanguageCode.SPANISH,
-    region: 'ES',
+    region: DEFAULT_REGION,
   };
 
   try {
@@ -57,7 +58,7 @@ export async function getUserTMDBParams(event?: H3Event): Promise<{
 }> {
   const defaults = {
     language: LanguageCode.SPANISH,
-    region: 'ES',
+    region: DEFAULT_REGION,
   };
 
   if (!event) {

@@ -297,12 +297,15 @@ const computedLinkTo = computed(() => {
   return routeWithLang(`/${mediaType.value}/${props.tmdbId}`);
 });
 
-// Fetch tagline from TMDB if missing
-const { tagline: fetchedTagline, fetchTaglineIfMissing } = useFetchTagline(
-  props.tagline,
-  props.tmdbId,
-  props.type || MEDIA_TYPE.MOVIE
-);
+// Fetch tagline from TMDB if missing (only if type is provided)
+const { tagline: fetchedTagline, fetchTaglineIfMissing } = props.type
+  ? useFetchTagline(props.tagline, props.tmdbId, props.type)
+  : {
+      tagline: computed(() => props.tagline || null),
+      fetchTaglineIfMissing: async () => {
+        // No-op for items without type (e.g., seasons, episodes)
+      },
+    };
 
 // Use fetched tagline if available, otherwise use prop
 const displayTagline = computed(() => {
@@ -316,7 +319,10 @@ const providersWithLogos = computed(() => {
 });
 
 onMounted(async () => {
-  await fetchTaglineIfMissing();
+  // Only fetch tagline if type is provided
+  if (props.type) {
+    await fetchTaglineIfMissing();
+  }
 });
 </script>
 

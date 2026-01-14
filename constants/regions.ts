@@ -40,3 +40,9 @@ export const AVAILABLE_REGIONS: Region[] = [
   { code: 'NZ', name: 'Nueva Zelanda' },
 ].sort((a, b) => a.name.localeCompare(b.name));
 
+/**
+ * Default region code (ISO 3166-1 alpha-2)
+ * Used as fallback when user region preference is not set
+ */
+export const DEFAULT_REGION = 'ES';
+

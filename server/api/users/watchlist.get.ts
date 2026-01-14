@@ -15,6 +15,7 @@ import {
 } from '@/composables/database/titles';
 import { getTMDBConfig } from '@/server/utils/config';
 import { MEDIA_TYPE } from '@/constants/domain/mediaType';
+import { DEFAULT_REGION } from '@/constants/regions';
 
 /**
  * Get user watchlist (watchlist status)
@@ -90,6 +91,10 @@ export default defineEventHandler(async (event) => {
     // Get user preferences for language and region
     const { language, region } = await getUserTMDBParams(event);
 
+    if (import.meta.dev) {
+      devLog('[User Watchlist] Using TMDB params:', { language, region });
+    }
+
     // Extract tmdb_ids and create a map of tmdb_id to type and created_at
     const tmdbIds: number[] = statuses.map((s) => s.tmdb_id);
     const titleTypesMap = new Map<number, 'movie' | 'tv'>(
@@ -135,13 +140,14 @@ export default defineEventHandler(async (event) => {
       (id: number) => !foundTmdbIds.has(id)
     );
 
+    // Get TMDB config for all API calls (used in tagline and provider fetching)
+    const tmdbConfig = getTMDBConfig(language, region);
+
     if (missingTmdbIds.length > 0) {
       devLog(
         '[User Watchlist] Missing titles, fetching from TMDB:',
         missingTmdbIds
       );
-
-      const tmdbConfig = getTMDBConfig(language, region);
       const fetchPromises = missingTmdbIds.map(async (tmdbId: number) => {
         const type = titleTypesMap.get(tmdbId);
         if (!type) return null;
@@ -318,10 +324,34 @@ export default defineEventHandler(async (event) => {
               title.type === MEDIA_TYPE.MOVIE
                 ? `/movie/${title.tmdb_id}/watch/providers`
                 : `/tv/${title.tmdb_id}/watch/providers`;
+
+            // Log region being used
+            // Ensure region is valid (non-empty string), fallback to default
+            const regionUpper =
+              region && region.trim()
+                ? region.toUpperCase().trim()
+                : DEFAULT_REGION;
+
+            if (import.meta.dev) {
+              devLog(
+                `[User Watchlist] Fetching providers for ${title.tmdb_id} (${title.type}) using region: ${regionUpper} (original: ${region || 'null/undefined'})`
+              );
+            }
+
             const providerResponse = await $fetch<{
               results?: {
                 [key: string]: {
                   flatrate?: Array<{
+                    provider_id: number;
+                    provider_name: string;
+                    logo_path: string | null;
+                  }>;
+                  buy?: Array<{
+                    provider_id: number;
+                    provider_name: string;
+                    logo_path: string | null;
+                  }>;
+                  rent?: Array<{
                     provider_id: number;
                     provider_name: string;
                     logo_path: string | null;
@@ -334,18 +364,47 @@ export default defineEventHandler(async (event) => {
               },
             });
 
-            // Use user's region for providers, fallback to ES
+            // Use user's region for providers, fallback to default
             // IMPORTANT: Only use flatrate providers (streaming services)
             // Try both uppercase and lowercase region codes (TMDB uses uppercase)
-            const regionUpper = region?.toUpperCase() || 'ES';
-            const regionLower = region?.toLowerCase() || 'es';
+            const regionLower =
+              region && region.trim()
+                ? region.toLowerCase().trim()
+                : DEFAULT_REGION.toLowerCase();
+            const defaultRegionLower = DEFAULT_REGION.toLowerCase();
+
             const regionProviders =
               providerResponse.results?.[regionUpper] ||
               providerResponse.results?.[regionLower] ||
-              providerResponse.results?.ES ||
-              providerResponse.results?.es;
+              providerResponse.results?.[DEFAULT_REGION] ||
+              providerResponse.results?.[defaultRegionLower];
+
+            if (import.meta.dev) {
+              devLog(
+                `[User Watchlist] Provider response for ${title.tmdb_id}:`,
+                {
+                  hasResults: !!providerResponse.results,
+                  availableRegions: providerResponse.results
+                    ? Object.keys(providerResponse.results)
+                    : [],
+                  regionUpper,
+                  regionLower,
+                  hasRegionProviders: !!regionProviders,
+                  regionProvidersKeys: regionProviders
+                    ? Object.keys(regionProviders)
+                    : [],
+                  hasFlatrate: !!regionProviders?.flatrate,
+                  flatrateCount: regionProviders?.flatrate?.length || 0,
+                  fullResponse: providerResponse.results
+                    ? JSON.stringify(providerResponse.results, null, 2)
+                    : 'no results',
+                }
+              );
+            }
+
             if (regionProviders && regionProviders.flatrate) {
               providers = (regionProviders.flatrate || []).slice(0, 5);
+
               // Log for debugging
               if (import.meta.dev && providers.length > 0) {
                 devLog(
@@ -356,20 +415,26 @@ export default defineEventHandler(async (event) => {
                     logo: p.logo_path,
                   }))
                 );
+              } else if (import.meta.dev) {
+                devLog(
+                  `[User Watchlist] Region ${regionUpper} found but no flatrate providers for ${title.tmdb_id}`
+                );
               }
-            } else if (import.meta.dev) {
-              devLog(
-                `[User Watchlist] No providers found for ${title.tmdb_id} in region ${regionUpper}. Available regions:`,
-                providerResponse.results
-                  ? Object.keys(providerResponse.results)
-                  : 'none'
-              );
+            } else {
+              if (import.meta.dev) {
+                devLog(
+                  `[User Watchlist] No providers found for ${title.tmdb_id} in region ${regionUpper}. Available regions:`,
+                  providerResponse.results
+                    ? Object.keys(providerResponse.results)
+                    : 'none'
+                );
+              }
             }
           } catch (error) {
             // Don't fail if providers can't be fetched
-            if (process.env.NODE_ENV === 'development') {
-              console.error(
-                `Error fetching providers for ${title.tmdb_id}:`,
+            if (import.meta.dev) {
+              devError(
+                `[User Watchlist] Error fetching providers for ${title.tmdb_id}:`,
                 error
               );
             }

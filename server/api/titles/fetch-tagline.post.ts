@@ -76,15 +76,134 @@ export default defineEventHandler(async (event) => {
       });
     }
 
+    // If title doesn't exist in DB, fetch it from TMDB and create it
     if (!titleFromDb) {
+      try {
+        // Fetch full title data from TMDB
+        const endpoint =
+          type === MEDIA_TYPE.MOVIE ? `/movie/${tmdb_id}` : `/tv/${tmdb_id}`;
+        
+        const fullTmdbResponse = await $fetch<{
+          title?: string;
+          name?: string;
+          overview?: string;
+          poster_path?: string | null;
+          backdrop_path?: string | null;
+          vote_average?: number;
+          release_date?: string;
+          first_air_date?: string;
+          genres?: Array<{ id: number; name: string }>;
+          status?: string;
+          runtime?: number;
+          tagline?: string;
+        }>(`${tmdbConfig.baseUrl}${endpoint}`, {
+          query: {
+            api_key: tmdbConfig.apiKey,
+            language: tmdbConfig.language,
+            region: tmdbConfig.region,
+          },
+        });
+
+        if (!fullTmdbResponse) {
+          throw createError({
+            statusCode: 404,
+            statusMessage: 'Title not found in TMDB',
+          });
+        }
+
+        // Create title in database with basic data
+        const titleMultiLang: MultiLanguageText = {
+          [userLanguage]: fullTmdbResponse.title || fullTmdbResponse.name || '',
+        };
+        const overviewMultiLang: MultiLanguageText = fullTmdbResponse.overview
+          ? { [userLanguage]: fullTmdbResponse.overview }
+          : {};
+        const posterPathMultiLang: MultiLanguageText = fullTmdbResponse.poster_path
+          ? { [userLanguage]: fullTmdbResponse.poster_path }
+          : {};
+        const taglineMultiLang: MultiLanguageText = fullTmdbResponse.tagline
+          ? { [userLanguage]: fullTmdbResponse.tagline }
+          : {};
+
+        const insertData: Record<string, unknown> = {
+          tmdb_id: tmdb_id,
+          type: type,
+          title: titleMultiLang,
+          overview: Object.keys(overviewMultiLang).length > 0 ? overviewMultiLang : null,
+          poster_path: Object.keys(posterPathMultiLang).length > 0 ? posterPathMultiLang : null,
+          tagline: Object.keys(taglineMultiLang).length > 0 ? taglineMultiLang : null,
+          backdrop_path: fullTmdbResponse.backdrop_path || null,
+          vote_average: fullTmdbResponse.vote_average || null,
+          genres: fullTmdbResponse.genres || null,
+          status: fullTmdbResponse.status || null,
+        };
+
+        if (type === MEDIA_TYPE.MOVIE) {
+          insertData.release_date = fullTmdbResponse.release_date || null;
+          insertData.runtime = fullTmdbResponse.runtime || null;
+        } else {
+          insertData.first_air_date = fullTmdbResponse.first_air_date || null;
+        }
+
+        const { data: insertedTitle, error: insertError } = await supabase
+          .from(TABLES.TITLES)
+          .insert(insertData as never)
+          .select()
+          .single();
+
+        if (insertError || !insertedTitle) {
+          throw createError({
+            statusCode: 500,
+            statusMessage: 'Error creating title in database',
+            data: insertError,
+          });
+        }
+
+        // If we got tagline from TMDB, return it
+        if (fullTmdbResponse.tagline && fullTmdbResponse.tagline.trim() !== '') {
+          return {
+            success: true,
+            tagline: taglineMultiLang,
+            message: 'Title created and tagline fetched from TMDB',
+          };
+        }
+
+        // If no tagline in TMDB response, continue with fallback logic below
+      } catch (error) {
+        // If error is already a createError, re-throw it
+        if (error && typeof error === 'object' && 'statusCode' in error) {
+          throw error;
+        }
+        // Otherwise, log and return error
+        if (import.meta.dev) {
+          console.error('[fetch-tagline] Error creating title from TMDB:', error);
+        }
+        throw createError({
+          statusCode: 500,
+          statusMessage: 'Error fetching title from TMDB',
+          data: error instanceof Error ? error.message : String(error),
+        });
+      }
+    }
+
+    // Re-fetch title from DB (in case we just created it)
+    const { data: titleFromDbAfter, error: dbErrorAfter } = await supabase
+      .from(TABLES.TITLES)
+      .select('*')
+      .eq(TITLES_COLUMNS.TMDB_ID, tmdb_id)
+      .eq(TITLES_COLUMNS.TYPE, type)
+      .maybeSingle();
+
+    if (dbErrorAfter || !titleFromDbAfter) {
       throw createError({
-        statusCode: 404,
-        statusMessage: 'Title not found in database',
+        statusCode: 500,
+        statusMessage: 'Error querying database after title creation',
+        data: dbErrorAfter,
       });
     }
 
     // Check if tagline already exists in requested language
-    const existingTagline = titleFromDb.tagline as MultiLanguageText | null;
+    const existingTagline = titleFromDbAfter.tagline as MultiLanguageText | null;
     const hasTaglineInLanguage =
       existingTagline &&
       typeof existingTagline === 'object' &&
