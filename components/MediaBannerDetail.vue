@@ -1264,6 +1264,26 @@ const handleBack = async () => {
   await nextTick();
 
   // Try to get the previous route from sessionStorage
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/fa20eabc-ceed-4124-936f-87a814c192af', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      sessionId: 'debug-session',
+      runId: 'pre-fix-1',
+      hypothesisId: 'H3',
+      location: 'components/MediaBannerDetail.vue:1267',
+      message: 'handleBack invoked in MediaBannerDetail',
+      data: {
+        hasPreviousRoute: !!sessionStorage.getItem('previousRoute'),
+        mediaId: mediaWithProviders.value.id,
+        mediaType: props.mediaType,
+      },
+      timestamp: Date.now(),
+    }),
+  }).catch(() => {});
+  // #endregion
+
   const previousRoute = sessionStorage.getItem('previousRoute');
 
   if (previousRoute) {

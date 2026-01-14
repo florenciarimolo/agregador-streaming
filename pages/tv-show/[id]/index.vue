@@ -174,13 +174,29 @@ watch(
   async (newLang, oldLang) => {
     if (newLang && oldLang && newLang !== oldLang) {
       if (import.meta.dev) {
-        console.log(
-          '[tv-show/[id]/index.vue] Language changed in URL, refreshing TV show data:',
-          {
-            oldLang,
-            newLang,
-          }
-        );
+        console.log('[tv-show/[id]/index.vue] Language changed in URL, refreshing TV show data:', {
+          oldLang,
+          newLang,
+        });
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/fa20eabc-ceed-4124-936f-87a814c192af', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            sessionId: 'debug-session',
+            runId: 'pre-fix-1',
+            hypothesisId: 'H4',
+            location: 'pages/tv-show/[id]/index.vue:172',
+            message: 'Language watcher triggered on tv-show index',
+            data: {
+              oldLang,
+              newLang,
+              tvShowId,
+            },
+            timestamp: Date.now(),
+          }),
+        }).catch(() => {});
+        // #endregion
       }
       // Refresh all data with new language
       await Promise.all([refreshTVShowDetails(), refreshTVProviders()]);

@@ -329,6 +329,24 @@ const { routeWithLang } = useRouteWithLang();
 
 // Handle back navigation - always go back to the series detail page
 const handleBack = () => {
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/fa20eabc-ceed-4124-936f-87a814c192af', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      sessionId: 'debug-session',
+      runId: 'pre-fix-1',
+      hypothesisId: 'H1',
+      location: 'components/SeasonBannerDetail.vue:331',
+      message: 'handleBack invoked in SeasonBannerDetail',
+      data: {
+        seriesId: props.seriesId,
+      },
+      timestamp: Date.now(),
+    }),
+  }).catch(() => {});
+  // #endregion
+
   router.push(routeWithLang(`/tv-show/${props.seriesId}`));
 };
 
@@ -404,6 +422,24 @@ onMounted(async () => {
   window.addEventListener('resize', handleResize);
   // Get user region for date formatting
   userRegion.value = await getUserRegion();
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/fa20eabc-ceed-4124-936f-87a814c192af', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      sessionId: 'debug-session',
+      runId: 'pre-fix-1',
+      hypothesisId: 'H2',
+      location: 'components/SeasonBannerDetail.vue:402',
+      message: 'SeasonBannerDetail mounted',
+      data: {
+        tmdbId: props.tmdbId,
+        seriesId: props.seriesId,
+      },
+      timestamp: Date.now(),
+    }),
+  }).catch(() => {});
+  // #endregion
   // Check tagline (though it's unlikely to exist for seasons)
   checkTagline();
   // Fetch videos

@@ -1,5 +1,12 @@
 <script setup lang="ts">
-import { computed, watchEffect, onMounted, ref, watch } from 'vue';
+import {
+  computed,
+  watchEffect,
+  onMounted,
+  onBeforeUnmount,
+  ref,
+  watch,
+} from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useUserStore } from '@/stores/user';
 import { useRecommendations } from '@/composables/useRecommendations';
@@ -33,6 +40,7 @@ import { useViewMode } from '@/composables/useViewMode';
 import { VIEW_MODE } from '@/constants/domain/viewMode';
 import { getSession } from '@/services/auth';
 import { MEDIA_TYPE } from '@/constants/domain/mediaType';
+import { useUserRegion } from '@/composables/useUserRegion';
 
 // Middleware handles onboarding check - if user has session, onboarding is completed
 definePageMeta({
@@ -146,6 +154,13 @@ const {
   filterRecommendationsByType,
 } = useRecommendations();
 
+// Global navigation loading state (from PageNavigationLoader)
+// Used to avoid showing home skeletons while a full-page navigation is in progress.
+const pageNavigationLoading = useState<boolean>(
+  'page-navigation-loading',
+  () => false
+);
+
 // Local pending content type (not applied until "Aplicar" is clicked)
 // Initialize to 'all' - content type is not stored in query params, so always start fresh
 const pendingContentType = ref<'all' | 'movie' | 'tv'>('all');
@@ -167,6 +182,8 @@ const {
 const userRegion = ref<string | null>(null);
 const preferencesPending = ref(false);
 const regionLoadAttempted = ref(false);
+// Track if preferences are currently being fetched to prevent concurrent calls
+const preferencesFetchInProgress = ref(false);
 
 // Filter state
 const showFilterCards = ref(false);
@@ -302,9 +319,18 @@ const fetchUserPreferences = async () => {
 
   filtersLoading.value = true;
   try {
+    // Add timeout to getSession() to prevent hanging forever
+    // If getSession() takes longer than 3 seconds, throw an error
+    const getSessionPromise = getSession();
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('getSession timeout after 3s')), 3000);
+    });
+
     const {
       data: { session },
-    } = await getSession();
+    } = (await Promise.race([getSessionPromise, timeoutPromise])) as Awaited<
+      ReturnType<typeof getSession>
+    >;
 
     if (!session?.access_token) {
       return;
@@ -321,6 +347,9 @@ const fetchUserPreferences = async () => {
       headers: {
         Authorization: `Bearer ${session.access_token}`,
       },
+      // Prevent hanging requests that would block home initialization forever
+      // If the request takes longer than this timeout, it will throw and be handled by the catch/finally blocks
+      timeout: 5000,
     });
 
     if (import.meta.dev) {
@@ -382,6 +411,29 @@ const fetchUserPreferences = async () => {
     }
   } catch (error) {
     console.error('Error fetching user preferences:', error);
+    // Fallback: Try to get cached region from useUserRegion if fetch failed
+    // This ensures the page can still render even if the API call times out
+    try {
+      const { getUserRegion } = useUserRegion();
+      const cachedRegion = await getUserRegion(false); // Don't force refresh, use cache
+      if (cachedRegion) {
+        if (import.meta.dev) {
+          console.log(
+            '[pages/index.vue] Using cached region from useUserRegion as fallback:',
+            cachedRegion
+          );
+        }
+        userRegion.value = cachedRegion;
+      }
+    } catch (fallbackError) {
+      // If fallback also fails, just log it - we'll continue with null region
+      if (import.meta.dev) {
+        console.warn(
+          '[pages/index.vue] Failed to get cached region from useUserRegion:',
+          fallbackError
+        );
+      }
+    }
   } finally {
     filtersLoading.value = false;
   }
@@ -441,14 +493,69 @@ watch(
       preferencesPending.value = false;
       regionLoadAttempted.value = false;
       userPreferencesData.value = null;
+      preferencesFetchInProgress.value = false;
+      return;
+    }
+
+    // Prevent concurrent calls - if already fetching, skip
+    if (preferencesFetchInProgress.value) {
+      return;
+    }
+
+    // If preferences are already loaded and user hasn't changed, skip reload
+    // This prevents unnecessary reloads when navigating to home
+    if (
+      regionLoadAttempted.value &&
+      !preferencesPending.value &&
+      userRegion.value !== null
+    ) {
       return;
     }
 
     preferencesPending.value = true;
     regionLoadAttempted.value = false;
+    preferencesFetchInProgress.value = true;
     try {
       // Fetch all preferences in a single call (includes region, genres, providers)
-      await fetchUserPreferences();
+      // Wrap in a timeout to ensure it completes even if it hangs
+      const fetchPromise = fetchUserPreferences();
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(
+          () => reject(new Error('fetchUserPreferences timeout after 8s')),
+          8000
+        );
+      });
+      try {
+        await Promise.race([fetchPromise, timeoutPromise]);
+      } catch (error) {
+        // If fetch times out or fails, try to use cached region from useUserRegion
+        if (import.meta.dev) {
+          console.warn(
+            '[pages/index.vue] fetchUserPreferences failed, trying cached region:',
+            error
+          );
+        }
+        try {
+          const { getUserRegion } = useUserRegion();
+          const cachedRegion = await getUserRegion(false); // Use cache, don't force refresh
+          if (cachedRegion && !userRegion.value) {
+            if (import.meta.dev) {
+              console.log(
+                '[pages/index.vue] Using cached region from useUserRegion as fallback:',
+                cachedRegion
+              );
+            }
+            userRegion.value = cachedRegion;
+          }
+        } catch (fallbackError) {
+          if (import.meta.dev) {
+            console.warn(
+              '[pages/index.vue] Failed to get cached region from useUserRegion:',
+              fallbackError
+            );
+          }
+        }
+      }
       if (import.meta.dev) {
         console.log(
           '[pages/index.vue] User preferences loaded, region:',
@@ -465,6 +572,7 @@ watch(
     } finally {
       preferencesPending.value = false;
       regionLoadAttempted.value = true;
+      preferencesFetchInProgress.value = false;
     }
   },
   { immediate: true }
@@ -700,6 +808,17 @@ const showAuthForm = ref(false);
 
 // Check if auth query param is present to show auth form
 onMounted(() => {
+  // Reset preferences loading state if it's stuck (e.g., from previous navigation)
+  // This ensures we don't get stuck in a loading state if a previous fetch didn't complete
+  if (preferencesPending.value && !preferencesFetchInProgress.value) {
+    // If preferences are stuck in pending state but no fetch is in progress,
+    // reset the state to allow the watch to retry
+    preferencesPending.value = false;
+    preferencesFetchInProgress.value = false;
+    // Don't reset regionLoadAttempted - if it was true, we want to keep that
+    // If it was false, the watch will set it to true when it completes
+  }
+
   // CRITICAL: Redirect auth codes to callback FIRST, before any other processing
   // This prevents the auth listener from processing the session before we can check the recovery flag
   const hasCode = !!route.query.code;
@@ -854,8 +973,15 @@ onMounted(() => {
                 </div>
               </Section>
 
-              <!-- Skeleton loading (also show while filters are loading) -->
-              <Section v-if="(showSkeleton && loading) || filtersLoading">
+              <!-- Skeleton loading (also show while filters are loading).
+                   Do NOT show home skeletons while a full-page navigation is in progress,
+                   so that PageNavigationLoader is the only thing visible during route changes. -->
+              <Section
+                v-if="
+                  !pageNavigationLoading &&
+                  ((showSkeleton && loading) || filtersLoading)
+                "
+              >
                 <!-- Mosaic view skeletons -->
                 <div
                   v-if="viewMode === VIEW_MODE.MOSAIC"

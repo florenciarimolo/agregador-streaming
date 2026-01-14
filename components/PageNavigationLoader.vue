@@ -30,12 +30,22 @@ const router = useRouter();
 const route = useRoute();
 const isLoading = ref(false);
 
+// Global navigation loading state shared across pages
+// This allows pages to detect when a full-page navigation is in progress
+// and avoid showing local skeletons at the same time.
+const pageNavigationLoading = useState<boolean>(
+  'page-navigation-loading',
+  () => false
+);
+
 const startLoading = () => {
   isLoading.value = true;
+  pageNavigationLoading.value = true;
 };
 
 const stopLoading = () => {
   isLoading.value = false;
+  pageNavigationLoading.value = false;
 };
 
 onMounted(() => {

@@ -17,18 +17,16 @@
       >
         <!-- Imagen -->
         <div class="flex-shrink-0">
-          <component
-            :is="computedLinkTo ? 'nuxt-link' : 'div'"
-            :to="computedLinkTo || undefined"
+          <!-- Use direct nuxt-link when there's a link, div when there isn't -->
+          <nuxt-link
+            v-if="computedLinkTo"
+            :to="computedLinkTo"
             :aria-label="linkAriaLabel"
             :class="[
-              computedLinkTo ? 'group relative cursor-pointer' : 'relative',
+              'group relative cursor-pointer',
               'block overflow-hidden rounded-2xl bg-gray-800 aspect-[2/3] w-20 md:w-24',
-              computedLinkTo
-                ? 'focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2'
-                : '',
+              'focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2',
             ]"
-            @click="handleImageClick"
           >
             <!-- Image or Placeholder -->
             <div class="overflow-hidden w-full h-full rounded-2xl">
@@ -36,12 +34,7 @@
                 v-if="posterPath"
                 :src="`https://image.tmdb.org/t/p/w500${posterPath}`"
                 :alt="imageAlt"
-                :class="[
-                  'object-cover w-full h-full',
-                  computedLinkTo
-                    ? 'transition-transform duration-300 group-hover:scale-105'
-                    : '',
-                ]"
+                class="object-cover w-full h-full transition-transform duration-300 group-hover:scale-105"
                 loading="lazy"
                 decoding="async"
               />
@@ -55,9 +48,8 @@
               </div>
             </div>
 
-            <!-- Hover Overlay (only shown when there's a link) -->
+            <!-- Hover Overlay -->
             <div
-              v-if="computedLinkTo"
               class="flex absolute bottom-0 left-0 flex-col justify-center items-center px-4 w-full h-full rounded-2xl opacity-0 backdrop-blur-md transition-all duration-300 pointer-events-none group-hover:opacity-100 dark:bg-black/80 bg-white/80"
             >
               <p
@@ -66,7 +58,33 @@
                 {{ $t('media.viewDetails') }}
               </p>
             </div>
-          </component>
+          </nuxt-link>
+          <!-- Non-link version (when computedLinkTo is empty) -->
+          <div
+            v-else
+            :aria-label="linkAriaLabel"
+            class="relative block overflow-hidden rounded-2xl bg-gray-800 aspect-[2/3] w-20 md:w-24"
+          >
+            <!-- Image or Placeholder -->
+            <div class="overflow-hidden w-full h-full rounded-2xl">
+              <img
+                v-if="posterPath"
+                :src="`https://image.tmdb.org/t/p/w500${posterPath}`"
+                :alt="imageAlt"
+                class="object-cover w-full h-full"
+                loading="lazy"
+                decoding="async"
+              />
+              <div
+                v-else
+                class="flex justify-center items-center w-full h-full text-gray-600 dark:text-gray-500"
+                role="img"
+                :aria-label="noImageAriaLabel"
+              >
+                <IconTv icon-class="w-8 h-8" />
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- RatingBadge, acciones y Badge de tipo (móvil: columna 2) -->
@@ -297,13 +315,66 @@ const mediaType = computed(() =>
   props.type === MEDIA_TYPE.MOVIE ? 'movie' : 'tv-show'
 );
 
+// Debug logging function (defined before computedLinkTo so it's available)
+function logClick(
+  hypothesisId: string,
+  location: string,
+  message: string,
+  data: any
+) {
+  if (import.meta.client && typeof window !== 'undefined' && window.fetch) {
+    window
+      .fetch(
+        'http://127.0.0.1:7242/ingest/fa20eabc-ceed-4124-936f-87a814c192af',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            sessionId: 'debug-session',
+            runId: 'debug-2',
+            hypothesisId,
+            location,
+            message,
+            data,
+            timestamp: Date.now(),
+          }),
+        }
+      )
+      .catch(() => {});
+  }
+}
+
 // Computed link with language prefix
 // If custom linkTo is provided, use it; otherwise compute from type and tmdbId
 // If type is not provided and no custom link, don't create a link (for episodes, etc.)
 const computedLinkTo = computed(() => {
-  if (props.linkTo !== undefined) return props.linkTo;
-  if (!props.type) return '';
-  return routeWithLang(`/${mediaType.value}/${props.tmdbId}`);
+  const result =
+    props.linkTo !== undefined
+      ? props.linkTo
+      : !props.type
+        ? ''
+        : routeWithLang(`/${mediaType.value}/${props.tmdbId}`);
+  // #region agent log - H3: computedLinkTo value
+  if (import.meta.client && result) {
+    logClick(
+      'H3',
+      'components/ListItemBase.vue:computedLinkTo',
+      'computedLinkTo computed',
+      {
+        result,
+        resultType: typeof result,
+        resultLength: result?.length,
+        isEmpty: !result || result === '',
+        isHash: result === '#',
+        linkTo: props.linkTo,
+        type: props.type,
+        tmdbId: props.tmdbId,
+        mediaType: mediaType.value,
+      }
+    );
+  }
+  // #endregion
+  return result;
 });
 
 // Fetch tagline from TMDB if missing (only if type is provided)
@@ -327,27 +398,10 @@ const providersWithLogos = computed(() => {
   return props.providers.filter((provider) => provider.logo_path).slice(0, 6);
 });
 
-// Handle image click to ensure navigation works
-function handleImageClick(event: MouseEvent) {
-  // Only handle if there's a link
-  if (!computedLinkTo.value) return;
-
-  // If linkTo is '#', prevent navigation
-  if (computedLinkTo.value === '#') {
-    event.preventDefault();
-    return;
-  }
-
-  // If the event was already prevented, manually navigate
-  if (event.defaultPrevented) {
-    event.stopPropagation();
-    const linkPath = computedLinkTo.value;
-    if (linkPath && linkPath !== '#') {
-      navigateTo(linkPath);
-    }
-  }
-  // Otherwise, let nuxt-link handle it normally
-}
+// Note: Removed all click handlers from nuxt-link
+// Having ANY @click handler on nuxt-link interferes with its native navigation
+// The component renders as 'nuxt-link' when there's a valid link, and 'div' when there isn't
+// Actions are positioned outside the link, so they won't interfere
 
 onMounted(async () => {
   // Only fetch tagline if type is provided
