@@ -31,7 +31,7 @@ function getUserId(
  * Composable for handling title actions (like, seen, watchlist, etc.)
  */
 export const useTitleActions = (
-  recommendations: Ref<Recommendation[]>,
+  _recommendations: Ref<Recommendation[]>,
   allRecommendations: Ref<Recommendation[]>,
   filterRecommendationsByType: () => void
 ) => {

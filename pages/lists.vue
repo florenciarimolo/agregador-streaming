@@ -553,6 +553,9 @@ const userStore = computed(() => {
       hasCompletedOnboarding: false,
       likesCount: 0,
       hasLikes: false,
+      fetchProfile: async () => {
+        // No-op on server
+      },
     };
   }
 
@@ -569,6 +572,9 @@ const userStore = computed(() => {
       hasCompletedOnboarding: false,
       likesCount: 0,
       hasLikes: false,
+      fetchProfile: async () => {
+        // No-op fallback
+      },
     };
   }
 });
@@ -936,7 +942,7 @@ const fetchLikedTitles = async () => {
         return {
           id: status.id,
           title: title.title,
-          type: title.type,
+          type: title.type as typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV,
           poster_path: title.poster_path,
           overview: title.overview || null,
           tagline: title.tagline || null,
@@ -990,7 +996,7 @@ const fetchSeenTitles = async () => {
         return {
           id: status.id,
           title: title.title,
-          type: title.type,
+          type: title.type as typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV,
           poster_path: title.poster_path,
           overview: title.overview || null,
           tagline: title.tagline || null,
@@ -1046,7 +1052,7 @@ const fetchNotInterestedTitles = async () => {
         return {
           id: status.id,
           title: title.title,
-          type: title.type,
+          type: title.type as typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV,
           poster_path: title.poster_path,
           overview: title.overview || null,
           tagline: title.tagline || null,
@@ -1101,7 +1107,7 @@ const fetchWatchlistTitles = async () => {
         return {
           id: status.id,
           title: title.title,
-          type: title.type,
+          type: title.type as typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV,
           poster_path: title.poster_path,
           overview: title.overview || null,
           tagline: title.tagline || null,

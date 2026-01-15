@@ -39,10 +39,7 @@
             class="relative w-12 h-16 rounded overflow-hidden"
             :style="{
               zIndex: 10 - index,
-              boxShadow: getShadowStyle(
-                index,
-                list.previewPosters.slice(0, 4).length
-              ),
+              boxShadow: getShadowStyle(),
             }"
           >
             <img
@@ -146,9 +143,8 @@ function getPosterUrl(posterPath: string | null): string {
   return `${TMDB_IMAGE_BASE_URL}${posterPath}`;
 }
 
-function getShadowStyle(_index?: number, _total?: number): string {
+function getShadowStyle(): string {
   // Add right shadow to all images using a light tone of primary color (#c7d2fe = primary-200)
-  // Parameters are accepted for compatibility but not used
   return `1px 0 2px rgba(199, 210, 254, 0.4)`;
 }
 </script>

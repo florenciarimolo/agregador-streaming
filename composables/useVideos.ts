@@ -10,6 +10,7 @@ import type { Video } from '@/types/Video';
 import { getPrimaryLanguageForRegion } from '@/utils/language-detection';
 import { useUserRegion } from '@/composables/useUserRegion';
 import { useCurrentLanguage } from '@/composables/useCurrentLanguage';
+import { LanguageIsoCode, DEFAULT_LANGUAGE_ISO } from '@/constants/languages';
 
 /**
  * Get videos for a title (movie or TV show) with language fallback
@@ -24,12 +25,12 @@ export async function getVideosForTitle(
     const { getUserRegion } = useUserRegion();
     
     // Get current language code (base code, e.g., 'es' from 'es-ES')
-    const currentLangCode = currentLanguage.value.code.split('-')[0]?.toLowerCase() || 'es';
+    const currentLangCode = currentLanguage.value.code.split('-')[0]?.toLowerCase() || DEFAULT_LANGUAGE_ISO;
     
     // Get user region for fallback
     const userRegion = await getUserRegion();
     const regionPrimaryLang = getPrimaryLanguageForRegion(userRegion);
-    const regionPrimaryLangCode = regionPrimaryLang.split('-')[0]?.toLowerCase() || 'es';
+    const regionPrimaryLangCode = regionPrimaryLang.split('-')[0]?.toLowerCase() || DEFAULT_LANGUAGE_ISO;
     
     // Determine fallback languages
     const fallbackLanguages: string[] = [currentLangCode];
@@ -40,8 +41,8 @@ export async function getVideosForTitle(
     }
     
     // Add English if region primary is not English
-    if (regionPrimaryLangCode !== 'en') {
-      fallbackLanguages.push('en');
+    if (regionPrimaryLangCode !== LanguageIsoCode.ENGLISH) {
+      fallbackLanguages.push(LanguageIsoCode.ENGLISH);
     }
 
     if (import.meta.dev) {

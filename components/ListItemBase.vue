@@ -326,7 +326,7 @@ function logClick(
   hypothesisId: string,
   location: string,
   message: string,
-  data: any
+  data: Record<string, unknown>
 ) {
   if (import.meta.client && typeof window !== 'undefined' && window.fetch) {
     window

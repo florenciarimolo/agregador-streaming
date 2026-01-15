@@ -284,7 +284,6 @@ export async function fetchSeasonOverviewEnglishFallback(
   const primaryLanguage = region
     ? getPrimaryLanguageForRegion(region)
     : DEFAULT_LANGUAGE_ISO;
-  const primaryLanguageKey = `${primaryLanguage}-${region?.toUpperCase() || 'ES'}`;
   const requestedLangCode = language.split('-')[0]?.toLowerCase() || '';
   const primaryLangCode = primaryLanguage.split('-')[0]?.toLowerCase() || '';
 

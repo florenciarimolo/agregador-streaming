@@ -5,6 +5,8 @@
     "paths": {
       "@/*": ["./*"]
     },
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "skipLibCheck": true,
     /* Linting */
     "strict": true,
     "noUnusedLocals": true,
@@ -18,5 +20,14 @@
     ".nuxt/**/*.d.ts",
     ".nuxt/types/**/*.d.ts",
     "types/**/*.d.ts"
+  ],
+  "exclude": [
+    ".nuxt/**/*.ts",
+    ".nuxt/**/*.tsx",
+    "node_modules",
+    "dist",
+    ".output",
+    ".nitro",
+    "supabase/functions"
   ]
 }

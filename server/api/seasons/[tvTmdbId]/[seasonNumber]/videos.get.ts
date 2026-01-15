@@ -17,6 +17,7 @@ import { updateSeasonVideos } from '@/services/seasons';
 import { VIDEO_REFRESH_THRESHOLD_HOURS } from '@/constants/domain/videos';
 import { getUserTMDBParams } from '@/server/utils/user-tmdb';
 import type { MultiLanguageVideos } from '@/types/Video';
+import { LanguageIsoCode, DEFAULT_LANGUAGE_ISO } from '@/constants/languages';
 
 export default defineEventHandler(async (event) => {
   try {
@@ -96,7 +97,7 @@ export default defineEventHandler(async (event) => {
         shouldFetch = true;
       } else {
         // Check if we have videos for current language
-        const langCode = userLanguage.split('-')[0]?.toLowerCase() || 'en';
+        const langCode = userLanguage.split('-')[0]?.toLowerCase() || LanguageIsoCode.ENGLISH;
         if (!existingVideos[langCode] || existingVideos[langCode].length === 0) {
           shouldFetch = true;
         }
@@ -134,13 +135,13 @@ export default defineEventHandler(async (event) => {
 
       // Update local reference
       const updatedVideos = normalizedVideos;
-      const langCode = userLanguage.split('-')[0]?.toLowerCase() || 'en';
+      const langCode = userLanguage.split('-')[0]?.toLowerCase() || LanguageIsoCode.ENGLISH;
 
       // Return videos for current language with fallback
       const videosForLang =
         updatedVideos[langCode] ||
-        updatedVideos['es'] ||
-        updatedVideos['en'] ||
+        updatedVideos[DEFAULT_LANGUAGE_ISO] ||
+        updatedVideos[LanguageIsoCode.ENGLISH] ||
         Object.values(updatedVideos)[0] ||
         [];
 
@@ -152,11 +153,11 @@ export default defineEventHandler(async (event) => {
       return [];
     }
 
-    const langCode = userLanguage.split('-')[0]?.toLowerCase() || 'en';
+    const langCode = userLanguage.split('-')[0]?.toLowerCase() || LanguageIsoCode.ENGLISH;
     const videosForLang =
       existingVideos[langCode] ||
-      existingVideos['es'] ||
-      existingVideos['en'] ||
+      existingVideos[DEFAULT_LANGUAGE_ISO] ||
+      existingVideos[LanguageIsoCode.ENGLISH] ||
       Object.values(existingVideos)[0] ||
       [];
 

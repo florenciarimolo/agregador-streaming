@@ -13,6 +13,7 @@ import { TABLES } from '@/constants/db/tables';
 import { TITLES_COLUMNS, USER_TITLE_STATUS_COLUMNS, PROFILES_COLUMNS } from '@/constants/db/columns';
 import type { MultiLanguageText } from '@/services/titles';
 import { MEDIA_TYPE } from '@/constants/domain/mediaType';
+import type { TMDBTitleDetails } from '@/types/tmdb/Responses';
 
 /**
  * TMDB API response types
@@ -228,7 +229,7 @@ export default defineEventHandler(async (event) => {
               type === MEDIA_TYPE.MOVIE
                 ? `/movie/${tmdbId}`
                 : `/tv/${tmdbId}`;
-            const fullResponse = await $fetch(`${tmdbConfig.baseUrl}${endpoint}`, {
+            const fullResponse = await $fetch<TMDBTitleDetails>(`${tmdbConfig.baseUrl}${endpoint}`, {
               query: {
                 api_key: tmdbConfig.apiKey,
                 language: tmdbConfig.language,
@@ -258,28 +259,29 @@ export default defineEventHandler(async (event) => {
               .maybeSingle();
 
             // Update titles table (async, don't wait)
-            supabase
-              .from(TABLES.TITLES)
-              .upsert({
-                [TITLES_COLUMNS.TMDB_ID]: tmdbId,
-                [TITLES_COLUMNS.TYPE]: type,
-                [TITLES_COLUMNS.TITLE]: titleJsonb,
-                [TITLES_COLUMNS.OVERVIEW]: Object.keys(overviewJsonb).length > 0 ? overviewJsonb : null,
-                [TITLES_COLUMNS.POSTER_PATH]: Object.keys(posterPathJsonb).length > 0 ? posterPathJsonb : null,
-                [TITLES_COLUMNS.GENRES]: (fullResponse.genres || []).length > 0 ? fullResponse.genres : (fullExistingTitle?.genres || null),
-                [TITLES_COLUMNS.BACKDROP_PATH]: fullResponse.backdrop_path || fullExistingTitle?.backdrop_path || null,
-                [TITLES_COLUMNS.VOTE_AVERAGE]: fullResponse.vote_average ?? fullExistingTitle?.vote_average ?? null,
-                [TITLES_COLUMNS.RELEASE_DATE]: fullResponse.release_date || fullExistingTitle?.release_date || null,
-                [TITLES_COLUMNS.FIRST_AIR_DATE]: fullResponse.first_air_date || fullExistingTitle?.first_air_date || null,
-                [TITLES_COLUMNS.RUNTIME]: type === MEDIA_TYPE.MOVIE ? (fullResponse.runtime || fullExistingTitle?.runtime || null) : null,
-              }, {
-                onConflict: TITLES_COLUMNS.TMDB_ID,
-              })
-              .catch((error) => {
-                if (import.meta.dev) {
-                  console.error(`[RefreshPool] Error updating titles for ${tmdbId}:`, error);
-                }
-              });
+            try {
+              await supabase
+                .from(TABLES.TITLES)
+                .upsert({
+                  [TITLES_COLUMNS.TMDB_ID]: tmdbId,
+                  [TITLES_COLUMNS.TYPE]: type,
+                  [TITLES_COLUMNS.TITLE]: titleJsonb,
+                  [TITLES_COLUMNS.OVERVIEW]: Object.keys(overviewJsonb).length > 0 ? overviewJsonb : null,
+                  [TITLES_COLUMNS.POSTER_PATH]: Object.keys(posterPathJsonb).length > 0 ? posterPathJsonb : null,
+                  [TITLES_COLUMNS.GENRES]: (fullResponse.genres || []).length > 0 ? fullResponse.genres : (fullExistingTitle?.genres || null),
+                  [TITLES_COLUMNS.BACKDROP_PATH]: fullResponse.backdrop_path || fullExistingTitle?.backdrop_path || null,
+                  [TITLES_COLUMNS.VOTE_AVERAGE]: fullResponse.vote_average ?? fullExistingTitle?.vote_average ?? null,
+                  [TITLES_COLUMNS.RELEASE_DATE]: fullResponse.release_date || fullExistingTitle?.release_date || null,
+                  [TITLES_COLUMNS.FIRST_AIR_DATE]: fullResponse.first_air_date || fullExistingTitle?.first_air_date || null,
+                  [TITLES_COLUMNS.RUNTIME]: type === MEDIA_TYPE.MOVIE ? (fullResponse.runtime || fullExistingTitle?.runtime || null) : null,
+                }, {
+                  onConflict: TITLES_COLUMNS.TMDB_ID,
+                });
+            } catch (error) {
+              if (import.meta.dev) {
+                console.error(`[RefreshPool] Error updating titles for ${tmdbId}:`, error);
+              }
+            }
           } catch (error) {
             safeError(`[RefreshPool] Error fetching title details for ${tmdbId}`, error);
             // Continue - don't block pool refresh

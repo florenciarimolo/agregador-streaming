@@ -5,6 +5,7 @@ import {
   SEASONS_COLUMNS,
 } from '../../constants/db/columns';
 import { TABLES } from '../../constants/db/tables';
+import { MEDIA_TYPE } from '../../constants/domain/mediaType';
 
 /**
  * Get all movie and TV show IDs from Supabase for sitemap generation
@@ -16,7 +17,7 @@ import { TABLES } from '../../constants/db/tables';
  * @note updated_at is NOT NULL in the schema, so it should always be present
  */
 export async function getTitleIdsForSitemap(): Promise<
-  Array<{ tmdb_id: number; type: 'movie' | 'tv'; updated_at: string }>
+  Array<{ tmdb_id: number; type: typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV; updated_at: string }>
 > {
   try {
     // Try to use runtime config, fallback to env vars for sitemap generation context
@@ -77,7 +78,7 @@ export async function getTitleIdsForSitemap(): Promise<
       }
       return {
         tmdb_id: title.tmdb_id,
-        type: title.type as 'movie' | 'tv',
+        type: title.type as typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV,
         updated_at: title.updated_at,
       };
     });

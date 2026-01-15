@@ -84,9 +84,9 @@ export function useViewMode(
   if (import.meta.client) {
     onMounted(() => {
       // Listen to storage events (from other tabs/windows)
-      window.addEventListener('storage', handleStorageChange);
+      window.addEventListener('storage', handleStorageChange as (e: StorageEvent) => void);
       // Listen to custom events (from same window)
-      window.addEventListener('viewModeChanged', handleStorageChange);
+      window.addEventListener('viewModeChanged', handleStorageChange as EventListener);
 
       // Also poll localStorage periodically as a fallback
       intervalId = setInterval(() => {
@@ -103,8 +103,8 @@ export function useViewMode(
     });
 
     onUnmounted(() => {
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('viewModeChanged', handleStorageChange);
+      window.removeEventListener('storage', handleStorageChange as (e: StorageEvent) => void);
+      window.removeEventListener('viewModeChanged', handleStorageChange as EventListener);
       if (intervalId) {
         clearInterval(intervalId);
       }

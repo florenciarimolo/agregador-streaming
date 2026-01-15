@@ -313,7 +313,7 @@ watchEffect(() => {
       ...hreflangLinks.value,
       {
         rel: 'canonical',
-        href: canonicalUrl.value,
+        href: canonicalUrl,
       },
     ],
   });

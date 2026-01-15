@@ -21,13 +21,14 @@ import { updateTitleVideos } from '@/services/titles';
 import { VIDEO_REFRESH_THRESHOLD_HOURS } from '@/constants/domain/videos';
 import { getUserTMDBParams } from '@/server/utils/user-tmdb';
 import type { MultiLanguageVideos } from '@/types/Video';
+import { LanguageIsoCode, DEFAULT_LANGUAGE_ISO } from '@/constants/languages';
 
 export default defineEventHandler(async (event) => {
   try {
     const config = useRuntimeConfig();
     const { tmdbId } = getRouterParams(event) as { tmdbId: string };
     const query = getQuery(event);
-    const type = query.type as 'movie' | 'tv';
+    const type = query.type as typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV;
 
     if (!type || (type !== 'movie' && type !== 'tv')) {
       throw createError({
@@ -110,7 +111,7 @@ export default defineEventHandler(async (event) => {
         shouldFetch = true;
       } else {
         // Check if we have videos for target language
-        const langCode = targetLanguage.split('-')[0]?.toLowerCase() || 'en';
+        const langCode = targetLanguage.split('-')[0]?.toLowerCase() || LanguageIsoCode.ENGLISH;
         if (!existingVideos[langCode] || existingVideos[langCode].length === 0) {
           shouldFetch = true;
         }
@@ -158,34 +159,35 @@ export default defineEventHandler(async (event) => {
           type === 'movie' ? MEDIA_TYPE.MOVIE : MEDIA_TYPE.TV,
           normalizedVideos,
           new Date(),
-          supabase // Pass server-side Supabase client
+          supabase as Parameters<typeof updateTitleVideos>[4] // Pass server-side Supabase client
         );
 
         // Update local reference
         const updatedVideos = normalizedVideos;
-        const langCode = targetLanguage.split('-')[0]?.toLowerCase() || 'en';
+        const langCode = targetLanguage.split('-')[0]?.toLowerCase() || LanguageIsoCode.ENGLISH;
 
         // Return videos for target language with fallback
         const videosForLang =
           updatedVideos[langCode] ||
-          updatedVideos['es'] ||
-          updatedVideos['en'] ||
+          updatedVideos[DEFAULT_LANGUAGE_ISO] ||
+          updatedVideos[LanguageIsoCode.ENGLISH] ||
           Object.values(updatedVideos)[0] ||
           [];
 
         return videosForLang;
       } catch (fetchError: unknown) {
         // Log the actual error for debugging
+        const error = fetchError as { message?: string; stack?: string; statusCode?: number; statusMessage?: string } | null;
         console.error('[videos.get] Error fetching videos from TMDB:', {
           tmdbId: tmdbIdNum,
           type,
           error: fetchError,
-          message: fetchError?.message,
-          stack: fetchError?.stack,
+          message: error?.message,
+          stack: error?.stack,
         });
         throw createError({
-          statusCode: fetchError?.statusCode || 500,
-          statusMessage: fetchError?.statusMessage || `Error fetching videos from TMDB: ${fetchError?.message || 'Unknown error'}`,
+          statusCode: error?.statusCode || 500,
+          statusMessage: error?.statusMessage || `Error fetching videos from TMDB: ${error?.message || 'Unknown error'}`,
           data: fetchError,
         });
       }
@@ -200,11 +202,11 @@ export default defineEventHandler(async (event) => {
     }
 
     // Use target language if provided, otherwise use user language
-    const langCode = targetLanguage.split('-')[0]?.toLowerCase() || 'en';
+    const langCode = targetLanguage.split('-')[0]?.toLowerCase() || LanguageIsoCode.ENGLISH;
     const videosForLang =
       existingVideos[langCode] ||
-      existingVideos['es'] ||
-      existingVideos['en'] ||
+      existingVideos[DEFAULT_LANGUAGE_ISO] ||
+      existingVideos[LanguageIsoCode.ENGLISH] ||
       Object.values(existingVideos)[0] ||
       [];
 
@@ -225,24 +227,25 @@ export default defineEventHandler(async (event) => {
     return videosForLang;
   } catch (error: unknown) {
     // Log the actual error for debugging
+    const errorObj = error as { message?: string; stack?: string; statusCode?: number; statusMessage?: string } | null;
     console.error('[videos.get] Unexpected error:', {
-      tmdbId,
+      tmdbId: tmdbIdNum,
       type,
       error,
-      message: error?.message,
-      stack: error?.stack,
-      statusCode: error?.statusCode,
-      statusMessage: error?.statusMessage,
+      message: errorObj?.message,
+      stack: errorObj?.stack,
+      statusCode: errorObj?.statusCode,
+      statusMessage: errorObj?.statusMessage,
     });
     
     // If error is already an H3 error, re-throw it
-    if (error?.statusCode && error?.statusMessage) {
+    if (errorObj?.statusCode && errorObj?.statusMessage) {
       throw error;
     }
     
     throw createError({
-      statusCode: error?.statusCode || 500,
-      statusMessage: error?.statusMessage || error?.message || 'Error fetching videos',
+      statusCode: errorObj?.statusCode || 500,
+      statusMessage: errorObj?.statusMessage || errorObj?.message || 'Error fetching videos',
       data: error,
     });
   }

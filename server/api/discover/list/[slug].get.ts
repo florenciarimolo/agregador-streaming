@@ -10,7 +10,7 @@ import {
   getDiscoverListBySlug,
   getDiscoverListItems,
 } from '@/composables/database/discoverLists';
-import { DEFAULT_LANGUAGE, toTMDBLanguageCode } from '@/constants/languages';
+import { DEFAULT_LANGUAGE, DEFAULT_LANGUAGE_ISO, toTMDBLanguageCode } from '@/constants/languages';
 import { createServerSupabaseClient } from '@/server/utils/supabase';
 import { TABLES } from '@/constants/db/tables';
 import { TITLES_COLUMNS } from '@/constants/db/columns';
@@ -193,7 +193,7 @@ export default defineEventHandler(async (event) => {
             const endpoint = item.type === 'movie' ? 'movies' : 'tvshows';
             // Use urlLangCode if available, otherwise extract from language
             const langParam =
-              urlLangCode || language.split('-')[0]?.toLowerCase() || 'es';
+              urlLangCode || language.split('-')[0]?.toLowerCase() || DEFAULT_LANGUAGE_ISO;
             const tmdbResponse = await $fetch<{
               overview?: string;
             }>(`/api/tmdb/${endpoint}/${item.tmdb_id}`, {

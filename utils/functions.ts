@@ -11,8 +11,8 @@ export interface Tilt {
  * @param e MouseEvent
  * @returns Tilt object with x and y values
  */
-export function calculateTilt(e: globalThis.MouseEvent): Tilt {
-  const target = e.currentTarget as globalThis.HTMLElement;
+export function calculateTilt(e: MouseEvent): Tilt {
+  const target = e.currentTarget as HTMLElement;
   const { left, top, width, height } = target.getBoundingClientRect();
   const x = (e.clientX - left) / width - 0.5;
   const y = (e.clientY - top) / height - 0.5;

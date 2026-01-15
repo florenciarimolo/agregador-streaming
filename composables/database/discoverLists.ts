@@ -17,6 +17,7 @@ import { getTitlesByTmdbIds } from './titles';
 import { insertPoolEntries } from '@/services/recommendationPool';
 import type { RecommendationPoolSource } from '@/services/recommendationPool';
 import { DEFAULT_LANGUAGE } from '@/constants/languages';
+import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 
 export interface DiscoverList {
   id: string;
@@ -218,7 +219,7 @@ export async function getDiscoverListItems(
     // Get tmdb_ids and types for fetching titles
     const tmdbIds = items.map((item) => item.tmdb_id);
     const titleTypes = new Map<number, 'movie' | 'tv'>(
-      items.map((item) => [item.tmdb_id, item.type as 'movie' | 'tv'])
+      items.map((item) => [item.tmdb_id, item.type as typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV])
     );
 
     // Fetch titles (with automatic ingestion if missing)
@@ -286,7 +287,7 @@ export async function getDiscoverListItems(
         id: item.id,
         discover_list_id: item.discover_list_id,
         tmdb_id: item.tmdb_id,
-        type: item.type as 'movie' | 'tv',
+        type: item.type as typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV,
         position: item.position,
         tag: extractedTag,
         title: title?.title || undefined,
@@ -401,7 +402,7 @@ export async function insertDiscoverListIntoPool(
 
       return {
         tmdb_id: item.tmdb_id,
-        type: item.type as 'movie' | 'tv',
+        type: item.type as typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV,
         source: 'discover' as RecommendationPoolSource,
         base_score: baseScore,
         preference_score: 0,

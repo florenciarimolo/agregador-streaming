@@ -144,6 +144,8 @@ export default defineEventHandler(async (event) => {
       type: typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV;
       source: RecommendationPoolSource;
       score: number;
+      base_score: number;
+      preference_score: number;
       explanation_code: string | null;
     }> = [];
 
@@ -211,7 +213,7 @@ export default defineEventHandler(async (event) => {
 
         // If we have everything from DB in the exact language (ISO format), we're done
         if (!needsFullFetch && genresFromDb && hasExactLanguage) {
-          return; // Data is already in titles table, no need to fetch from TMDB
+          return null; // Data is already in titles table, no need to fetch from TMDB
         }
 
         // Fetch from TMDB if needed
@@ -228,7 +230,7 @@ export default defineEventHandler(async (event) => {
           }
         );
 
-        if (!fullResponse) return;
+        if (!fullResponse) return null;
 
         // Extract full genre objects (not just IDs)
         const genres = fullResponse.genres || [];
@@ -240,7 +242,7 @@ export default defineEventHandler(async (event) => {
           devError(
             `[PopulatePool] No title returned from TMDB for ${tmdbId} in language ${language}`
           );
-          return;
+          return null;
         }
 
         // Merge with existing DB data
@@ -337,7 +339,7 @@ export default defineEventHandler(async (event) => {
           const { data: existingTitle } = await supabase
             .from(TABLES.TITLES)
             .select(
-              `${TITLES_COLUMNS.TITLE}, ${TITLES_COLUMNS.OVERVIEW}, ${TITLES_COLUMNS.POSTER_PATH}, ${TITLES_COLUMNS.GENRES}, ${TITLES_COLUMNS.BACKDROP_PATH}, ${TITLES_COLUMNS.VOTE_AVERAGE}, ${TITLES_COLUMNS.RELEASE_DATE}, ${TITLES_COLUMNS.FIRST_AIR_DATE}`
+              `${TITLES_COLUMNS.TITLE}, ${TITLES_COLUMNS.OVERVIEW}, ${TITLES_COLUMNS.POSTER_PATH}, ${TITLES_COLUMNS.GENRES}, ${TITLES_COLUMNS.BACKDROP_PATH}, ${TITLES_COLUMNS.VOTE_AVERAGE}, ${TITLES_COLUMNS.RELEASE_DATE}, ${TITLES_COLUMNS.FIRST_AIR_DATE}, ${TITLES_COLUMNS.STATUS}, ${TITLES_COLUMNS.RUNTIME}`
             )
             .eq(TITLES_COLUMNS.TMDB_ID, tmdbId)
             .eq(TITLES_COLUMNS.TYPE, type)
@@ -396,10 +398,10 @@ export default defineEventHandler(async (event) => {
                 existingTitle?.first_air_date ||
                 null,
               [TITLES_COLUMNS.STATUS]:
-                fullResponse.status || existingTitle?.status || null,
+                (fullResponse.status as string | undefined) || (existingTitle as { status?: string | null } | null)?.status || null,
               [TITLES_COLUMNS.RUNTIME]:
                 type === MEDIA_TYPE.MOVIE
-                  ? fullResponse.runtime || existingTitle?.runtime || null
+                  ? fullResponse.runtime || (existingTitle as { runtime?: number | null } | null)?.runtime || null
                   : null,
             },
             {
@@ -412,12 +414,15 @@ export default defineEventHandler(async (event) => {
             console.error('[PopulatePool] Error updating titles cache:', error);
           }
         }
+        // Return null after updating database (function is for side effects, not return value)
+        return null;
       } catch (error) {
         safeError(
           `[PopulatePool] Error fetching title details for ${tmdbId}`,
           error
         );
         // Continue - don't block pool population
+        return null;
       }
     };
 

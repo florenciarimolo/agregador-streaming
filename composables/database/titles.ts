@@ -44,7 +44,7 @@ function normalizeLanguageCode(code: string, region?: string | null): string {
 
   // Convert legacy format to ISO format
   // Default region is 'ES' for Spanish languages, 'US' for English
-  const defaultRegion = code === 'en' ? 'US' : 'ES';
+  const defaultRegion = code === LanguageIsoCode.ENGLISH ? 'US' : 'ES';
   const normalizedRegion = region?.toUpperCase() || defaultRegion;
 
   return `${code}-${normalizedRegion}`;

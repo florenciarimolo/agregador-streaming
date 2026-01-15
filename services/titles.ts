@@ -49,7 +49,7 @@ function normalizeLanguageCode(code: string, region?: string | null): string {
 
   // Convert legacy format to ISO format
   // Default region is 'ES' for Spanish languages, 'US' for English
-  const defaultRegion = code === 'en' ? 'US' : 'ES';
+  const defaultRegion = code === LanguageIsoCode.ENGLISH ? 'US' : 'ES';
   const normalizedRegion = region?.toUpperCase() || defaultRegion;
 
   return `${code}-${normalizedRegion}`;
@@ -647,9 +647,11 @@ export async function getTitlesByTmdbIds(
           // Need to fetch primary language from TMDB
           // Also check if overview is empty in preferred language
           const needsOverview = !extractedOverview || extractedOverview === '';
+          // Type assertion: title.type comes from database and should be MEDIA_TYPE.MOVIE or MEDIA_TYPE.TV
+          const titleType = title.type as typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV;
           titlesNeedingPrimaryLanguageFallback.push({
             tmdb_id: title.tmdb_id,
-            type: title.type,
+            type: titleType,
             needsOverview,
           });
         }

@@ -30,8 +30,8 @@ import {
   calculateBoostFactors,
   filterByProviders,
   getTitleData,
-  type TitleData,
 } from '@/server/utils/recommendations';
+import type { TitleData } from '@/services/recommendationPool';
 import { getExplanationTranslation } from '@/server/utils/translations';
 
 /**
@@ -105,7 +105,7 @@ export default defineEventHandler(async (event) => {
   const query = getQuery(event);
   const mood = query[QUERY_PARAMS.MOOD] as Mood | undefined;
   const attention = query[QUERY_PARAMS.ATTENTION] as Attention | undefined;
-  const contentType = query[QUERY_PARAMS.TYPE] as 'movie' | 'tv' | undefined; // Filter by content type on server
+  const contentType = query[QUERY_PARAMS.TYPE] as typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV | undefined; // Filter by content type on server
   const preserveIdsParam = query[QUERY_PARAMS.PRESERVE_IDS] as
     | string
     | undefined; // Format: "tmdb_id:type,tmdb_id:type"
@@ -202,7 +202,7 @@ export default defineEventHandler(async (event) => {
           const [tmdbId, type] = item.trim().split(':');
           return {
             tmdb_id: parseInt(tmdbId, 10),
-            type: type as 'movie' | 'tv',
+            type: type as typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV,
           };
         });
         if (import.meta.dev) {
@@ -355,7 +355,7 @@ export default defineEventHandler(async (event) => {
               id: `${entry.tmdb_id}-${entry.type}`,
               tmdb_id: entry.tmdb_id,
               title: titleData.title,
-              type: entry.type as 'movie' | 'tv',
+              type: entry.type as typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV,
               poster_path: titleData.poster_path,
               overview: titleData.overview,
               tagline: titleData.tagline || null,
@@ -365,7 +365,7 @@ export default defineEventHandler(async (event) => {
               first_air_date: titleData.first_air_date,
               explanation,
               explanation_code: explanationCode,
-              providers: titleData.providers,
+              providers: [], // Providers are fetched separately, not part of TitleData
               in_watchlist: false, // Will be set below if needed
               liked: false, // Will be set below if needed
             };
@@ -476,12 +476,19 @@ export default defineEventHandler(async (event) => {
       // Filter by providers if user has preferences
       // Only include titles that have the selected providers in flatrate
       // Exclude titles that don't have the provider in flatrate
-      filteredEntries = await filterByProviders(
-        filteredEntries,
+      const filteredByProviders = await filterByProviders(
+        filteredEntries.map((e) => ({ tmdb_id: e.tmdb_id, type: e.type })),
         includedProviders,
         region,
-        tmdbConfig,
-        '[Recommendations]'
+        tmdbConfig
+      );
+      // Create a set of filtered IDs for quick lookup
+      const filteredIdsSet = new Set(
+        filteredByProviders.map((e) => `${e.tmdb_id}:${e.type}`)
+      );
+      // Filter original entries to keep all properties
+      filteredEntries = filteredEntries.filter(
+        (e) => filteredIdsSet.has(`${e.tmdb_id}:${e.type}`)
       );
 
       // Filter by genres if user has preferences
@@ -508,7 +515,7 @@ export default defineEventHandler(async (event) => {
           const titleData = await getTitleDataForEntry(entry);
           if (!titleData) return null;
 
-          const genreIds = titleData.genres.map((g) => g.id);
+          const genreIds = titleData.genres.map((g: { id: number; name: string }) => g.id);
           const voteAverage = titleData.vote_average;
 
           // Filter by genres if user has preferences
@@ -578,7 +585,7 @@ export default defineEventHandler(async (event) => {
           // Apply prioritize_content adjustments (runtime only, after exploration_mode)
           if (prioritizeContent === PRIORITIZE_CONTENT.NEW) {
             // Boost recent releases: last 2 years for movies, 1 year for TV
-            if (isRecentRelease(titleData, entry.type as 'movie' | 'tv')) {
+            if (isRecentRelease(titleData, entry.type as typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV)) {
               finalScore *= 1.05;
             }
           } else if (prioritizeContent === PRIORITIZE_CONTENT.CLASSICS) {

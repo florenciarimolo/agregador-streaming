@@ -49,7 +49,7 @@ export default defineEventHandler(async (event) => {
   const excludedTmdbId = query.excluded_tmdb_id
     ? Number(query.excluded_tmdb_id)
     : null;
-  const excludedType = query.excluded_type as 'movie' | 'tv' | undefined;
+  const excludedType = query.excluded_type as typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV | undefined;
   const mood = query[QUERY_PARAMS.MOOD] as Mood | undefined;
   const attention = query[QUERY_PARAMS.ATTENTION] as Attention | undefined;
   // Optional: exclude titles already in current recommendations
@@ -193,12 +193,19 @@ export default defineEventHandler(async (event) => {
     // Filter by providers if user has preferences
     // Only include titles that have the selected providers in flatrate
     // Exclude titles that don't have the provider in flatrate
-    filteredEntries = await filterByProviders(
-      filteredEntries,
+    const filteredByProviders = await filterByProviders(
+      filteredEntries.map((e) => ({ tmdb_id: e.tmdb_id, type: e.type })),
       includedProviders,
       region,
-      tmdbConfig,
-      '[Replacement]'
+      tmdbConfig
+    );
+    // Create a set of filtered IDs for quick lookup
+    const filteredIdsSet = new Set(
+      filteredByProviders.map((e) => `${e.tmdb_id}:${e.type}`)
+    );
+    // Filter original entries to keep all properties
+    filteredEntries = filteredEntries.filter(
+      (e) => filteredIdsSet.has(`${e.tmdb_id}:${e.type}`)
     );
 
     // Helper to fetch title data from titles table (or TMDB if missing)
@@ -267,7 +274,7 @@ export default defineEventHandler(async (event) => {
           voteAverage,
           null, // runtime not available
           null, // episodeCount not available
-          entry.type as 'movie' | 'tv',
+          entry.type as typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV,
           mood,
           attention
         );

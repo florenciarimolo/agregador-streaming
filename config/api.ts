@@ -20,5 +20,5 @@ export async function tmdbFetch<T>(
     ...params,
   });
 
-  return await $fetch<T>(`${tmdbConfig.baseURL}${endpoint}?${searchParams}`);
+  return (await $fetch<T>(`${tmdbConfig.baseURL}${endpoint}?${searchParams}`)) as T;
 }

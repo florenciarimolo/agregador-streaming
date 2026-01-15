@@ -36,7 +36,7 @@ async function generateFavicons() {
     // Check if source file exists
     try {
       await readFile(SOURCE_FAVICON);
-    } catch (error) {
+    } catch {
       console.error(
         '[generate-favicons] ERROR: Source favicon.png not found at:',
         SOURCE_FAVICON

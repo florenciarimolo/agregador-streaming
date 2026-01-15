@@ -343,7 +343,7 @@ async function searchTitleInTMDB(
     const bestMatch = filteredResults[0];
     return {
       tmdbId: bestMatch.id,
-      type: bestMatch.media_type as 'movie' | 'tv',
+      type: bestMatch.media_type as typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV,
     };
   } catch (error) {
     console.error(

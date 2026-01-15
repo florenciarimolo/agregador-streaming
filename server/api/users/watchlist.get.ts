@@ -97,8 +97,8 @@ export default defineEventHandler(async (event) => {
 
     // Extract tmdb_ids and create a map of tmdb_id to type and created_at
     const tmdbIds: number[] = statuses.map((s) => s.tmdb_id);
-    const titleTypesMap = new Map<number, 'movie' | 'tv'>(
-      statuses.map((s) => [s.tmdb_id, s.type as 'movie' | 'tv'])
+    const titleTypesMap = new Map<number, typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV>(
+      statuses.map((s) => [s.tmdb_id, s.type as typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV])
     );
     const createdAtMap = new Map<number, string>(
       statuses.map((s) => [s.tmdb_id, s.created_at])

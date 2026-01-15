@@ -8,6 +8,7 @@ import type {
   Video,
   MultiLanguageVideos,
 } from '@/types/Video';
+import { LanguageIsoCode } from '@/constants/languages';
 
 /**
  * Normalize a single TMDB video to our internal format
@@ -39,7 +40,7 @@ export function normalizeVideosForStorage(
   const videosByLanguage: Record<string, Video[]> = {};
 
   for (const tmdbVideo of tmdbVideos) {
-    const lang = tmdbVideo.iso_639_1?.toLowerCase() || 'en';
+    const lang = tmdbVideo.iso_639_1?.toLowerCase() || LanguageIsoCode.ENGLISH;
     const normalizedVideo = normalizeVideo(tmdbVideo);
 
     if (!videosByLanguage[lang]) {
