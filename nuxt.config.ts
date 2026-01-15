@@ -200,7 +200,12 @@ export default defineNuxtConfig({
         {
           name: 'description',
           content:
-            'Descubre y explora películas y series de televisión. Encuentra dónde ver tu contenido favorito en diferentes plataformas de streaming.',
+            'Discover personalized movie and TV show recommendations based on your mood and attention level. Find what to watch today with smart recommendations tailored to you. Find where to watch your favorite content on different streaming platforms.',
+        },
+        {
+          name: 'keywords',
+          content:
+            'movie recommendations, TV show recommendations, personalized recommendations, streaming platforms, what to watch, mood-based recommendations, attention level, Netflix, HBO, Disney Plus, Amazon Prime, streaming guide, movie finder, series finder, watch recommendations',
         },
         // Open Graph / Facebook
         { property: 'og:type', content: 'website' },
@@ -209,7 +214,7 @@ export default defineNuxtConfig({
         {
           property: 'og:description',
           content:
-            'Descubre y explora películas y series de televisión. Encuentra dónde ver tu contenido favorito en diferentes plataformas de streaming.',
+            'Discover personalized movie and TV show recommendations based on your mood and attention level. Find what to watch today with smart recommendations tailored to you. Find where to watch your favorite content on different streaming platforms.',
         },
         // Twitter
         // Note: twitter:image is updated dynamically in app.vue based on language
@@ -217,6 +222,15 @@ export default defineNuxtConfig({
         // CRITICAL: Twitter cards require absolute URLs, not relative paths
         { name: 'twitter:card', content: 'summary_large_image' },
         { name: 'twitter:site', content: '@upnext' },
+        {
+          name: 'twitter:title',
+          content: 'UpNext - Personalized Movie & TV Show Recommendations',
+        },
+        {
+          name: 'twitter:description',
+          content:
+            'Discover personalized movie and TV show recommendations based on your mood and attention level. Find what to watch today with smart recommendations tailored to you.',
+        },
         {
           name: 'twitter:image',
           content: `${getSiteUrl()}/twitter-cards/en-twitter-card.jpg`,
