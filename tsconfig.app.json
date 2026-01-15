@@ -17,8 +17,10 @@
     "**/*.ts",
     "**/*.tsx",
     "**/*.vue",
+    ".nuxt/nuxt.d.ts",
     ".nuxt/**/*.d.ts",
     ".nuxt/types/**/*.d.ts",
+    ".nuxt/*.d.ts",
     "types/**/*.d.ts"
   ],
   "exclude": [

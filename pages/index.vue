@@ -35,6 +35,7 @@ import { VIEW_MODE } from '@/constants/domain/viewMode';
 import { getSession } from '@/services/auth';
 import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 import { useUserRegion } from '@/composables/useUserRegion';
+import { useRouteWithLang } from '@/composables/useRouteWithLang';
 
 // Middleware handles onboarding check - if user has session, onboarding is completed
 definePageMeta({
