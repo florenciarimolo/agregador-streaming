@@ -210,7 +210,9 @@ export default defineNuxtConfig({
         // Open Graph / Facebook
         { property: 'og:type', content: 'website' },
         { property: 'og:site_name', content: 'UpNext' },
-        { property: 'og:image', content: '/logo-banner.png' },
+        // Default og:image (fallback for default language 'en')
+        // Actual og:image is set dynamically in pages/index.vue based on language
+        { property: 'og:image', content: '/en-og-image.jpg' },
         {
           property: 'og:description',
           content:

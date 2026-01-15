@@ -48,7 +48,7 @@ const user = useSupabaseUser();
 
 // Get language from URL (this page is /:lang/ with strategy: 'prefix')
 // Use useRouteWithLang for reactive route building
-const { routeWithLang } = useRouteWithLang();
+const { routeWithLang, lang } = useRouteWithLang();
 
 // Computed routes with language prefix
 // CRITICAL: routeWithLang() accesses route.params.lang directly, ensuring reactivity
@@ -90,6 +90,19 @@ const userStore = computed(() => {
 // SEO: hreflang and canonical (only for public pages)
 const { hreflangLinks } = useHreflang();
 const { canonicalUrl } = useCanonical();
+
+// Get language code for og:image (outside watchEffect to avoid recreating computed)
+const ogImageUrl = computed(() => {
+  const isAuthenticated = !!user.value;
+  if (isAuthenticated) {
+    return '/logo-banner.png';
+  }
+  // Map language codes to image filenames
+  const langCode = lang.value;
+  // Handle en-gb -> en (fallback if en-gb-og-image.jpg doesn't exist)
+  const imageLangCode = langCode === 'en-gb' ? 'en' : langCode;
+  return `/${imageLangCode}-og-image.jpg`;
+});
 
 watchEffect(() => {
   const isAuthenticated = !!user.value;
@@ -146,9 +159,11 @@ watchEffect(() => {
     ogDescription: isAuthenticated
       ? t('seo.homeDescription')
       : t('seo.homeDescriptionPublic'),
+    ogImage: ogImageUrl,
     ogType: 'website',
     ogUrl: canonicalUrl,
     twitterCard: 'summary_large_image',
+    twitterImage: ogImageUrl,
     robots: isAuthenticated ? 'noindex, nofollow' : 'index, follow',
   });
 });
