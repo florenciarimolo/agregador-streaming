@@ -100,11 +100,10 @@ async function updateMissingSeasonData(
     const hasExactOverviewLanguage =
       overviewJsonb && overviewJsonb[userLanguage] !== undefined;
 
-    if (
-      !hasExactOverviewLanguage &&
-      tmdbSeason?.overview &&
-      tmdbSeason.overview.trim() !== ''
-    ) {
+    // Add to update list if:
+    // 1. Missing in current language AND TMDB has overview, OR
+    // 2. Missing in current language AND TMDB overview is also empty (need English fallback)
+    if (!hasExactOverviewLanguage) {
       seasonsNeedingOverviewUpdate.push({ season, tmdbSeason });
     }
   }
@@ -181,9 +180,35 @@ async function updateMissingSeasonData(
 
     const currentOverviewJsonb =
       safeGetMultiLanguageText(currentSeasonData?.overview) || {};
+    
+    // Use TMDB overview if available, otherwise check for English fallback
+    let overviewToSave = tmdbSeason.overview || '';
+    let languageForOverview = userLanguage;
+    
+    // If overview is still empty, try fetching English fallback
+    if (!overviewToSave || overviewToSave.trim() === '') {
+      const { fetchSeasonOverviewEnglishFallback } = await import(
+        '@/server/utils/season-update'
+      );
+      const englishOverview = await fetchSeasonOverviewEnglishFallback(
+        tmdbId,
+        season.season_number,
+        overviewToSave,
+        userLanguage,
+        region,
+        supabase
+      );
+      
+      if (englishOverview) {
+        overviewToSave = englishOverview;
+        languageForOverview = 'en-US';
+      }
+    }
+    
+    // Update with current language overview or English fallback
     const updatedOverviewJsonb: MultiLanguageText = {
       ...currentOverviewJsonb,
-      [userLanguage]: tmdbSeason.overview || '',
+      [languageForOverview]: overviewToSave,
     };
 
     // Preserve existing poster_path when updating overview

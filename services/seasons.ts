@@ -68,6 +68,15 @@ function extractSeasonTextFields(
         }
       }
     }
+
+    // Final fallback: if overview is still empty, try English
+    // This happens when overview is empty in current language and primary language
+    if (!overview && overviewJsonb) {
+      const englishOverview = getTitleInLanguage(overviewJsonb, 'en-US', userRegion);
+      if (englishOverview) {
+        overview = englishOverview;
+      }
+    }
   } else {
     // If no language provided, try to get first available value (for backward compatibility)
     if (posterPathJsonb && typeof posterPathJsonb === 'object') {

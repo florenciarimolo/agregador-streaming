@@ -112,6 +112,24 @@ export default defineEventHandler(
       const tvTmdbId = parseInt(id, 10);
       const seasonNumber = parseInt(season_id, 10);
 
+      // Fetch English overview as final fallback if needed
+      const { fetchSeasonOverviewEnglishFallback } = await import(
+        '@/server/utils/season-update'
+      );
+      const englishOverview = await fetchSeasonOverviewEnglishFallback(
+        tvTmdbId,
+        seasonNumber,
+        response.overview,
+        language,
+        region,
+        supabase
+      );
+
+      // Use English overview if we got it
+      if (englishOverview) {
+        response.overview = englishOverview;
+      }
+
       const { getSeasonByTmdbIds } = await import('@/services/seasons');
 
       const seasonFromDb = await getSeasonByTmdbIds(
@@ -133,6 +151,27 @@ export default defineEventHandler(
       const { updateMissingSeasonFields } = await import(
         '@/server/utils/season-update'
       );
+      
+      // Prepare TMDB season data
+      const tmdbSeasonData = {
+        id: response.id,
+        name: response.name,
+        season_number: seasonNumber,
+        overview: response.overview,
+        air_date: response.air_date,
+        poster_path: response.poster_path,
+        vote_average: response.vote_average,
+        episode_count: episodeCount ?? response.episode_count,
+        // Pass episodes array so utility can get air_date from first episode if needed
+        episodes: response.episodes?.map((ep) => ({
+          air_date: ep.air_date,
+        })),
+      };
+
+      // Determine which language to use for saving overview
+      // If we got English overview as fallback, save it with 'en-US' key
+      const languageForUpdate = englishOverview ? 'en-US' : language;
+      
       await updateMissingSeasonFields(
         tvTmdbId,
         seasonNumber,
@@ -146,21 +185,8 @@ export default defineEventHandler(
               episode_count: seasonFromDb.episode_count,
             }
           : null,
-        {
-          id: response.id,
-          name: response.name,
-          season_number: seasonNumber,
-          overview: response.overview,
-          air_date: response.air_date,
-          poster_path: response.poster_path,
-          vote_average: response.vote_average,
-          episode_count: episodeCount ?? response.episode_count,
-          // Pass episodes array so utility can get air_date from first episode if needed
-          episodes: response.episodes?.map((ep) => ({
-            air_date: ep.air_date,
-          })),
-        },
-        language,
+        tmdbSeasonData,
+        languageForUpdate,
         supabase,
         region
       );

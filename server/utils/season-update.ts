@@ -13,6 +13,9 @@ import {
   getAirDateFromSeasonOrEpisode,
   fetchSeasonAirDate,
 } from '@/server/utils/season-air-date';
+import { getTMDBConfig } from '@/server/utils/config';
+import { getPrimaryLanguageForRegion } from '@/utils/language-detection';
+import { DEFAULT_LANGUAGE_ISO } from '@/constants/languages';
 
 /**
  * Safely extract MultiLanguageText from database value
@@ -248,5 +251,120 @@ export async function updateMissingSeasonFields(
     );
     return false;
   }
+}
+
+/**
+ * Fetch English overview for a season when it's missing in current and primary language
+ * Saves the English overview to the database with 'en-US' key
+ * 
+ * @param tvTmdbId TV show TMDB ID
+ * @param seasonNumber Season number
+ * @param currentOverview Current overview (may be empty)
+ * @param language Current user language
+ * @param region User region
+ * @param supabase Supabase client
+ * @returns English overview if fetched, null otherwise
+ */
+export async function fetchSeasonOverviewEnglishFallback(
+  tvTmdbId: number,
+  seasonNumber: number,
+  currentOverview: string | null | undefined,
+  language: string,
+  region: string | null | undefined,
+  supabase: SupabaseClient
+): Promise<string | null> {
+  // Check if we need to fetch English overview
+  const hasEmptyOverview = !currentOverview || currentOverview.trim() === '';
+  
+  if (!hasEmptyOverview) {
+    return null;
+  }
+
+  // Determine primary language for region
+  const primaryLanguage = region
+    ? getPrimaryLanguageForRegion(region)
+    : DEFAULT_LANGUAGE_ISO;
+  const primaryLanguageKey = `${primaryLanguage}-${region?.toUpperCase() || 'ES'}`;
+  const requestedLangCode = language.split('-')[0]?.toLowerCase() || '';
+  const primaryLangCode = primaryLanguage.split('-')[0]?.toLowerCase() || '';
+
+  // Check if we need English fallback:
+  // 1. Overview is empty in current language
+  // 2. And current language is primary language OR we already tried primary language and it's also empty
+  // 3. And primary language is not English
+  const isCurrentLanguagePrimary = requestedLangCode === primaryLangCode;
+  const needsEnglishFallback =
+    hasEmptyOverview &&
+    (isCurrentLanguagePrimary || true) && // Always try English if overview is empty
+    primaryLangCode !== 'en';
+
+  if (!needsEnglishFallback) {
+    return null;
+  }
+
+  try {
+    const englishConfig = getTMDBConfig('en-US', region ?? undefined);
+    const englishResponse = await $fetch<{
+      overview?: string;
+    }>(`${englishConfig.baseUrl}/tv/${tvTmdbId}/season/${seasonNumber}`, {
+      query: {
+        api_key: englishConfig.apiKey,
+        language: englishConfig.language,
+        region: englishConfig.region,
+      },
+    });
+
+    if (englishResponse?.overview && englishResponse.overview.trim() !== '') {
+      // Get current season data to preserve existing fields
+      const { data: currentSeasonData } = await supabase
+        .from(TABLES.SEASONS)
+        .select('*')
+        .eq(SEASONS_COLUMNS.TV_TMDB_ID, tvTmdbId)
+        .eq(SEASONS_COLUMNS.SEASON_NUMBER, seasonNumber)
+        .maybeSingle();
+
+      const currentOverviewJsonb =
+        safeGetMultiLanguageText(currentSeasonData?.overview) || {};
+      const updatedOverviewJsonb: MultiLanguageText = {
+        ...currentOverviewJsonb,
+        'en-US': englishResponse.overview,
+      };
+
+      // Update season with English overview
+      await upsertSeason(
+        {
+          tv_tmdb_id: tvTmdbId,
+          season_number: seasonNumber,
+          tmdb_season_id: currentSeasonData?.tmdb_season_id,
+          overview: updatedOverviewJsonb,
+          // Preserve other fields
+          name: safeGetMultiLanguageText(currentSeasonData?.name),
+          poster_path: safeGetMultiLanguageText(currentSeasonData?.poster_path),
+          air_date: currentSeasonData?.air_date || undefined,
+          vote_average: currentSeasonData?.vote_average || null,
+          episode_count: currentSeasonData?.episode_count ?? undefined,
+        },
+        supabase
+      );
+
+      if (import.meta.dev) {
+        console.log(
+          `[fetchSeasonOverviewEnglishFallback] Saved English overview for season ${seasonNumber} of TV ${tvTmdbId}`
+        );
+      }
+
+      return englishResponse.overview;
+    }
+  } catch (error) {
+    // Log but don't fail the request
+    if (import.meta.dev) {
+      console.error(
+        `[fetchSeasonOverviewEnglishFallback] Error fetching English overview for season ${seasonNumber} of TV ${tvTmdbId}:`,
+        error
+      );
+    }
+  }
+
+  return null;
 }
 
