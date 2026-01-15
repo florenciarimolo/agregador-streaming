@@ -10,6 +10,7 @@
     :aria-label="$t('media.recommendationLabel', { title: props.title.title })"
     :link-aria-label="$t('media.viewDetailsOf', { title: props.title.title })"
     :image-alt="$t('media.posterOf', { title: props.title.title })"
+    :show-overview="false"
     :no-image-aria-label="
       $t('media.noPosterAvailableFor', { title: props.title.title })
     "

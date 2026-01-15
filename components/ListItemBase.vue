@@ -87,11 +87,10 @@
           </div>
         </div>
 
-        <!-- RatingBadge, acciones y Badge de tipo (móvil: columna 2) -->
+        <!-- Acciones y Badge de tipo (móvil: columna 2) -->
         <div class="flex flex-col flex-shrink-0 gap-2 items-end md:hidden">
-          <!-- RatingBadge and Actions in the same row -->
+          <!-- Actions only (RatingBadge moved to title row) -->
           <div class="flex gap-2 items-center">
-            <RatingBadge v-if="voteAverage" :rating="voteAverage" />
             <!-- Slot para acciones (menú o botón de eliminar, o info adicional como fecha/duración) -->
             <div class="flex overflow-visible items-end">
               <slot name="actions" />
@@ -101,28 +100,32 @@
         </div>
       </div>
 
-      <!-- Fila 2 (móvil): Título/Tag/Tagline (nueva línea) -->
+      <!-- Fila 2 (móvil): Título/Tag/RatingBadge/Tagline (nueva línea) -->
       <div class="flex flex-col gap-1 min-w-0 md:hidden">
-        <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-300">
-          <component
-            :is="computedLinkTo ? 'nuxt-link' : 'span'"
-            :to="computedLinkTo || undefined"
-            :class="
-              computedLinkTo
-                ? 'hover:text-primary-800 dark:hover:text-primary-400 transition-colors'
-                : ''
-            "
-          >
-            {{ title }}
-          </component>
-        </h3>
-        <!-- Tag (solo para discover lists) -->
-        <Badge
-          v-if="tag"
-          :label="capitalizeTag(tag)"
-          size="sm"
-          class="self-start mt-1"
-        />
+        <div class="flex gap-2 items-center flex-wrap">
+          <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-300">
+            <component
+              :is="computedLinkTo ? 'nuxt-link' : 'span'"
+              :to="computedLinkTo || undefined"
+              :class="
+                computedLinkTo
+                  ? 'hover:text-primary-800 dark:hover:text-primary-400 transition-colors'
+                  : ''
+              "
+            >
+              {{ title }}
+            </component>
+          </h3>
+          <!-- Tag (solo para discover lists) -->
+          <Badge
+            v-if="tag"
+            :label="capitalizeTag(tag)"
+            size="sm"
+            class="flex-shrink-0"
+          />
+          <!-- RatingBadge moved here from row 1 -->
+          <RatingBadge v-if="voteAverage" :rating="voteAverage" />
+        </div>
         <p
           v-if="displayTagline"
           class="mt-1 text-sm italic text-gray-600 dark:text-gray-400"
@@ -131,24 +134,28 @@
         </p>
       </div>
 
-      <!-- Desktop: Columna 2 (Título/Tag/Tagline, Overview, Providers) -->
+      <!-- Desktop: Columna 2 (Título/Tag/RatingBadge/Tagline, Overview, Providers) -->
       <div class="hidden flex-col flex-1 gap-2 justify-center min-w-0 md:flex">
         <div>
-          <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-300">
-            <nuxt-link
-              :to="computedLinkTo"
-              class="transition-colors hover:text-primary-800 dark:hover:text-primary-400"
-            >
-              {{ title }}
-            </nuxt-link>
-          </h3>
-          <!-- Tag (solo para discover lists) -->
-          <Badge
-            v-if="tag"
-            :label="capitalizeTag(tag)"
-            size="sm"
-            class="self-start mt-1"
-          />
+          <div class="flex gap-2 items-center flex-wrap">
+            <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-300">
+              <nuxt-link
+                :to="computedLinkTo"
+                class="transition-colors hover:text-primary-800 dark:hover:text-primary-400"
+              >
+                {{ title }}
+              </nuxt-link>
+            </h3>
+            <!-- Tag (solo para discover lists) -->
+            <Badge
+              v-if="tag"
+              :label="capitalizeTag(tag)"
+              size="sm"
+              class="flex-shrink-0"
+            />
+            <!-- RatingBadge moved here from column 3 -->
+            <RatingBadge v-if="voteAverage" :rating="voteAverage" />
+          </div>
           <p
             v-if="displayTagline"
             class="mt-1 text-sm italic text-gray-600 dark:text-gray-400"
@@ -235,11 +242,10 @@
         </div>
       </div>
 
-      <!-- Desktop: Columna 3 (Rating/Menu/Badge) -->
+      <!-- Desktop: Columna 3 (Actions/Badge) -->
       <div class="hidden flex-col flex-shrink-0 gap-2 items-end md:flex">
-        <!-- RatingBadge and Actions in the same row -->
+        <!-- Actions only (RatingBadge moved to title row) -->
         <div class="flex gap-2 items-center">
-          <RatingBadge v-if="voteAverage" :rating="voteAverage" />
           <!-- Slot para acciones (menú o botón de eliminar, o info adicional como fecha/duración) -->
           <div class="flex overflow-visible items-end">
             <slot name="actions" />

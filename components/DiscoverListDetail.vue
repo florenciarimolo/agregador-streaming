@@ -103,8 +103,10 @@
             $t('media.noPosterAvailableFor', { title: item.title })
           "
           :type="item.type"
+          :tmdb-id="item.tmdb_id"
           :vote-average="item.vote_average || null"
           :overview="item.overview || null"
+          :tagline="item.tagline || null"
           :providers="item.providers"
           :tag="item.tag || null"
           :is-discover-list="true"

@@ -86,8 +86,10 @@
                   $t('media.noPosterAvailableFor', { title: title.title })
                 "
                 :type="title.type"
+                :tmdb-id="title.tmdb_id"
                 :vote-average="title.vote_average"
                 :overview="title.overview"
+                :tagline="title.tagline"
                 :providers="title.providers"
                 :aria-label="$t('media.titleCardLabel', { title: title.title })"
               >

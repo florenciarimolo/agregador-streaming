@@ -22,18 +22,26 @@
       <slot name="actions" />
     </template>
 
-    <!-- Content: Overview and Providers -->
+    <!-- Content: Overview/Tagline and Providers -->
     <template #content>
       <!-- Explanation slot (only for recommendations) -->
       <slot name="explanation" />
 
-      <!-- Overview -->
+      <!-- Tagline in italic (prioritize tagline over overview) -->
       <p
-        v-if="overview"
+        v-if="displayTagline"
+        class="mb-3 text-xs italic text-gray-800 dark:text-gray-300"
+      >
+        {{ displayTagline }}
+      </p>
+      <!-- Overview if no tagline -->
+      <p
+        v-else-if="overview"
         class="mb-3 text-xs text-gray-800 dark:text-gray-300 line-clamp-3"
       >
         {{ overview }}
       </p>
+      <!-- No description available -->
       <p v-else class="mb-3 text-xs italic text-gray-700 dark:text-gray-300">
         {{ $t('media.noDescriptionAvailable') }}
       </p>
@@ -60,9 +68,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue';
 import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 import type { Provider } from '@/types/Recommendation';
+import { useFetchTagline } from '@/composables/useFetchTagline';
 import TitleCard from '@/components/TitleCard.vue';
 import RatingBadge from '@/components/RatingBadge.vue';
 
@@ -74,8 +83,10 @@ interface Props {
   imageAlt?: string;
   noImageAriaLabel?: string;
   type?: typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV;
+  tmdbId?: number;
   voteAverage?: number | null;
   overview?: string | null;
+  tagline?: string | null;
   providers?: Provider[];
   tag?: string | null;
   isDiscoverList?: boolean;
@@ -88,17 +99,42 @@ const props = withDefaults(defineProps<Props>(), {
   imageAlt: undefined,
   noImageAriaLabel: undefined,
   type: undefined,
+  tmdbId: undefined,
   voteAverage: null,
   overview: null,
+  tagline: null,
   providers: undefined,
   tag: null,
   isDiscoverList: false,
   ariaLabel: undefined,
 });
 
+// Fetch tagline from TMDB if missing (only if type and tmdbId are provided)
+const { tagline: fetchedTagline, fetchTaglineIfMissing } =
+  props.type && props.tmdbId
+    ? useFetchTagline(props.tagline, props.tmdbId, props.type)
+    : {
+        tagline: computed(() => props.tagline || null),
+        fetchTaglineIfMissing: async () => {
+          // No-op for items without type or tmdbId
+        },
+      };
+
+// Use fetched tagline if available, otherwise use prop
+const displayTagline = computed(() => {
+  return fetchedTagline.value || props.tagline || null;
+});
+
 // Filter providers that have logos
 const providersWithLogos = computed(() => {
   if (!props.providers) return [];
   return props.providers.filter((provider) => provider.logo_path).slice(0, 6);
+});
+
+onMounted(async () => {
+  // Only fetch tagline if type and tmdbId are provided
+  if (props.type && props.tmdbId) {
+    await fetchTaglineIfMissing();
+  }
 });
 </script>

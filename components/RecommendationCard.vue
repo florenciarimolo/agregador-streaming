@@ -9,8 +9,10 @@
       $t('media.noPosterAvailableFor', { title: props.title.title })
     "
     :type="props.title.type"
+    :tmdb-id="props.title.tmdb_id"
     :vote-average="props.title.vote_average"
     :overview="props.title.overview"
+    :tagline="props.title.tagline"
     :providers="props.title.providers"
     :aria-label="$t('media.recommendationLabel', { title: props.title.title })"
   >
