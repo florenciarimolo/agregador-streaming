@@ -48,7 +48,7 @@
               />
             </div>
             <!-- List view skeletons -->
-            <div v-else class="space-y-4">
+            <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <SkeletonListItem
                 v-for="i in 8"
                 :key="`skeleton-watchlist-list-${i}`"
@@ -112,7 +112,7 @@
               </TitleCardMosaic>
             </div>
             <!-- List view -->
-            <div v-else class="space-y-4">
+            <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <TitleListItem
                 v-for="title in watchlistTitles"
                 :key="`watchlist-list-${title.tmdb_id}`"

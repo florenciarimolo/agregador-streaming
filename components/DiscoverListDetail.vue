@@ -71,7 +71,7 @@
         />
       </div>
       <!-- List view skeletons -->
-      <div v-else class="space-y-4">
+      <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <SkeletonListItem
           v-for="i in 8"
           :key="`skeleton-discover-list-${i}`"
@@ -123,7 +123,7 @@
         </TitleCardMosaic>
       </div>
       <!-- List view -->
-      <div v-else class="space-y-4">
+      <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <TitleListItem
           v-for="item in items"
           :key="item.id"

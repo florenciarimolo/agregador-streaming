@@ -995,7 +995,7 @@ onMounted(() => {
                   />
                 </div>
                 <!-- List view skeletons -->
-                <div v-else class="space-y-4">
+                <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <SkeletonListItem
                     v-for="i in 20"
                     :key="`skeleton-list-${i}`"

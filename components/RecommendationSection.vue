@@ -36,7 +36,7 @@
       </template>
       <!-- List view skeletons -->
       <template v-else>
-        <div class="space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <SkeletonListItem
             v-for="i in 8"
             :key="`skeleton-list-${i}`"
@@ -78,7 +78,7 @@
         />
       </div>
       <!-- List view -->
-      <div v-else class="space-y-4">
+      <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <RecommendationListItem
           v-for="recommendation in recommendations"
           :key="recommendation.id"
