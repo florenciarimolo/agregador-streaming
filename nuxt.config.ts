@@ -216,8 +216,49 @@ export default defineNuxtConfig({
         },
       ],
       link: [
-        { rel: 'icon', type: 'image/png', href: '/favicon.png' },
-        { rel: 'apple-touch-icon', href: '/favicon.png' },
+        // Main favicon.ico (multi-resolution: 16x16, 32x32)
+        {
+          rel: 'icon',
+          type: 'image/x-icon',
+          href: `${getSiteUrl()}/favicon.ico`,
+        },
+        // PNG favicons with sizes for Google SEO (multiples of 48px)
+        {
+          rel: 'icon',
+          type: 'image/png',
+          sizes: '48x48',
+          href: `${getSiteUrl()}/favicon-48x48.png`,
+        },
+        {
+          rel: 'icon',
+          type: 'image/png',
+          sizes: '96x96',
+          href: `${getSiteUrl()}/favicon-96x96.png`,
+        },
+        {
+          rel: 'icon',
+          type: 'image/png',
+          sizes: '144x144',
+          href: `${getSiteUrl()}/favicon-144x144.png`,
+        },
+        {
+          rel: 'icon',
+          type: 'image/png',
+          sizes: '192x192',
+          href: `${getSiteUrl()}/favicon-192x192.png`,
+        },
+        // Main favicon.png (fallback, 192x192)
+        {
+          rel: 'icon',
+          type: 'image/png',
+          href: `${getSiteUrl()}/favicon.png`,
+        },
+        // Apple Touch Icon
+        {
+          rel: 'apple-touch-icon',
+          sizes: '180x180',
+          href: `${getSiteUrl()}/apple-touch-icon.png`,
+        },
       ],
     },
   },
