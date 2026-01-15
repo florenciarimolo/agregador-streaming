@@ -135,6 +135,13 @@ export default defineNuxtConfig({
   // Add compatibility date to avoid warnings
   compatibilityDate: '2024-04-03',
 
+  // Site configuration for SEO and sitemap
+  // @nuxtjs/sitemap v7 uses site.url instead of sitemap.siteUrl
+  site: {
+    url: getSiteUrl(), // Uses NUXT_PUBLIC_BASE_URL or auto-detects environment
+    name: 'UpNext',
+  },
+
   i18n: {
     langDir: 'locales',
     locales: [
@@ -179,7 +186,7 @@ export default defineNuxtConfig({
     strategy: 'prefix',
     vueI18n: 'i18n/i18n.config.ts',
     detectBrowserLanguage: false, // Disabled - we handle / redirect manually in legacy-redirect middleware
-    rootRedirect: null, // Disabled - we handle / redirect manually in legacy-redirect middleware
+    rootRedirect: undefined, // Disabled - we handle / redirect manually in legacy-redirect middleware
     skipSettingLocaleOnNavigate: false, // Enable automatic locale sync from URL - the middleware ensures it matches
   },
 
@@ -266,9 +273,8 @@ export default defineNuxtConfig({
   sitemap: {
     // @nuxtjs/sitemap v7 uses urls() - this is the correct API
     // The sitemap will be served at /sitemap.xml
-    // CRITICAL: siteUrl must be set explicitly and must NOT have trailing slash
-    // This prevents double slashes (//) when concatenating with loc paths
-    siteUrl: getSiteUrl(),
+    // CRITICAL: site.url is set in the site config above (not here)
+    // site.url must NOT have trailing slash to prevent double slashes (//)
     exclude: [
       '/:lang/auth/**',
       '/:lang/auth/callback',
