@@ -277,12 +277,14 @@ const pageDescription = computed(() => {
   return t('seo.tvShowDescription', { title, experience });
 });
 
-const ogImage = computed(() => {
-  if (tvShow.value?.backdrop_path) {
-    return `https://image.tmdb.org/t/p/w1280${tvShow.value.backdrop_path}`;
+const posterUrl = computed(() => {
+  if (tvShow.value?.poster_path) {
+    return `https://image.tmdb.org/t/p/w500${tvShow.value.poster_path}`;
   }
   return '';
 });
+
+const ogImage = computed(() => posterUrl.value);
 
 // Canonical URL - ensure unique, avoid duplicates with /tv-show/[id]/index
 // SEO: hreflang and canonical
@@ -330,6 +332,10 @@ useSeoMeta({
   ogTitle: pageTitle,
   ogDescription: pageDescription,
   ogImage: ogImage,
+  ogImageAlt: computed(() => {
+    const name = tvShow.value?.name || t('media.series');
+    return t('media.posterOf', { title: name });
+  }),
   ogType: 'video.tv_show',
   ogUrl: canonicalUrlFromComposable,
   twitterCard: 'summary_large_image',

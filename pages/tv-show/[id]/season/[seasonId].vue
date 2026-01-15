@@ -97,7 +97,7 @@
 
 <script setup lang="ts">
 import { useRoute } from 'vue-router';
-import { useFetch } from 'nuxt/app';
+import { useFetch, useSeoMeta, useHead } from 'nuxt/app';
 import { computed, watch, onMounted, ref } from 'vue';
 import { useRouteWithLang } from '@/composables/useRouteWithLang';
 
@@ -114,6 +114,9 @@ import IconClock from '@/components/icons/IconClock.vue';
 import ListItemBase from '@/components/ListItemBase.vue';
 import { formatDateByRegion } from '@/utils/formatDate';
 import { useUserRegion } from '@/composables/useUserRegion';
+import { useTVSeasonSchema } from '@/composables/useSchemaOrg';
+import { useHreflang } from '@/composables/useHreflang';
+import { useCanonical } from '@/composables/useCanonical';
 
 const route = useRoute();
 const { locale } = useI18n();
@@ -218,18 +221,87 @@ const pageTitle = computed(() => {
   return t('media.seasonTitle');
 });
 
+const pageDescription = computed(() => {
+  if (seasonWithProviders.value?.overview) {
+    return seasonWithProviders.value.overview;
+  }
+  return t('media.seasonDescription', { seasonId });
+});
+
+const posterUrl = computed(() => {
+  if (seasonWithProviders.value?.poster_path) {
+    return `https://image.tmdb.org/t/p/w500${seasonWithProviders.value.poster_path}`;
+  }
+  return '';
+});
+
+// SEO: Season page - public, indexable
+const config = useRuntimeConfig();
+const siteUrl = config.public.baseUrl || config.public.siteUrl;
+
+// SEO: hreflang and canonical
+const { hreflangLinks } = useHreflang();
+const { canonicalUrl: canonicalUrlFromComposable } = useCanonical();
+
+// Schema.org JSON-LD
+const seasonSchema = computed(() => {
+  if (!seasonWithProviders.value || !tvShowData.value) return null;
+  return useTVSeasonSchema(seasonWithProviders.value, tvShowData.value, siteUrl);
+});
+
 useHead({
   title: pageTitle,
+  meta: [
+    {
+      name: 'description',
+      content: pageDescription,
+    },
+    {
+      name: 'robots',
+      content: 'index, follow',
+    },
+  ],
+  link: [
+    ...hreflangLinks.value,
+    {
+      rel: 'canonical',
+      href: canonicalUrlFromComposable,
+    },
+  ],
+  script: seasonSchema.value
+    ? [
+        {
+          type: 'application/ld+json',
+          innerHTML: JSON.stringify(seasonSchema.value),
+        },
+      ]
+    : [],
 });
 
 useSeoMeta({
   title: pageTitle,
-  description: computed(() => {
-    if (seasonWithProviders.value?.overview) {
-      return seasonWithProviders.value.overview;
+  description: pageDescription,
+  ogTitle: pageTitle,
+  ogDescription: pageDescription,
+  ogImage: posterUrl,
+  ogImageAlt: computed(() => {
+    const seasonName = seasonWithProviders.value?.name || '';
+    const seriesName = tvShowData.value?.name || '';
+    if (seasonName && seriesName) {
+      return t('media.posterOf', { title: `${seasonName} – ${seriesName}` });
     }
-    return t('media.seasonDescription', { seasonId });
+    if (seasonName) {
+      return t('media.posterOf', { title: seasonName });
+    }
+    return t('media.seasonTitle');
   }),
+  ogType: 'video.tv_show',
+  ogUrl: canonicalUrlFromComposable,
+  twitterCard: 'summary_large_image',
+  twitterTitle: pageTitle,
+  twitterDescription: pageDescription,
+  twitterImage: posterUrl,
+  robots: 'index, follow',
 });
 
 onMounted(async () => {

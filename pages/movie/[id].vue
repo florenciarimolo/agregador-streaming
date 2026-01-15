@@ -238,13 +238,14 @@ const pageDescription = computed(() => {
   return t('seo.movieDescription', { title, experience });
 });
 
-const ogImage = computed(() => {
-  if (movie.value?.backdrop_path) {
-    return `https://image.tmdb.org/t/p/w1280${movie.value.backdrop_path}`;
+const posterUrl = computed(() => {
+  if (movie.value?.poster_path) {
+    return `https://image.tmdb.org/t/p/w500${movie.value.poster_path}`;
   }
-
   return '';
 });
+
+const ogImage = computed(() => posterUrl.value);
 
 // SEO: hreflang and canonical
 const { hreflangLinks } = useHreflang();
@@ -292,6 +293,10 @@ useSeoMeta({
   ogTitle: pageTitle,
   ogDescription: pageDescription,
   ogImage: ogImage,
+  ogImageAlt: computed(() => {
+    const title = movie.value?.title || t('media.movie');
+    return t('media.posterOf', { title });
+  }),
   ogType: 'video.movie',
   ogUrl: canonicalUrlFromComposable,
   twitterCard: 'summary_large_image',
