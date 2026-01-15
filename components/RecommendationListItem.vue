@@ -7,6 +7,7 @@
     :vote-average="props.title.vote_average"
     :type="props.title.type"
     :tmdb-id="props.title.tmdb_id"
+    :providers="props.title.providers"
     :aria-label="$t('media.recommendationLabel', { title: props.title.title })"
     :link-aria-label="$t('media.viewDetailsOf', { title: props.title.title })"
     :image-alt="$t('media.posterOf', { title: props.title.title })"
