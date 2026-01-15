@@ -731,6 +731,27 @@
       "lightAndConversational": "ligera y conversacional",
       "intenseAndReflective": "intensa y reflexiva",
       "fallback": "para ver a tu ritmo"
+    },
+    "keywords": {
+      "home": "recomendaciones de películas, recomendaciones de series, recomendaciones personalizadas, qué ver, recomendaciones de streaming, recomendaciones según estado de ánimo, recomendaciones según nivel de atención, plataformas de streaming, Netflix, HBO, Disney Plus, Amazon Prime, guía de streaming, recomendaciones para ver, buscador de películas, buscador de series",
+      "discover": "listas curadas de películas, listas curadas de series, listas editoriales, colecciones de películas, colecciones de series, listas de streaming, listas de qué ver, recomendaciones de películas, recomendaciones de series, descubrir películas, descubrir series, contenido de streaming",
+      "discoverListBase": "lista curada, lista de películas, lista de series, lista de streaming, qué ver",
+      "discoverListTypeMovie": "películas, films, cine",
+      "discoverListTypeTv": "series, televisión",
+      "discoverListTypeMixed": "películas, series, televisión",
+      "movieBase": "película, film, cine, streaming, dónde ver, ver online",
+      "movieYear": "película {year}, películas {year}",
+      "movieStreaming": "plataformas de streaming, Netflix, HBO, Disney Plus, Amazon Prime, recomendaciones de películas, qué ver",
+      "tvShowBase": "serie, series, televisión, streaming, dónde ver, ver online",
+      "tvShowYear": "serie {year}, series {year}",
+      "tvShowSeasons": "{count} temporadas",
+      "tvShowStreaming": "plataformas de streaming, Netflix, HBO, Disney Plus, Amazon Prime, recomendaciones de series, recomendaciones de televisión, qué ver",
+      "seasonBase": "temporada, temporada de serie, streaming, dónde ver, ver online",
+      "seasonNumber": "temporada {number}",
+      "seasonNumberWithShow": "temporada {number} {showName}",
+      "seasonEpisodes": "{count} episodios",
+      "seasonYear": "temporada {year}",
+      "seasonStreaming": "plataformas de streaming, Netflix, HBO, Disney Plus, Amazon Prime, recomendaciones de series, qué ver"
     }
   },
   "howItWorks": {

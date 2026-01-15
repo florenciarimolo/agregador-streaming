@@ -53,6 +53,7 @@ import type { AlternativeTitlesResponse } from '@/types/AlternativeTitle';
 import { isMovieInTheaters } from '@/utils/movieStatus';
 import { useMovieSchema } from '@/composables/useSchemaOrg';
 import { getMovieSeoExperience } from '@/composables/useSeoExperience';
+import { useMovieKeywords } from '@/composables/useSeoKeywords';
 import AppShell from '@/components/layout/AppShell.vue';
 import PageContainer from '@/components/layout/PageContainer.vue';
 import Alert from '@/components/ui/Alert.vue';
@@ -258,12 +259,22 @@ const movieSchema = computed(() => {
   return useMovieSchema(movie.value, siteUrl);
 });
 
+// SEO keywords
+const { seoKeywords: movieKeywords } = useMovieKeywords(
+  computed(() => movie.value)
+);
+const seoKeywords = movieKeywords;
+
 useHead({
   title: pageTitle,
   meta: [
     {
       name: 'description',
       content: pageDescription,
+    },
+    {
+      name: 'keywords',
+      content: seoKeywords,
     },
     {
       name: 'robots',

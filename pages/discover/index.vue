@@ -58,6 +58,7 @@ import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
 import { useHreflang } from '@/composables/useHreflang';
 import { useCanonical } from '@/composables/useCanonical';
+import { useDiscoverKeywords } from '@/composables/useSeoKeywords';
 import AppShell from '@/components/layout/AppShell.vue';
 import PageContainer from '@/components/layout/PageContainer.vue';
 import Section from '@/components/layout/Section.vue';
@@ -87,12 +88,20 @@ const showAuthForm = ref(false);
 const { hreflangLinks } = useHreflang();
 const { canonicalUrl } = useCanonical();
 
+// SEO keywords
+const { seoKeywords: discoverKeywords } = useDiscoverKeywords();
+const seoKeywords = discoverKeywords;
+
 useHead({
   title: t('discover.title'),
   meta: [
     {
       name: 'description',
       content: t('discover.description'),
+    },
+    {
+      name: 'keywords',
+      content: seoKeywords,
     },
     {
       name: 'robots',

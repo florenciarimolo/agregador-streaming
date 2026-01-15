@@ -23,6 +23,7 @@
 import { ref, onMounted, computed, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
+import { useDiscoverListKeywords } from '@/composables/useSeoKeywords';
 import AppShell from '@/components/layout/AppShell.vue';
 import PageContainer from '@/components/layout/PageContainer.vue';
 import Section from '@/components/layout/Section.vue';
@@ -71,12 +72,22 @@ const pageDescription = computed(() => {
   return t('discover.description');
 });
 
+// SEO keywords
+const { seoKeywords: listKeywords } = useDiscoverListKeywords(
+  computed(() => list.value)
+);
+const seoKeywords = listKeywords;
+
 useHead({
   title: pageTitle,
   meta: [
     {
       name: 'description',
       content: pageDescription,
+    },
+    {
+      name: 'keywords',
+      content: seoKeywords,
     },
     {
       name: 'robots',

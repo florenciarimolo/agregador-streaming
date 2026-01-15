@@ -1,11 +1,5 @@
 <script setup lang="ts">
-import {
-  computed,
-  watchEffect,
-  onMounted,
-  ref,
-  watch,
-} from 'vue';
+import { computed, watchEffect, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useUserStore } from '@/stores/user';
 import { useRecommendations } from '@/composables/useRecommendations';
@@ -16,6 +10,7 @@ import type { Mood } from '@/constants/domain/mood';
 import type { Attention } from '@/constants/domain/attention';
 import { useHreflang } from '@/composables/useHreflang';
 import { useCanonical } from '@/composables/useCanonical';
+import { useHomeKeywords } from '@/composables/useSeoKeywords';
 import AppShell from '@/components/layout/AppShell.vue';
 import PageContainer from '@/components/layout/PageContainer.vue';
 import Section from '@/components/layout/Section.vue';
@@ -111,6 +106,15 @@ watchEffect(() => {
         },
       ];
 
+  // SEO keywords
+  const { seoKeywords: homeKeywords } = useHomeKeywords();
+  const seoKeywords = computed(() => {
+    if (isAuthenticated) {
+      return '';
+    }
+    return homeKeywords.value;
+  });
+
   useHead({
     title: isAuthenticated ? t('seo.defaultTitle') : t('seo.homeTitlePublic'),
     titleTemplate: isAuthenticated ? '%s' : undefined,
@@ -119,6 +123,14 @@ watchEffect(() => {
         name: 'robots',
         content: isAuthenticated ? 'noindex, nofollow' : 'index, follow',
       },
+      ...(isAuthenticated
+        ? []
+        : [
+            {
+              name: 'keywords',
+              content: seoKeywords,
+            },
+          ]),
     ],
     link: seoLinks,
     htmlAttrs: {},

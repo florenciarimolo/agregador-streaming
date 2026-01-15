@@ -117,6 +117,7 @@ import { useUserRegion } from '@/composables/useUserRegion';
 import { useTVSeasonSchema } from '@/composables/useSchemaOrg';
 import { useHreflang } from '@/composables/useHreflang';
 import { useCanonical } from '@/composables/useCanonical';
+import { useSeasonKeywords } from '@/composables/useSeoKeywords';
 
 const route = useRoute();
 const { locale } = useI18n();
@@ -249,12 +250,23 @@ const seasonSchema = computed(() => {
   return useTVSeasonSchema(seasonWithProviders.value, tvShowData.value, siteUrl);
 });
 
+// SEO keywords
+const { seoKeywords: seasonKeywords } = useSeasonKeywords(
+  computed(() => seasonWithProviders.value as Season | null),
+  computed(() => tvShowData.value ?? null)
+);
+const seoKeywords = seasonKeywords;
+
 useHead({
   title: pageTitle,
   meta: [
     {
       name: 'description',
       content: pageDescription,
+    },
+    {
+      name: 'keywords',
+      content: seoKeywords,
     },
     {
       name: 'robots',

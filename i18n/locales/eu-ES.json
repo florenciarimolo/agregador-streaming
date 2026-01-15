@@ -731,6 +731,27 @@
       "lightAndConversational": "arina eta elkarrizketazkoa",
       "intenseAndReflective": "intentsua eta islatzailea",
       "fallback": "zure erritmoan ikusteko"
+    },
+    "keywords": {
+      "home": "film gomendioak, telesail gomendioak, gomendio pertsonalizatuak, zer ikusi, streaming gomendioak, egoeraren araberako gomendioak, arreta mailaren araberako gomendioak, streaming plataformak, Netflix, HBO, Disney Plus, Amazon Prime, streaming gida, ikusteko gomendioak, film bilatzailea, telesail bilatzailea",
+      "discover": "film zerrenda kuratuak, telesail zerrenda kuratuak, editorial zerrendak, film bildumak, telesail bildumak, streaming zerrendak, zer ikusi zerrendak, film gomendioak, telesail gomendioak, filmak aurkitu, telesailak aurkitu, streaming edukiak",
+      "discoverListBase": "zerrenda kuratua, film zerrenda, telesail zerrenda, streaming zerrenda, zer ikusi",
+      "discoverListTypeMovie": "filmak, zinemak",
+      "discoverListTypeTv": "telesailak, telebista",
+      "discoverListTypeMixed": "filmak, telesailak, telebista",
+      "movieBase": "filma, zinemak, streaming, non ikusi, online ikusi",
+      "movieYear": "{year} filma, {year} filmak",
+      "movieStreaming": "streaming plataformak, Netflix, HBO, Disney Plus, Amazon Prime, film gomendioak, zer ikusi",
+      "tvShowBase": "telesaila, telesailak, telebista, streaming, non ikusi, online ikusi",
+      "tvShowYear": "{year} telesaila, {year} telesailak",
+      "tvShowSeasons": "{count} denboraldiak",
+      "tvShowStreaming": "streaming plataformak, Netflix, HBO, Disney Plus, Amazon Prime, telesail gomendioak, telebista gomendioak, zer ikusi",
+      "seasonBase": "denboraldia, telesail denboraldia, streaming, non ikusi, online ikusi",
+      "seasonNumber": "{number} denboraldia",
+      "seasonNumberWithShow": "{number} denboraldia {showName}",
+      "seasonEpisodes": "{count} atalak",
+      "seasonYear": "{year} denboraldia",
+      "seasonStreaming": "streaming plataformak, Netflix, HBO, Disney Plus, Amazon Prime, telesail gomendioak, zer ikusi"
     }
   },
   "howItWorks": {

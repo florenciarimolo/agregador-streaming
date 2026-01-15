@@ -729,6 +729,27 @@
       "lightAndConversational": "light and conversational",
       "intenseAndReflective": "intense and reflective",
       "fallback": "to watch at your own pace"
+    },
+    "keywords": {
+      "home": "movie recommendations, TV show recommendations, personalised recommendations, what to watch, streaming recommendations, mood-based recommendations, attention level recommendations, streaming platforms, Netflix, HBO, Disney Plus, Amazon Prime, streaming guide, watch recommendations, movie finder, series finder",
+      "discover": "curated movie lists, curated TV show lists, editorial lists, movie collections, series collections, streaming lists, what to watch lists, movie recommendations, TV show recommendations, discover movies, discover series, streaming content",
+      "discoverListBase": "curated list, movie list, TV show list, streaming list, what to watch",
+      "discoverListTypeMovie": "movies, films, cinema",
+      "discoverListTypeTv": "TV shows, series, television",
+      "discoverListTypeMixed": "movies, TV shows, series",
+      "movieBase": "movie, film, cinema, streaming, where to watch, watch online",
+      "movieYear": "{year} movie, movies {year}",
+      "movieStreaming": "streaming platforms, Netflix, HBO, Disney Plus, Amazon Prime, movie recommendations, what to watch",
+      "tvShowBase": "TV show, series, television, streaming, where to watch, watch online",
+      "tvShowYear": "{year} series, TV shows {year}",
+      "tvShowSeasons": "{count} seasons",
+      "tvShowStreaming": "streaming platforms, Netflix, HBO, Disney Plus, Amazon Prime, TV show recommendations, series recommendations, what to watch",
+      "seasonBase": "TV season, series season, streaming, where to watch, watch online",
+      "seasonNumber": "season {number}, temporada {number}",
+      "seasonNumberWithShow": "temporada {number} {showName}",
+      "seasonEpisodes": "{count} episodes",
+      "seasonYear": "{year} season",
+      "seasonStreaming": "streaming platforms, Netflix, HBO, Disney Plus, Amazon Prime, TV show recommendations, what to watch"
     }
   },
   "howItWorks": {

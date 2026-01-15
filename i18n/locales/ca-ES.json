@@ -731,6 +731,27 @@
       "lightAndConversational": "lleugera i conversacional",
       "intenseAndReflective": "intensa i reflexiva",
       "fallback": "per veure al teu ritme"
+    },
+    "keywords": {
+      "home": "recomanacions de pel·lícules, recomanacions de sèries, recomanacions personalitzades, què veure, recomanacions de streaming, recomanacions segons estat d'ànim, recomanacions segons nivell d'atenció, plataformes de streaming, Netflix, HBO, Disney Plus, Amazon Prime, guia de streaming, recomanacions per veure, cercador de pel·lícules, cercador de sèries",
+      "discover": "llistes curades de pel·lícules, llistes curades de sèries, llistes editorials, col·leccions de pel·lícules, col·leccions de sèries, llistes de streaming, llistes de què veure, recomanacions de pel·lícules, recomanacions de sèries, descobrir pel·lícules, descobrir sèries, contingut de streaming",
+      "discoverListBase": "llista curada, llista de pel·lícules, llista de sèries, llista de streaming, què veure",
+      "discoverListTypeMovie": "pel·lícules, films, cinema",
+      "discoverListTypeTv": "sèries, televisió",
+      "discoverListTypeMixed": "pel·lícules, sèries, televisió",
+      "movieBase": "pel·lícula, film, cinema, streaming, on veure, veure online",
+      "movieYear": "pel·lícula {year}, pel·lícules {year}",
+      "movieStreaming": "plataformes de streaming, Netflix, HBO, Disney Plus, Amazon Prime, recomanacions de pel·lícules, què veure",
+      "tvShowBase": "sèrie, sèries, televisió, streaming, on veure, veure online",
+      "tvShowYear": "sèrie {year}, sèries {year}",
+      "tvShowSeasons": "{count} temporades",
+      "tvShowStreaming": "plataformes de streaming, Netflix, HBO, Disney Plus, Amazon Prime, recomanacions de sèries, recomanacions de televisió, què veure",
+      "seasonBase": "temporada, temporada de sèrie, streaming, on veure, veure online",
+      "seasonNumber": "temporada {number}",
+      "seasonNumberWithShow": "temporada {number} {showName}",
+      "seasonEpisodes": "{count} episodis",
+      "seasonYear": "temporada {year}",
+      "seasonStreaming": "plataformes de streaming, Netflix, HBO, Disney Plus, Amazon Prime, recomanacions de sèries, què veure"
     }
   },
   "howItWorks": {

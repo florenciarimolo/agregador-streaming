@@ -133,6 +133,7 @@ import Badge from '@/components/Badge.vue';
 import ListItemBase from '@/components/ListItemBase.vue';
 import { useTVShowSchema } from '@/composables/useSchemaOrg';
 import { getTVShowSeoExperience } from '@/composables/useSeoExperience';
+import { useTVShowKeywords } from '@/composables/useSeoKeywords';
 import AppShell from '@/components/layout/AppShell.vue';
 import PageContainer from '@/components/layout/PageContainer.vue';
 import Section from '@/components/layout/Section.vue';
@@ -297,12 +298,22 @@ const tvShowSchema = computed(() => {
   return useTVShowSchema(tvShow.value, siteUrl);
 });
 
+// SEO keywords
+const { seoKeywords: tvShowKeywords } = useTVShowKeywords(
+  computed(() => tvShow.value)
+);
+const seoKeywords = tvShowKeywords;
+
 useHead({
   title: pageTitle,
   meta: [
     {
       name: 'description',
       content: pageDescription,
+    },
+    {
+      name: 'keywords',
+      content: seoKeywords,
     },
     {
       name: 'robots',
