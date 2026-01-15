@@ -149,7 +149,7 @@
           {{
             formatDateByRegion(
               (mediaObject.release_date || mediaObject.first_air_date) ?? '',
-              userRegion.value,
+              userRegion,
               t
             )
           }}
@@ -195,7 +195,10 @@ const props = defineProps({
 const isMobile = ref(false);
 const isTablet = ref(false);
 const { getUserRegion } = useUserRegion();
-const userRegion = ref<string | null>(null);
+const userRegionRef = ref<string>('ES'); // Initialize with default value
+
+// Computed to ensure type safety in template
+const userRegion = computed(() => userRegionRef.value);
 
 // Detect mobile screen size
 const checkMobile = () => {
@@ -249,7 +252,10 @@ onMounted(async () => {
     checkMobile();
     window.addEventListener('resize', handleResize);
     // Get user region for date formatting
-    userRegion.value = await getUserRegion();
+    const region = await getUserRegion();
+    if (region) {
+      userRegionRef.value = region;
+    }
   }
 });
 

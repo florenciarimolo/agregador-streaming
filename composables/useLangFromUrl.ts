@@ -10,6 +10,7 @@ import {
   URL_TO_I18N_MAP,
   VALID_URL_CODES,
   DEFAULT_LANGUAGE_URL_CODE,
+  type UrlLanguageCode,
 } from '@/constants/urlLanguageCodes';
 
 // Re-export for backward compatibility
@@ -35,7 +36,7 @@ export const useLangFromUrl = () => {
     }
 
     // Normalize: convert to lowercase and handle any case variations
-    const normalizedLang = langFromUrl.toLowerCase();
+    const normalizedLang = langFromUrl.toLowerCase() as UrlLanguageCode;
 
     // Validate language code
     if (!VALID_URL_CODES.includes(normalizedLang)) {
@@ -57,7 +58,8 @@ export const useLangFromUrl = () => {
     }
 
     // Map to i18n code
-    const i18nCode = URL_TO_I18N_MAP[urlCode];
+    // Type assertion is safe because urlCode is validated in langUrlCode computed
+    const i18nCode = URL_TO_I18N_MAP[urlCode as UrlLanguageCode];
 
     if (!i18nCode) {
       // This should never happen if VALID_URL_CODES is correct, but safety check

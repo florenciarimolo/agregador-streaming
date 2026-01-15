@@ -71,7 +71,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
       // Set locale to match URL (this is the source of truth)
       // IMPORTANT: setLocale() expects URL code, not i18n code
       // This ensures translations are loaded for the correct language
-      await setLocale(normalizedLangFromUrl);
+      await setLocale(normalizedLangFromUrl as (typeof VALID_URL_CODES)[number]);
 
       // Verify synchronization (safety check)
       if (

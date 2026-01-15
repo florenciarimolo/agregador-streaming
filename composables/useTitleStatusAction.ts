@@ -248,7 +248,7 @@ export const useTitleStatusAction = () => {
           },
         }, 7000);
 
-        return { success: true, action: 'removed', newStatus: currentStatus };
+        return { success: true, action: 'removed', newStatus: currentStatus ?? null };
       } else {
         // Add like (requires seen status)
         await $fetch('/api/users/title-status', {

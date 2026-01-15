@@ -40,11 +40,11 @@ const { twitterCardImage } = useTwitterCardImage();
 
 // Watch for route changes and update html lang and Twitter card image
 watch(
-  () => [route.params.lang, htmlLang.value, twitterCardImage.value],
+  () => [route.params.lang, htmlLang, twitterCardImage],
   () => {
     useHead({
       htmlAttrs: {
-        lang: htmlLang.value,
+        lang: htmlLang,
       },
     });
 

@@ -25,8 +25,10 @@ function getDOMElement(ref: Ref<HTMLElement | null>): HTMLElement | null {
   }
   
   // If it's a Vue component, try to get $el
-  if (ref.value.$el && ref.value.$el instanceof HTMLElement) {
-    return ref.value.$el;
+  // Type assertion needed because TypeScript doesn't know about Vue component $el property
+  const component = ref.value as unknown as { $el?: HTMLElement };
+  if (component.$el && component.$el instanceof HTMLElement) {
+    return component.$el;
   }
   
   // If $el is not available, the component might not be mounted yet

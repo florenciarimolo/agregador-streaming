@@ -1,6 +1,7 @@
 import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 import type { Movie } from '@/types/Movie';
 import type { TVShow } from '@/types/TVShow';
+import type { Genre } from '@/types/Genre';
 
 /**
  * SEO Experience mapping based on TMDB genre IDs
@@ -83,7 +84,11 @@ export function getMovieSeoExperience(movie: Movie | null | undefined): string {
   if (!movie) {
     return 'seo.experience.fallback';
   }
-  return getSeoExperience(MEDIA_TYPE.MOVIE, movie.genres);
+  // Map Genre[] to Array<{ id: number }> for getSeoExperience
+  // Note: Genre type only has 'name', but we need 'id' from TMDB
+  // This function expects genres with id, so we return fallback if genres don't have id
+  const genresWithId = movie.genres?.filter((g): g is Genre & { id: number } => 'id' in g) || [];
+  return getSeoExperience(MEDIA_TYPE.MOVIE, genresWithId.length > 0 ? genresWithId : null);
 }
 
 /**
@@ -93,6 +98,10 @@ export function getTVShowSeoExperience(tvShow: TVShow | null | undefined): strin
   if (!tvShow) {
     return 'seo.experience.fallback';
   }
-  return getSeoExperience(MEDIA_TYPE.TV, tvShow.genres);
+  // Map Genre[] to Array<{ id: number }> for getSeoExperience
+  // Note: Genre type only has 'name', but we need 'id' from TMDB
+  // This function expects genres with id, so we return fallback if genres don't have id
+  const genresWithId = tvShow.genres?.filter((g): g is Genre & { id: number } => 'id' in g) || [];
+  return getSeoExperience(MEDIA_TYPE.TV, genresWithId.length > 0 ? genresWithId : null);
 }
 

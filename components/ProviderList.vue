@@ -31,7 +31,6 @@ import {
   getFallbackSearchUrl,
 } from '@/utils/providerLinks';
 import type { MediaType } from '@/constants/domain/mediaType';
-import { useUserRegion } from '@/composables/useUserRegion';
 
 const props = defineProps({
   mediaProviderPropList: {
@@ -88,15 +87,9 @@ const _getProviderUrl = (providerName: string): string => {
   );
 };
 
-// Use composable for user region (cache included)
-const { getUserRegion } = useUserRegion();
-
 // Pre-fetch URLs for async providers
 onMounted(async () => {
   if (!props.mediaTitle) return;
-
-  // Get user region from composable (uses cache)
-  const userRegion = (await getUserRegion()) || 'ES';
 
   // Generate URLs for all providers using the title in the user's current language
   // mediaTitle is already in the user's current language from the API response
@@ -113,8 +106,7 @@ onMounted(async () => {
           props.alternativeTitles.length > 0
             ? props.alternativeTitles
             : undefined,
-          props.mediaType,
-          userRegion
+          props.mediaType
         );
         if (url) {
           providerUrls.value[providerName] = url;
@@ -132,8 +124,7 @@ onMounted(async () => {
           props.alternativeTitles.length > 0
             ? props.alternativeTitles
             : undefined,
-          props.mediaType,
-          userRegion
+          props.mediaType
         );
         if (url) {
           providerUrls.value[providerName] = url;
