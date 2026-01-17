@@ -66,7 +66,7 @@
 
       <!-- Top-left badges slot and type badge - Outside the link to allow tooltips to escape -->
       <div
-        class="flex overflow-visible absolute top-2 left-2 z-10 flex-col gap-2 items-start"
+        class="flex overflow-visible absolute top-2 left-2 z-10 flex-col items-start"
       >
         <div class="relative z-20">
           <slot name="top-left-badges">
@@ -88,15 +88,36 @@
           </slot>
         </div>
         <!-- Show type badge or tag badge for discover lists -->
+        <!-- Only add margin-top when there's content in the slot above -->
         <Badge
           v-if="showType && isDiscoverList && tag"
           :label="capitalizeTag(tag)"
           size="xs"
+          :class="
+            hasTopLeftContent !== undefined
+              ? hasTopLeftContent
+                ? 'mt-2'
+                : ''
+              : recommendation?.vote_average ||
+                recommendation?.in_watchlist
+              ? 'mt-2'
+              : ''
+          "
         />
         <Badge
           v-else-if="showType && !(isDiscoverList && tag)"
           :type="computedType"
           size="xs"
+          :class="
+            hasTopLeftContent !== undefined
+              ? hasTopLeftContent
+                ? 'mt-2'
+                : ''
+              : recommendation?.vote_average ||
+                recommendation?.in_watchlist
+              ? 'mt-2'
+              : ''
+          "
         />
       </div>
 
@@ -121,7 +142,7 @@
                       "
                       size="small"
                       variant="default"
-                      custom-class="menu-button p-2 rounded-full bg-black/50 hover:bg-gray-700/80 backdrop-blur-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-black/50 [&>svg]:text-white"
+                      custom-class="menu-button p-2 rounded-full bg-black/50 hover:bg-gray-700/80 backdrop-blur-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-black/50 [&>svg]:text-white [&>svg]:w-3 [&>svg]:h-3"
                     />
                   </template>
                   <div class="p-4">
@@ -361,6 +382,8 @@ interface Props {
   tag?: string | null | Record<string, string>;
   // Flag to indicate if this is a discover list card (to show tag instead of type badge)
   isDiscoverList?: boolean;
+  // Flag to indicate if there's content in the top-left-badges slot (for spacing)
+  hasTopLeftContent?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -385,6 +408,7 @@ const props = withDefaults(defineProps<Props>(), {
   isInWatchlist: false,
   tag: undefined,
   isDiscoverList: false,
+  hasTopLeftContent: undefined,
 });
 
 const user = useSupabaseUser();
