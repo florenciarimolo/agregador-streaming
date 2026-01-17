@@ -13,6 +13,7 @@ import {
   DEFAULT_LANGUAGE_ISO,
   LATIN_SCRIPT_LANGUAGE_ISO_CODES,
 } from '@/constants/languages';
+import { useLogger } from '@/composables/useLogger';
 
 // Multi-language structure: {"es": "...", "ca": "...", "eu": "...", "gl": "...", "en": "..."}
 export type MultiLanguageText = Record<string, string>;
@@ -452,11 +453,7 @@ export function getTitleInLanguage(
       }
     }
 
-    if (import.meta.dev) {
-      console.log(
-        `[getTitleInLanguage] Using legacy format for language ${language}, found key: ${langCode}`
-      );
-    }
+    // Development-only logging removed
     return legacyText;
   }
 
@@ -564,14 +561,7 @@ export async function getTitlesByTmdbIds(
 ) {
   const supabase = supabaseClient || useSupabaseClient();
 
-  if (import.meta.dev) {
-    console.log(
-      '[getTitlesByTmdbIds] Fetching titles for tmdbIds:',
-      tmdbIds,
-      'with language:',
-      language
-    );
-  }
+  // Development-only logging removed
 
   const result = await supabase
     .from(TABLES.TITLES)
@@ -584,7 +574,15 @@ export async function getTitlesByTmdbIds(
   const { error } = result;
 
   if (error) {
-    console.error('[getTitlesByTmdbIds] Error fetching titles:', error);
+    const { logError } = useLogger();
+    logError(
+      '[DatabaseTitles] Error fetching titles by tmdbIds',
+      error as Error,
+      {
+        tmdbIdsCount: tmdbIds.length,
+        language,
+      }
+    );
     return { data: null, error };
   }
 
@@ -598,20 +596,16 @@ export async function getTitlesByTmdbIds(
 
   // If there are missing titles and we have type information, fetch them from TMDB
   if (missingTmdbIds.length > 0 && titleTypes) {
-    if (import.meta.dev) {
-      console.log(
-        '[getTitlesByTmdbIds] Missing titles, fetching from TMDB:',
-        missingTmdbIds
-      );
-    }
+    // Development-only logging removed
 
     // Fetch missing titles from TMDB in parallel
     const fetchPromises = missingTmdbIds.map(async (tmdbId) => {
       const type = titleTypes.get(tmdbId);
       if (!type) {
-        console.warn(
-          `[getTitlesByTmdbIds] No type found for tmdb_id ${tmdbId}, skipping`
-        );
+        const { logWarn } = useLogger();
+        logWarn('[DatabaseTitles] No type found for tmdb_id, skipping', {
+          tmdbId,
+        });
         return null;
       }
 
@@ -623,16 +617,16 @@ export async function getTitlesByTmdbIds(
             language,
           },
         });
-        if (import.meta.dev) {
-          console.log(
-            `[getTitlesByTmdbIds] Successfully fetched and inserted title ${tmdbId} from TMDB`
-          );
-        }
         return tmdbId;
       } catch (err) {
-        console.error(
-          `[getTitlesByTmdbIds] Error fetching title ${tmdbId} from TMDB:`,
-          err
+        const { logError } = useLogger();
+        logError(
+          '[DatabaseTitles] Error fetching title from TMDB',
+          err as Error,
+          {
+            tmdbId,
+            type,
+          }
         );
         return null;
       }
@@ -649,55 +643,26 @@ export async function getTitlesByTmdbIds(
       .in(TITLES_COLUMNS.TMDB_ID, tmdbIds);
 
     if (reloadError) {
-      console.error(
-        '[getTitlesByTmdbIds] Error reloading titles after TMDB fetch:',
-        reloadError
+      const { logError } = useLogger();
+      logError(
+        '[DatabaseTitles] Error reloading titles after TMDB fetch',
+        reloadError as Error
       );
     } else if (reloadedData) {
       // Use reloaded data which includes the newly fetched titles
       data = reloadedData;
-      if (import.meta.dev) {
-        console.log(
-          `[getTitlesByTmdbIds] Reloaded ${data.length} titles from database after TMDB fetch`
-        );
-      }
     }
   }
 
   if (!data || data.length === 0) {
-    if (import.meta.dev) {
-      console.warn(
-        '[getTitlesByTmdbIds] No titles found in database for tmdbIds:',
-        tmdbIds
-      );
-    }
+    const { logWarn } = useLogger();
+    logWarn('[DatabaseTitles] No titles found in database', {
+      tmdbIdsCount: tmdbIds.length,
+    });
     return { data: [], error: null };
   }
 
-  if (import.meta.dev) {
-    console.log(
-      '[getTitlesByTmdbIds] Found',
-      data.length,
-      'titles in database'
-    );
-    // Check what language keys exist in the first title
-    if (data.length > 0) {
-      const firstTitle = data[0];
-      const titleJsonb = firstTitle.title as MultiLanguageText;
-      if (titleJsonb && typeof titleJsonb === 'object') {
-        console.log(
-          '[getTitlesByTmdbIds] Sample title language keys:',
-          Object.keys(titleJsonb)
-        );
-        console.log(
-          '[getTitlesByTmdbIds] Looking for language:',
-          language,
-          'exists:',
-          !!titleJsonb[language]
-        );
-      }
-    }
-  }
+  // Development-only logging removed
 
   // Check which titles need language updates and fetch them in parallel
   const updatePromises: Array<
@@ -769,9 +734,14 @@ export async function getTitlesByTmdbIds(
           poster_path: response.poster_path,
         }))
         .catch((err) => {
-          console.error(
-            `Error updating language for title ${title.tmdb_id}:`,
-            err
+          const { logError } = useLogger();
+          logError(
+            '[DatabaseTitles] Error updating language for title',
+            err as Error,
+            {
+              tmdbId: title.tmdb_id,
+              type: title.type,
+            }
           );
           return { tmdb_id: title.tmdb_id };
         });
@@ -925,15 +895,7 @@ export async function getTitlesByTmdbIds(
 
   // If we have titles needing primary language fallback, fetch them from TMDB
   if (titlesNeedingPrimaryLanguageFallback.length > 0) {
-    if (import.meta.dev) {
-      console.log(
-        `[getTitlesByTmdbIds] Titles needing primary language (${primaryLanguageKey}) fallback (non-Latin detected but no primary language found):`,
-        titlesNeedingPrimaryLanguageFallback.map((t) => ({
-          tmdb_id: t.tmdb_id,
-          needsOverview: t.needsOverview,
-        }))
-      );
-    }
+    // Development-only logging removed
 
     // Fetch translations from TMDB in parallel
     // If needsOverview is true, fetch in requested language first, then try English if empty
@@ -960,7 +922,7 @@ export async function getTitlesByTmdbIds(
               primaryLangCode !== 'en'
             ) {
               try {
-                const englishResponse = await $fetch<{
+                await $fetch<{
                   overview?: string;
                 }>(`/api/tmdb/${endpoint}/${title.tmdb_id}`, {
                   query: {
@@ -969,19 +931,16 @@ export async function getTitlesByTmdbIds(
                 });
                 // If English has overview, it will be saved by the endpoint
                 // The endpoint handles saving to DB automatically
-                if (import.meta.dev && englishResponse?.overview) {
-                  console.log(
-                    `[getTitlesByTmdbIds] Found overview in English for title ${title.tmdb_id}`
-                  );
-                }
-              } catch (englishErr) {
+                // Development-only logging removed
+              } catch {
                 // Log but don't fail - English is just a fallback
-                if (import.meta.dev) {
-                  console.warn(
-                    `[getTitlesByTmdbIds] Error fetching English overview for ${title.tmdb_id}:`,
-                    englishErr
-                  );
-                }
+                const { logWarn } = useLogger();
+                logWarn(
+                  '[DatabaseTitles] Error fetching English overview (fallback)',
+                  {
+                    tmdbId: title.tmdb_id,
+                  }
+                );
               }
             }
           } else {
@@ -993,16 +952,16 @@ export async function getTitlesByTmdbIds(
             });
           }
 
-          if (import.meta.dev) {
-            console.log(
-              `[getTitlesByTmdbIds] Successfully fetched language for title ${title.tmdb_id} from TMDB`
-            );
-          }
           return title.tmdb_id;
         } catch (err) {
-          console.error(
-            `[getTitlesByTmdbIds] Error fetching language for title ${title.tmdb_id} from TMDB:`,
-            err
+          const { logError } = useLogger();
+          logError(
+            '[DatabaseTitles] Error fetching language for title from TMDB',
+            err as Error,
+            {
+              tmdbId: title.tmdb_id,
+              type: title.type,
+            }
           );
           return null;
         }
@@ -1163,7 +1122,14 @@ export async function getTitleByTmdbIdWithLanguage(
         }
       }
     } catch (err) {
-      console.error(`Error updating language for title ${tmdbId}:`, err);
+      const { logError } = useLogger();
+      logError(
+        '[DatabaseTitles] Error updating language for title',
+        err as Error,
+        {
+          tmdbId,
+        }
+      );
       // Continue with fallback language
     }
   }

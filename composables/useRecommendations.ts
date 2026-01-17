@@ -9,6 +9,7 @@ import type { Recommendation } from '@/types/Recommendation';
 import { getUrlCodeFromI18nCode } from '@/composables/useLangFromUrl';
 import { getCurrentLangUrlCode } from '@/composables/useRouteWithLang';
 import { toTMDBLanguageCode } from '@/constants/languages';
+import { useLogger } from '@/composables/useLogger';
 
 /**
  * Composable for managing recommendations
@@ -34,9 +35,10 @@ export const useRecommendations = () => {
       return useUserStore();
     } catch (error) {
       // If store is not available, return a fallback object
-      if (process.env.NODE_ENV === 'development') {
-        console.warn('[useRecommendations] useUserStore not available:', error);
-      }
+      const { logWarn } = useLogger();
+      logWarn('[Recommendations] useUserStore not available', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
       return {
         profile: null,
         hasCompletedOnboarding: false,
@@ -112,17 +114,16 @@ export const useRecommendations = () => {
         },
         body: { tmdb_ids: tmdbIds },
       }).catch((error) => {
-        if (import.meta.dev) {
-          console.warn(
-            '[TrackView] Error tracking recommendations view:',
-            error
-          );
-        }
+        const { logWarn } = useLogger();
+        logWarn('[Recommendations] Error tracking recommendations view', {
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
       });
     } catch (error) {
-      if (import.meta.dev) {
-        console.warn('[TrackView] Error tracking recommendations view:', error);
-      }
+      const { logWarn } = useLogger();
+      logWarn('[Recommendations] Error tracking recommendations view', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
     }
   };
 
@@ -143,7 +144,11 @@ export const useRecommendations = () => {
       } = await getSession();
 
       if (sessionError) {
-        console.error('Error getting session:', sessionError);
+        const { logError } = useLogger();
+        logError(
+          '[Recommendations] Error getting session',
+          sessionError as Error
+        );
         return [];
       }
 
@@ -194,7 +199,11 @@ export const useRecommendations = () => {
 
       return fetched;
     } catch (error) {
-      console.error('Error fetching recommendations:', error);
+      const { logError } = useLogger();
+      logError(
+        '[Recommendations] Error fetching recommendations',
+        error as Error
+      );
       return [];
     } finally {
       loading.value = false;
@@ -249,15 +258,7 @@ export const useRecommendations = () => {
         userStore.value?.hasCompletedOnboarding &&
         hasAttemptedLoad.value
       ) {
-        if (import.meta.dev) {
-          console.log(
-            '[useRecommendations] Language changed, refreshing recommendations with new language:',
-            {
-              oldLocale,
-              newLocale,
-            }
-          );
-        }
+        // Development-only logging removed
 
         // Convert i18n locale code to URL language code
         // Handle both formats: 'gl-ES' (full) and 'gl' (short)
@@ -277,19 +278,22 @@ export const useRecommendations = () => {
           const currentUrlLang = getCurrentLangUrlCode(route);
           if (currentUrlLang) {
             urlLangCode = currentUrlLang;
-            if (import.meta.dev) {
-              console.warn(
-                '[useRecommendations] Could not convert locale to URL code, using current URL language:',
-                {
-                  locale: newLocale,
-                  fallback: urlLangCode,
-                }
-              );
-            }
+            const { logWarn } = useLogger();
+            logWarn(
+              '[Recommendations] Could not convert locale to URL code, using current URL language',
+              {
+                locale: newLocale,
+                fallback: urlLangCode,
+              }
+            );
           } else {
-            console.error(
-              '[useRecommendations] Could not determine language code, skipping refresh:',
-              newLocale
+            const { logError } = useLogger();
+            logError(
+              '[Recommendations] Could not determine language code, skipping refresh',
+              new Error('Language conversion failed'),
+              {
+                locale: newLocale,
+              }
             );
             return;
           }
@@ -302,13 +306,7 @@ export const useRecommendations = () => {
           type: rec.type,
         }));
 
-        if (import.meta.dev) {
-          console.log(
-            '[useRecommendations] Preserving recommendation order:',
-            currentIds.length,
-            'titles'
-          );
-        }
+        // Development-only logging removed
 
         // Refresh recommendations with new language
         // Pass the language and IDs to maintain the same order
@@ -324,15 +322,17 @@ export const useRecommendations = () => {
           if (fetched && fetched.length > 0) {
             allRecommendations.value = fetched;
             filterRecommendationsByType();
-          } else if (import.meta.dev) {
-            console.warn(
-              '[useRecommendations] No recommendations returned, keeping existing ones'
+          } else {
+            const { logWarn } = useLogger();
+            logWarn(
+              '[Recommendations] No recommendations returned, keeping existing ones'
             );
           }
         } catch (error) {
-          console.error(
-            '[useRecommendations] Error refreshing recommendations with new language:',
-            error
+          const { logError } = useLogger();
+          logError(
+            '[Recommendations] Error refreshing recommendations with new language',
+            error as Error
           );
           // On error, keep existing recommendations visible
         }
@@ -378,9 +378,10 @@ export const useRecommendations = () => {
               allRecommendations.value = newFetched;
               filterRecommendationsByType();
             } catch (error) {
-              console.error(
-                '[useRecommendations] Error regenerating pool:',
-                error
+              const { logError } = useLogger();
+              logError(
+                '[Recommendations] Error regenerating pool',
+                error as Error
               );
             } finally {
               sessionStorage.removeItem('generatingRecommendations');

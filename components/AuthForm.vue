@@ -13,6 +13,7 @@ import IconEyeSlash from '@/components/icons/IconEyeSlash.vue';
 import IconCheck from '@/components/icons/IconCheck.vue';
 import IconX from '@/components/icons/IconX.vue';
 import { useUserStore } from '@/stores/user';
+import { useLogger } from '@/composables/useLogger';
 
 // Type for Supabase user that may have either 'id' or 'sub' as identifier
 type SupabaseUserWithSub = {
@@ -64,9 +65,10 @@ const userStore = computed(() => {
     return useUserStore();
   } catch (error) {
     // If store is not available, return a fallback object
-    if (process.env.NODE_ENV === 'development') {
-      console.warn('[AuthForm] useUserStore not available:', error);
-    }
+    const { logWarn } = useLogger();
+    logWarn('[AuthForm] useUserStore not available', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
     return {
       setUser: () => {},
       fetchProfile: async () => {},
@@ -146,9 +148,7 @@ const handlePasswordAuth = async () => {
 
     // Handle signin success
     if (!isSignUp.value) {
-      console.log(
-        '[AuthForm] Signin success, loading profile and navigating...'
-      );
+      // Development-only logging removed
 
       // Wait for Supabase to update the session and useSupabaseUser to be available
       let attempts = 0;
@@ -162,25 +162,16 @@ const handlePasswordAuth = async () => {
       }
 
       const userId = getUserId(currentUser.value);
-      console.log('[AuthForm] User check:', {
-        hasUser: !!currentUser.value,
-        userId,
-        attempts,
-      });
+      // Development-only logging removed
 
       if (currentUser.value && userId) {
-        console.log(
-          '[AuthForm] User available, setting in store and fetching profile...'
-        );
+        // Development-only logging removed
         userStore.value.setUser(currentUser.value);
 
         // CRITICAL: Fetch profile to ensure it's loaded before navigation
         await userStore.value.fetchProfile();
 
-        console.log('[AuthForm] Profile fetched:', {
-          hasProfile: !!userStore.value.profile,
-          onboarding_completed: userStore.value.profile?.onboarding_completed,
-        });
+        // Development-only logging removed
 
         // Step: Eliminar el flag auth:recovery si existe (después de recuperar contraseña)
         // Esto se hace cuando el usuario inicia sesión manualmente después de recuperar la contraseña
@@ -197,9 +188,7 @@ const handlePasswordAuth = async () => {
             }
 
             if (hasRecoveryFlag) {
-              console.log(
-                '[AuthForm] Removing auth:recovery flag after successful login'
-              );
+              // Development-only logging removed
               localStorage.removeItem(STORAGE_KEYS.AUTH_RECOVERY);
             }
           }
@@ -216,23 +205,17 @@ const handlePasswordAuth = async () => {
         const { routeWithLang } = useRouteWithLang();
         const hasCompletedOnboarding = userStore.value.hasCompletedOnboarding;
         if (hasCompletedOnboarding) {
-          console.log(
-            '[AuthForm] User completed onboarding, navigating to home'
-          );
+          // Development-only logging removed
           await navigateTo(routeWithLang('/'), { replace: true });
         } else {
-          console.log(
-            '[AuthForm] User not completed onboarding, navigating to /onboarding'
-          );
+          // Development-only logging removed
           await navigateTo(routeWithLang('/onboarding'), { replace: true });
         }
       } else {
         // Fallback: navigate to home using Nuxt navigation
         // This prevents full page reload and ensures Pinia is initialized before middleware runs
         const { routeWithLang } = useRouteWithLang();
-        console.log(
-          '[AuthForm] User not available after waiting, navigating to home'
-        );
+        // Development-only logging removed
         await navigateTo(routeWithLang('/'), { replace: true });
       }
     }
@@ -278,19 +261,14 @@ const toggleSignUp = () => {
 };
 
 const handleForgotPassword = async () => {
-  console.log('[AUTH TRACE] authform.vue handleForgotPassword called', {
-    email: email.value,
-  });
+  // Development-only logging removed
   loading.value = true;
   error.value = '';
   forgotPasswordSent.value = false;
 
   try {
     const result = await resetPassword(email.value);
-    console.log('[AUTH TRACE] authform.vue resetPassword result', {
-      hasError: !!result.error,
-      error: result.error?.message,
-    });
+    // Development-only logging removed
 
     if (result.error) {
       // Translate common error messages to Spanish
@@ -322,11 +300,10 @@ const handleForgotPassword = async () => {
     }
 
     forgotPasswordSent.value = true;
-    console.log(
-      '[AUTH TRACE] authform.vue forgot password email sent successfully'
-    );
+    // Development-only logging removed
   } catch (err: unknown) {
-    console.error('[AUTH TRACE] authform.vue forgot password error', err);
+    const { logError } = useLogger();
+    logError('[AuthForm] Forgot password error', err as Error);
     error.value = t('auth.requestError');
   } finally {
     loading.value = false;

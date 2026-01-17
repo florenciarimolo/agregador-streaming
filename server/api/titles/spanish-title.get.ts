@@ -59,8 +59,10 @@ export default defineEventHandler(async (event) => {
 
     return { title: spanishTitle || null };
   } catch (error) {
-    console.error('Error fetching Spanish title:', error);
+    const { logError } = await import('@/server/utils/logger');
+    logError('[SpanishTitle] Error fetching Spanish title', error as Error, {
+      tmdbId,
+    });
     return { title: null };
   }
 });
-

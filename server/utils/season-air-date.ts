@@ -5,6 +5,7 @@
 
 import { getTMDBConfig } from '@/server/utils/config';
 import { $fetch } from 'ofetch';
+import { logError } from '@/server/utils/logger';
 
 /**
  * Get air_date from season data or first episode
@@ -69,13 +70,14 @@ export async function fetchSeasonAirDate(
     );
   } catch (error) {
     // Log error but don't fail - return null
-    if (import.meta.dev) {
-      console.error(
-        `[fetchSeasonAirDate] Error fetching season details for air_date:`,
-        error
-      );
-    }
+    logError(
+      '[SeasonAirDate] Error fetching season details for air_date',
+      error as Error,
+      {
+        tvTmdbId,
+        seasonNumber,
+      }
+    );
     return null;
   }
 }
-

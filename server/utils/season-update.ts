@@ -16,13 +16,12 @@ import {
 import { getTMDBConfig } from '@/server/utils/config';
 import { getPrimaryLanguageForRegion } from '@/utils/language-detection';
 import { DEFAULT_LANGUAGE_ISO } from '@/constants/languages';
+import { logError, devLog } from '@/server/utils/logger';
 
 /**
  * Safely extract MultiLanguageText from database value
  */
-function safeGetMultiLanguageText(
-  value: unknown
-): MultiLanguageText | null {
+function safeGetMultiLanguageText(value: unknown): MultiLanguageText | null {
   if (value && typeof value === 'object' && !Array.isArray(value)) {
     return value as MultiLanguageText;
   }
@@ -60,7 +59,7 @@ export type DatabaseSeasonData = {
 /**
  * Update missing season data from TMDB to database
  * Preserves existing data and only updates missing fields
- * 
+ *
  * @param tvTmdbId TV show TMDB ID
  * @param seasonNumber Season number
  * @param dbSeason Season data from database (extracted)
@@ -117,8 +116,7 @@ export async function updateMissingSeasonFields(
 
   // Check if we need to update air_date (after potentially fetching it)
   const needsAirDateUpdate =
-    (!dbSeason?.air_date || dbSeason.air_date.trim() === '') &&
-    finalAirDate;
+    (!dbSeason?.air_date || dbSeason.air_date.trim() === '') && finalAirDate;
   const needsEpisodeCountUpdate =
     (dbSeason?.episode_count === null ||
       dbSeason?.episode_count === undefined) &&
@@ -192,9 +190,7 @@ export async function updateMissingSeasonFields(
           season_number: seasonNumber,
           tmdb_season_id: currentSeasonData.tmdb_season_id,
           name:
-            Object.keys(updatedNameJsonb).length > 0
-              ? updatedNameJsonb
-              : null,
+            Object.keys(updatedNameJsonb).length > 0 ? updatedNameJsonb : null,
           poster_path:
             Object.keys(updatedPosterPathJsonb).length > 0
               ? updatedPosterPathJsonb
@@ -209,7 +205,7 @@ export async function updateMissingSeasonFields(
           vote_average: updatedVoteAverage,
           episode_count: needsEpisodeCountUpdate
             ? tmdbSeason.episode_count!
-            : currentSeasonData.episode_count ?? undefined,
+            : (currentSeasonData.episode_count ?? undefined),
         },
         supabase
       );
@@ -245,10 +241,10 @@ export async function updateMissingSeasonFields(
     return true;
   } catch (error) {
     // Log error but don't fail the request
-    console.error(
-      `[updateMissingSeasonFields] Error updating season ${seasonNumber} for TV ${tvTmdbId}:`,
-      error
-    );
+    logError('[SeasonUpdate] Error updating season', error as Error, {
+      tvTmdbId,
+      seasonNumber,
+    });
     return false;
   }
 }
@@ -256,7 +252,7 @@ export async function updateMissingSeasonFields(
 /**
  * Fetch English overview for a season when it's missing in current and primary language
  * Saves the English overview to the database with 'en-US' key
- * 
+ *
  * @param tvTmdbId TV show TMDB ID
  * @param seasonNumber Season number
  * @param currentOverview Current overview (may be empty)
@@ -275,7 +271,7 @@ export async function fetchSeasonOverviewEnglishFallback(
 ): Promise<string | null> {
   // Check if we need to fetch English overview
   const hasEmptyOverview = !currentOverview || currentOverview.trim() === '';
-  
+
   if (!hasEmptyOverview) {
     return null;
   }
@@ -346,24 +342,19 @@ export async function fetchSeasonOverviewEnglishFallback(
         supabase
       );
 
-      if (import.meta.dev) {
-        console.log(
-          `[fetchSeasonOverviewEnglishFallback] Saved English overview for season ${seasonNumber} of TV ${tvTmdbId}`
-        );
-      }
+      devLog(
+        `[SeasonUpdate] Saved English overview for season ${seasonNumber} of TV ${tvTmdbId}`
+      );
 
       return englishResponse.overview;
     }
   } catch (error) {
     // Log but don't fail the request
-    if (import.meta.dev) {
-      console.error(
-        `[fetchSeasonOverviewEnglishFallback] Error fetching English overview for season ${seasonNumber} of TV ${tvTmdbId}:`,
-        error
-      );
-    }
+    logError('[SeasonUpdate] Error fetching English overview', error as Error, {
+      tvTmdbId,
+      seasonNumber,
+    });
   }
 
   return null;
 }
-

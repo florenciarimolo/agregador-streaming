@@ -1,5 +1,6 @@
-import { createClient } from '@supabase/supabase-js';
 import { getUserIdFromEvent } from '@/server/utils/user-auth';
+import { createServerSupabaseClient } from '@/server/utils/supabase';
+import { logError } from '@/server/utils/logger';
 
 export default defineEventHandler(async (event) => {
   try {
@@ -16,16 +17,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // Create Supabase client with service role key for admin operations
-    const supabaseKey =
-      process.env.SUPABASE_SERVICE_ROLE_KEY || config.public.supabaseAnonKey;
-
-    const supabase = createClient(config.public.supabaseUrl, supabaseKey, {
-      auth: {
-        persistSession: false,
-        autoRefreshToken: false,
-        detectSessionInUrl: false,
-      },
-    });
+    const supabase = createServerSupabaseClient(config);
 
     // Delete user from auth.users
     // This will cascade delete all related data due to ON DELETE CASCADE constraints
@@ -37,9 +29,7 @@ export default defineEventHandler(async (event) => {
     const { error: deleteError } = await supabase.auth.admin.deleteUser(userId);
 
     if (deleteError) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('[DeleteAccount] Error deleting user:', deleteError);
-      }
+      logError('[DeleteAccount] Error deleting user', deleteError, { userId });
       throw createError({
         statusCode: 500,
         statusMessage: 'Failed to delete account',
@@ -54,9 +44,7 @@ export default defineEventHandler(async (event) => {
     if (error && typeof error === 'object' && 'statusCode' in error) {
       throw error;
     }
-    if (process.env.NODE_ENV === 'development') {
-      console.error('[DeleteAccount] Error:', error);
-    }
+    logError('[DeleteAccount] Unexpected error', error);
     throw createError({
       statusCode: 500,
       statusMessage:
@@ -64,4 +52,3 @@ export default defineEventHandler(async (event) => {
     });
   }
 });
-

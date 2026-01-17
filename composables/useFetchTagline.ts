@@ -177,11 +177,13 @@ export function useFetchTagline(
         // This will trigger a reactive update in the tagline computed
         localTagline.value = response.tagline;
       }
-    } catch (error) {
+    } catch {
       // Silently fail - tagline is optional
-      if (import.meta.dev) {
-        console.error('[useFetchTagline] Error fetching tagline:', error);
-      }
+      const { logWarn } = useLogger();
+      logWarn('[FetchTagline] Error fetching tagline (optional)', {
+        tmdbId,
+        type,
+      });
     }
   };
 

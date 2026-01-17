@@ -120,6 +120,7 @@ import {
 } from '@/constants/urlLanguageCodes';
 import { getFlagFileName } from '@/utils/flags';
 import { useCurrentLanguage } from '@/composables/useCurrentLanguage';
+import { useLogger } from '@/composables/useLogger';
 
 interface Props {
   /**
@@ -317,11 +318,13 @@ const selectedLanguage = computed({
     try {
       // Validate that the i18nCode is a valid LanguageCode enum value
       if (!isValidI18nCode(i18nCode)) {
-        if (process.env.NODE_ENV === 'development') {
-          console.warn(
-            `Invalid i18n code: ${i18nCode}. Falling back to default`
-          );
-        }
+        const { logWarn } = useLogger();
+        logWarn(
+          '[AppLanguageSelector] Invalid i18n code, falling back to default',
+          {
+            i18nCode,
+          }
+        );
         // Use default language if invalid - navigate to default language URL
         const defaultUrlCode = getUrlCodeFromI18nCode(getDefaultI18nCode());
         if (defaultUrlCode) {
@@ -342,7 +345,10 @@ const selectedLanguage = computed({
       // Get URL code for new language
       const newLangUrlCode = getUrlCodeFromI18nCode(i18nCode);
       if (!newLangUrlCode) {
-        console.warn(`Could not get URL code for i18n code: ${i18nCode}`);
+        const { logWarn } = useLogger();
+        logWarn('[AppLanguageSelector] Could not get URL code for i18n code', {
+          i18nCode,
+        });
         return;
       }
 
@@ -366,9 +372,14 @@ const selectedLanguage = computed({
     } catch (error) {
       // Log error but don't try to set locale directly
       // The middleware will handle synchronization after navigation
-      if (process.env.NODE_ENV === 'development') {
-        console.error('Error changing language:', error);
-      }
+      const { logError } = useLogger();
+      logError(
+        '[AppLanguageSelector] Error changing language',
+        error as Error,
+        {
+          i18nCode,
+        }
+      );
     }
   },
 });

@@ -18,6 +18,7 @@ import { insertPoolEntries } from '@/services/recommendationPool';
 import type { RecommendationPoolSource } from '@/services/recommendationPool';
 import { DEFAULT_LANGUAGE } from '@/constants/languages';
 import { MEDIA_TYPE } from '@/constants/domain/mediaType';
+import { useLogger } from '@/composables/useLogger';
 
 export interface DiscoverList {
   id: string;
@@ -77,7 +78,8 @@ export async function getDiscoverLists(
     const { data, error } = await query;
 
     if (error) {
-      console.error('[DiscoverLists] Error fetching lists:', error);
+      const { logError } = useLogger();
+      logError('[DiscoverLists] Error fetching lists', error as Error);
       return { data: null, error };
     }
 
@@ -115,7 +117,8 @@ export async function getDiscoverLists(
 
     return { data: lists, error: null };
   } catch (error) {
-    console.error('[DiscoverLists] Unexpected error:', error);
+    const { logError } = useLogger();
+    logError('[DiscoverLists] Unexpected error fetching lists', error as Error);
     return { data: null, error: error as Error };
   }
 }
@@ -142,7 +145,10 @@ export async function getDiscoverListBySlug(
       .maybeSingle();
 
     if (error) {
-      console.error('[DiscoverLists] Error fetching list by slug:', error);
+      const { logError } = useLogger();
+      logError('[DiscoverLists] Error fetching list by slug', error as Error, {
+        slug,
+      });
       return { data: null, error };
     }
 
@@ -178,7 +184,14 @@ export async function getDiscoverListBySlug(
 
     return { data: list, error: null };
   } catch (error) {
-    console.error('[DiscoverLists] Unexpected error:', error);
+    const { logError } = useLogger();
+    logError(
+      '[DiscoverLists] Unexpected error fetching list by slug',
+      error as Error,
+      {
+        slug,
+      }
+    );
     return { data: null, error: error as Error };
   }
 }
@@ -208,7 +221,14 @@ export async function getDiscoverListItems(
       .order(DISCOVER_LIST_ITEMS_COLUMNS.POSITION, { ascending: true });
 
     if (itemsError) {
-      console.error('[DiscoverLists] Error fetching list items:', itemsError);
+      const { logError } = useLogger();
+      logError(
+        '[DiscoverLists] Error fetching list items',
+        itemsError as Error,
+        {
+          listId,
+        }
+      );
       return { data: null, error: itemsError };
     }
 
@@ -219,7 +239,10 @@ export async function getDiscoverListItems(
     // Get tmdb_ids and types for fetching titles
     const tmdbIds = items.map((item) => item.tmdb_id);
     const titleTypes = new Map<number, 'movie' | 'tv'>(
-      items.map((item) => [item.tmdb_id, item.type as typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV])
+      items.map((item) => [
+        item.tmdb_id,
+        item.type as typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV,
+      ])
     );
 
     // Fetch titles (with automatic ingestion if missing)
@@ -233,7 +256,11 @@ export async function getDiscoverListItems(
     );
 
     if (titlesError) {
-      console.error('[DiscoverLists] Error fetching titles:', titlesError);
+      const { logError } = useLogger();
+      logError('[DiscoverLists] Error fetching titles', titlesError as Error, {
+        listId,
+        tmdbIdsCount: tmdbIds.length,
+      });
       return { data: null, error: titlesError };
     }
 
@@ -254,25 +281,8 @@ export async function getDiscoverListItems(
           ) {
             // Extract tag using URL language code (es, ca, eu, gl, en, en-gb)
             extractedTag = tagJsonb[urlLangCode] || null;
-            // Debug logging in development
-            if (import.meta.dev && !extractedTag && tagJsonb) {
-              console.warn(
-                `[DiscoverLists] Tag not found for lang "${urlLangCode}". Available keys:`,
-                Object.keys(tagJsonb)
-              );
-            }
-          } else if (import.meta.dev) {
-            console.warn(
-              '[DiscoverLists] Tag is not a valid JSONB object:',
-              item.tag,
-              typeof item.tag
-            );
+            // Development-only logging removed
           }
-        } else if (import.meta.dev) {
-          console.warn(
-            '[DiscoverLists] Tag exists but urlLangCode is missing. Tag will be null.',
-            item.tag
-          );
         }
         // Always set to null if we couldn't extract a string (never return the object)
         if (typeof extractedTag !== 'string') {
@@ -300,7 +310,14 @@ export async function getDiscoverListItems(
 
     return { data: itemsWithTitles, error: null };
   } catch (error) {
-    console.error('[DiscoverLists] Unexpected error:', error);
+    const { logError } = useLogger();
+    logError(
+      '[DiscoverLists] Unexpected error fetching list items',
+      error as Error,
+      {
+        listId,
+      }
+    );
     return { data: null, error: error as Error };
   }
 }
@@ -327,9 +344,14 @@ export async function insertDiscoverListIntoPool(
       .eq(DISCOVER_LIST_ITEMS_COLUMNS.DISCOVER_LIST_ID, listId);
 
     if (itemsError) {
-      console.error(
-        '[DiscoverLists] Error fetching list items for seed:',
-        itemsError
+      const { logError } = useLogger();
+      logError(
+        '[DiscoverLists] Error fetching list items for seed',
+        itemsError as Error,
+        {
+          listId,
+          userId,
+        }
       );
       return { inserted: 0, error: itemsError };
     }
@@ -349,9 +371,13 @@ export async function insertDiscoverListIntoPool(
       ]);
 
     if (exclusionsError) {
-      console.error(
-        '[DiscoverLists] Error fetching exclusions:',
-        exclusionsError
+      const { logError } = useLogger();
+      logError(
+        '[DiscoverLists] Error fetching exclusions',
+        exclusionsError as Error,
+        {
+          userId,
+        }
       );
       return { inserted: 0, error: exclusionsError };
     }
@@ -379,9 +405,14 @@ export async function insertDiscoverListIntoPool(
       .in(TITLES_COLUMNS.TMDB_ID, tmdbIds);
 
     if (titlesError) {
-      console.error(
-        '[DiscoverLists] Error fetching titles for base_score:',
-        titlesError
+      const { logError } = useLogger();
+      logError(
+        '[DiscoverLists] Error fetching titles for base_score',
+        titlesError as Error,
+        {
+          listId,
+          userId,
+        }
       );
       return { inserted: 0, error: titlesError };
     }
@@ -416,9 +447,14 @@ export async function insertDiscoverListIntoPool(
 
     return { inserted, error: null };
   } catch (error) {
-    console.error(
-      '[DiscoverLists] Unexpected error inserting into pool:',
-      error
+    const { logError } = useLogger();
+    logError(
+      '[DiscoverLists] Unexpected error inserting into pool',
+      error as Error,
+      {
+        listId,
+        userId,
+      }
     );
     return { inserted: 0, error: error as Error };
   }

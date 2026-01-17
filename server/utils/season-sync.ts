@@ -11,6 +11,7 @@ import { upsertSeason } from '@/services/seasons';
 import { $fetch } from 'ofetch';
 import type { MultiLanguageText } from '@/services/titles';
 import { getAirDateFromSeasonOrEpisode } from '@/server/utils/season-air-date';
+import { logError, devLog } from '@/server/utils/logger';
 
 /**
  * TMDB season structure from /tv/{id} response
@@ -55,13 +56,18 @@ export async function syncSeasonsFromTVShow(
   // Get existing seasons from DB for this TV show (including air_date, episode_count and tmdb_season_id to check for nulls)
   const { data: existingSeasons, error: fetchError } = await supabase
     .from(TABLES.SEASONS)
-    .select(`${SEASONS_COLUMNS.SEASON_NUMBER}, ${SEASONS_COLUMNS.AIR_DATE}, ${SEASONS_COLUMNS.EPISODE_COUNT}, ${SEASONS_COLUMNS.TMDB_SEASON_ID}, ${SEASONS_COLUMNS.NAME}, ${SEASONS_COLUMNS.POSTER_PATH}, ${SEASONS_COLUMNS.VOTE_AVERAGE}`)
+    .select(
+      `${SEASONS_COLUMNS.SEASON_NUMBER}, ${SEASONS_COLUMNS.AIR_DATE}, ${SEASONS_COLUMNS.EPISODE_COUNT}, ${SEASONS_COLUMNS.TMDB_SEASON_ID}, ${SEASONS_COLUMNS.NAME}, ${SEASONS_COLUMNS.POSTER_PATH}, ${SEASONS_COLUMNS.VOTE_AVERAGE}`
+    )
     .eq(SEASONS_COLUMNS.TV_TMDB_ID, tvTmdbId);
 
   if (fetchError) {
-    console.error(
-      `[syncSeasonsFromTVShow] Error fetching existing seasons:`,
-      fetchError
+    logError(
+      '[SeasonSync] Error fetching existing seasons',
+      fetchError as Error,
+      {
+        tvTmdbId,
+      }
     );
     return;
   }
@@ -76,18 +82,19 @@ export async function syncSeasonsFromTVShow(
   );
 
   // Find existing seasons with null air_date (to update them)
-  const existingSeasonsWithNullDate = existingSeasons?.filter(
-    (s) => !s.air_date || s.air_date.trim() === ''
-  ) || [];
+  const existingSeasonsWithNullDate =
+    existingSeasons?.filter((s) => !s.air_date || s.air_date.trim() === '') ||
+    [];
 
   // Find existing seasons with null episode_count (to update them)
-  const existingSeasonsWithNullEpisodeCount = existingSeasons?.filter(
-    (s) => s.episode_count === null || s.episode_count === undefined
-  ) || [];
+  const existingSeasonsWithNullEpisodeCount =
+    existingSeasons?.filter(
+      (s) => s.episode_count === null || s.episode_count === undefined
+    ) || [];
 
   // Find existing seasons missing poster_path in current language
   const existingSeasonsMissingPosterPath: Array<{
-    season: typeof existingSeasons[0];
+    season: (typeof existingSeasons)[0];
     tmdbSeason: TMDBSeason;
   }> = [];
   if (tmdbConfig?.language && existingSeasons) {
@@ -97,7 +104,8 @@ export async function syncSeasonsFromTVShow(
       );
       if (tmdbSeason && tmdbSeason.poster_path) {
         // Check if poster_path is missing in current language
-        const posterPathJsonb = existingSeason.poster_path as MultiLanguageText | null;
+        const posterPathJsonb =
+          existingSeason.poster_path as MultiLanguageText | null;
         const hasPosterPathInLanguage =
           posterPathJsonb &&
           typeof posterPathJsonb === 'object' &&
@@ -126,14 +134,16 @@ export async function syncSeasonsFromTVShow(
   // Prepare seasons for upsert
   // Convert name and poster_path to JSONB format with language from tmdbConfig
   const seasonsToUpsert = seasonsToCreate.map((tmdbSeason) => {
-    const nameJsonb: MultiLanguageText | null = tmdbSeason.name && tmdbConfig?.language
-      ? { [tmdbConfig.language]: tmdbSeason.name }
-      : null;
+    const nameJsonb: MultiLanguageText | null =
+      tmdbSeason.name && tmdbConfig?.language
+        ? { [tmdbConfig.language]: tmdbSeason.name }
+        : null;
 
     // Convert poster_path string to MultiLanguageText JSONB format
-    const posterPathJsonb: MultiLanguageText | null = tmdbSeason.poster_path && tmdbConfig?.language
-      ? { [tmdbConfig.language]: tmdbSeason.poster_path }
-      : null;
+    const posterPathJsonb: MultiLanguageText | null =
+      tmdbSeason.poster_path && tmdbConfig?.language
+        ? { [tmdbConfig.language]: tmdbSeason.poster_path }
+        : null;
 
     return {
       [SEASONS_COLUMNS.TV_TMDB_ID]: tvTmdbId,
@@ -159,13 +169,13 @@ export async function syncSeasonsFromTVShow(
     });
 
   if (upsertError) {
-    console.error(
-      `[syncSeasonsFromTVShow] Error upserting seasons:`,
-      upsertError
-    );
-  } else if (seasonsToCreate.length > 0 && import.meta.dev) {
-    console.log(
-      `[syncSeasonsFromTVShow] Created ${seasonsToCreate.length} new season(s) for TV show ${tvTmdbId}`
+    logError('[SeasonSync] Error upserting seasons', upsertError as Error, {
+      tvTmdbId,
+      seasonsCount: seasonsToCreate.length,
+    });
+  } else if (seasonsToCreate.length > 0) {
+    devLog(
+      `[SeasonSync] Created ${seasonsToCreate.length} new season(s) for TV show ${tvTmdbId}`
     );
   }
 
@@ -178,13 +188,16 @@ export async function syncSeasonsFromTVShow(
         const seasonResponse = await $fetch<{
           id: number;
           episodes?: Array<unknown>;
-        }>(`${tmdbConfig.baseUrl}/tv/${tvTmdbId}/season/${existingSeason.season_number}`, {
-          query: {
-            api_key: tmdbConfig.apiKey,
-            language: tmdbConfig.language,
-            region: tmdbConfig.region,
-          },
-        });
+        }>(
+          `${tmdbConfig.baseUrl}/tv/${tvTmdbId}/season/${existingSeason.season_number}`,
+          {
+            query: {
+              api_key: tmdbConfig.apiKey,
+              language: tmdbConfig.language,
+              region: tmdbConfig.region,
+            },
+          }
+        );
 
         // Calculate episode_count from episodes array
         const episodeCount = seasonResponse.episodes?.length || null;
@@ -192,7 +205,8 @@ export async function syncSeasonsFromTVShow(
         // If we found episode_count, update the season in the database
         if (episodeCount !== null) {
           // Keep existing name JSONB (don't overwrite)
-          const existingNameJsonb = existingSeason.name as MultiLanguageText | null;
+          const existingNameJsonb =
+            existingSeason.name as MultiLanguageText | null;
           await upsertSeason(
             {
               tv_tmdb_id: tvTmdbId,
@@ -206,27 +220,27 @@ export async function syncSeasonsFromTVShow(
             supabase
           );
 
-          if (import.meta.dev) {
-            console.log(
-              `[syncSeasonsFromTVShow] Updated episode_count for existing season ${existingSeason.season_number}: ${episodeCount}`
-            );
-          }
+          devLog(
+            `[SeasonSync] Updated episode_count for existing season ${existingSeason.season_number}: ${episodeCount}`
+          );
         }
       } catch (episodeError) {
         // Log error but don't fail the sync
-        if (import.meta.dev) {
-          console.error(
-            `[syncSeasonsFromTVShow] Error fetching episode_count for existing season ${existingSeason.season_number}:`,
-            episodeError
-          );
-        }
+        logError(
+          '[SeasonSync] Error fetching episode_count for existing season',
+          episodeError as Error,
+          {
+            tvTmdbId,
+            seasonNumber: existingSeason.season_number,
+          }
+        );
       }
     }
     // Combine new seasons with null dates and existing seasons with null dates
     const newSeasonsWithNullDate = seasonsToCreate.filter(
       (s) => !s.air_date || s.air_date.trim() === ''
     );
-    
+
     // Process new seasons with null air_date
     for (const season of newSeasonsWithNullDate) {
       try {
@@ -238,13 +252,16 @@ export async function syncSeasonsFromTVShow(
           episodes?: Array<{
             air_date: string | null;
           }>;
-        }>(`${tmdbConfig.baseUrl}/tv/${tvTmdbId}/season/${season.season_number}`, {
-          query: {
-            api_key: tmdbConfig.apiKey,
-            language: tmdbConfig.language,
-            region: tmdbConfig.region,
-          },
-        });
+        }>(
+          `${tmdbConfig.baseUrl}/tv/${tvTmdbId}/season/${season.season_number}`,
+          {
+            query: {
+              api_key: tmdbConfig.apiKey,
+              language: tmdbConfig.language,
+              region: tmdbConfig.region,
+            },
+          }
+        );
 
         // Get air_date from season response or first episode
         const finalAirDate = getAirDateFromSeasonOrEpisode(
@@ -258,13 +275,15 @@ export async function syncSeasonsFromTVShow(
         // If we found a date or episode_count, update the season in the database
         if (finalAirDate || episodeCount !== null) {
           // Convert name to JSONB format with language from tmdbConfig
-          const nameJsonb: MultiLanguageText | null = seasonResponse.name && tmdbConfig?.language
-            ? { [tmdbConfig.language]: seasonResponse.name }
-            : null;
+          const nameJsonb: MultiLanguageText | null =
+            seasonResponse.name && tmdbConfig?.language
+              ? { [tmdbConfig.language]: seasonResponse.name }
+              : null;
           // Convert poster_path string to MultiLanguageText JSONB format
-          const posterPathJsonb: MultiLanguageText | null = season.poster_path && tmdbConfig?.language
-            ? { [tmdbConfig.language]: season.poster_path }
-            : null;
+          const posterPathJsonb: MultiLanguageText | null =
+            season.poster_path && tmdbConfig?.language
+              ? { [tmdbConfig.language]: season.poster_path }
+              : null;
 
           await upsertSeason(
             {
@@ -280,27 +299,27 @@ export async function syncSeasonsFromTVShow(
             supabase
           );
 
-          if (import.meta.dev) {
-            if (finalAirDate) {
-              console.log(
-                `[syncSeasonsFromTVShow] Updated air_date for season ${season.season_number} from first episode: ${finalAirDate}`
-              );
-            }
-            if (episodeCount !== null) {
-              console.log(
-                `[syncSeasonsFromTVShow] Updated episode_count for season ${season.season_number}: ${episodeCount}`
-              );
-            }
+          if (finalAirDate) {
+            devLog(
+              `[SeasonSync] Updated air_date for season ${season.season_number} from first episode: ${finalAirDate}`
+            );
+          }
+          if (episodeCount !== null) {
+            devLog(
+              `[SeasonSync] Updated episode_count for season ${season.season_number}: ${episodeCount}`
+            );
           }
         }
       } catch (episodeError) {
         // Log error but don't fail the sync
-        if (import.meta.dev) {
-          console.error(
-            `[syncSeasonsFromTVShow] Error fetching air_date from first episode for season ${season.season_number}:`,
-            episodeError
-          );
-        }
+        logError(
+          '[SeasonSync] Error fetching air_date from first episode',
+          episodeError as Error,
+          {
+            tvTmdbId,
+            seasonNumber: season.season_number,
+          }
+        );
       }
     }
 
@@ -315,13 +334,16 @@ export async function syncSeasonsFromTVShow(
           episodes?: Array<{
             air_date: string | null;
           }>;
-        }>(`${tmdbConfig.baseUrl}/tv/${tvTmdbId}/season/${existingSeason.season_number}`, {
-          query: {
-            api_key: tmdbConfig.apiKey,
-            language: tmdbConfig.language,
-            region: tmdbConfig.region,
-          },
-        });
+        }>(
+          `${tmdbConfig.baseUrl}/tv/${tvTmdbId}/season/${existingSeason.season_number}`,
+          {
+            query: {
+              api_key: tmdbConfig.apiKey,
+              language: tmdbConfig.language,
+              region: tmdbConfig.region,
+            },
+          }
+        );
 
         // Get air_date from season response or first episode
         const finalAirDate = getAirDateFromSeasonOrEpisode(
@@ -404,25 +426,27 @@ export async function syncSeasonsFromTVShow(
 
           if (import.meta.dev) {
             if (finalAirDate) {
-              console.log(
-                `[syncSeasonsFromTVShow] Updated air_date for existing season ${existingSeason.season_number} from first episode: ${finalAirDate}`
+              devLog(
+                `[SeasonSync] Updated air_date for existing season ${existingSeason.season_number} from first episode: ${finalAirDate}`
               );
             }
             if (episodeCount !== null) {
-              console.log(
-                `[syncSeasonsFromTVShow] Updated episode_count for existing season ${existingSeason.season_number}: ${episodeCount}`
+              devLog(
+                `[SeasonSync] Updated episode_count for existing season ${existingSeason.season_number}: ${episodeCount}`
               );
             }
           }
         }
       } catch (episodeError) {
         // Log error but don't fail the sync
-        if (import.meta.dev) {
-          console.error(
-            `[syncSeasonsFromTVShow] Error fetching air_date from first episode for existing season ${existingSeason.season_number}:`,
-            episodeError
-          );
-        }
+        logError(
+          '[SeasonSync] Error fetching air_date from first episode for existing season',
+          episodeError as Error,
+          {
+            tvTmdbId,
+            seasonNumber: existingSeason.season_number,
+          }
+        );
       }
     }
 
@@ -467,21 +491,20 @@ export async function syncSeasonsFromTVShow(
           supabase
         );
 
-        if (import.meta.dev) {
-          console.log(
-            `[syncSeasonsFromTVShow] Updated poster_path for existing season ${season.season_number} in language ${tmdbConfig.language}`
-          );
-        }
+        devLog(
+          `[SeasonSync] Updated poster_path for existing season ${season.season_number} in language ${tmdbConfig.language}`
+        );
       } catch (posterError) {
         // Log error but don't fail the sync
-        if (import.meta.dev) {
-          console.error(
-            `[syncSeasonsFromTVShow] Error updating poster_path for existing season ${season.season_number}:`,
-            posterError
-          );
-        }
+        logError(
+          '[SeasonSync] Error updating poster_path for existing season',
+          posterError as Error,
+          {
+            tvTmdbId,
+            seasonNumber: season.season_number,
+          }
+        );
       }
     }
   }
 }
-

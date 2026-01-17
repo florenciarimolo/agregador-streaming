@@ -216,7 +216,8 @@ async function fetchAtresPlayerUrl(query: string): Promise<string | null> {
 
     return null;
   } catch (error) {
-    console.error('Error fetching Atres Player URL:', error);
+    const { logError } = useLogger();
+    logError('[ProviderLinks] Error fetching Atres Player URL', error as Error);
     return null;
   }
 }

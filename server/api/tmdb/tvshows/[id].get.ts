@@ -180,16 +180,15 @@ async function updateMissingSeasonData(
 
     const currentOverviewJsonb =
       safeGetMultiLanguageText(currentSeasonData?.overview) || {};
-    
+
     // Use TMDB overview if available, otherwise check for English fallback
     let overviewToSave = tmdbSeason.overview || '';
     let languageForOverview = userLanguage;
-    
+
     // If overview is still empty, try fetching English fallback
     if (!overviewToSave || overviewToSave.trim() === '') {
-      const { fetchSeasonOverviewEnglishFallback } = await import(
-        '@/server/utils/season-update'
-      );
+      const { fetchSeasonOverviewEnglishFallback } =
+        await import('@/server/utils/season-update');
       const englishOverview = await fetchSeasonOverviewEnglishFallback(
         tmdbId,
         season.season_number,
@@ -198,13 +197,13 @@ async function updateMissingSeasonData(
         region,
         supabase
       );
-      
+
       if (englishOverview) {
         overviewToSave = englishOverview;
         languageForOverview = 'en-US';
       }
     }
-    
+
     // Update with current language overview or English fallback
     const updatedOverviewJsonb: MultiLanguageText = {
       ...currentOverviewJsonb,
@@ -977,9 +976,10 @@ export default defineEventHandler(async (event) => {
       return response;
     } catch (syncError) {
       // Log but don't fail the request if season sync fails
-      if (import.meta.dev) {
-        console.error('[TV Show] Error syncing seasons:', syncError);
-      }
+      const { logError } = await import('@/server/utils/logger');
+      logError('[TVShow] Error syncing seasons', syncError as Error, {
+        tvTmdbId: id,
+      });
 
       // Return response even if season sync failed
       const response: Partial<TVShow> & {

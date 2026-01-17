@@ -5,6 +5,7 @@ import { USER_TITLE_STATUS_COLUMNS } from '@/constants/db/columns';
 import { SCORE_WEIGHTS } from '@/constants/domain/scoring';
 import { updatePoolScore } from '@/services/recommendationPool';
 import { getUserIdFromEvent } from '@/server/utils/user-auth';
+import { logError } from '@/server/utils/logger';
 
 /**
  * Delete user title status (remove from seen or not_interested)
@@ -85,9 +86,10 @@ export default defineEventHandler(async (event) => {
       .eq(USER_TITLE_STATUS_COLUMNS.TMDB_ID, tmdbIdNumber);
 
     if (error) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('Error deleting user title status:', error);
-      }
+      logError('[Title Status] Error deleting user title status', error, {
+        tmdbId: tmdbIdNumber,
+        userId,
+      });
       throw createError({
         statusCode: 500,
         message: 'Error al eliminar el estado del título',
@@ -101,10 +103,7 @@ export default defineEventHandler(async (event) => {
       const deletedLiked = previousStatus?.liked ?? false;
 
       // Revert status impact (if status was not watchlist)
-      if (
-        deletedStatus &&
-        deletedStatus !== TITLE_STATUS.WATCHLIST
-      ) {
+      if (deletedStatus && deletedStatus !== TITLE_STATUS.WATCHLIST) {
         // Revert: score -= SCORE_WEIGHTS[deletedStatus]
         const deletedWeight =
           SCORE_WEIGHTS[deletedStatus as keyof typeof SCORE_WEIGHTS];
@@ -125,9 +124,14 @@ export default defineEventHandler(async (event) => {
       }
     } catch (poolError) {
       // Don't fail the request if pool update fails
-      if (process.env.NODE_ENV === 'development') {
-        console.error('Error updating recommendation pool:', poolError);
-      }
+      logError(
+        '[Title Status] Error updating recommendation pool',
+        poolError as Error,
+        {
+          tmdbId: tmdbIdNumber,
+          userId,
+        }
+      );
     }
 
     return { success: true };

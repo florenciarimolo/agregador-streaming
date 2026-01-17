@@ -11,8 +11,14 @@
               🔎 {{ $t('home.discover.modePill') }}
             </span>
           </div>
-          <div class="home-section-title" data-aos="fade-up" data-aos-delay="100">
-            <SectionTitle align="center">{{ $t('home.discover.title') }}</SectionTitle>
+          <div
+            class="home-section-title"
+            data-aos="fade-up"
+            data-aos-delay="100"
+          >
+            <SectionTitle align="center">{{
+              $t('home.discover.title')
+            }}</SectionTitle>
           </div>
           <p
             class="mx-auto mb-8 text-subtitle text-center font-body text-gray-600 dark:text-gray-400 max-w-3xl"
@@ -67,7 +73,11 @@
           </div>
 
           <!-- CTA secundario -->
-          <div class="flex justify-center" data-aos="fade-up" data-aos-delay="700">
+          <div
+            class="flex justify-center"
+            data-aos="fade-up"
+            data-aos-delay="700"
+          >
             <nuxt-link :to="discoverRoute">
               <Button size="medium" variant="secondary">
                 {{ $t('home.discover.cta') }}
@@ -91,6 +101,7 @@ import Button from '@/components/ui/Button.vue';
 import DiscoverListCard from '@/components/DiscoverListCard.vue';
 import { useRouteWithLang } from '@/composables/useRouteWithLang';
 import type { DiscoverList } from '@/composables/database/discoverLists';
+import { useLogger } from '@/composables/useLogger';
 
 interface ExtendedDiscoverList extends DiscoverList {
   itemCount?: number;
@@ -122,7 +133,8 @@ const loadLists = async () => {
       lists.value = response.lists;
     }
   } catch (error) {
-    console.error('[DiscoverSection] Error fetching lists:', error);
+    const { logError } = useLogger();
+    logError('[DiscoverSection] Error fetching lists', error as Error);
   } finally {
     isLoading.value = false;
   }

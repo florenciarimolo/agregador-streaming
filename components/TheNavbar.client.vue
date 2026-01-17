@@ -490,6 +490,7 @@ import IconSearch from '@/components/icons/IconSearch.vue';
 import IconArrowUp from '@/components/icons/IconArrowUp.vue';
 import AuthForm from '@/components/AuthForm.vue';
 import ThemeSwitcher from '@/components/ThemeSwitcher.vue';
+import { useLogger } from '@/composables/useLogger';
 
 // User state
 const user = useSupabaseUser();
@@ -501,9 +502,10 @@ try {
 } catch (error) {
   // If store is not available, it will be null and computed properties will handle it
   // This can happen if Pinia hasn't been initialized yet
-  if (process.env.NODE_ENV === 'development') {
-    console.warn('[TheNavbar] useUserStore not available, will retry:', error);
-  }
+  const { logWarn } = useLogger();
+  logWarn('[TheNavbar] useUserStore not available, will retry', {
+    error: error instanceof Error ? error.message : 'Unknown error',
+  });
 }
 const { signOut } = useAuth();
 const { routeWithLang } = useRouteWithLang();
@@ -608,9 +610,8 @@ const confirmLogout = async () => {
       userStore.reset();
     }
   } catch (error) {
-    if (process.env.NODE_ENV === 'development') {
-      console.error('Error signing out:', error);
-    }
+    const { logError } = useLogger();
+    logError('[TheNavbar] Error signing out', error as Error);
     // Reopen modal on error
     showLogoutConfirm.value = true;
   }

@@ -17,120 +17,28 @@
     "
   >
     <template #actions>
-      <ActionMenu ref="dropdownRef" width="w-48" position="right">
-        <template #trigger>
-          <IconButton
-            :icon="IconMoreVertical"
-            :aria-label="
-              $t('media.actionsMenuFor', { title: props.title.title })
-            "
-            size="small"
-            variant="default"
-            custom-class="menu-button p-2 rounded-full bg-black/50 hover:bg-gray-700/80 backdrop-blur-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-black/50 [&>svg]:text-white [&>svg]:w-3 [&>svg]:h-3"
-          />
-        </template>
-        <div class="p-4">
-          <!-- If title has a state, only show option to remove that state -->
-          <!-- All remove actions use IconX -->
-          <Button
-            v-if="props.title.liked"
-            type="button"
-            variant="ghost"
-            size="small"
-            custom-class="justify-start w-full text-left"
-            @click.stop.prevent="handleAction('remove-liked')"
-          >
-            <template #icon>
-              <IconX icon-class="w-4 h-4" />
-            </template>
-            {{ $t('media.removeFromLiked') }}
-          </Button>
-          <Button
-            v-else-if="props.title.in_watchlist"
-            type="button"
-            variant="ghost"
-            size="small"
-            custom-class="justify-start w-full text-left"
-            @click.stop.prevent="handleAction(TITLE_STATUS.WATCHLIST)"
-          >
-            <template #icon>
-              <IconX icon-class="w-4 h-4" />
-            </template>
-            {{ $t('media.removeFromWatchlist') }}
-          </Button>
-          <!-- If title has no state, show all options to add states -->
-          <template v-else>
-            <Button
-              type="button"
-              variant="ghost"
-              size="small"
-              custom-class="justify-start mb-2 w-full text-left"
-              @click.stop.prevent="handleAction(TITLE_STATUS.SEEN)"
-            >
-              <template #icon>
-                <IconCheck icon-class="w-4 h-4" />
-              </template>
-              {{ $t('media.seen') }}
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="small"
-              custom-class="justify-start mb-2 w-full text-left"
-              @click.stop.prevent="handleAction('liked')"
-            >
-              <template #icon>
-                <IconHeart icon-class="w-4 h-4" />
-              </template>
-              {{ $t('media.liked') }}
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="small"
-              custom-class="justify-start mb-2 w-full text-left"
-              @click.stop.prevent="handleAction(TITLE_STATUS.NOT_INTERESTED)"
-            >
-              <template #icon>
-                <IconX icon-class="w-4 h-4" />
-              </template>
-              {{ $t('media.notInterested') }}
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="small"
-              custom-class="justify-start w-full text-left"
-              @click.stop.prevent="handleAction(TITLE_STATUS.WATCHLIST)"
-            >
-              <template #icon>
-                <IconClock icon-class="w-4 h-4" />
-              </template>
-              {{ $t('media.watchLater') }}
-            </Button>
-          </template>
-        </div>
-      </ActionMenu>
+      <TitleActionMenu
+        :status-info="titleStatusInfo"
+        :aria-label="$t('media.actionsMenuFor', { title: props.title.title })"
+        @mark-seen="handleAction(TITLE_STATUS.SEEN)"
+        @mark-liked="handleAction('liked')"
+        @remove-liked="handleAction('remove-liked')"
+        @mark-not-interested="handleAction(TITLE_STATUS.NOT_INTERESTED)"
+        @mark-watchlist="handleAction(TITLE_STATUS.WATCHLIST)"
+      />
     </template>
   </ListItemBase>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed } from 'vue';
 import type { Recommendation } from '@/types/Recommendation';
 import {
   TITLE_STATUS,
   type TitleStatusType,
 } from '@/constants/domain/titleStatus';
 import ListItemBase from '@/components/ListItemBase.vue';
-import IconMoreVertical from '@/components/icons/IconMoreVertical.vue';
-import IconClock from '@/components/icons/IconClock.vue';
-import IconCheck from '@/components/icons/IconCheck.vue';
-import IconHeart from '@/components/icons/IconHeart.vue';
-import IconX from '@/components/icons/IconX.vue';
-import IconButton from '@/components/ui/IconButton.vue';
-import Button from '@/components/ui/Button.vue';
-import ActionMenu from '@/components/ui/ActionMenu.vue';
+import TitleActionMenu from '@/components/ui/TitleActionMenu.vue';
 
 interface Props {
   title: Recommendation;
@@ -146,12 +54,14 @@ const emit = defineEmits<{
   'mark-watchlist': [title: Recommendation];
 }>();
 
-const dropdownRef = ref<InstanceType<typeof ActionMenu> | null>(null);
+const titleStatusInfo = computed(() => ({
+  isLiked: props.title.liked || false,
+  isSeen: false,
+  isNotInterested: false,
+  isInWatchlist: props.title.in_watchlist || false,
+}));
 
 const handleAction = (action: TitleStatusType | 'liked' | 'remove-liked') => {
-  // Close dropdown when action is triggered
-  dropdownRef.value?.close();
-
   if (action === TITLE_STATUS.SEEN) {
     emit('mark-seen', props.title);
   } else if (action === 'liked') {

@@ -56,12 +56,7 @@ export default defineEventHandler(async (event) => {
     else if (query.language && typeof query.language === 'string') {
       const langParam = query.language;
 
-      if (import.meta.dev) {
-        console.log(
-          '[Regions] Processing query language parameter:',
-          langParam
-        );
-      }
+      // Development-only logging removed
 
       // Check if it's already an i18n code (contains hyphen, e.g., 'es-ES', 'en-US')
       if (langParam.includes('-')) {
@@ -76,14 +71,7 @@ export default defineEventHandler(async (event) => {
           if (urlCode) {
             // Valid i18n code, use normalized version
             language = normalizedI18nCode;
-            if (import.meta.dev) {
-              console.log(
-                '[Regions] Using normalized i18n code:',
-                langParam,
-                '->',
-                normalizedI18nCode
-              );
-            }
+            // Development-only logging removed
           } else {
             // Invalid i18n code, try to convert as URL code
             const i18nCode = getI18nCodeFromUrlCode(langParam.toLowerCase());
@@ -112,26 +100,12 @@ export default defineEventHandler(async (event) => {
         const i18nCode = getI18nCodeFromUrlCode(langParam.toLowerCase());
         if (i18nCode) {
           language = i18nCode;
-          if (import.meta.dev) {
-            console.log(
-              '[Regions] Converted URL code to i18n code:',
-              langParam,
-              '->',
-              i18nCode
-            );
-          }
+          // Development-only logging removed
         } else {
           // Use toTMDBLanguageCode as fallback
           const { toTMDBLanguageCode } = await import('@/constants/languages');
           language = toTMDBLanguageCode(langParam);
-          if (import.meta.dev) {
-            console.log(
-              '[Regions] Using toTMDBLanguageCode fallback:',
-              langParam,
-              '->',
-              language
-            );
-          }
+          // Development-only logging removed
         }
       }
     }
@@ -173,13 +147,7 @@ export default defineEventHandler(async (event) => {
 
     // Fetch from TMDB API for this language
 
-    if (import.meta.dev) {
-      console.log('[Regions] Fetching from TMDB:', {
-        inputLanguage: language,
-        tmdbLanguage: tmdbConfig.language,
-        baseUrl: tmdbConfig.baseUrl,
-      });
-    }
+    // Development-only logging removed
 
     // The exact language code that will be sent to TMDB API
     const languageSentToTMDB = tmdbConfig.language;
@@ -197,13 +165,7 @@ export default defineEventHandler(async (event) => {
       throw new Error('Invalid response from TMDB API');
     }
 
-    // Log TMDB response (visible in production for debugging)
-    console.log('[Regions] TMDB response:', {
-      totalRegions: response.results.length,
-      sampleRegions: response.results.slice(0, 5),
-      languageSentToTMDB: languageSentToTMDB,
-      tmdbUrl: `${tmdbConfig.baseUrl}/watch/providers/regions`,
-    });
+    // Development-only logging removed
 
     // Update cache for this language
     regionsCache.set(language, {
@@ -223,21 +185,7 @@ export default defineEventHandler(async (event) => {
       .sort((a, b) => a.name.localeCompare(b.name));
 
     // Debug: Show which regions from TMDB don't have flags (visible in production)
-    const regionsWithoutFlags = response.results
-      .filter((region) => !availableFlags.has(region.iso_3166_1))
-      .slice(0, 10)
-      .map((r) => r.iso_3166_1);
-
-    console.log('[Regions] Filtered regions:', {
-      totalFromTMDB: response.results.length,
-      filteredCount: filteredRegions.length,
-      sampleFiltered: filteredRegions.slice(0, 5),
-      regionsWithoutFlags: regionsWithoutFlags,
-      sampleRegionsFromTMDB: response.results.slice(0, 5).map((r) => ({
-        code: r.iso_3166_1,
-        hasFlag: availableFlags.has(r.iso_3166_1),
-      })),
-    });
+    // Development-only logging removed
 
     // Set cache headers
     event.node.res.setHeader('Cache-Control', 'public, max-age=86400'); // 24 hours
@@ -251,7 +199,8 @@ export default defineEventHandler(async (event) => {
       language: languageSentToTMDB, // Return the exact language sent to TMDB (for debug)
     };
   } catch (error) {
-    console.error('[Regions] Error fetching regions from TMDB:', error);
+    const { logError } = await import('@/server/utils/logger');
+    logError('[Regions] Error fetching regions from TMDB', error as Error);
     throw createError({
       statusCode: 500,
       statusMessage: 'Failed to fetch regions from TMDB',

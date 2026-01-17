@@ -17,6 +17,7 @@
  */
 
 import { VALID_URL_CODES } from '@/constants/urlLanguageCodes';
+import { useLogger } from '@/composables/useLogger';
 
 export default defineNuxtRouteMiddleware(async (to) => {
   // Only run on client side (i18n is client-side only in this setup)
@@ -49,9 +50,10 @@ export default defineNuxtRouteMiddleware(async (to) => {
     ) {
       // Invalid language code - let other middleware handle 404
       if (process.env.NODE_ENV === 'development') {
-        console.warn(
-          `[sync-lang] Invalid language code in URL: ${langFromUrl}`
-        );
+        const { logWarn } = useLogger();
+        logWarn('[SyncLang] Invalid language code in URL', {
+          langFromUrl,
+        });
       }
       return;
     }
@@ -62,32 +64,33 @@ export default defineNuxtRouteMiddleware(async (to) => {
     // With skipSettingLocaleOnNavigate: false, Nuxt i18n should sync automatically,
     // but we verify and sync explicitly as a backup to ensure translations are always correct
     if (locale.value !== normalizedLangFromUrl) {
-      if (process.env.NODE_ENV === 'development') {
-        console.log(
-          `[sync-lang] Synchronizing i18n.locale: ${locale.value} -> ${normalizedLangFromUrl} (from URL: /${langFromUrl}/...)`
-        );
-      }
+      // Development-only logging removed
 
       // Set locale to match URL (this is the source of truth)
       // IMPORTANT: setLocale() expects URL code, not i18n code
       // This ensures translations are loaded for the correct language
-      await setLocale(normalizedLangFromUrl as (typeof VALID_URL_CODES)[number]);
+      await setLocale(
+        normalizedLangFromUrl as (typeof VALID_URL_CODES)[number]
+      );
 
       // Verify synchronization (safety check)
       if (
         locale.value !== normalizedLangFromUrl &&
         process.env.NODE_ENV === 'development'
       ) {
-        console.warn(
-          `[sync-lang] WARNING: Failed to synchronize locale. Expected: ${normalizedLangFromUrl}, Got: ${locale.value}`
-        );
+        const { logWarn } = useLogger();
+        logWarn('[SyncLang] Failed to synchronize locale', {
+          expected: normalizedLangFromUrl,
+          got: locale.value,
+        });
       }
     }
   } catch (error) {
     // Don't block navigation if locale sync fails
     // Log error but continue
     if (process.env.NODE_ENV === 'development') {
-      console.error('[sync-lang] Error synchronizing locale:', error);
+      const { logError } = useLogger();
+      logError('[SyncLang] Error synchronizing locale', error as Error);
     }
   }
 });

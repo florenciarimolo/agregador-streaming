@@ -102,15 +102,7 @@ watch(
   () => lang.value,
   async (newLang, oldLang) => {
     if (newLang && oldLang && newLang !== oldLang) {
-      if (import.meta.dev) {
-        console.log(
-          '[movie/[id].vue] Language changed in URL, refreshing movie data:',
-          {
-            oldLang,
-            newLang,
-          }
-        );
-      }
+      // Development-only logging removed
       // Refresh all data with new language
       await Promise.all([
         refreshMovieDetails(),

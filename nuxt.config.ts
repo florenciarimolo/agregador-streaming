@@ -81,6 +81,7 @@ export default defineNuxtConfig({
     '@nuxtjs/tailwindcss',
     '@nuxtjs/i18n',
     '@nuxtjs/sitemap',
+    '@sentry/nuxt/module',
   ],
 
   supabase: {
@@ -122,6 +123,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     tmdbApiKey: process.env.NUXT_TMDB_API_KEY || '',
     resendApiKey: process.env.RESEND_API_KEY || '',
+    sentryDsn: process.env.SENTRY_DSN || '',
     public: {
       tmdbBaseUrl: process.env.NUXT_TMDB_BASE_URL || '',
       supabaseUrl: process.env.NUXT_PUBLIC_SUPABASE_URL || '',
@@ -398,10 +400,70 @@ export default defineNuxtConfig({
       }
 
       if (urls.length === 0) {
-        console.error('[Sitemap] ERROR: No URLs generated!');
+        const { logError } = await import('@/server/utils/logger');
+        logError(
+          '[Sitemap] No URLs generated',
+          new Error('Sitemap generation failed')
+        );
       }
 
       return urls;
     },
+  },
+
+  sentry: {
+    // DSN from environment variable (required)
+    // CRITICAL: If DSN is empty, Sentry will initialize but won't send events
+    // Only set dsn if it actually exists, otherwise let it be undefined
+    dsn:
+      process.env.SENTRY_DSN && process.env.SENTRY_DSN.trim() !== ''
+        ? process.env.SENTRY_DSN
+        : undefined,
+
+    // Enable in production, or when SENTRY_ENABLED is explicitly set (for testing)
+    // Only enable if DSN is also set
+    enabled:
+      (process.env.NODE_ENV === 'production' ||
+        process.env.SENTRY_ENABLED === 'true') &&
+      !!process.env.SENTRY_DSN &&
+      process.env.SENTRY_DSN.trim() !== '',
+
+    // Performance monitoring - sample 10% of transactions in production, 100% when testing
+    tracesSampleRate:
+      process.env.SENTRY_ENABLED === 'true'
+        ? 1.0
+        : process.env.NODE_ENV === 'production'
+          ? 0.1
+          : 0,
+
+    // Disable features that are not needed
+    enableLogs: false,
+
+    sendDefaultPii: false,
+
+    // Enable debug only when explicitly testing Sentry
+    debug: process.env.SENTRY_ENABLED === 'true',
+
+    // Disable Session Replay
+    replaysSessionSampleRate: 0,
+
+    replaysOnErrorSampleRate: 0,
+
+    // No tunnel endpoint
+    tunnel: false,
+
+    // Sourcemaps configuration
+    sourcemaps: {
+      assets: process.env.NODE_ENV === 'production',
+      filesToDeleteAfterUpload: '**/*.map',
+    },
+
+    // Server-side configuration
+    autoInjectServerSentry: 'top-level-import',
+  },
+
+  sourcemap: {
+    client: 'hidden',
+    server: true,
   },
 });

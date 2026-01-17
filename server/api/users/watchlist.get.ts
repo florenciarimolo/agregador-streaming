@@ -97,8 +97,14 @@ export default defineEventHandler(async (event) => {
 
     // Extract tmdb_ids and create a map of tmdb_id to type and created_at
     const tmdbIds: number[] = statuses.map((s) => s.tmdb_id);
-    const titleTypesMap = new Map<number, typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV>(
-      statuses.map((s) => [s.tmdb_id, s.type as typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV])
+    const titleTypesMap = new Map<
+      number,
+      typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV
+    >(
+      statuses.map((s) => [
+        s.tmdb_id,
+        s.type as typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV,
+      ])
     );
     const createdAtMap = new Map<number, string>(
       statuses.map((s) => [s.tmdb_id, s.created_at])
@@ -294,23 +300,23 @@ export default defineEventHandler(async (event) => {
                     // Success - tagline saved
                   } catch (error: unknown) {
                     // Log but don't fail the request
-                    if (import.meta.dev) {
-                      console.error(
-                        `Error saving tagline to database for ${title.tmdb_id}:`,
-                        error
-                      );
-                    }
+                    const { logError } = await import('@/server/utils/logger');
+                    logError(
+                      '[Watchlist] Error saving tagline to database',
+                      error as Error,
+                      {
+                        tmdbId: title.tmdb_id,
+                      }
+                    );
                   }
                 }
               }
             } catch (error) {
               // Silently fail - tagline is optional
-              if (import.meta.dev) {
-                console.error(
-                  `Error fetching tagline for ${title.tmdb_id}:`,
-                  error
-                );
-              }
+              const { logError } = await import('@/server/utils/logger');
+              logError('[Watchlist] Error fetching tagline', error as Error, {
+                tmdbId: title.tmdb_id,
+              });
             }
           }
 

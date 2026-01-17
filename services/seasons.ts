@@ -11,6 +11,7 @@ import type { MultiLanguageVideos } from '@/types/Video';
 import type { MultiLanguageText } from './titles';
 import { getTitleInLanguage } from './titles';
 import { getPrimaryLanguageForRegion } from '@/utils/language-detection';
+import { logError } from '@/server/utils/logger';
 
 /**
  * Extract season text fields (name, poster_path, overview) from JSONB with language fallback
@@ -48,7 +49,8 @@ function extractSeasonTextFields(
       const primaryLanguage = getPrimaryLanguageForRegion(userRegion);
       const primaryLanguageKey = `${primaryLanguage}-${userRegion.toUpperCase()}`;
       const requestedLangCode = language.split('-')[0]?.toLowerCase() || '';
-      const primaryLangCode = primaryLanguage.split('-')[0]?.toLowerCase() || '';
+      const primaryLangCode =
+        primaryLanguage.split('-')[0]?.toLowerCase() || '';
 
       // Only use primary language fallback if requested language is not primary
       if (requestedLangCode !== primaryLangCode) {
@@ -64,7 +66,11 @@ function extractSeasonTextFields(
         }
         // Also try overview in primary language if not found
         if (!overview) {
-          overview = getTitleInLanguage(overviewJsonb, primaryLanguageKey, userRegion);
+          overview = getTitleInLanguage(
+            overviewJsonb,
+            primaryLanguageKey,
+            userRegion
+          );
         }
       }
     }
@@ -72,7 +78,11 @@ function extractSeasonTextFields(
     // Final fallback: if overview is still empty, try English
     // This happens when overview is empty in current language and primary language
     if (!overview && overviewJsonb) {
-      const englishOverview = getTitleInLanguage(overviewJsonb, 'en-US', userRegion);
+      const englishOverview = getTitleInLanguage(
+        overviewJsonb,
+        'en-US',
+        userRegion
+      );
       if (englishOverview) {
         overview = englishOverview;
       }
@@ -114,7 +124,14 @@ export async function getSeasonByTmdbIds(
     .maybeSingle();
 
   if (error) {
-    console.error('[getSeasonByTmdbIds] Error:', error);
+    if (import.meta.client) {
+      const { useLogger } = await import('@/composables/useLogger');
+      const { logError } = useLogger();
+      logError('[Seasons] Error getting season by tmdbIds', error as Error, {
+        tvTmdbId,
+        seasonNumber,
+      });
+    }
     return null;
   }
 
@@ -203,7 +220,14 @@ export async function upsertSeason(
     .single();
 
   if (error) {
-    console.error('[upsertSeason] Error:', error);
+    if (import.meta.client) {
+      const { useLogger } = await import('@/composables/useLogger');
+      const { logError } = useLogger();
+      logError('[Seasons] Error upserting season', error as Error, {
+        tvTmdbId: seasonData.tv_tmdb_id,
+        seasonNumber: seasonData.season_number,
+      });
+    }
     return null;
   }
 
@@ -235,7 +259,13 @@ export async function getSeasonsByTvTmdbId(
     .order(SEASONS_COLUMNS.SEASON_NUMBER, { ascending: true });
 
   if (error) {
-    console.error('[getSeasonsByTvTmdbId] Error:', error);
+    if (import.meta.client) {
+      const { useLogger } = await import('@/composables/useLogger');
+      const { logError } = useLogger();
+      logError('[Seasons] Error getting seasons by TV tmdbId', error as Error, {
+        tvTmdbId,
+      });
+    }
     return [];
   }
 
@@ -284,16 +314,17 @@ export async function updateSeasonVideos(
   const { error } = await supabaseClient
     .from(TABLES.SEASONS)
     .update({
-      [SEASONS_COLUMNS.VIDEOS]:
-        Object.keys(videos).length > 0 ? videos : {},
+      [SEASONS_COLUMNS.VIDEOS]: Object.keys(videos).length > 0 ? videos : {},
       [SEASONS_COLUMNS.VIDEOS_UPDATED_AT]: videosUpdatedAt.toISOString(),
     })
     .eq(SEASONS_COLUMNS.TV_TMDB_ID, tvTmdbId)
     .eq(SEASONS_COLUMNS.SEASON_NUMBER, seasonNumber);
 
   if (error) {
-    console.error('[updateSeasonVideos] Error:', error);
+    logError('[updateSeasonVideos] Error', error, {
+      tvTmdbId,
+      seasonNumber,
+    });
     throw error;
   }
 }
-

@@ -2,23 +2,27 @@
  * Test endpoint to verify sitemap generation
  * Access at: /api/test-sitemap
  */
-import { getTitleIdsForSitemap, getDiscoverListsForSitemap } from '@/server/utils/sitemap';
+import {
+  getTitleIdsForSitemap,
+  getDiscoverListsForSitemap,
+} from '@/server/utils/sitemap';
+import { devLog, logError } from '@/server/utils/logger';
 
 export default defineEventHandler(async () => {
-  console.log('[Test Sitemap] Endpoint called');
-  
+  devLog('[Test Sitemap] Endpoint called');
+
   try {
-    console.log('[Test Sitemap] Calling getTitleIdsForSitemap()...');
+    devLog('[Test Sitemap] Calling getTitleIdsForSitemap()...');
     const titles = await getTitleIdsForSitemap();
-    console.log('[Test Sitemap] Titles fetched:', titles.length);
-    
-    console.log('[Test Sitemap] Calling getDiscoverListsForSitemap()...');
+    devLog('[Test Sitemap] Titles fetched:', titles.length);
+
+    devLog('[Test Sitemap] Calling getDiscoverListsForSitemap()...');
     const discoverLists = await getDiscoverListsForSitemap();
-    console.log('[Test Sitemap] Discover lists fetched:', discoverLists.length);
-    
+    devLog('[Test Sitemap] Discover lists fetched:', discoverLists.length);
+
     const movies = titles.filter((t) => t.type === 'movie');
     const tvShows = titles.filter((t) => t.type === 'tv');
-    
+
     return {
       success: true,
       stats: {
@@ -35,7 +39,7 @@ export default defineEventHandler(async () => {
       allTitles: titles.slice(0, 10), // First 10 for debugging
     };
   } catch (error) {
-    console.error('[Test Sitemap] Error:', error);
+    logError('[Test Sitemap] Error', error as Error);
     return {
       success: false,
       error: error instanceof Error ? error.message : String(error),
@@ -43,4 +47,3 @@ export default defineEventHandler(async () => {
     };
   }
 });
-

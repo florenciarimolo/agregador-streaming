@@ -10,7 +10,11 @@ import {
   getDiscoverListBySlug,
   getDiscoverListItems,
 } from '@/composables/database/discoverLists';
-import { DEFAULT_LANGUAGE, DEFAULT_LANGUAGE_ISO, toTMDBLanguageCode } from '@/constants/languages';
+import {
+  DEFAULT_LANGUAGE,
+  DEFAULT_LANGUAGE_ISO,
+  toTMDBLanguageCode,
+} from '@/constants/languages';
 import { createServerSupabaseClient } from '@/server/utils/supabase';
 import { TABLES } from '@/constants/db/tables';
 import { TITLES_COLUMNS } from '@/constants/db/columns';
@@ -178,12 +182,10 @@ export default defineEventHandler(async (event) => {
           }
         } catch (error) {
           // Don't fail if providers can't be fetched
-          if (process.env.NODE_ENV === 'development') {
-            console.error(
-              `Error fetching providers for ${item.tmdb_id}:`,
-              error
-            );
-          }
+          const { logError } = await import('@/server/utils/logger');
+          logError('[DiscoverList] Error fetching providers', error as Error, {
+            tmdbId: item.tmdb_id,
+          });
         }
 
         // If overview is empty, fetch from TMDB as fallback (same logic as detail page)
@@ -193,7 +195,9 @@ export default defineEventHandler(async (event) => {
             const endpoint = item.type === 'movie' ? 'movies' : 'tvshows';
             // Use urlLangCode if available, otherwise extract from language
             const langParam =
-              urlLangCode || language.split('-')[0]?.toLowerCase() || DEFAULT_LANGUAGE_ISO;
+              urlLangCode ||
+              language.split('-')[0]?.toLowerCase() ||
+              DEFAULT_LANGUAGE_ISO;
             const tmdbResponse = await $fetch<{
               overview?: string;
             }>(`/api/tmdb/${endpoint}/${item.tmdb_id}`, {
@@ -237,12 +241,14 @@ export default defineEventHandler(async (event) => {
             }
           } catch (error) {
             // Don't fail if overview can't be fetched from TMDB
-            if (process.env.NODE_ENV === 'development') {
-              console.error(
-                `Error fetching overview from TMDB for ${item.tmdb_id}:`,
-                error
-              );
-            }
+            const { logError } = await import('@/server/utils/logger');
+            logError(
+              '[DiscoverList] Error fetching overview from TMDB',
+              error as Error,
+              {
+                tmdbId: item.tmdb_id,
+              }
+            );
           }
         }
 
@@ -267,11 +273,10 @@ export default defineEventHandler(async (event) => {
       throw error;
     }
     // Log error details for debugging
-    console.error('[DiscoverList] Error:', error);
-    if (error instanceof Error) {
-      console.error('[DiscoverList] Error message:', error.message);
-      console.error('[DiscoverList] Error stack:', error.stack);
-    }
+    const { logError } = await import('@/server/utils/logger');
+    logError('[DiscoverList] Error fetching discover list', error as Error, {
+      slug,
+    });
     throw createError({
       statusCode: 500,
       statusMessage: 'Error fetching discover list',

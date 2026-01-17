@@ -1,4 +1,5 @@
 import { getSession } from '@/services/auth';
+import { useLogger } from '@/composables/useLogger';
 
 /**
  * Shared Map to track loading promises across all composable instances
@@ -33,25 +34,15 @@ export const useUserRegion = () => {
       typeof regionCache.value === 'string' &&
       regionCache.value.length > 0
     ) {
-      if (import.meta.dev) {
-        console.warn(
-          '[useUserRegion] Returning cached region:',
-          regionCache.value
-        );
-      }
+      // Development-only logging removed
       return regionCache.value;
     }
 
-    if (forceRefresh && import.meta.dev) {
-      console.log('[useUserRegion] Force refresh requested, bypassing cache');
-    }
+    // Development-only logging removed
 
     // If already loading, wait for the existing promise
     const existingPromise = loadingPromisesMap.get(LOADING_PROMISE_KEY);
     if (existingPromise) {
-      if (import.meta.dev) {
-        console.log('[useUserRegion] Waiting for existing promise');
-      }
       return existingPromise;
     }
 
@@ -62,15 +53,8 @@ export const useUserRegion = () => {
           data: { session },
         } = await getSession();
         if (!session?.access_token) {
-          if (import.meta.dev) {
-            console.log('[useUserRegion] No session or access token');
-          }
           regionCache.value = null;
           return null;
-        }
-
-        if (import.meta.dev) {
-          console.log('[useUserRegion] Fetching preferences from API...');
         }
 
         const prefsResponse = await $fetch<{
@@ -87,43 +71,26 @@ export const useUserRegion = () => {
         if (prefsResponse?.success && prefsResponse?.preferences) {
           // Check if region exists (even if it's null, we want to know it was checked)
           const region = prefsResponse.preferences.region;
-          if (import.meta.dev) {
-            console.warn('[useUserRegion] Checking region:', {
-              region,
-              type: typeof region,
-              isString: typeof region === 'string',
-              length: typeof region === 'string' ? region.length : 'N/A',
-              isEmpty:
-                !region || (typeof region === 'string' && region.length === 0),
-            });
-          }
 
           if (region && typeof region === 'string' && region.length > 0) {
             regionCache.value = region;
-            if (import.meta.dev) {
-              console.warn('[useUserRegion] ✅ Region found and cached:', region);
-            }
             return regionCache.value;
           }
           // If preferences exist but region is null/empty, cache null explicitly
           regionCache.value = null;
-          if (import.meta.dev) {
-            console.error(
-              '[useUserRegion] ❌ Preferences found but region is null/empty. Full preferences:',
-              JSON.stringify(prefsResponse, null, 2)
-            );
-          }
+          const { logWarn } = useLogger();
+          logWarn('[UserRegion] Preferences found but region is null/empty', {
+            hasPreferences: true,
+          });
           return null;
         }
 
         // If preferences don't exist, cache null explicitly
-        if (import.meta.dev) {
-          console.log('[useUserRegion] No preferences found or success=false');
-        }
         regionCache.value = null;
         return null;
       } catch (error) {
-        console.error('[useUserRegion] Error fetching user region:', error);
+        const { logError } = useLogger();
+        logError('[UserRegion] Error fetching user region', error as Error);
         regionCache.value = null;
         return null;
       } finally {

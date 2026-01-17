@@ -1,5 +1,6 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { VIEW_MODE, type ViewMode } from '@/constants/domain/viewMode';
+import { useLogger } from '@/composables/useLogger';
 
 /**
  * Composable to manage view mode (mosaic/list) with localStorage persistence
@@ -17,17 +18,16 @@ export function useViewMode(
     if (import.meta.client && typeof window !== 'undefined') {
       try {
         const stored = localStorage.getItem(STORAGE_KEY);
-        if (
-          stored === VIEW_MODE.MOSAIC ||
-          stored === VIEW_MODE.LIST
-        ) {
+        if (stored === VIEW_MODE.MOSAIC || stored === VIEW_MODE.LIST) {
           return stored as ViewMode;
         }
       } catch (error) {
         // localStorage might not be available (e.g., private browsing)
-        if (import.meta.dev) {
-          console.warn('[useViewMode] Error reading from localStorage:', error);
-        }
+        const { logWarn } = useLogger();
+        logWarn('[ViewMode] Error reading from localStorage', {
+          pageKey,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
       }
     }
     return DEFAULT_VIEW_MODE;
@@ -66,10 +66,7 @@ export function useViewMode(
   const handleStorageChange = (e: StorageEvent | CustomEvent) => {
     if (e instanceof StorageEvent) {
       if (e.key === STORAGE_KEY && e.newValue) {
-        if (
-          e.newValue === VIEW_MODE.MOSAIC ||
-          e.newValue === VIEW_MODE.LIST
-        ) {
+        if (e.newValue === VIEW_MODE.MOSAIC || e.newValue === VIEW_MODE.LIST) {
           viewMode.value = e.newValue as ViewMode;
         }
       }
@@ -84,17 +81,20 @@ export function useViewMode(
   if (import.meta.client) {
     onMounted(() => {
       // Listen to storage events (from other tabs/windows)
-      window.addEventListener('storage', handleStorageChange as (e: StorageEvent) => void);
+      window.addEventListener(
+        'storage',
+        handleStorageChange as (e: StorageEvent) => void
+      );
       // Listen to custom events (from same window)
-      window.addEventListener('viewModeChanged', handleStorageChange as EventListener);
+      window.addEventListener(
+        'viewModeChanged',
+        handleStorageChange as EventListener
+      );
 
       // Also poll localStorage periodically as a fallback
       intervalId = setInterval(() => {
         const stored = localStorage.getItem(STORAGE_KEY);
-        if (
-          stored === VIEW_MODE.MOSAIC ||
-          stored === VIEW_MODE.LIST
-        ) {
+        if (stored === VIEW_MODE.MOSAIC || stored === VIEW_MODE.LIST) {
           if (viewMode.value !== stored) {
             viewMode.value = stored as ViewMode;
           }
@@ -103,8 +103,14 @@ export function useViewMode(
     });
 
     onUnmounted(() => {
-      window.removeEventListener('storage', handleStorageChange as (e: StorageEvent) => void);
-      window.removeEventListener('viewModeChanged', handleStorageChange as EventListener);
+      window.removeEventListener(
+        'storage',
+        handleStorageChange as (e: StorageEvent) => void
+      );
+      window.removeEventListener(
+        'viewModeChanged',
+        handleStorageChange as EventListener
+      );
       if (intervalId) {
         clearInterval(intervalId);
       }

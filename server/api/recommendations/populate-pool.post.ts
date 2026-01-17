@@ -398,10 +398,15 @@ export default defineEventHandler(async (event) => {
                 existingTitle?.first_air_date ||
                 null,
               [TITLES_COLUMNS.STATUS]:
-                (fullResponse.status as string | undefined) || (existingTitle as { status?: string | null } | null)?.status || null,
+                (fullResponse.status as string | undefined) ||
+                (existingTitle as { status?: string | null } | null)?.status ||
+                null,
               [TITLES_COLUMNS.RUNTIME]:
                 type === MEDIA_TYPE.MOVIE
-                  ? fullResponse.runtime || (existingTitle as { runtime?: number | null } | null)?.runtime || null
+                  ? fullResponse.runtime ||
+                    (existingTitle as { runtime?: number | null } | null)
+                      ?.runtime ||
+                    null
                   : null,
             },
             {
@@ -410,9 +415,11 @@ export default defineEventHandler(async (event) => {
           );
         } catch (error) {
           // Log but don't fail the request
-          if (import.meta.dev) {
-            console.error('[PopulatePool] Error updating titles cache:', error);
-          }
+          const { logError } = await import('@/server/utils/logger');
+          logError(
+            '[PopulatePool] Error updating titles cache',
+            error as Error
+          );
         }
         // Return null after updating database (function is for side effects, not return value)
         return null;

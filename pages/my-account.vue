@@ -331,6 +331,7 @@ import {
 import { getSession } from '@/services/auth';
 import { useUndoToast } from '@/composables/useUndoToast';
 import { useUserStore } from '@/stores/user';
+import { useLogger } from '@/composables/useLogger';
 
 definePageMeta({
   middleware: 'auth',
@@ -371,9 +372,10 @@ const userStore = computed(() => {
   try {
     return useUserStore();
   } catch (error) {
-    if (process.env.NODE_ENV === 'development') {
-      console.warn('[pages/my-account.vue] useUserStore not available:', error);
-    }
+    const { logWarn } = useLogger();
+    logWarn('[MyAccount] useUserStore not available', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
     return {
       profile: null,
       authInitialized: false,
@@ -469,7 +471,8 @@ const handleAvatarUploaded = async (avatarUrl: string) => {
     await userStore.value.fetchProfile();
     showToast(t('profile.avatarUpdated'), null);
   } catch (error) {
-    console.error('Error updating avatar:', error);
+    const { logError } = useLogger();
+    logError('[MyAccount] Error updating avatar', error as Error);
     showToast(t('profile.errorUpdating'), null);
   }
 };
@@ -515,7 +518,8 @@ const handleUpdateDisplayName = async () => {
       throw new Error('Failed to update display name');
     }
   } catch (error) {
-    console.error('Error updating display name:', error);
+    const { logError } = useLogger();
+    logError('[MyAccount] Error updating display name', error as Error);
     displayNameError.value = t('myAccount.displayName.error');
     showToast(t('myAccount.displayName.error'), null);
   } finally {
@@ -524,14 +528,9 @@ const handleUpdateDisplayName = async () => {
 };
 
 const handleUpdatePassword = async () => {
-  if (import.meta.dev) {
-    console.log('[my-account] handleUpdatePassword called');
-  }
+  // Development-only logging removed
 
   if (!canUpdatePassword.value) {
-    if (import.meta.dev) {
-      console.log('[my-account] canUpdatePassword is false, returning');
-    }
     return;
   }
 
@@ -541,18 +540,12 @@ const handleUpdatePassword = async () => {
   // Validate password
   const validation = validatePassword(newPassword.value);
   if (!validation.isValid) {
-    if (import.meta.dev) {
-      console.log('[my-account] Password validation failed');
-    }
     passwordError.value = t('auth.passwordNotValid');
     loadingPassword.value = false;
     return;
   }
 
   if (newPassword.value !== confirmPassword.value) {
-    if (import.meta.dev) {
-      console.log('[my-account] Passwords do not match');
-    }
     passwordError.value = t('myAccount.password.passwordsMismatch');
     loadingPassword.value = false;
     return;
@@ -561,10 +554,6 @@ const handleUpdatePassword = async () => {
   try {
     const supabase = useSupabaseClient();
 
-    if (import.meta.dev) {
-      console.log('[my-account] Verifying current password...');
-    }
-
     // First, verify current password by attempting to sign in
     const { error: signInError } = await supabase.auth.signInWithPassword({
       email: currentUser.value?.email || '',
@@ -572,21 +561,9 @@ const handleUpdatePassword = async () => {
     });
 
     if (signInError) {
-      if (import.meta.dev) {
-        console.log(
-          '[my-account] Current password verification failed:',
-          signInError
-        );
-      }
       passwordError.value = t('auth.passwordNotValid');
       loadingPassword.value = false;
       return;
-    }
-
-    if (import.meta.dev) {
-      console.log(
-        '[my-account] Current password verified, updating password...'
-      );
     }
 
     // Update password
@@ -595,11 +572,10 @@ const handleUpdatePassword = async () => {
     });
 
     if (updateError) {
-      console.error('[my-account] Password update error:', updateError);
+      const { logError } = useLogger();
+      logError('[MyAccount] Password update error', updateError as Error);
       throw updateError;
     }
-
-    console.log('[my-account] Password updated successfully');
 
     // Clear form
     currentPassword.value = '';
@@ -610,25 +586,10 @@ const handleUpdatePassword = async () => {
     // Use nextTick to ensure the toast is shown after all state updates
     await nextTick();
     const successMessage = t('myAccount.password.updated');
-    console.log('[my-account] About to show toast:', successMessage);
     showToast(successMessage, null);
-    console.log('[my-account] showToast called');
-
-    if (import.meta.dev) {
-      console.log(
-        '[my-account] showToast called, checking if toast was set...'
-      );
-      // Check toast state after a brief delay
-      setTimeout(() => {
-        const { toast: toastState } = useUndoToast();
-        console.log(
-          '[my-account] Toast state after showToast:',
-          toastState.value
-        );
-      }, 100);
-    }
   } catch (error) {
-    console.error('[my-account] Error updating password:', error);
+    const { logError } = useLogger();
+    logError('[MyAccount] Error updating password', error as Error);
     passwordError.value = t('myAccount.password.error');
     showToast(t('myAccount.password.error'), null);
   } finally {
@@ -665,7 +626,8 @@ const handleDeleteAccount = async () => {
     const { routeWithLang } = useRouteWithLang();
     await router.push(routeWithLang('/'));
   } catch (error) {
-    console.error('Error deleting account:', error);
+    const { logError } = useLogger();
+    logError('[MyAccount] Error deleting account', error as Error);
     showToast(t('myAccount.deleteAccount.error'), null);
   } finally {
     loadingDeleteAccount.value = false;

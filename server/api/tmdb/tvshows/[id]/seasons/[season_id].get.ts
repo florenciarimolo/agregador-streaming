@@ -17,7 +17,7 @@ export default defineEventHandler(
       // Get user preferences for language and region
       const { language, region } = await getUserTMDBParams(event);
       const config = getTMDBConfig(language, region);
-      
+
       const { id, season_id } = event.context.params as {
         id: string;
         season_id: string;
@@ -42,7 +42,8 @@ export default defineEventHandler(
         : DEFAULT_LANGUAGE_ISO;
       const primaryLanguageKey = `${primaryLanguage}-${region?.toUpperCase() || 'ES'}`;
       const requestedLangCode = language.split('-')[0]?.toLowerCase() || '';
-      const primaryLangCode = primaryLanguage.split('-')[0]?.toLowerCase() || '';
+      const primaryLangCode =
+        primaryLanguage.split('-')[0]?.toLowerCase() || '';
 
       // Check if we need to fetch primary language (if preferred language is not primary)
       const needsPrimaryLanguage =
@@ -73,9 +74,15 @@ export default defineEventHandler(
           );
         } catch (primaryError) {
           // If primary language fetch fails, continue with original response
-          console.error(
-            `[Season] Error fetching primary language (${primaryLanguageKey}) for season ${season_id}:`,
-            primaryError
+          const { logError } = await import('@/server/utils/logger');
+          logError(
+            '[Season] Error fetching primary language',
+            primaryError as Error,
+            {
+              tvTmdbId: id,
+              seasonId: season_id,
+              primaryLanguageKey,
+            }
           );
         }
       }
@@ -86,13 +93,18 @@ export default defineEventHandler(
       }
 
       // Use primary language episode overviews if preferred language overviews are empty
-      if (hasEmptyEpisodeOverview && primaryResponse?.episodes && response.episodes) {
+      if (
+        hasEmptyEpisodeOverview &&
+        primaryResponse?.episodes &&
+        response.episodes
+      ) {
         response.episodes = response.episodes.map((episode, index) => {
           // Match episodes by index (they should be in the same order)
           // or by id if available
-          const primaryEpisode = primaryResponse!.episodes?.[index] ||
+          const primaryEpisode =
+            primaryResponse!.episodes?.[index] ||
             primaryResponse!.episodes?.find((ep) => ep.id === episode.id);
-          
+
           if (
             (!episode.overview || episode.overview.trim() === '') &&
             primaryEpisode?.overview
@@ -113,9 +125,8 @@ export default defineEventHandler(
       const seasonNumber = parseInt(season_id, 10);
 
       // Fetch English overview as final fallback if needed
-      const { fetchSeasonOverviewEnglishFallback } = await import(
-        '@/server/utils/season-update'
-      );
+      const { fetchSeasonOverviewEnglishFallback } =
+        await import('@/server/utils/season-update');
       const englishOverview = await fetchSeasonOverviewEnglishFallback(
         tvTmdbId,
         seasonNumber,
@@ -148,10 +159,9 @@ export default defineEventHandler(
 
       // Update missing season data using shared utility
       // The utility will handle getting air_date from first episode if needed
-      const { updateMissingSeasonFields } = await import(
-        '@/server/utils/season-update'
-      );
-      
+      const { updateMissingSeasonFields } =
+        await import('@/server/utils/season-update');
+
       // Prepare TMDB season data
       const tmdbSeasonData = {
         id: response.id,
@@ -171,7 +181,7 @@ export default defineEventHandler(
       // Determine which language to use for saving overview
       // If we got English overview as fallback, save it with 'en-US' key
       const languageForUpdate = englishOverview ? 'en-US' : language;
-      
+
       await updateMissingSeasonFields(
         tvTmdbId,
         seasonNumber,

@@ -112,7 +112,10 @@ onMounted(async () => {
           providerUrls.value[providerName] = url;
         }
       } catch (error) {
-        console.error(`Error generating URL for ${providerName}:`, error);
+        const { logError } = useLogger();
+        logError('[ProviderList] Error generating URL', error as Error, {
+          providerName,
+        });
       }
     } else {
       // For other providers, generate synchronously (they're not async)

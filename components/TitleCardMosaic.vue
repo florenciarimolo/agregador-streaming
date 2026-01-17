@@ -11,6 +11,7 @@
     :tag="tag"
     :is-discover-list="isDiscoverList"
     :aria-label="ariaLabel"
+    :has-top-left-content="!!voteAverage"
   >
     <!-- Top-left: Rating Badge -->
     <template #top-left-badges>

@@ -31,6 +31,7 @@ import Button from './ui/Button.vue';
 import IconSeed from './icons/IconSeed.vue';
 import { useUndoToast } from '@/composables/useUndoToast';
 import { getSession } from '@/services/auth';
+import { useLogger } from '@/composables/useLogger';
 
 interface Props {
   listSlug: string;
@@ -84,11 +85,13 @@ async function handleSeed() {
   } catch (error) {
     // Always show generic error message to user, regardless of error type
     // Log full error details to console for debugging
-    console.error('[SeedListButton] Error seeding list:', error);
+    const { logError } = useLogger();
+    logError('[SeedListButton] Error seeding list', error as Error, {
+      listSlug: props.listSlug,
+    });
     showToast(t('discover.seedError'), null, 5000);
   } finally {
     isLoading.value = false;
   }
 }
 </script>
-

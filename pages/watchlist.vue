@@ -168,6 +168,7 @@ import EmptyState from '@/components/EmptyState.vue';
 import ViewModeSelector from '@/components/ViewModeSelector.vue';
 import TitleListItem from '@/components/TitleListItem.vue';
 import SkeletonMediaCard from '@/components/SkeletonMediaCard.vue';
+import { useLogger } from '@/composables/useLogger';
 import SkeletonListItem from '@/components/SkeletonListItem.vue';
 import { useViewMode } from '@/composables/useViewMode';
 import { VIEW_MODE } from '@/constants/domain/viewMode';
@@ -259,10 +260,7 @@ const fetchWatchlist = async () => {
     watchlistTitles.value = (response.watchlist || []).map((item) => {
       // Log providers for debugging
       if (import.meta.dev && item.providers && item.providers.length > 0) {
-        console.log(
-          `[watchlist.vue] Providers for ${item.title} (${item.tmdb_id}):`,
-          item.providers
-        );
+        // Development-only logging removed
       }
       return {
         tmdb_id: item.tmdb_id,
@@ -277,9 +275,8 @@ const fetchWatchlist = async () => {
       };
     });
   } catch (error) {
-    if (process.env.NODE_ENV === 'development') {
-      console.error('Error fetching watchlist:', error);
-    }
+    const { logError } = useLogger();
+    logError('[Watchlist] Error fetching watchlist', error as Error);
     showToast(t('watchlist.errorLoading'), null, 5000);
   } finally {
     isLoading.value = false;
@@ -336,7 +333,10 @@ const handleRemoveTitle = async (title: WatchlistTitle) => {
     }
   } catch (error) {
     if (process.env.NODE_ENV === 'development') {
-      console.error('Error removing title:', error);
+      const { logError } = useLogger();
+      logError('[Watchlist] Error removing title', error as Error, {
+        tmdbId: title.tmdb_id,
+      });
     }
     await fetchWatchlist();
   } finally {
@@ -350,10 +350,7 @@ watch(
   async (newLocale, oldLocale) => {
     if (newLocale && oldLocale && newLocale !== oldLocale) {
       if (import.meta.dev) {
-        console.log('[watchlist.vue] Language changed, refreshing watchlist:', {
-          oldLocale,
-          newLocale,
-        });
+        // Development-only logging removed
       }
       // Refresh watchlist with new language
       await fetchWatchlist();
@@ -367,7 +364,7 @@ onMounted(async () => {
   // This prevents duplicate redirects and race conditions during F5/refresh
   // The middleware ensures profile is loaded and onboarding is checked before
   // the page component mounts
-  
+
   // Profile is ready, show content
   isProfileReady.value = true;
 

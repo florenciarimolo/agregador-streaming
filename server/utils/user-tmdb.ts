@@ -39,7 +39,8 @@ export async function getUserTMDBParamsByUserId(userId: string): Promise<{
     };
   } catch (error) {
     // If any error occurs, return defaults
-    console.error('Error getting user TMDB params:', error);
+    const { logError } = await import('@/server/utils/logger');
+    logError('[UserTMDB] Error getting user TMDB params', error as Error);
     return defaults;
   }
 }
@@ -140,39 +141,25 @@ export async function getUserTMDBParams(event?: H3Event): Promise<{
           const i18nCode = getI18nCodeFromUrlCode(langFromUrl.toLowerCase());
           if (i18nCode) {
             language = toTMDBLanguageCode(i18nCode);
-            if (import.meta.dev) {
-              console.log(
-                `[getUserTMDBParams] Language extracted: URL code=${langFromUrl}, i18nCode=${i18nCode}, TMDB code=${language}`
-              );
-            }
-          } else if (import.meta.dev) {
-            console.warn(
-              `[getUserTMDBParams] Could not map URL code to i18n code: ${langFromUrl}`
-            );
           }
         } catch (importError) {
-          // If dynamic import fails, log and use default
-          if (import.meta.dev) {
-            console.warn(
-              `[getUserTMDBParams] Error importing getI18nCodeFromUrlCode:`,
-              importError
-            );
-          }
+          // If dynamic import fails, use default
+          const { logWarn } = await import('@/server/utils/logger');
+          logWarn('[UserTMDB] Error importing getI18nCodeFromUrlCode', {
+            error:
+              importError instanceof Error
+                ? importError.message
+                : 'Unknown error',
+          });
           // Continue with default language
         }
-      } else if (import.meta.dev) {
-        console.warn(
-          `[getUserTMDBParams] No language found in URL, using default: ${language}`
-        );
       }
     } catch (error) {
       // If error reading from URL, use default
-      if (import.meta.dev) {
-        console.warn(
-          '[getUserTMDBParams] Error extracting language from URL:',
-          error
-        );
-      }
+      const { logWarn } = await import('@/server/utils/logger');
+      logWarn('[UserTMDB] Error extracting language from URL', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
       language = defaults.language;
     }
 
@@ -184,27 +171,8 @@ export async function getUserTMDBParams(event?: H3Event): Promise<{
     // If we have a userId, fetch region from database (same source as preferences endpoint)
     if (userId) {
       try {
-        if (import.meta.dev) {
-          console.warn(
-            '[getUserTMDBParams] Fetching region for userId:',
-            userId
-          );
-        }
         // Get region from user_preferences table (same source as preferences endpoint)
         const preferencesResult = await getUserPreferencesServer(userId);
-
-        if (import.meta.dev) {
-          console.warn('[getUserTMDBParams] Preferences result:', {
-            hasData: !!preferencesResult.data,
-            region: preferencesResult.data?.region,
-            regionType: typeof preferencesResult.data?.region,
-            regionIsNull: preferencesResult.data?.region === null,
-            regionIsUndefined: preferencesResult.data?.region === undefined,
-            fullData: preferencesResult.data
-              ? JSON.stringify(preferencesResult.data, null, 2)
-              : 'null',
-          });
-        }
 
         // IMPORTANT: Only use region from DB if it's a valid non-null value
         // If region is null in DB, we should return null (not default), to match preferences.get.ts behavior
@@ -215,25 +183,13 @@ export async function getUserTMDBParams(event?: H3Event): Promise<{
           preferencesResult.data.region !== null
         ) {
           region = String(preferencesResult.data.region);
-          if (import.meta.dev) {
-            console.warn('[getUserTMDBParams] Using region from DB:', region);
-          }
-        } else {
-          if (import.meta.dev) {
-            console.warn(
-              '[getUserTMDBParams] No valid region in DB, using default:',
-              defaults.region
-            );
-          }
         }
       } catch (error) {
         // If error fetching preferences, use default region
-        if (import.meta.dev) {
-          console.error(
-            '[getUserTMDBParams] Error fetching preferences:',
-            error
-          );
-        }
+        const { logError } = await import('@/server/utils/logger');
+        logError('[UserTMDB] Error fetching preferences', error as Error, {
+          userId,
+        });
       }
     }
 
@@ -248,13 +204,14 @@ export async function getUserTMDBParams(event?: H3Event): Promise<{
     return result;
   } catch (error) {
     // If any error occurs, return defaults
-    if (import.meta.dev) {
-      console.error('Error getting user TMDB params from event:', error);
-    }
+    const { logError } = await import('@/server/utils/logger');
+    logError(
+      '[UserTMDB] Error getting user TMDB params from event',
+      error as Error
+    );
     const result = defaults;
     // Cache defaults too to avoid retrying on error
     event.context[cacheKey] = result;
     return result;
   }
 }
-

@@ -184,6 +184,7 @@
 import { ref, onMounted, onUnmounted } from 'vue';
 import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 import type { TMDBSearchResult } from '@/types/tmdb/Search';
+import { useLogger } from '@/composables/useLogger';
 
 const { routeWithLang } = useRouteWithLang();
 const searchContainerRef = ref<HTMLElement | null>(null);
@@ -305,7 +306,10 @@ const handleSearch = () => {
         .sort((a, b) => (b.popularity || 0) - (a.popularity || 0))
         .slice(0, 8);
     } catch (error) {
-      console.error('Search error:', error);
+      const { logError } = useLogger();
+      logError('[SearchBar] Search error', error as Error, {
+        query: searchQuery.value,
+      });
       searchResults.value = [];
     } finally {
       isLoading.value = false;

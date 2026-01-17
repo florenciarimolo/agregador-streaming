@@ -78,9 +78,14 @@ export default defineEventHandler(async (event) => {
     );
 
     if (insertError) {
-      console.error(
-        '[Discover List Seed] Error inserting into pool:',
-        insertError
+      const { logError } = await import('@/server/utils/logger');
+      logError(
+        '[DiscoverListSeed] Error inserting into pool',
+        insertError as Error,
+        {
+          listId: list.id,
+          userId,
+        }
       );
       // Include error details in the response for debugging
       const errorMessage =
@@ -112,9 +117,9 @@ export default defineEventHandler(async (event) => {
     if (error && typeof error === 'object' && 'statusCode' in error) {
       throw error;
     }
-    console.error('[Discover List Seed] Unexpected error:', error);
-    const errorMessage =
-      error instanceof Error ? error.message : String(error);
+    const { logError } = await import('@/server/utils/logger');
+    logError('[DiscoverListSeed] Unexpected error', error as Error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
     const errorStack = error instanceof Error ? error.stack : undefined;
     throw createError({
       statusCode: 500,

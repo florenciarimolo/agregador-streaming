@@ -12,6 +12,7 @@
  */
 import { useUserStore } from '@/stores/user';
 import type { Session } from '@supabase/supabase-js';
+import { useLogger } from '@/composables/useLogger';
 
 export const useAuthInit = () => {
   const supabase = useSupabaseClient();
@@ -62,9 +63,8 @@ export const useAuthInit = () => {
         } catch (error) {
           // Only log non-refresh-token errors
           if (!isRefreshTokenError(error)) {
-            if (process.env.NODE_ENV === 'development') {
-              console.error('[useAuthInit] Error fetching profile:', error);
-            }
+            const { logError } = useLogger();
+            logError('[AuthInit] Error fetching profile', error as Error);
           }
           // Even if profile fetch fails, mark as initialized to avoid blocking
           if (!userStore.authInitialized) {
@@ -80,9 +80,8 @@ export const useAuthInit = () => {
     } catch (error) {
       // Silently handle refresh token errors - they're expected when tokens are invalid/expired
       if (!isRefreshTokenError(error)) {
-        if (process.env.NODE_ENV === 'development') {
-          console.error('[useAuthInit] Error getting session:', error);
-        }
+        const { logError } = useLogger();
+        logError('[AuthInit] Error getting session', error as Error);
       }
       // Mark as initialized even if there's an error, so components can proceed
       if (!userStore.authInitialized) {
@@ -113,28 +112,12 @@ export const useAuthInit = () => {
               currentPath.includes('/auth/reset-password') ||
               currentPath.includes('/auth/callback')
             ) {
-              if (process.env.NODE_ENV === 'development') {
-                console.log(
-                  '[useAuthInit] Skipping auth state change on',
-                  currentPath,
-                  'event:',
-                  _event
-                );
-              }
+              // Development-only logging removed
               return;
             }
           }
 
-          if (process.env.NODE_ENV === 'development') {
-            console.log('[useAuthInit] Processing auth state change', {
-              event: _event,
-              hasSession: !!session,
-              path:
-                typeof window !== 'undefined'
-                  ? window.location.pathname
-                  : 'N/A',
-            });
-          }
+          // Development-only logging removed
 
           if (session?.user) {
             userStore.setUser(session.user);
@@ -147,9 +130,8 @@ export const useAuthInit = () => {
             } catch (error) {
               // Only log non-refresh-token errors
               if (!isRefreshTokenError(error)) {
-                if (process.env.NODE_ENV === 'development') {
-                  console.error('[useAuthInit] Error fetching profile:', error);
-                }
+                const { logError } = useLogger();
+                logError('[AuthInit] Error fetching profile', error as Error);
               }
               // Even if profile fetch fails, mark as initialized to avoid blocking
               if (!userStore.authInitialized) {
@@ -165,11 +147,9 @@ export const useAuthInit = () => {
           }
         } catch (error) {
           // Silently handle refresh token errors - they're expected when tokens are invalid
-          if (
-            !isRefreshTokenError(error) &&
-            process.env.NODE_ENV === 'development'
-          ) {
-            console.error('[useAuthInit] Auth state change error:', error);
+          if (!isRefreshTokenError(error)) {
+            const { logError } = useLogger();
+            logError('[AuthInit] Auth state change error', error as Error);
           }
         }
       }
