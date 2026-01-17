@@ -1,4 +1,4 @@
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 
 // Global state to track which dropdown is open
 const openDropdownId = ref<string | null>(null);

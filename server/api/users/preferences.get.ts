@@ -1,7 +1,7 @@
-import { createClient } from '@supabase/supabase-js';
 import { TABLES } from '@/constants/db/tables';
 import { USER_PREFERENCES_COLUMNS } from '@/constants/db/columns';
 import { getUserIdFromEvent } from '@/server/utils/user-auth';
+import { createServerSupabaseClient } from '@/server/utils/supabase';
 
 export default defineEventHandler(async (event) => {
   try {
@@ -33,16 +33,7 @@ export default defineEventHandler(async (event) => {
 
     // Create Supabase client for server-side operations
     // Use service role key to bypass RLS (we've already validated userId)
-    const supabaseKey =
-      process.env.SUPABASE_SERVICE_ROLE_KEY || config.public.supabaseAnonKey;
-
-    const supabase = createClient(config.public.supabaseUrl, supabaseKey, {
-      auth: {
-        persistSession: false,
-        autoRefreshToken: false,
-        detectSessionInUrl: false,
-      },
-    });
+    const supabase = createServerSupabaseClient(config);
 
     const { data, error } = await supabase
       .from(TABLES.USER_PREFERENCES)

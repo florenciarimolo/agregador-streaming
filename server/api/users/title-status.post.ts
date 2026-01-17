@@ -1,9 +1,9 @@
-import { createClient } from '@supabase/supabase-js';
 import { TITLE_STATUS } from '@/constants/domain/titleStatus';
 import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 import { TABLES } from '@/constants/db/tables';
 import { USER_TITLE_STATUS_COLUMNS } from '@/constants/db/columns';
 import { getUserIdFromEvent } from '@/server/utils/user-auth';
+import { createServerSupabaseClient } from '@/server/utils/supabase';
 import { DEFAULT_LANGUAGE } from '@/constants/languages';
 
 /**
@@ -63,16 +63,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // Create Supabase client
-  const supabaseKey =
-    process.env.SUPABASE_SERVICE_ROLE_KEY || config.public.supabaseAnonKey;
-
-  const supabase = createClient(config.public.supabaseUrl, supabaseKey, {
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false,
-      detectSessionInUrl: false,
-    },
-  });
+  const supabase = createServerSupabaseClient(config);
 
   try {
     // Ensure title exists in database (especially important for watchlist)

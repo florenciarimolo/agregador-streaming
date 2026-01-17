@@ -12,74 +12,13 @@
     <div class="flex flex-row gap-4 p-4">
       <!-- Columna 1: Imagen (móvil y desktop) -->
       <div class="flex-shrink-0">
-        <!-- Use direct nuxt-link when there's a link, div when there isn't -->
-        <nuxt-link
-          v-if="computedLinkTo"
-          :to="computedLinkTo"
-          :aria-label="linkAriaLabel"
-          :class="[
-            'group relative cursor-pointer',
-            'block overflow-hidden rounded-2xl bg-gray-800 aspect-[2/3] w-20 md:w-24',
-            'focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2',
-          ]"
-        >
-          <!-- Image or Placeholder -->
-          <div class="overflow-hidden w-full h-full rounded-2xl">
-            <img
-              v-if="posterPath"
-              :src="`https://image.tmdb.org/t/p/w500${posterPath}`"
-              :alt="imageAlt"
-              class="object-cover w-full h-full transition-transform duration-300 group-hover:scale-105"
-              loading="lazy"
-              decoding="async"
-            />
-            <div
-              v-else
-              class="flex justify-center items-center w-full h-full text-gray-600 dark:text-gray-500"
-              role="img"
-              :aria-label="noImageAriaLabel"
-            >
-              <IconTv icon-class="w-8 h-8" />
-            </div>
-          </div>
-
-          <!-- Hover Overlay -->
-          <div
-            class="flex absolute bottom-0 left-0 flex-col justify-center items-center px-4 w-full h-full rounded-2xl opacity-0 backdrop-blur-md transition-all duration-300 pointer-events-none group-hover:opacity-100 dark:bg-black/80 bg-white/80"
-          >
-            <p
-              class="text-xs font-semibold text-center text-gray-800 dark:text-gray-300"
-            >
-              {{ $t('media.viewDetails') }}
-            </p>
-          </div>
-        </nuxt-link>
-        <!-- Non-link version (when computedLinkTo is empty) -->
-        <div
-          v-else
-          :aria-label="linkAriaLabel"
-          class="relative block overflow-hidden rounded-2xl bg-gray-800 aspect-[2/3] w-20 md:w-24"
-        >
-          <!-- Image or Placeholder -->
-          <div class="overflow-hidden w-full h-full rounded-2xl">
-            <img
-              v-if="posterPath"
-              :src="`https://image.tmdb.org/t/p/w500${posterPath}`"
-              :alt="imageAlt"
-              class="object-cover w-full h-full"
-              loading="lazy"
-              decoding="async"
-            />
-            <div
-              v-else
-              class="flex justify-center items-center w-full h-full text-gray-600 dark:text-gray-500"
-              role="img"
-              :aria-label="noImageAriaLabel"
-            >
-              <IconTv icon-class="w-8 h-8" />
-            </div>
-          </div>
-        </div>
+        <MediaPoster
+          :poster-path="posterPath"
+          :link-to="computedLinkTo"
+          :link-aria-label="linkAriaLabel"
+          :image-alt="imageAlt"
+          :no-image-aria-label="noImageAriaLabel"
+        />
       </div>
 
       <!-- Columna 2: Contenido (móvil y desktop) -->
@@ -174,19 +113,10 @@ import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 import { useRouteWithLang } from '@/composables/useRouteWithLang';
 import { useFetchTagline } from '@/composables/useFetchTagline';
 import type { Provider } from '@/types/Recommendation';
+import { capitalizeTag } from '@/utils/capitalizeTag';
 import RatingBadge from '@/components/RatingBadge.vue';
 import Badge from '@/components/Badge.vue';
-import IconTv from '@/components/icons/IconTv.vue';
-
-// Capitalize first letter of tag
-function capitalizeTag(
-  tag: string | null | undefined | Record<string, string>
-): string {
-  if (!tag) return '';
-  // Handle case where tag might be an object (defensive programming)
-  if (typeof tag !== 'string') return '';
-  return tag.charAt(0).toUpperCase() + tag.slice(1).toLowerCase();
-}
+import MediaPoster from '@/components/ui/MediaPoster.vue';
 
 interface Props {
   title: string;

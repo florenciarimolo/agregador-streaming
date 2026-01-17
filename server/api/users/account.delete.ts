@@ -1,5 +1,5 @@
-import { createClient } from '@supabase/supabase-js';
 import { getUserIdFromEvent } from '@/server/utils/user-auth';
+import { createServerSupabaseClient } from '@/server/utils/supabase';
 
 export default defineEventHandler(async (event) => {
   try {
@@ -16,16 +16,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // Create Supabase client with service role key for admin operations
-    const supabaseKey =
-      process.env.SUPABASE_SERVICE_ROLE_KEY || config.public.supabaseAnonKey;
-
-    const supabase = createClient(config.public.supabaseUrl, supabaseKey, {
-      auth: {
-        persistSession: false,
-        autoRefreshToken: false,
-        detectSessionInUrl: false,
-      },
-    });
+    const supabase = createServerSupabaseClient(config);
 
     // Delete user from auth.users
     // This will cascade delete all related data due to ON DELETE CASCADE constraints
