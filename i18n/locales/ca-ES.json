@@ -25,6 +25,7 @@
   "navbar": {
     "home": "Inici",
     "watchlist": "La meva Watchlist",
+    "following": "Seguint",
     "userMenu": "Menú d'usuari per a {email}",
     "userMenuFor": "Menú d'usuari per a {email}",
     "editProfile": "Editar perfil",
@@ -347,6 +348,13 @@
     "list": "Vista de llista",
     "selectView": "Seleccionar vista"
   },
+  "sort": {
+    "selectSort": "Ordenar",
+    "nameAsc": "Nom (A-Z)",
+    "nameDesc": "Nom (Z-A)",
+    "dateAddedAsc": "Data afegit (més antics primer)",
+    "dateAddedDesc": "Data afegit (més recents primer)"
+  },
   "watchlist": {
     "title": "Watchlist",
     "description": "Pel·lícules i sèries que has desat per veure més endevant.",
@@ -363,6 +371,34 @@
     "errorLoading": "Error en carregar la Watchlist.",
     "notAuthenticated": "No estàs autenticat. Si us plau, inicia sessió.",
     "noTitle": "Sense títol"
+  },
+  "following": {
+    "title": "Seguint",
+    "description": "Sèries de TV que estàs seguint per rastrejar episodis.",
+    "loading": "Carregant sèries seguides...",
+    "empty": "Encara no estàs seguint cap sèrie. Comença a seguir una sèrie per rastrejar episodis i temporades.",
+    "emptyCta": "Veure recomanacions",
+    "removeTitle": "Deixar de seguir {title}",
+    "removeTooltip": "Deixar de seguir",
+    "following": "Seguint",
+    "follow": "Seguir",
+    "unfollow": "Deixar de seguir",
+    "titleAdded": "\"{title}\" ara s'està seguint",
+    "titleRemoved": "\"{title}\" ja no s'està seguint",
+    "errorLoading": "Error en carregar les sèries seguides.",
+    "errorAdding": "Error en seguir \"{title}\".",
+    "errorRemoving": "Error en deixar de seguir \"{title}\".",
+    "noTitle": "Sense títol"
+  },
+  "episodes": {
+    "markAsSeen": "Marcar episodi {episode} de la temporada {season} com a vist",
+    "unmarkAsSeen": "Desmarcar episodi {episode} de la temporada {season} com a vist",
+    "seasonMarkAsSeen": "Marcar temporada {season} com a vista",
+    "seasonUnmarkAsSeen": "Desmarcar temporada {season} com a vista",
+    "episodesSeenCount_one": "{count} episodi vist",
+    "episodesSeenCount_other": "{count} episodis vistos",
+    "confirmUnmarkSeason": "Desmarcar temporada?",
+    "confirmUnmarkSeasonMessage": "Això desmarcarà tots els episodis de la temporada {season}. Aquesta acció no es pot desfer."
   },
   "seen": {
     "title": "Vist",

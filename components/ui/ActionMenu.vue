@@ -17,7 +17,7 @@
       <div
         v-if="isOpen && !isMobile"
         :class="[
-          'absolute z-[10000] mt-2',
+          'absolute z-[99999] mt-2',
           'dark:bg-gray-900/95 bg-gray-100/95 rounded-3xl border border-gray-300/50 dark:border-white/10 shadow-xl overflow-hidden',
           widthClass,
           positionClass,

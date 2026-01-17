@@ -48,7 +48,7 @@
               </nuxt-link>
             </nav>
 
-            <!-- When logged in: Mi Watchlist and User Avatar -->
+            <!-- When logged in: Mi Watchlist, Following, and User Avatar -->
             <template v-if="currentUser">
               <nuxt-link
                 :to="watchlistRoute"
@@ -57,6 +57,14 @@
                 active-class="text-primary dark:text-primary-400"
               >
                 {{ $t('navbar.watchlist') }}
+              </nuxt-link>
+              <nuxt-link
+                :to="followingRoute"
+                no-prefetch
+                class="text-sm font-medium text-gray-800 transition-colors dark:text-gray-300 hover:text-primary dark:hover:text-primary-400"
+                active-class="text-primary dark:text-primary-400"
+              >
+                {{ $t('navbar.following') }}
               </nuxt-link>
 
               <!-- User Avatar -->
@@ -353,6 +361,15 @@
               {{ $t('navbar.watchlist') }}
             </nuxt-link>
             <nuxt-link
+              :to="followingRoute"
+              no-prefetch
+              class="flex items-center px-4 py-3 text-sm font-medium text-gray-800 rounded-lg transition-colors dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+              active-class="bg-gray-100 dark:bg-gray-700 text-primary dark:text-primary-400"
+              @click="showMobileMenu = false"
+            >
+              {{ $t('navbar.following') }}
+            </nuxt-link>
+            <nuxt-link
               :to="listsRoute"
               no-prefetch
               class="flex items-center px-4 py-3 text-sm font-medium text-gray-800 rounded-lg transition-colors dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -516,6 +533,7 @@ const { routeWithLang } = useRouteWithLang();
 const homeRoute = computed(() => routeWithLang('/'));
 const discoverRoute = computed(() => routeWithLang('/discover'));
 const watchlistRoute = computed(() => routeWithLang('/watchlist'));
+const followingRoute = computed(() => routeWithLang('/following'));
 const listsRoute = computed(() => routeWithLang('/lists'));
 const preferencesRoute = computed(() => routeWithLang('/preferences'));
 const myAccountRoute = computed(() => routeWithLang('/my-account'));

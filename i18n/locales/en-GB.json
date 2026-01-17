@@ -25,6 +25,7 @@
   "navbar": {
     "home": "Home",
     "watchlist": "My Watchlist",
+    "following": "Following",
     "userMenu": "User menu for {email}",
     "userMenuFor": "User menu for {email}",
     "editProfile": "Edit profile",
@@ -345,6 +346,13 @@
     "list": "List view",
     "selectView": "Select view"
   },
+  "sort": {
+    "selectSort": "Sort",
+    "nameAsc": "Name (A-Z)",
+    "nameDesc": "Name (Z-A)",
+    "dateAddedAsc": "Date added (oldest first)",
+    "dateAddedDesc": "Date added (newest first)"
+  },
   "watchlist": {
     "title": "Watchlist",
     "description": "Movies and TV shows you've saved to watch later.",
@@ -361,6 +369,34 @@
     "errorLoading": "Error loading Watchlist.",
     "notAuthenticated": "You are not authenticated. Please sign in.",
     "noTitle": "No title"
+  },
+  "following": {
+    "title": "Following",
+    "description": "TV series you're following to track episodes.",
+    "loading": "Loading following...",
+    "empty": "You're not following any series yet. Start following a series to track episodes and seasons.",
+    "emptyCta": "View recommendations",
+    "removeTitle": "Unfollow {title}",
+    "removeTooltip": "Unfollow",
+    "following": "Following",
+    "follow": "Follow",
+    "unfollow": "Unfollow",
+    "titleAdded": "\"{title}\" is now being followed",
+    "titleRemoved": "\"{title}\" is no longer being followed",
+    "errorLoading": "Error loading following.",
+    "errorAdding": "Error following \"{title}\".",
+    "errorRemoving": "Error unfollowing \"{title}\".",
+    "noTitle": "No title"
+  },
+  "episodes": {
+    "markAsSeen": "Mark episode {episode} of season {season} as seen",
+    "unmarkAsSeen": "Unmark episode {episode} of season {season} as seen",
+    "seasonMarkAsSeen": "Mark season {season} as seen",
+    "seasonUnmarkAsSeen": "Unmark season {season} as seen",
+    "confirmUnmarkSeason": "Unmark season?",
+    "confirmUnmarkSeasonMessage": "This will unmark all episodes in season {season}. This action cannot be undone.",
+    "episodesSeenCount_one": "{count} episode seen",
+    "episodesSeenCount_other": "{count} episodes seen"
   },
   "seen": {
     "title": "Seen",

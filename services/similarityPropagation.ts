@@ -201,3 +201,86 @@ export async function propagateRemoveLikeInfluence(
   }
 }
 
+/**
+ * Propagate following influence to similar titles
+ * Following is a soft, editorial signal with fixed propagation values:
+ * - ≥2 shared genres: +4
+ * - 1 shared genre: +2
+ * 
+ * This is separate from like propagation and uses fixed values instead of multipliers.
+ */
+export async function propagateFollowingInfluence(
+  userId: string,
+  tmdbId: number,
+  type: 'movie' | 'tv',
+  supabaseClient: SupabaseClient
+): Promise<void> {
+  const similarTitles = await findSimilarTitles(tmdbId, type, supabaseClient, userId);
+
+  for (const similar of similarTitles) {
+    // Get current preference_score
+    const { data: currentEntry } = await supabaseClient
+      .from(TABLES.RECOMMENDATION_POOL)
+      .select(RECOMMENDATION_POOL_COLUMNS.PREFERENCE_SCORE)
+      .eq(RECOMMENDATION_POOL_COLUMNS.USER_ID, userId)
+      .eq(RECOMMENDATION_POOL_COLUMNS.TMDB_ID, similar.tmdb_id)
+      .maybeSingle();
+
+    if (!currentEntry) continue;
+
+    const currentPreferenceScore = currentEntry.preference_score ?? 0;
+
+    // Calculate increment based on shared genres (fixed values, not multipliers)
+    let increment = 0;
+    if (similar.sharedGenres >= 2) {
+      increment = 4; // Strong influence
+    } else if (similar.sharedGenres === 1) {
+      increment = 2; // Moderate influence
+    }
+
+    if (increment > 0) {
+      const newPreferenceScore = Math.min(100, currentPreferenceScore + increment);
+      await updatePreferenceScore(userId, similar.tmdb_id, newPreferenceScore, supabaseClient);
+    }
+  }
+}
+
+/**
+ * Revert following influence from similar titles
+ * Removes the propagation that was applied when following
+ */
+export async function revertFollowingInfluence(
+  userId: string,
+  tmdbId: number,
+  type: 'movie' | 'tv',
+  supabaseClient: SupabaseClient
+): Promise<void> {
+  const similarTitles = await findSimilarTitles(tmdbId, type, supabaseClient, userId);
+
+  for (const similar of similarTitles) {
+    // Get current preference_score
+    const { data: currentEntry } = await supabaseClient
+      .from(TABLES.RECOMMENDATION_POOL)
+      .select(RECOMMENDATION_POOL_COLUMNS.PREFERENCE_SCORE)
+      .eq(RECOMMENDATION_POOL_COLUMNS.USER_ID, userId)
+      .eq(RECOMMENDATION_POOL_COLUMNS.TMDB_ID, similar.tmdb_id)
+      .maybeSingle();
+
+    if (!currentEntry) continue;
+
+    const currentPreferenceScore = currentEntry.preference_score ?? 0;
+
+    // Calculate decrement based on shared genres (inverse of propagation)
+    let decrement = 0;
+    if (similar.sharedGenres >= 2) {
+      decrement = 4; // Revert strong influence
+    } else if (similar.sharedGenres === 1) {
+      decrement = 2; // Revert moderate influence
+    }
+
+    if (decrement > 0) {
+      const newPreferenceScore = Math.max(-100, currentPreferenceScore - decrement);
+      await updatePreferenceScore(userId, similar.tmdb_id, newPreferenceScore, supabaseClient);
+    }
+  }
+}

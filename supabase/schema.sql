@@ -85,6 +85,41 @@ CREATE TABLE IF NOT EXISTS public.user_title_status (
 CREATE INDEX IF NOT EXISTS idx_user_title_status_user_id ON public.user_title_status(user_id);
 CREATE INDEX IF NOT EXISTS idx_user_title_status_tmdb_id ON public.user_title_status(tmdb_id);
 
+-- User title following table (tracks TV series user is following)
+-- Following is an interest signal, separate from consumption states (seen/watchlist/not_interested)
+-- Following does NOT exclude titles from recommendations
+CREATE TABLE IF NOT EXISTS public.user_title_following (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+  tmdb_id INTEGER NOT NULL,
+  type TEXT CHECK (type IN ('movie', 'tv')) NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL,
+  UNIQUE(user_id, tmdb_id) -- One following record per user/title
+);
+
+-- Indexes for faster queries
+CREATE INDEX IF NOT EXISTS idx_user_title_following_user_id ON public.user_title_following(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_title_following_tmdb_id ON public.user_title_following(tmdb_id);
+
+-- User episode status table (tracks episode-level and season-level seen status for TV series)
+-- Episode/season seen does NOT exclude titles from recommendations
+-- Only fully seen series (all episodes in all seasons) are excluded
+CREATE TABLE IF NOT EXISTS public.user_episode_status (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+  tmdb_series_id INTEGER NOT NULL, -- TV series tmdb_id
+  season_number INTEGER NOT NULL,
+  episode_number INTEGER NOT NULL,
+  seen BOOLEAN DEFAULT TRUE NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL,
+  UNIQUE(user_id, tmdb_series_id, season_number, episode_number) -- One status per user/episode
+);
+
+-- Indexes for faster queries
+CREATE INDEX IF NOT EXISTS idx_user_episode_status_user_id ON public.user_episode_status(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_episode_status_series_id ON public.user_episode_status(tmdb_series_id);
+CREATE INDEX IF NOT EXISTS idx_user_episode_status_user_series ON public.user_episode_status(user_id, tmdb_series_id);
+
 -- Row Level Security (RLS) Policies
 
 -- Enable RLS on all tables
@@ -92,6 +127,8 @@ ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.titles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.seasons ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_title_status ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.user_title_following ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.user_episode_status ENABLE ROW LEVEL SECURITY;
 
 -- Profiles policies
 -- Users can read their own profile
@@ -248,6 +285,113 @@ BEGIN
   ) THEN
     CREATE POLICY "Users can delete own title statuses"
       ON public.user_title_status FOR DELETE
+      USING (auth.uid() = user_id);
+  END IF;
+END $$;
+
+-- User title following policies
+-- Users can view their own following records
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE schemaname = 'public' 
+    AND tablename = 'user_title_following' 
+    AND policyname = 'Users can view own following records'
+  ) THEN
+    CREATE POLICY "Users can view own following records"
+      ON public.user_title_following FOR SELECT
+      USING (auth.uid() = user_id);
+  END IF;
+END $$;
+
+-- Users can insert their own following records
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE schemaname = 'public' 
+    AND tablename = 'user_title_following' 
+    AND policyname = 'Users can insert own following records'
+  ) THEN
+    CREATE POLICY "Users can insert own following records"
+      ON public.user_title_following FOR INSERT
+      WITH CHECK (auth.uid() = user_id);
+  END IF;
+END $$;
+
+-- Users can delete their own following records
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE schemaname = 'public' 
+    AND tablename = 'user_title_following' 
+    AND policyname = 'Users can delete own following records'
+  ) THEN
+    CREATE POLICY "Users can delete own following records"
+      ON public.user_title_following FOR DELETE
+      USING (auth.uid() = user_id);
+  END IF;
+END $$;
+
+-- User episode status policies
+-- Users can view their own episode status records
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE schemaname = 'public' 
+    AND tablename = 'user_episode_status' 
+    AND policyname = 'Users can view own episode status records'
+  ) THEN
+    CREATE POLICY "Users can view own episode status records"
+      ON public.user_episode_status FOR SELECT
+      USING (auth.uid() = user_id);
+  END IF;
+END $$;
+
+-- Users can insert their own episode status records
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE schemaname = 'public' 
+    AND tablename = 'user_episode_status' 
+    AND policyname = 'Users can insert own episode status records'
+  ) THEN
+    CREATE POLICY "Users can insert own episode status records"
+      ON public.user_episode_status FOR INSERT
+      WITH CHECK (auth.uid() = user_id);
+  END IF;
+END $$;
+
+-- Users can update their own episode status records
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE schemaname = 'public' 
+    AND tablename = 'user_episode_status' 
+    AND policyname = 'Users can update own episode status records'
+  ) THEN
+    CREATE POLICY "Users can update own episode status records"
+      ON public.user_episode_status FOR UPDATE
+      USING (auth.uid() = user_id);
+  END IF;
+END $$;
+
+-- Users can delete their own episode status records
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE schemaname = 'public' 
+    AND tablename = 'user_episode_status' 
+    AND policyname = 'Users can delete own episode status records'
+  ) THEN
+    CREATE POLICY "Users can delete own episode status records"
+      ON public.user_episode_status FOR DELETE
       USING (auth.uid() = user_id);
   END IF;
 END $$;

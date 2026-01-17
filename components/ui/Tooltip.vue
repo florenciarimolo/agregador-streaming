@@ -16,9 +16,15 @@ defineProps<Props>();
 </script>
 
 <style scoped>
+.tooltip-container {
+  position: relative;
+  z-index: 100000;
+}
+
 .tooltip-container:hover,
-.tooltip-container:focus {
-  z-index: 10000;
+.tooltip-container:focus,
+.tooltip-container:focus-within {
+  z-index: 100000;
 }
 
 .tooltip {
@@ -39,7 +45,7 @@ defineProps<Props>();
   transition:
     opacity 0.2s ease-in-out,
     transform 0.2s ease-in-out;
-  z-index: 9999;
+  z-index: 100000;
   margin-top: 0;
   overflow: visible;
 }

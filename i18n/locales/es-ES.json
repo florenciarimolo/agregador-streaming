@@ -25,6 +25,7 @@
   "navbar": {
     "home": "Inicio",
     "watchlist": "Mi Watchlist",
+    "following": "Siguiendo",
     "userMenu": "Menú de usuario para {email}",
     "userMenuFor": "Menú de usuario para {email}",
     "editProfile": "Editar perfil",
@@ -347,6 +348,13 @@
     "list": "Vista de lista",
     "selectView": "Seleccionar vista"
   },
+  "sort": {
+    "selectSort": "Ordenar",
+    "nameAsc": "Nombre (A-Z)",
+    "nameDesc": "Nombre (Z-A)",
+    "dateAddedAsc": "Fecha agregado (más antiguos primero)",
+    "dateAddedDesc": "Fecha agregado (más recientes primero)"
+  },
   "watchlist": {
     "title": "Watchlist",
     "description": "Películas y series que has guardado para ver más adelante.",
@@ -363,6 +371,34 @@
     "errorLoading": "Error al cargar la Watchlist.",
     "notAuthenticated": "No estás autenticado. Por favor, inicia sesión.",
     "noTitle": "Sin título"
+  },
+  "following": {
+    "title": "Siguiendo",
+    "description": "Series de TV que estás siguiendo para rastrear episodios.",
+    "loading": "Cargando series seguidas...",
+    "empty": "Aún no estás siguiendo ninguna serie. Comienza a seguir una serie para rastrear episodios y temporadas.",
+    "emptyCta": "Ver recomendaciones",
+    "removeTitle": "Dejar de seguir {title}",
+    "removeTooltip": "Dejar de seguir",
+    "following": "Siguiendo",
+    "follow": "Seguir",
+    "unfollow": "Dejar de seguir",
+    "titleAdded": "\"{title}\" ahora se está siguiendo",
+    "titleRemoved": "\"{title}\" ya no se está siguiendo",
+    "errorLoading": "Error al cargar las series seguidas.",
+    "errorAdding": "Error al seguir \"{title}\".",
+    "errorRemoving": "Error al dejar de seguir \"{title}\".",
+    "noTitle": "Sin título"
+  },
+  "episodes": {
+    "markAsSeen": "Marcar episodio {episode} de la temporada {season} como visto",
+    "unmarkAsSeen": "Desmarcar episodio {episode} de la temporada {season} como visto",
+    "seasonMarkAsSeen": "Marcar temporada {season} como vista",
+    "seasonUnmarkAsSeen": "Desmarcar temporada {season} como vista",
+    "episodesSeenCount_one": "{count} episodio visto",
+    "episodesSeenCount_other": "{count} episodios vistos",
+    "confirmUnmarkSeason": "¿Desmarcar temporada?",
+    "confirmUnmarkSeasonMessage": "Esto desmarcará todos los episodios de la temporada {season}. Esta acción no se puede deshacer."
   },
   "seen": {
     "title": "Visto",

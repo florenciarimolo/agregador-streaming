@@ -37,6 +37,8 @@ import { getSession } from '@/services/auth';
 import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 import { useUserRegion } from '@/composables/useUserRegion';
 import { useRouteWithLang } from '@/composables/useRouteWithLang';
+import { useUndoToast } from '@/composables/useUndoToast';
+import Toast from '@/components/ui/Toast.vue';
 
 // Middleware handles onboarding check - if user has session, onboarding is completed
 definePageMeta({
@@ -47,6 +49,7 @@ const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const user = useSupabaseUser();
+const { showToast } = useUndoToast();
 
 // Get language from URL (this page is /:lang/ with strategy: 'prefix')
 // Use useRouteWithLang for reactive route building
@@ -210,6 +213,169 @@ const {
   filterRecommendationsByType
 );
 
+// Follow/unfollow handlers
+const handleFollow = async (title: Recommendation) => {
+  if (title.type !== MEDIA_TYPE.TV) return;
+
+  // Optimistic update: update UI immediately
+  const titleIndex = allRecommendations.value.findIndex(
+    (r: Recommendation) => r.tmdb_id === title.tmdb_id
+  );
+  let previousFollowingState = false;
+  
+  if (titleIndex !== -1) {
+    previousFollowingState = allRecommendations.value[titleIndex].following || false;
+    allRecommendations.value[titleIndex] = {
+      ...allRecommendations.value[titleIndex],
+      following: true,
+    };
+    filterRecommendationsByType();
+  }
+
+  // Show toast immediately after optimistic update
+  const isOnFollowingPage = route.path.includes('/following');
+  showToast(
+    t('following.titleAdded', { title: title.title }),
+    isOnFollowingPage
+      ? null
+      : {
+          label: t('home.viewList'),
+          variant: 'secondary',
+          action: async () => {
+            await navigateTo(routeWithLang('/following'));
+          },
+        },
+    5000
+  );
+
+  // Make API call in background
+  try {
+    const {
+      data: { session },
+    } = await getSession();
+
+    if (!session?.access_token) {
+      // Revert optimistic update if no session
+      if (titleIndex !== -1) {
+        allRecommendations.value[titleIndex] = {
+          ...allRecommendations.value[titleIndex],
+          following: previousFollowingState,
+        };
+        filterRecommendationsByType();
+      }
+      return;
+    }
+
+    await $fetch('/api/users/following', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: {
+        tmdb_id: title.tmdb_id,
+        type: MEDIA_TYPE.TV,
+      },
+    });
+  } catch (error) {
+    // Revert optimistic update on error
+    if (titleIndex !== -1) {
+      allRecommendations.value[titleIndex] = {
+        ...allRecommendations.value[titleIndex],
+        following: previousFollowingState,
+      };
+      filterRecommendationsByType();
+    }
+    
+    const { logError } = useLogger();
+    logError('[Home] Error following series', error as Error, {
+      tmdbId: title.tmdb_id,
+    });
+    
+    // Show error toast
+    showToast(
+      t('following.errorAdding', { title: title.title }),
+      null,
+      3000
+    );
+  }
+};
+
+const handleUnfollow = async (title: Recommendation) => {
+  if (title.type !== MEDIA_TYPE.TV) return;
+
+  // Optimistic update: update UI immediately
+  const titleIndex = allRecommendations.value.findIndex(
+    (r: Recommendation) => r.tmdb_id === title.tmdb_id
+  );
+  let previousFollowingState = false;
+  
+  if (titleIndex !== -1) {
+    previousFollowingState = allRecommendations.value[titleIndex].following || false;
+    allRecommendations.value[titleIndex] = {
+      ...allRecommendations.value[titleIndex],
+      following: false,
+    };
+    filterRecommendationsByType();
+  }
+
+  // Show toast immediately after optimistic update
+  showToast(
+    t('following.titleRemoved', { title: title.title }),
+    null,
+    5000
+  );
+
+  // Make API call in background
+  try {
+    const {
+      data: { session },
+    } = await getSession();
+
+    if (!session?.access_token) {
+      // Revert optimistic update if no session
+      if (titleIndex !== -1) {
+        allRecommendations.value[titleIndex] = {
+          ...allRecommendations.value[titleIndex],
+          following: previousFollowingState,
+        };
+        filterRecommendationsByType();
+      }
+      return;
+    }
+
+    await $fetch('/api/users/following', {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      query: {
+        tmdb_id: title.tmdb_id,
+      },
+    });
+  } catch (error) {
+    // Revert optimistic update on error
+    if (titleIndex !== -1) {
+      allRecommendations.value[titleIndex] = {
+        ...allRecommendations.value[titleIndex],
+        following: previousFollowingState,
+      };
+      filterRecommendationsByType();
+    }
+    
+    const { logError } = useLogger();
+    logError('[Home] Error unfollowing series', error as Error, {
+      tmdbId: title.tmdb_id,
+    });
+    
+    // Show error toast
+    showToast(
+      t('following.errorRemoving', { title: title.title }),
+      null,
+      3000
+    );
+  }
+};
+
 // User region (will be set from preferences)
 const userRegion = ref<string | null>(null);
 const preferencesPending = ref(false);
@@ -362,11 +528,19 @@ const fetchUserPreferences = async () => {
       setTimeout(() => reject(new Error('getSession timeout after 3s')), 3000);
     });
 
-    const {
-      data: { session },
-    } = (await Promise.race([getSessionPromise, timeoutPromise])) as Awaited<
-      ReturnType<typeof getSession>
-    >;
+    let session;
+    try {
+      const result = await Promise.race([getSessionPromise, timeoutPromise]);
+      session = (result as Awaited<ReturnType<typeof getSession>>).data
+        ?.session;
+    } catch (error) {
+      // Timeout or other error - log as warning, not error, since we have fallbacks
+      const { logWarn } = useLogger();
+      logWarn('[Home] getSession timeout or error in fetchUserPreferences', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+      return;
+    }
 
     if (!session?.access_token) {
       return;
@@ -430,8 +604,17 @@ const fetchUserPreferences = async () => {
       mapPreferencesToSelections();
     }
   } catch (error) {
-    const { logError } = useLogger();
-    logError('[Home] Error fetching user preferences', error as Error);
+    // Don't log as error if it's a timeout - it's expected and handled gracefully
+    const isTimeout =
+      error instanceof Error && error.message.includes('timeout');
+    const { logWarn, logError } = useLogger();
+    if (isTimeout) {
+      logWarn('[Home] fetchUserPreferences timeout (handled gracefully)', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+    } else {
+      logError('[Home] Error fetching user preferences', error as Error);
+    }
     // Fallback: Try to get cached region from useUserRegion if fetch failed
     // This ensures the page can still render even if the API call times out
     try {
@@ -1164,10 +1347,16 @@ onMounted(() => {
                   @mark-watchlist="
                     handleTitleStatus($event, TITLE_STATUS.WATCHLIST)
                   "
+                  @follow="handleFollow($event)"
+                  @unfollow="handleUnfollow($event)"
                 />
               </Section>
             </PageContainer>
           </AppShell>
+          <!-- Toast - Always available, client-only to avoid hydration issues -->
+          <ClientOnly>
+            <Toast />
+          </ClientOnly>
         </section>
         <template #fallback>
           <section>

@@ -25,6 +25,7 @@
   "navbar": {
     "home": "Hasiera",
     "watchlist": "Nire Watchlist",
+    "following": "Jarraitzen",
     "userMenu": "Erabiltzaile menua {email} erabiltzailearentzat",
     "userMenuFor": "Erabiltzaile menua {email} erabiltzailearentzat",
     "editProfile": "Editatu perfil",
@@ -347,6 +348,13 @@
     "list": "Zerrenda ikuspegia",
     "selectView": "Ikuspegia hautatu"
   },
+  "sort": {
+    "selectSort": "Ordenatu",
+    "nameAsc": "Izena (A-Z)",
+    "nameDesc": "Izena (Z-A)",
+    "dateAddedAsc": "Data gehitua (zaharrenak lehen)",
+    "dateAddedDesc": "Data gehitua (berrienak lehen)"
+  },
   "watchlist": {
     "title": "Watchlist",
     "description": "Filmak eta telesailak geroago ikusteko gordeta dituzunak.",
@@ -363,6 +371,34 @@
     "errorLoading": "Errorea Watchlist kargatzean.",
     "notAuthenticated": "Ez zaude autentifikatuta. Mesedez, hasi saioa.",
     "noTitle": "Titulurik ez"
+  },
+  "following": {
+    "title": "Jarraitu",
+    "description": "Jarraitu ari zaren telesailak atal eta denboraldiak erregistratzeko.",
+    "loading": "Jarraitu ari zaren telesailak kargatzen...",
+    "empty": "Oraindik ez duzu telesailik jarraitzen. Hasi telesail bat jarraitzen atal eta denboraldiak erregistratzeko.",
+    "emptyCta": "Ikusi gomendioak",
+    "removeTitle": "Ez jarraitu {title}",
+    "removeTooltip": "Ez jarraitu",
+    "following": "Jarraitu",
+    "follow": "Jarraitu",
+    "unfollow": "Ez jarraitu",
+    "titleAdded": "\"{title}\" orain jarraitzen ari da",
+    "titleRemoved": "\"{title}\" jada ez da jarraitzen",
+    "errorLoading": "Errorea jarraitu ari zaren telesailak kargatzean.",
+    "errorAdding": "Errorea \"{title}\" jarraitzean.",
+    "errorRemoving": "Errorea \"{title}\" jarraitzen uztean.",
+    "noTitle": "Titulurik ez"
+  },
+  "episodes": {
+    "markAsSeen": "Markatu {season}. denboraldiko {episode}. atala ikusita bezala",
+    "unmarkAsSeen": "Desmarkatu {season}. denboraldiko {episode}. atala ikusita bezala",
+    "seasonMarkAsSeen": "Markatu {season}. denboraldia ikusita bezala",
+    "seasonUnmarkAsSeen": "Desmarkatu {season}. denboraldia ikusita bezala",
+    "episodesSeenCount_one": "{count} atal ikusia",
+    "episodesSeenCount_other": "{count} atal ikusiak",
+    "confirmUnmarkSeason": "Desmarkatu denboraldia?",
+    "confirmUnmarkSeasonMessage": "Honek {season}. denboraldiko atal guztiak desmarkatuko ditu. Ekintza hau ezin da desegin."
   },
   "seen": {
     "title": "Ikusia",

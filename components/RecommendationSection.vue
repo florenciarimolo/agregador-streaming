@@ -62,6 +62,8 @@
           @mark-liked="$emit('mark-liked', $event)"
           @remove-liked="$emit('remove-liked', $event)"
           @mark-watchlist="$emit('mark-watchlist', $event)"
+          @follow="$emit('follow', $event)"
+          @unfollow="$emit('unfollow', $event)"
         />
         <!-- Show skeleton while fetching replacement -->
         <SkeletonMediaCard
@@ -82,6 +84,8 @@
           @mark-liked="$emit('mark-liked', $event)"
           @remove-liked="$emit('remove-liked', $event)"
           @mark-watchlist="$emit('mark-watchlist', $event)"
+          @follow="$emit('follow', $event)"
+          @unfollow="$emit('unfollow', $event)"
         />
         <!-- Show skeleton while fetching replacement -->
         <SkeletonListItem
@@ -133,6 +137,8 @@ defineEmits<{
   'mark-liked': [title: Recommendation];
   'remove-liked': [title: Recommendation];
   'mark-watchlist': [title: Recommendation];
+  'follow': [title: Recommendation];
+  'unfollow': [title: Recommendation];
 }>();
 </script>
 

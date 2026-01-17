@@ -137,6 +137,7 @@
           :tmdb-id="item.tmdb_id"
           :providers="item.providers"
           :hide-type-badge="true"
+          :has-menu-open="openMenuItemId === item.id"
         >
           <!-- Actions for logged users only -->
           <template v-if="isLoggedIn" #actions>
@@ -144,6 +145,8 @@
               :item="item"
               :title-status="getItemStatus(item.tmdb_id)"
               @action="handleAction"
+              @menu-open="openMenuItemId = item.id"
+              @menu-close="openMenuItemId = null"
             />
           </template>
         </TitleListItem>
@@ -164,6 +167,7 @@ import { computed, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 import { TITLE_STATUS } from '@/constants/domain/titleStatus';
+import { TITLE_ACTION } from '@/constants/domain/titleActions';
 import type {
   DiscoverList,
   DiscoverListItem,
@@ -207,6 +211,7 @@ const user = useSupabaseUser();
 const isLoggedIn = computed(() => !!user.value);
 const { executeAction, executeLikedAction } = useTitleStatusAction();
 const loadingTitles = ref<Set<number>>(new Set());
+const openMenuItemId = ref<number | null>(null);
 const titleStatuses = ref<
   Map<number, { liked: boolean; status: string | null }>
 >(new Map());
@@ -306,12 +311,19 @@ watch(isLoggedIn, async (newValue) => {
 // Get item status for menu actions
 function getItemStatus(tmdbId: number) {
   const status = titleStatuses.value.get(tmdbId);
+  const item = props.items?.find((i) => i.tmdb_id === tmdbId);
+  // Convert item.type ('movie' | 'tv') to MEDIA_TYPE enum
+  const itemType = item?.type 
+    ? (item.type === MEDIA_TYPE.MOVIE ? MEDIA_TYPE.MOVIE : MEDIA_TYPE.TV)
+    : undefined;
+  
   if (!status) {
     return {
       isLiked: false,
       isSeen: false,
       isNotInterested: false,
       isInWatchlist: false,
+      type: itemType,
     };
   }
 
@@ -320,6 +332,7 @@ function getItemStatus(tmdbId: number) {
     isSeen: status.status === TITLE_STATUS.SEEN || false,
     isNotInterested: status.status === TITLE_STATUS.NOT_INTERESTED || false,
     isInWatchlist: status.status === TITLE_STATUS.WATCHLIST || false,
+    type: itemType,
   };
 }
 
@@ -340,7 +353,7 @@ async function handleAction(item: DiscoverListItem, action: string) {
           : null;
 
     // Handle remove actions (these are explicit remove actions from menu)
-    if (action === 'remove-liked') {
+    if (action === TITLE_ACTION.REMOVE_LIKED) {
       // Remove liked but keep seen status (as per APP_LOGIC.md: Scenario 4)
       // Title remains as 'seen' (not eligible for recommendations)
       const result = await executeLikedAction(
@@ -381,7 +394,7 @@ async function handleAction(item: DiscoverListItem, action: string) {
       if (result.success) {
         await loadTitleStatuses();
       }
-    } else if (action === 'liked') {
+    } else if (action === TITLE_ACTION.LIKED) {
       // Check if title is already liked
       const userId = user.value?.id || (user.value as { sub?: string })?.sub;
       if (userId) {

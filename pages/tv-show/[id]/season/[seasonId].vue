@@ -32,11 +32,26 @@
             :season="seasonWithProviders"
             :tmdb-id="parseInt(String(seriesId), 10)"
             :series-id="String(seriesId)"
+            :seen-episodes-count="seenEpisodesCount"
+            :is-season-seen="isSeasonFullySeen"
+            :season-number="seasonWithProviders?.season_number"
+            @mark-season-seen="handleMarkSeasonSeen"
+            @unmark-season="handleUnmarkSeason"
           />
 
           <!-- Episodios -->
           <Section>
-            <SectionTitle>{{ $t('media.episodes') }}</SectionTitle>
+            <div class="flex items-center justify-between mb-4">
+              <SectionTitle>{{ $t('media.episodes') }}</SectionTitle>
+              <!-- Season seen button -->
+              <SeasonSeenButton
+                v-if="seasonWithProviders"
+                :is-season-seen="isSeasonFullySeen"
+                :season-number="seasonWithProviders.season_number"
+                @mark="handleMarkSeasonSeen"
+                @unmark="handleUnmarkSeason"
+              />
+            </div>
 
             <div v-if="seasonWithProviders?.episodes?.length" class="space-y-4">
               <ListItemBase
@@ -59,8 +74,17 @@
                 "
               >
                 <template #actions>
-                  <!-- Additional episode info: Date and Duration -->
+                  <!-- Episode actions: Seen button and info -->
                   <div class="flex flex-col gap-2 items-end">
+                    <!-- Episode seen button -->
+                    <EpisodeSeenButton
+                      :is-seen="isEpisodeSeen(seasonWithProviders.season_number, episode.episode_number)"
+                      :season-number="seasonWithProviders.season_number"
+                      :episode-number="episode.episode_number"
+                      size="small"
+                      @click="handleToggleEpisodeSeen(seasonWithProviders.season_number, episode.episode_number)"
+                    />
+                    <!-- Additional episode info: Date and Duration -->
                     <div
                       class="flex items-center gap-2 dark:text-gray-300 text-gray-800 text-xs"
                     >
@@ -112,12 +136,17 @@ import Alert from '@/components/ui/Alert.vue';
 import IconCalendar from '@/components/icons/IconCalendar.vue';
 import IconClock from '@/components/icons/IconClock.vue';
 import ListItemBase from '@/components/ListItemBase.vue';
+import EpisodeSeenButton from '@/components/EpisodeSeenButton.vue';
+import SeasonSeenButton from '@/components/SeasonSeenButton.vue';
 import { formatDateByRegion } from '@/utils/formatDate';
 import { useUserRegion } from '@/composables/useUserRegion';
 import { useTVSeasonSchema } from '@/composables/useSchemaOrg';
 import { useHreflang } from '@/composables/useHreflang';
 import { useCanonical } from '@/composables/useCanonical';
 import { useSeasonKeywords } from '@/composables/useSeoKeywords';
+import { useEpisodeStatus } from '@/composables/useEpisodeStatus';
+import { getSession } from '@/services/auth';
+import { useLogger } from '@/composables/useLogger';
 
 const route = useRoute();
 const { locale } = useI18n();
@@ -312,9 +341,100 @@ useSeoMeta({
   robots: 'index, follow',
 });
 
+// Episode status management
+const tmdbSeriesId = computed(() => parseInt(String(seriesId), 10));
+const {
+  fetchEpisodeStatuses,
+  isEpisodeSeen,
+  markEpisodeSeen,
+  unmarkEpisode,
+  markSeasonSeen,
+  unmarkSeason,
+} = useEpisodeStatus(tmdbSeriesId);
+
+const isSeasonFullySeen = computed(() => {
+  if (!seasonWithProviders.value?.episodes) return false;
+  const seasonNumber = seasonWithProviders.value.season_number;
+  return seasonWithProviders.value.episodes.every((episode) =>
+    isEpisodeSeen(seasonNumber, episode.episode_number)
+  );
+});
+
+const seenEpisodesCount = computed(() => {
+  if (!seasonWithProviders.value?.episodes) return 0;
+  const seasonNumber = seasonWithProviders.value.season_number;
+  return seasonWithProviders.value.episodes.filter((episode) =>
+    isEpisodeSeen(seasonNumber, episode.episode_number)
+  ).length;
+});
+
+const handleToggleEpisodeSeen = async (
+  seasonNumber: number,
+  episodeNumber: number
+) => {
+  const { logError } = useLogger();
+  try {
+    const {
+      data: { session },
+    } = await getSession();
+
+    if (!session?.access_token) {
+      return;
+    }
+
+    const currentlySeen = isEpisodeSeen(seasonNumber, episodeNumber);
+
+    if (currentlySeen) {
+      await unmarkEpisode(seasonNumber, episodeNumber);
+    } else {
+      await markEpisodeSeen(seasonNumber, episodeNumber);
+    }
+
+    // Refresh episode statuses
+    await fetchEpisodeStatuses();
+  } catch (error) {
+    logError('[SeasonPage] Error toggling episode seen', error as Error, {
+      seasonNumber,
+      episodeNumber,
+    });
+  }
+};
+
+const handleMarkSeasonSeen = async () => {
+  const { logError } = useLogger();
+  try {
+    if (!seasonWithProviders.value) return;
+
+    await markSeasonSeen(seasonWithProviders.value.season_number);
+    await fetchEpisodeStatuses();
+  } catch (error) {
+    logError('[SeasonPage] Error marking season as seen', error as Error);
+  }
+};
+
+const handleUnmarkSeason = async () => {
+  const { logError } = useLogger();
+  try {
+    if (!seasonWithProviders.value) return;
+
+    await unmarkSeason(seasonWithProviders.value.season_number);
+    await fetchEpisodeStatuses();
+  } catch (error) {
+    logError('[SeasonPage] Error unmarking season', error as Error);
+  }
+};
+
 onMounted(async () => {
   // Get user region for date formatting
   userRegion.value = await getUserRegion();
+
+  // Fetch episode statuses if user is authenticated
+  const {
+    data: { session },
+  } = await getSession();
+  if (session?.access_token) {
+    await fetchEpisodeStatuses();
+  }
 });
 </script>
 

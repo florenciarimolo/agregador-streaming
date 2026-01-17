@@ -272,6 +272,27 @@ If the list of supported languages is unclear:
 - STOP
 - Ask for clarification
 
+### No Hardcoded Values (Strict)
+
+- **Never hardcode user-facing text** - Always use translation keys from `i18n/locales/`
+- **Never hardcode string literals for status, types, or domain values** - Use enums from `/constants/domain/` or `/types/enums/`
+- **Never hardcode database values** - Use constants from `/constants/db/`
+- **Never hardcode API values** - Use constants from `/constants/api/`
+- **Never hardcode magic strings or numbers** - Extract to constants or enums
+
+Examples:
+- ❌ `if (status === 'Ended')` → ✅ `if (status === TmdbStatus.ENDED)`
+- ❌ `'tv'` → ✅ `MEDIA_TYPE.TV`
+- ❌ `'user_title_status'` → ✅ `TABLES.USER_TITLE_STATUS`
+- ❌ `'Error loading data'` → ✅ `$t('errors.loadingData')`
+
+If you need a new enum or constant:
+
+- STOP
+- Check if it already exists
+- If not, create it in the appropriate `/constants/` or `/types/enums/` location
+- Update all usages to use the new enum/constant
+
 ### Documentation & Comments Language
 
 - All documentation must be written in English

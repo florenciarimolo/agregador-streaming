@@ -185,6 +185,58 @@ export interface Database {
           created_at?: string;
         };
       };
+      user_title_following: {
+        Row: {
+          id: string;
+          user_id: string;
+          tmdb_id: number;
+          type: 'movie' | 'tv';
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          tmdb_id: number;
+          type: 'movie' | 'tv';
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          tmdb_id?: number;
+          type?: 'movie' | 'tv';
+          created_at?: string;
+        };
+      };
+      user_episode_status: {
+        Row: {
+          id: string;
+          user_id: string;
+          tmdb_series_id: number;
+          season_number: number;
+          episode_number: number;
+          seen: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          tmdb_series_id: number;
+          season_number: number;
+          episode_number: number;
+          seen?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          tmdb_series_id?: number;
+          season_number?: number;
+          episode_number?: number;
+          seen?: boolean;
+          created_at?: string;
+        };
+      };
     };
     Views: {
       [_ in never]: never;

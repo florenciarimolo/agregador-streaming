@@ -136,12 +136,14 @@
                   })
                 "
                 @mark-seen="() => handleAction(TITLE_STATUS.SEEN)"
-                @mark-liked="() => handleAction('liked')"
-                @remove-liked="() => handleAction('remove-liked')"
+                @mark-liked="() => handleAction(TITLE_ACTION.LIKED)"
+                @remove-liked="() => handleAction(TITLE_ACTION.REMOVE_LIKED)"
                 @mark-not-interested="
                   () => handleAction(TITLE_STATUS.NOT_INTERESTED)
                 "
                 @mark-watchlist="() => handleAction(TITLE_STATUS.WATCHLIST)"
+                @follow="() => handleAction(TITLE_ACTION.FOLLOW)"
+                @unfollow="() => handleAction(TITLE_ACTION.UNFOLLOW)"
               />
             </template>
           </slot>
@@ -151,10 +153,11 @@
       <!-- Informative icons overlay (only show if user has session and status is provided) -->
       <!-- Positioned to the left of actions menu to avoid overlap -->
       <TitleStatusBadges
-        :is-liked="isLiked"
-        :is-seen="isSeen"
-        :is-not-interested="isNotInterested"
-        :is-in-watchlist="isInWatchlist"
+        :is-liked="computedIsLiked"
+        :is-seen="computedIsSeen"
+        :is-not-interested="computedIsNotInterested"
+        :is-in-watchlist="computedIsInWatchlist"
+        :is-following="computedIsFollowing"
       />
     </div>
 
@@ -210,6 +213,7 @@ import {
   TITLE_STATUS,
   type TitleStatusType,
 } from '@/constants/domain/titleStatus';
+import { TITLE_ACTION, type TitleActionType } from '@/constants/domain/titleActions';
 import { capitalizeTag } from '@/utils/capitalizeTag';
 import Badge from './Badge.vue';
 import RatingBadge from './RatingBadge.vue';
@@ -245,6 +249,7 @@ interface Props {
   isSeen?: boolean;
   isNotInterested?: boolean;
   isInWatchlist?: boolean;
+  isFollowing?: boolean;
 
   // Tag for discover lists (extracted from JSONB, already in current language)
   // Should be string | null, but handle object case defensively
@@ -275,6 +280,7 @@ const props = withDefaults(defineProps<Props>(), {
   isSeen: false,
   isNotInterested: false,
   isInWatchlist: false,
+  isFollowing: false,
   tag: undefined,
   isDiscoverList: false,
   hasTopLeftContent: undefined,
@@ -288,6 +294,8 @@ const emit = defineEmits<{
   'mark-liked': [title: Recommendation];
   'remove-liked': [title: Recommendation];
   'mark-watchlist': [title: Recommendation];
+  'follow': [title: Recommendation];
+  'unfollow': [title: Recommendation];
 }>();
 
 // Computed values based on recommendation or individual props
@@ -345,6 +353,23 @@ const providersWithLogos = computed(() => {
     .slice(0, 6);
 });
 
+// Computed status values for badges (from props or recommendation)
+const computedIsLiked = computed(() => {
+  return props.recommendation?.liked || props.isLiked || false;
+});
+const computedIsSeen = computed(() => {
+  return props.isSeen || false;
+});
+const computedIsNotInterested = computed(() => {
+  return props.isNotInterested || false;
+});
+const computedIsInWatchlist = computed(() => {
+  return props.recommendation?.in_watchlist || props.isInWatchlist || false;
+});
+const computedIsFollowing = computed(() => {
+  return props.recommendation?.following || props.isFollowing || false;
+});
+
 // Computed status info for recommendation
 const recommendationStatusInfo = computed(() => {
   if (!props.recommendation) {
@@ -353,29 +378,41 @@ const recommendationStatusInfo = computed(() => {
       isSeen: props.isSeen,
       isNotInterested: props.isNotInterested,
       isInWatchlist: props.isInWatchlist,
+      isFollowing: props.isFollowing,
+      type: props.type, // Use the type prop if available
     };
   }
+  const isFollowing = props.recommendation.following || false;
+  // When following, remove conflicting states (watchlist, not_interested, seen)
+  // This matches the backend behavior where following removes those states
   return {
     isLiked: props.recommendation.liked || false,
     isSeen: false, // Recommendations don't track seen status
     isNotInterested: false, // Recommendations don't track not_interested status
-    isInWatchlist: props.recommendation.in_watchlist || false,
+    isInWatchlist: isFollowing ? false : (props.recommendation.in_watchlist || false), // Remove watchlist if following
+    isFollowing,
+    isFullySeen: false, // TODO: Add this from API if needed
+    type: props.recommendation.type === MEDIA_TYPE.MOVIE ? MEDIA_TYPE.MOVIE : MEDIA_TYPE.TV,
   };
 });
 
-const handleAction = (action: TitleStatusType | 'liked' | 'remove-liked') => {
+const handleAction = (action: TitleStatusType | TitleActionType) => {
   if (!props.recommendation) return;
 
   if (action === TITLE_STATUS.SEEN) {
     emit('mark-seen', props.recommendation);
-  } else if (action === 'liked') {
+  } else if (action === TITLE_ACTION.LIKED) {
     emit('mark-liked', props.recommendation);
-  } else if (action === 'remove-liked') {
+  } else if (action === TITLE_ACTION.REMOVE_LIKED) {
     emit('remove-liked', props.recommendation);
   } else if (action === TITLE_STATUS.NOT_INTERESTED) {
     emit('mark-not-interested', props.recommendation);
   } else if (action === TITLE_STATUS.WATCHLIST) {
     emit('mark-watchlist', props.recommendation);
+  } else if (action === TITLE_ACTION.FOLLOW) {
+    emit('follow', props.recommendation);
+  } else if (action === TITLE_ACTION.UNFOLLOW) {
+    emit('unfollow', props.recommendation);
   }
 };
 

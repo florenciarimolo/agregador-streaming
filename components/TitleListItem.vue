@@ -10,6 +10,7 @@
     :tmdb-id="tmdbId"
     :providers="providers"
     :hide-type-badge="hideTypeBadge"
+    :has-menu-open="hasMenuOpen"
     :aria-label="
       $t('media.titleCardLabel', { title: title || $t('media.noTitle') })
     "
@@ -45,6 +46,7 @@ interface Props {
   providers?: Provider[];
   hideTypeBadge?: boolean;
   showOverviewPlaceholder?: boolean;
+  hasMenuOpen?: boolean;
 }
 
 withDefaults(defineProps<Props>(), {
@@ -57,5 +59,6 @@ withDefaults(defineProps<Props>(), {
   providers: undefined,
   hideTypeBadge: false,
   showOverviewPlaceholder: true,
+  hasMenuOpen: false,
 });
 </script>

@@ -12,7 +12,7 @@
             (mediaWithProviders.backdrop_path || mediaWithProviders.poster_path)
           "
           :alt="mediaWithProviders.title"
-          class="absolute inset-0 w-full h-full object-cover z-0"
+          class="absolute inset-0 w-full h-full object-cover object-top z-0"
         />
         <!-- Gradient overlay: black to transparent left to right -->
         <div
@@ -113,6 +113,22 @@
                   {{ $t('media.removeFromNotInterested') }}
                 </Button>
                 <Button
+                  v-else-if="isFollowing"
+                  type="button"
+                  variant="ghost"
+                  size="small"
+                  custom-class="justify-start w-full text-left"
+                  @click.stop.prevent="
+                    mobileDropdownRef?.close();
+                    handleUnfollow();
+                  "
+                >
+                  <template #icon>
+                    <IconX icon-class="w-4 h-4" />
+                  </template>
+                  {{ $t('following.unfollow') }}
+                </Button>
+                <Button
                   v-else-if="isInWatchlist"
                   type="button"
                   variant="ghost"
@@ -152,7 +168,7 @@
                     custom-class="justify-start mb-2 w-full text-left"
                     @click.stop.prevent="
                       mobileDropdownRef?.close();
-                      handleAction('liked');
+                      handleAction(TITLE_ACTION.LIKED);
                     "
                   >
                     <template #icon>
@@ -179,7 +195,7 @@
                     type="button"
                     variant="ghost"
                     size="small"
-                    custom-class="justify-start w-full text-left"
+                    custom-class="justify-start mb-2 w-full text-left"
                     @click.stop.prevent="
                       mobileDropdownRef?.close();
                       handleAction(TITLE_STATUS.WATCHLIST);
@@ -189,6 +205,23 @@
                       <IconClock icon-class="w-4 h-4" />
                     </template>
                     {{ $t('media.watchLater') }}
+                  </Button>
+                  <!-- Follow option for TV series (hide if fully seen) -->
+                  <Button
+                    v-if="mediaType === MEDIA_TYPE.TV && !isFullySeen"
+                    type="button"
+                    variant="ghost"
+                    size="small"
+                    custom-class="justify-start w-full text-left"
+                    @click.stop.prevent="
+                      mobileDropdownRef?.close();
+                      handleFollow();
+                    "
+                  >
+                    <template #icon>
+                      <IconStar icon-class="w-4 h-4" />
+                    </template>
+                    {{ $t('following.follow') }}
                   </Button>
                 </template>
               </div>
@@ -249,6 +282,16 @@
               <IconClock icon-class="w-5 h-5 text-white" />
             </div>
           </Tooltip>
+          <Tooltip
+            v-if="isFollowing && !isLiked && !isSeen && !isNotInterested && !isInWatchlist"
+            :text="$t('following.following')"
+          >
+            <div
+              class="flex justify-center items-center w-8 h-8 rounded-full backdrop-blur-sm bg-primary-600/90"
+            >
+              <IconStar icon-class="w-5 h-5 text-white" />
+            </div>
+          </Tooltip>
         </div>
       </div>
     </div>
@@ -283,40 +326,51 @@
                 :alt="mediaWithProviders.title"
                 class="w-full h-full object-cover rounded-3xl"
               />
-              <!-- Informative icons overlay (only show if user has session) -->
-              <div
-                v-if="hasSession"
-                class="media-banner-tooltips flex absolute top-2 right-2 gap-2 z-20"
+            </div>
+            <!-- Informative icons overlay (only show if user has session) -->
+            <!-- Moved outside overflow-hidden container to prevent tooltip clipping -->
+            <div
+              v-if="hasSession"
+              class="media-banner-tooltips flex absolute top-2 right-2 gap-2 z-20"
+            >
+              <Tooltip v-if="isLiked" text="Favorito">
+                <div
+                  class="flex justify-center items-center w-8 h-8 rounded-full backdrop-blur-sm bg-primary-600/90"
+                >
+                  <IconHeartFilled icon-class="w-5 h-5 text-white" />
+                </div>
+              </Tooltip>
+              <Tooltip v-if="isSeen && !isLiked" text="Visto">
+                <div
+                  class="flex justify-center items-center w-8 h-8 rounded-full backdrop-blur-sm bg-primary-600/90"
+                >
+                  <IconCheck icon-class="w-5 h-5 text-white" />
+                </div>
+              </Tooltip>
+              <Tooltip v-if="isNotInterested" text="No me interesa">
+                <div
+                  class="flex justify-center items-center w-8 h-8 rounded-full backdrop-blur-sm bg-primary-600/90"
+                >
+                  <IconX icon-class="w-5 h-5 text-white" />
+                </div>
+              </Tooltip>
+              <Tooltip v-if="isInWatchlist" text="Watchlist">
+                <div
+                  class="flex justify-center items-center w-8 h-8 rounded-full backdrop-blur-sm bg-primary-600/90"
+                >
+                  <IconClock icon-class="w-5 h-5 text-white" />
+                </div>
+              </Tooltip>
+              <Tooltip
+                v-if="isFollowing && !isLiked && !isSeen && !isNotInterested && !isInWatchlist"
+                :text="$t('following.following')"
               >
-                <Tooltip v-if="isLiked" text="Favorito">
-                  <div
-                    class="flex justify-center items-center w-8 h-8 rounded-full backdrop-blur-sm bg-primary-600/90"
-                  >
-                    <IconHeartFilled icon-class="w-5 h-5 text-white" />
-                  </div>
-                </Tooltip>
-                <Tooltip v-if="isSeen && !isLiked" text="Visto">
-                  <div
-                    class="flex justify-center items-center w-8 h-8 rounded-full backdrop-blur-sm bg-primary-600/90"
-                  >
-                    <IconCheck icon-class="w-5 h-5 text-white" />
-                  </div>
-                </Tooltip>
-                <Tooltip v-if="isNotInterested" text="No me interesa">
-                  <div
-                    class="flex justify-center items-center w-8 h-8 rounded-full backdrop-blur-sm bg-primary-600/90"
-                  >
-                    <IconX icon-class="w-5 h-5 text-white" />
-                  </div>
-                </Tooltip>
-                <Tooltip v-if="isInWatchlist" text="Watchlist">
-                  <div
-                    class="flex justify-center items-center w-8 h-8 rounded-full backdrop-blur-sm bg-primary-600/90"
-                  >
-                    <IconClock icon-class="w-5 h-5 text-white" />
-                  </div>
-                </Tooltip>
-              </div>
+                <div
+                  class="flex justify-center items-center w-8 h-8 rounded-full backdrop-blur-sm bg-primary-600/90"
+                >
+                  <IconStar icon-class="w-5 h-5 text-white" />
+                </div>
+              </Tooltip>
             </div>
           </div>
           <!-- Providers below image on desktop -->
@@ -521,6 +575,22 @@
                       {{ $t('media.removeFromNotInterested') }}
                     </Button>
                     <Button
+                      v-else-if="isFollowing"
+                      type="button"
+                      variant="ghost"
+                      size="small"
+                      custom-class="justify-start w-full text-left"
+                      @click.stop.prevent="
+                        dropdownRef?.close();
+                        handleUnfollow();
+                      "
+                    >
+                      <template #icon>
+                        <IconX icon-class="w-4 h-4" />
+                      </template>
+                      {{ $t('following.unfollow') }}
+                    </Button>
+                    <Button
                       v-else-if="isInWatchlist"
                       type="button"
                       variant="ghost"
@@ -560,7 +630,7 @@
                         custom-class="justify-start mb-2 w-full text-left"
                         @click.stop.prevent="
                           dropdownRef?.close();
-                          handleAction('liked');
+                          handleAction(TITLE_ACTION.LIKED);
                         "
                       >
                         <template #icon>
@@ -587,7 +657,7 @@
                         type="button"
                         variant="ghost"
                         size="small"
-                        custom-class="justify-start w-full text-left"
+                        custom-class="justify-start mb-2 w-full text-left"
                         @click.stop.prevent="
                           dropdownRef?.close();
                           handleAction(TITLE_STATUS.WATCHLIST);
@@ -597,6 +667,23 @@
                           <IconClock icon-class="w-4 h-4" />
                         </template>
                         {{ $t('media.watchLater') }}
+                      </Button>
+                      <!-- Follow option for TV series (hide if fully seen) -->
+                      <Button
+                        v-if="mediaType === MEDIA_TYPE.TV && !isFullySeen"
+                        type="button"
+                        variant="ghost"
+                        size="small"
+                        custom-class="justify-start w-full text-left"
+                        @click.stop.prevent="
+                          dropdownRef?.close();
+                          handleFollow();
+                        "
+                      >
+                        <template #icon>
+                          <IconStar icon-class="w-4 h-4" />
+                        </template>
+                        {{ $t('following.follow') }}
                       </Button>
                     </template>
                   </div>
@@ -806,6 +893,7 @@ import {
   TITLE_STATUS,
   type TitleStatusType,
 } from '@/constants/domain/titleStatus';
+import { TITLE_ACTION } from '@/constants/domain/titleActions';
 import { getSession } from '@/services/auth';
 import { useUndoToast } from '@/composables/useUndoToast';
 import { useTitleStatusAction } from '@/composables/useTitleStatusAction';
@@ -814,6 +902,7 @@ import { useLogger } from '@/composables/useLogger';
 import IconButton from '@/components/ui/IconButton.vue';
 import Button from '@/components/ui/Button.vue';
 import Tooltip from '@/components/ui/Tooltip.vue';
+import IconStar from '@/components/icons/IconStar.vue';
 import { getUserLikedTitle, getTitleStatus } from '@/services/userTitleStatus';
 import { useRouter } from 'vue-router';
 import Section from '@/components/layout/Section.vue';
@@ -821,6 +910,8 @@ import { useUserRegion } from '@/composables/useUserRegion';
 import { type MultiLanguageText } from '@/services/titles';
 import { useRouteWithLang } from '@/composables/useRouteWithLang';
 import { useFetchTagline } from '@/composables/useFetchTagline';
+import { useFollowing } from '@/composables/useFollowing';
+import { checkSeriesFullySeen } from '@/services/userEpisodeStatus';
 
 const props = defineProps({
   media: {
@@ -906,9 +997,19 @@ const isLiked = ref(false);
 const isInWatchlist = ref(false);
 const isSeen = ref(false);
 const isNotInterested = ref(false);
+const isFullySeen = ref(false);
 const router = useRouter();
 const { getUserRegion } = useUserRegion();
 const userRegion = ref<string | null>(null);
+
+// Following state management (only for TV series)
+const tmdbIdRef = computed(() => mediaWithProviders.value.id);
+const {
+  isFollowing,
+  checkFollowing,
+  followSeries,
+  unfollowSeries,
+} = useFollowing(tmdbIdRef);
 
 // Check if user has session
 const user = useSupabaseUser();
@@ -960,6 +1061,33 @@ const fetchTitleStatus = async () => {
       isSeen.value = titleStatus.status === TITLE_STATUS.SEEN;
       isNotInterested.value =
         titleStatus.status === TITLE_STATUS.NOT_INTERESTED;
+    }
+
+    // Check following status (only for TV series)
+    if (props.mediaType === MEDIA_TYPE.TV) {
+      await checkFollowing();
+
+      // Check if series is fully seen (to hide/disable follow option)
+      // Only check on client side to avoid SSR issues
+      if (process.client) {
+        try {
+          isFullySeen.value = await checkSeriesFullySeen(
+            userId,
+            mediaWithProviders.value.id
+          );
+        } catch (error) {
+          const { logError } = useLogger();
+          logError(
+            '[MediaBannerDetail] Error checking if series is fully seen',
+            error as Error,
+            {
+              tmdbId: mediaWithProviders.value.id,
+            }
+          );
+          // Default to false if check fails
+          isFullySeen.value = false;
+        }
+      }
     }
   } catch (error) {
     const { logError } = useLogger();
@@ -1030,7 +1158,7 @@ const posterFilterStyle = computed(() => ({
 // Get unified title status action handler
 const { executeAction, executeLikedAction } = useTitleStatusAction();
 
-const handleAction = async (action: TitleStatusType | 'liked') => {
+const handleAction = async (action: TitleStatusType | typeof TITLE_ACTION.LIKED) => {
   const mediaTitle =
     mediaWithProviders.value.title ||
     (mediaWithProviders.value as Movie & { name?: string }).name ||
@@ -1045,7 +1173,7 @@ const handleAction = async (action: TitleStatusType | 'liked') => {
         ? TITLE_STATUS.WATCHLIST
         : null;
 
-  if (action === 'liked') {
+  if (action === TITLE_ACTION.LIKED) {
     // Check if title is already liked
     const {
       data: { session },
@@ -1390,6 +1518,102 @@ const handleRemoveFromWatchlist = async () => {
     showToast(t('home.errorUpdatingStatus', { title: mediaTitle }), null, 3000);
   }
 };
+
+// Handle following a series
+const handleFollow = async () => {
+  const mediaTitle =
+    mediaWithProviders.value.title ||
+    (mediaWithProviders.value as Movie & { name?: string }).name ||
+    t('media.thisTitle');
+
+  try {
+    await followSeries();
+
+    // Update local state
+    await fetchTitleStatus();
+
+    // Show success toast
+    showToast(
+      t('following.titleAdded', { title: mediaTitle }),
+      {
+        label: t('undo.undo'),
+        variant: 'secondary',
+        action: async () => {
+          // Undo: Unfollow
+          try {
+            await unfollowSeries();
+            await fetchTitleStatus();
+          } catch (error) {
+            const { logError } = useLogger();
+            logError('[MediaBannerDetail] Error undoing follow', error as Error, {
+              tmdbId: mediaWithProviders.value.id,
+            });
+            await fetchTitleStatus();
+          }
+        },
+      },
+      7000
+    );
+  } catch (error) {
+    const { logError } = useLogger();
+    logError('[MediaBannerDetail] Error following series', error as Error, {
+      tmdbId: mediaWithProviders.value.id,
+    });
+    showToast(
+      t('following.errorAdding', { title: mediaTitle }),
+      null,
+      3000
+    );
+  }
+};
+
+// Handle unfollowing a series
+const handleUnfollow = async () => {
+  const mediaTitle =
+    mediaWithProviders.value.title ||
+    (mediaWithProviders.value as Movie & { name?: string }).name ||
+    t('media.thisTitle');
+
+  try {
+    await unfollowSeries();
+
+    // Update local state
+    await fetchTitleStatus();
+
+    // Show success toast
+    showToast(
+      t('following.titleRemoved', { title: mediaTitle }),
+      {
+        label: t('undo.undo'),
+        variant: 'secondary',
+        action: async () => {
+          // Undo: Re-follow
+          try {
+            await followSeries();
+            await fetchTitleStatus();
+          } catch (error) {
+            const { logError } = useLogger();
+            logError('[MediaBannerDetail] Error undoing unfollow', error as Error, {
+              tmdbId: mediaWithProviders.value.id,
+            });
+            await fetchTitleStatus();
+          }
+        },
+      },
+      7000
+    );
+  } catch (error) {
+    const { logError } = useLogger();
+    logError('[MediaBannerDetail] Error unfollowing series', error as Error, {
+      tmdbId: mediaWithProviders.value.id,
+    });
+    showToast(
+      t('following.errorRemoving', { title: mediaTitle }),
+      null,
+      3000
+    );
+  }
+};
 </script>
 
 <style>
@@ -1397,10 +1621,14 @@ const handleRemoveFromWatchlist = async () => {
 /* Ensure the tooltip container has higher z-index when hovered */
 /* This matches the same pattern used in watchlist and preferences pages */
 .media-banner-tooltips .tooltip-container {
-  z-index: 10000;
+  z-index: 100000 !important;
 }
 
 .media-banner-tooltips .tooltip-container:hover {
-  z-index: 10001 !important;
+  z-index: 100000 !important;
+}
+
+.media-banner-tooltips .tooltip {
+  z-index: 100000 !important;
 }
 </style>

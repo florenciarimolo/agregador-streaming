@@ -1,6 +1,6 @@
 <template>
-  <div class="overflow-visible">
-    <ActionMenu width="w-48" position="right">
+  <div class="overflow-visible relative">
+    <ActionMenu width="w-48" position="right" @open="handleMenuOpen" @close="handleMenuClose">
       <template #trigger>
         <IconButton
           :icon="IconMoreVertical"
@@ -40,6 +40,10 @@
               v-else-if="menuAction.icon === 'IconClock'"
               icon-class="w-4 h-4"
             />
+            <IconStar
+              v-else-if="menuAction.icon === 'IconStar'"
+              icon-class="w-4 h-4"
+            />
             <IconX
               v-else-if="menuAction.icon === 'IconX'"
               icon-class="w-4 h-4"
@@ -53,7 +57,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import {
   useTitleMenuActions,
   type TitleStatusInfo,
@@ -66,6 +70,7 @@ import IconMoreVertical from './icons/IconMoreVertical.vue';
 import IconCheck from './icons/IconCheck.vue';
 import IconHeart from './icons/IconHeart.vue';
 import IconClock from './icons/IconClock.vue';
+import IconStar from './icons/IconStar.vue';
 import IconX from './icons/IconX.vue';
 
 interface Props {
@@ -77,10 +82,24 @@ const props = defineProps<Props>();
 
 const emit = defineEmits<{
   action: [item: DiscoverListItem, action: string];
+  'menu-open': [];
+  'menu-close': [];
 }>();
 
 // Use the composable to determine which actions to show
 const { menuActions } = useTitleMenuActions(computed(() => props.titleStatus));
+
+const isMenuOpen = ref(false);
+
+const handleMenuOpen = () => {
+  isMenuOpen.value = true;
+  emit('menu-open');
+};
+
+const handleMenuClose = () => {
+  isMenuOpen.value = false;
+  emit('menu-close');
+};
 
 const handleMenuAction = (action: string) => {
   emit('action', props.item, action);

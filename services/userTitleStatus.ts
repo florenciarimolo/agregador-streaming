@@ -51,7 +51,7 @@ export async function getUserLikedTitles(userId: string) {
 
   const result = await supabase
     .from(TABLES.USER_TITLE_STATUS)
-    .select('id, tmdb_id, type')
+    .select('id, tmdb_id, type, created_at')
     .eq(USER_TITLE_STATUS_COLUMNS.USER_ID, userId)
     .eq(USER_TITLE_STATUS_COLUMNS.LIKED, true)
     .order(USER_TITLE_STATUS_COLUMNS.CREATED_AT, { ascending: false });
@@ -122,7 +122,7 @@ export async function getUserSeenTitles(userId: string) {
 
   const result = await supabase
     .from(TABLES.USER_TITLE_STATUS)
-    .select('id, tmdb_id, type, liked')
+    .select('id, tmdb_id, type, liked, created_at')
     .eq(USER_TITLE_STATUS_COLUMNS.USER_ID, userId)
     .eq(USER_TITLE_STATUS_COLUMNS.STATUS, 'seen')
     .order(USER_TITLE_STATUS_COLUMNS.CREATED_AT, { ascending: false });
@@ -138,7 +138,7 @@ export async function getUserNotInterestedTitles(userId: string) {
 
   const result = await supabase
     .from(TABLES.USER_TITLE_STATUS)
-    .select('id, tmdb_id, type')
+    .select('id, tmdb_id, type, created_at')
     .eq(USER_TITLE_STATUS_COLUMNS.USER_ID, userId)
     .eq(USER_TITLE_STATUS_COLUMNS.STATUS, 'not_interested')
     .order(USER_TITLE_STATUS_COLUMNS.CREATED_AT, { ascending: false });

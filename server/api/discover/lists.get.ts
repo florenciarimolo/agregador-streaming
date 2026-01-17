@@ -9,6 +9,8 @@ import { getDiscoverLists } from '@/composables/database/discoverLists';
 import { DEFAULT_LANGUAGE, toTMDBLanguageCode } from '@/constants/languages';
 import { createServerSupabaseClient } from '@/server/utils/supabase';
 import { getTitleInLanguage, type MultiLanguageText } from '@/composables/database/titles';
+import { TABLES } from '@/constants/db/tables';
+import { DISCOVER_LIST_ITEMS_COLUMNS, TITLES_COLUMNS } from '@/constants/db/columns';
 
 export default defineEventHandler(async (event) => {
   try {
@@ -53,16 +55,16 @@ export default defineEventHandler(async (event) => {
       (data || []).map(async (list) => {
         // Get first 4 items with poster paths for preview
         const { data: items } = await supabase
-          .from('discover_list_items')
-          .select('tmdb_id, type')
-          .eq('discover_list_id', list.id)
-          .order('position', { ascending: true })
+          .from(TABLES.DISCOVER_LIST_ITEMS)
+          .select(`${DISCOVER_LIST_ITEMS_COLUMNS.TMDB_ID}, ${DISCOVER_LIST_ITEMS_COLUMNS.TYPE}`)
+          .eq(DISCOVER_LIST_ITEMS_COLUMNS.DISCOVER_LIST_ID, list.id)
+          .order(DISCOVER_LIST_ITEMS_COLUMNS.POSITION, { ascending: true })
           .limit(4);
 
         const countResult = await supabase
-          .from('discover_list_items')
+          .from(TABLES.DISCOVER_LIST_ITEMS)
           .select('*', { count: 'exact', head: true })
-          .eq('discover_list_id', list.id);
+          .eq(DISCOVER_LIST_ITEMS_COLUMNS.DISCOVER_LIST_ID, list.id);
 
         const totalCount = countResult.count || 0;
 
@@ -71,9 +73,9 @@ export default defineEventHandler(async (event) => {
         if (items && items.length > 0) {
           const tmdbIds = items.map((item) => item.tmdb_id);
           const { data: titles } = await supabase
-            .from('titles')
-            .select('tmdb_id, poster_path')
-            .in('tmdb_id', tmdbIds);
+            .from(TABLES.TITLES)
+            .select(`${TITLES_COLUMNS.TMDB_ID}, ${TITLES_COLUMNS.POSTER_PATH}`)
+            .in(TITLES_COLUMNS.TMDB_ID, tmdbIds);
 
           if (titles) {
             // Map posters in the same order as items, extracting from JSONB

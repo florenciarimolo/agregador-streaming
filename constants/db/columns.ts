@@ -134,3 +134,26 @@ export const SEASONS_COLUMNS = {
   UPDATED_AT: 'updated_at',
 } as const;
 
+/**
+ * Field names for user_title_following table
+ */
+export const USER_TITLE_FOLLOWING_COLUMNS = {
+  ID: 'id',
+  USER_ID: 'user_id',
+  TMDB_ID: 'tmdb_id',
+  TYPE: 'type',
+  CREATED_AT: 'created_at',
+} as const;
+
+/**
+ * Field names for user_episode_status table
+ */
+export const USER_EPISODE_STATUS_COLUMNS = {
+  ID: 'id',
+  USER_ID: 'user_id',
+  TMDB_SERIES_ID: 'tmdb_series_id',
+  SEASON_NUMBER: 'season_number',
+  EPISODE_NUMBER: 'episode_number',
+  SEEN: 'seen',
+  CREATED_AT: 'created_at',
+} as const;

@@ -6,6 +6,10 @@ import { getUserIdFromEvent } from '@/server/utils/user-auth';
 import { createServerSupabaseClient } from '@/server/utils/supabase';
 import { DEFAULT_LANGUAGE } from '@/constants/languages';
 import { logWarn, logError, devLog } from '@/server/utils/logger';
+import { markAllEpisodesAsSeen } from '@/services/userEpisodeStatus';
+import { isTVShowStillOngoing } from '@/server/utils/tv-show-status';
+import { deleteUserFollowing, isFollowing } from '@/services/userFollowing';
+import { RECOMMENDATION_POOL_COLUMNS } from '@/constants/db/columns';
 
 /**
  * Update user title status (seen, not_interested, or watchlist)
@@ -124,6 +128,88 @@ export default defineEventHandler(async (event) => {
     // This is enforced by the product logic: liked is an attribute of seen
     if (typeof liked === 'boolean') {
       upsertData.liked = liked;
+    }
+
+    // For TV shows marked as seen, mark all episodes as seen
+    if (type === MEDIA_TYPE.TV && status === TITLE_STATUS.SEEN) {
+      const { error: markEpisodesError } = await markAllEpisodesAsSeen(
+        userId,
+        tmdb_id,
+        supabase
+      );
+
+      if (markEpisodesError) {
+        logError('[Title Status] Error marking all episodes as seen', markEpisodesError, {
+          tmdbId: tmdb_id,
+          userId,
+        });
+        // Don't fail the request, but log the error
+        // The title status will still be set, but episodes won't be marked
+      }
+
+      // Check if show is finished or cancelled
+      const isStillOngoing = await isTVShowStillOngoing(tmdb_id, supabase);
+
+      // If show is finished or cancelled (not ongoing), remove following
+      if (isStillOngoing === false) {
+        const { isFollowing: currentlyFollowing } = await isFollowing(
+          userId,
+          tmdb_id,
+          supabase
+        );
+
+        if (currentlyFollowing) {
+          // Remove following (finished/cancelled shows should not be followed when marked as seen)
+          const { error: unfollowError } = await deleteUserFollowing(
+            userId,
+            tmdb_id,
+            supabase
+          );
+
+          if (unfollowError) {
+            // Log but don't fail - following might not exist
+            logError('[Title Status] Error removing following for finished/cancelled show', unfollowError, {
+              userId,
+              tmdbId: tmdb_id,
+            });
+          } else {
+            // Revert following scoring if it existed
+            const { updatePreferenceScore } = await import(
+              '@/services/recommendationPool'
+            );
+            const { revertFollowingInfluence } = await import(
+              '@/services/similarityPropagation'
+            );
+
+            const { data: currentPoolEntry } = await supabase
+              .from(TABLES.RECOMMENDATION_POOL)
+              .select(RECOMMENDATION_POOL_COLUMNS.PREFERENCE_SCORE)
+              .eq(RECOMMENDATION_POOL_COLUMNS.USER_ID, userId)
+              .eq(RECOMMENDATION_POOL_COLUMNS.TMDB_ID, tmdb_id)
+              .maybeSingle();
+
+            if (currentPoolEntry) {
+              // Revert base following score (-5)
+              const FOLLOWING_BASE_SCORE = 5;
+              const currentPreferenceScore = currentPoolEntry.preference_score ?? 0;
+              const newPreferenceScore = Math.max(
+                -100,
+                currentPreferenceScore - FOLLOWING_BASE_SCORE
+              );
+
+              await updatePreferenceScore(
+                userId,
+                tmdb_id,
+                newPreferenceScore,
+                supabase
+              );
+
+              // Revert propagation
+              await revertFollowingInfluence(userId, tmdb_id, MEDIA_TYPE.TV, supabase);
+            }
+          }
+        }
+      }
     }
 
     const { error } = await supabase

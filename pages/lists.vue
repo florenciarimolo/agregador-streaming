@@ -70,7 +70,12 @@
                   v-else-if="likedTitles.length > 0"
                   class="flex flex-col gap-4"
                 >
-                  <div class="flex justify-end">
+                  <div class="flex justify-end items-center gap-2">
+                    <SortSelector
+                      :current-sort="currentSort"
+                      page-key="lists"
+                      @update:sort="setSort"
+                    />
                     <ViewModeSelector page-key="lists" />
                   </div>
                   <!-- Mosaic view -->
@@ -79,7 +84,7 @@
                     class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
                   >
                     <TitleCardMosaic
-                      v-for="title in likedTitles"
+                      v-for="title in sortedLikedTitles"
                       :key="title.id"
                       :title="title.title"
                       :poster-path="title.poster_path"
@@ -117,7 +122,7 @@
                   <!-- List view -->
                   <div v-else class="space-y-4">
                     <TitleListItem
-                      v-for="title in likedTitles"
+                      v-for="title in sortedLikedTitles"
                       :key="`liked-list-${title.id}`"
                       :title="title.title"
                       :poster-path="title.poster_path"
@@ -183,7 +188,12 @@
                   v-else-if="seenTitles.length > 0"
                   class="flex flex-col gap-4"
                 >
-                  <div class="flex justify-end">
+                  <div class="flex justify-end items-center gap-2">
+                    <SortSelector
+                      :current-sort="currentSort"
+                      page-key="lists"
+                      @update:sort="setSort"
+                    />
                     <ViewModeSelector page-key="lists" />
                   </div>
                   <!-- Mosaic view -->
@@ -192,7 +202,7 @@
                     class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
                   >
                     <TitleCardMosaic
-                      v-for="title in seenTitles"
+                      v-for="title in sortedSeenTitles"
                       :key="title.id"
                       :title="title.title"
                       :poster-path="title.poster_path"
@@ -256,7 +266,7 @@
                   <!-- List view -->
                   <div v-else class="space-y-4">
                     <TitleListItem
-                      v-for="title in seenTitles"
+                      v-for="title in sortedSeenTitles"
                       :key="`seen-list-${title.id}`"
                       :title="title.title"
                       :poster-path="title.poster_path"
@@ -346,7 +356,12 @@
                   v-else-if="notInterestedTitles.length > 0"
                   class="flex flex-col gap-4"
                 >
-                  <div class="flex justify-end">
+                  <div class="flex justify-end items-center gap-2">
+                    <SortSelector
+                      :current-sort="currentSort"
+                      page-key="lists"
+                      @update:sort="setSort"
+                    />
                     <ViewModeSelector page-key="lists" />
                   </div>
                   <!-- Mosaic view -->
@@ -355,7 +370,7 @@
                     class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
                   >
                     <TitleCardMosaic
-                      v-for="title in notInterestedTitles"
+                      v-for="title in sortedNotInterestedTitles"
                       :key="title.id"
                       :title="title.title"
                       :poster-path="title.poster_path"
@@ -397,7 +412,7 @@
                   <!-- List view -->
                   <div v-else class="space-y-4">
                     <TitleListItem
-                      v-for="title in notInterestedTitles"
+                      v-for="title in sortedNotInterestedTitles"
                       :key="`not-interested-list-${title.id}`"
                       :title="title.title"
                       :poster-path="title.poster_path"
@@ -480,6 +495,8 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
+import SortSelector from '@/components/SortSelector.vue';
+import { useSort } from '@/composables/useSort';
 import { useUserStore } from '@/stores/user';
 import { TITLE_STATUS } from '@/constants/domain/titleStatus';
 import Button from '@/components/ui/Button.vue';
@@ -615,6 +632,7 @@ const likedTitles = ref<
       logo_path: string | null;
     }>;
     tmdb_id: number;
+    created_at: string;
   }>
 >([]);
 const seenTitles = ref<
@@ -633,6 +651,7 @@ const seenTitles = ref<
     }>;
     tmdb_id: number;
     liked?: boolean;
+    created_at: string;
   }>
 >([]);
 const notInterestedTitles = ref<
@@ -650,6 +669,7 @@ const notInterestedTitles = ref<
       logo_path: string | null;
     }>;
     tmdb_id: number;
+    created_at: string;
   }>
 >([]);
 const watchlistTitles = ref<
@@ -668,6 +688,22 @@ const userId = computed(() => {
 
 // Get routeWithLang for building language-prefixed links
 const { routeWithLang } = useRouteWithLang();
+
+// Sort for lists (shared across all tabs)
+const { currentSort, setSort, sortItems } = useSort('lists', 'name-asc');
+
+// Computed sorted arrays for each tab
+const sortedLikedTitles = computed(() => {
+  return sortItems(likedTitles.value);
+});
+
+const sortedSeenTitles = computed(() => {
+  return sortItems(seenTitles.value);
+});
+
+const sortedNotInterestedTitles = computed(() => {
+  return sortItems(notInterestedTitles.value);
+});
 
 // Helper function to generate link with language prefix
 const getTitleLink = (
@@ -927,6 +963,7 @@ const fetchLikedTitles = async () => {
           vote_average: title.vote_average || null,
           providers: [],
           tmdb_id: title.tmdb_id,
+          created_at: (status as { created_at?: string }).created_at || new Date().toISOString(),
         };
       })
       .filter((t): t is NonNullable<typeof t> => t !== null);
@@ -982,6 +1019,7 @@ const fetchSeenTitles = async () => {
           providers: [],
           tmdb_id: title.tmdb_id,
           liked: isLiked,
+          created_at: (status as { created_at?: string }).created_at || new Date().toISOString(),
         };
       })
       .filter((t): t is NonNullable<typeof t> => t !== null);
@@ -1037,6 +1075,7 @@ const fetchNotInterestedTitles = async () => {
           vote_average: title.vote_average || null,
           providers: [],
           tmdb_id: title.tmdb_id,
+          created_at: (status as { created_at?: string }).created_at || new Date().toISOString(),
         };
       })
       .filter((t): t is NonNullable<typeof t> => t !== null);

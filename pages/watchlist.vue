@@ -13,10 +13,17 @@
               {{ $t('watchlist.description') }}
             </p>
           </div>
-          <ViewModeSelector
+          <div
             v-if="watchlistTitles.length > 0"
-            page-key="watchlist"
-          />
+            class="flex items-center gap-2"
+          >
+            <SortSelector
+              :current-sort="currentSort"
+              page-key="watchlist"
+              @update:sort="setSort"
+            />
+            <ViewModeSelector page-key="watchlist" />
+          </div>
         </div>
 
         <!-- Show loading while checking profile -->
@@ -73,7 +80,7 @@
               class="watchlist-grid grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
             >
               <TitleCardMosaic
-                v-for="title in watchlistTitles"
+                v-for="title in sortedTitles"
                 :key="`watchlist-${title.tmdb_id}`"
                 :title="title.title"
                 :poster-path="title.poster_path"
@@ -114,7 +121,7 @@
             <!-- List view -->
             <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <TitleListItem
-                v-for="title in watchlistTitles"
+                v-for="title in sortedTitles"
                 :key="`watchlist-list-${title.tmdb_id}`"
                 :title="title.title"
                 :poster-path="title.poster_path"
@@ -172,6 +179,8 @@ import { useLogger } from '@/composables/useLogger';
 import SkeletonListItem from '@/components/SkeletonListItem.vue';
 import { useViewMode } from '@/composables/useViewMode';
 import { VIEW_MODE } from '@/constants/domain/viewMode';
+import SortSelector from '@/components/SortSelector.vue';
+import { useSort } from '@/composables/useSort';
 
 const { t, locale } = useI18n();
 
@@ -227,11 +236,18 @@ type WatchlistResponseItem = {
 const isLoading = ref(true);
 const watchlistTitles = ref<WatchlistTitle[]>([]);
 const isRemoving = ref(false);
+
+// Computed sorted titles
+const sortedTitles = computed(() => {
+  return sortItems(watchlistTitles.value);
+});
 const { executeAction } = useTitleStatusAction();
 const { showToast } = useUndoToast();
 const { routeWithLang } = useRouteWithLang();
 // View mode for watchlist
 const { viewMode } = useViewMode('watchlist');
+// Sort for watchlist
+const { currentSort, setSort, sortItems } = useSort('watchlist', 'name-asc');
 // Profile ready flag - controls main render, separate from isLoading
 const isProfileReady = ref(false);
 
@@ -257,7 +273,7 @@ const fetchWatchlist = async () => {
       }
     );
 
-    watchlistTitles.value = (response.watchlist || []).map((item) => {
+    const mappedTitles = (response.watchlist || []).map((item) => {
       // Log providers for debugging
       if (import.meta.dev && item.providers && item.providers.length > 0) {
         // Development-only logging removed
@@ -274,6 +290,8 @@ const fetchWatchlist = async () => {
         created_at: item.created_at,
       };
     });
+    // Apply sorting
+    watchlistTitles.value = sortItems(mappedTitles);
   } catch (error) {
     const { logError } = useLogger();
     logError('[Watchlist] Error fetching watchlist', error as Error);

@@ -15,6 +15,9 @@
     :tagline="props.title.tagline"
     :providers="props.title.providers"
     :aria-label="$t('media.recommendationLabel', { title: props.title.title })"
+    :is-following="props.title.following || false"
+    :is-liked="props.title.liked || false"
+    :is-in-watchlist="props.title.in_watchlist || false"
   >
     <!-- Top-right: Actions Menu -->
     <template #actions>
@@ -22,10 +25,12 @@
         :status-info="titleStatusInfo"
         :aria-label="$t('media.actionsMenuFor', { title: props.title.title })"
         @mark-seen="handleAction(TITLE_STATUS.SEEN)"
-        @mark-liked="handleAction('liked')"
-        @remove-liked="handleAction('remove-liked')"
+        @mark-liked="handleAction(TITLE_ACTION.LIKED)"
+        @remove-liked="handleAction(TITLE_ACTION.REMOVE_LIKED)"
         @mark-not-interested="handleAction(TITLE_STATUS.NOT_INTERESTED)"
         @mark-watchlist="handleAction(TITLE_STATUS.WATCHLIST)"
+        @follow="handleAction(TITLE_ACTION.FOLLOW)"
+        @unfollow="handleAction(TITLE_ACTION.UNFOLLOW)"
       />
     </template>
 
@@ -44,6 +49,7 @@ import {
   TITLE_STATUS,
   type TitleStatusType,
 } from '@/constants/domain/titleStatus';
+import { TITLE_ACTION, type TitleActionType } from '@/constants/domain/titleActions';
 import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 import type { Recommendation } from '@/types/Recommendation';
 import TitleActionMenu from '@/components/ui/TitleActionMenu.vue';
@@ -61,28 +67,42 @@ const emit = defineEmits<{
   'mark-liked': [title: Recommendation];
   'remove-liked': [title: Recommendation];
   'mark-watchlist': [title: Recommendation];
+  'follow': [title: Recommendation];
+  'unfollow': [title: Recommendation];
 }>();
 
 const { routeWithLang } = useRouteWithLang();
 
-const titleStatusInfo = computed(() => ({
-  isLiked: props.title.liked || false,
-  isSeen: false,
-  isNotInterested: false,
-  isInWatchlist: props.title.in_watchlist || false,
-}));
+const titleStatusInfo = computed(() => {
+  const isFollowing = props.title.following || false;
+  // When following, remove conflicting states (watchlist, not_interested, seen)
+  // This matches the backend behavior where following removes those states
+  return {
+    isLiked: props.title.liked || false,
+    isSeen: false,
+    isNotInterested: false,
+    isInWatchlist: isFollowing ? false : (props.title.in_watchlist || false), // Remove watchlist if following
+    isFollowing,
+    isFullySeen: false, // TODO: Add this from API if needed
+    type: props.title.type === MEDIA_TYPE.MOVIE ? MEDIA_TYPE.MOVIE : MEDIA_TYPE.TV,
+  };
+});
 
-const handleAction = (action: TitleStatusType | 'liked' | 'remove-liked') => {
+const handleAction = (action: TitleStatusType | TitleActionType) => {
   if (action === TITLE_STATUS.SEEN) {
     emit('mark-seen', props.title);
-  } else if (action === 'liked') {
+  } else if (action === TITLE_ACTION.LIKED) {
     emit('mark-liked', props.title);
-  } else if (action === 'remove-liked') {
+  } else if (action === TITLE_ACTION.REMOVE_LIKED) {
     emit('remove-liked', props.title);
   } else if (action === TITLE_STATUS.NOT_INTERESTED) {
     emit('mark-not-interested', props.title);
   } else if (action === TITLE_STATUS.WATCHLIST) {
     emit('mark-watchlist', props.title);
+  } else if (action === TITLE_ACTION.FOLLOW) {
+    emit('follow', props.title);
+  } else if (action === TITLE_ACTION.UNFOLLOW) {
+    emit('unfollow', props.title);
   }
 };
 

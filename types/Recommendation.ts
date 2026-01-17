@@ -21,6 +21,7 @@ export type Recommendation = {
   providers?: Provider[];
   in_watchlist?: boolean; // Indicates if title is in user's watchlist
   liked?: boolean; // Indicates if title is in user's liked titles
+  following?: boolean; // Indicates if TV series is being followed
 };
 
 // Single array of recommendations - no more separate lists

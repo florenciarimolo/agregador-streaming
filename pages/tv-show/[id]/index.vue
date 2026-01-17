@@ -70,6 +70,11 @@
                 "
                 :hide-type-badge="true"
                 :truncate-overview="true"
+                :show-season-seen-button="hasSession"
+                :is-season-seen="isSeasonFullySeen(season.season_number, season.episode_count || 0)"
+                :season-number="season.season_number"
+                @season-seen-mark="handleMarkSeasonSeen(season.season_number)"
+                @season-seen-unmark="handleUnmarkSeason(season.season_number)"
               >
                 <template #actions>
                   <!-- Additional season info: Date and Episode count -->
@@ -103,6 +108,25 @@
                         )
                       }}</span>
                     </div>
+                    <!-- Episodes seen count (only for logged users) -->
+                    <div
+                      v-if="hasSession && seenEpisodesCountBySeason[season.season_number] !== undefined"
+                      class="flex items-center gap-2 dark:text-gray-300 text-gray-800 text-xs"
+                    >
+                      <IconEye
+                        icon-class="w-3 h-3 text-primary-600 dark:text-primary-400"
+                      />
+                      <span>{{
+                        $t(
+                          seenEpisodesCountBySeason[season.season_number] === 1
+                            ? 'episodes.episodesSeenCount_one'
+                            : 'episodes.episodesSeenCount_other',
+                          {
+                            count: seenEpisodesCountBySeason[season.season_number],
+                          }
+                        )
+                      }}</span>
+                    </div>
                   </div>
                 </template>
               </ListItemBase>
@@ -129,8 +153,14 @@ import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 import type { Media } from '@/types/Media';
 import IconCalendar from '@/components/icons/IconCalendar.vue';
 import IconEpisodes from '@/components/icons/IconEpisodes.vue';
+import IconEye from '@/components/icons/IconEye.vue';
 import Badge from '@/components/Badge.vue';
 import ListItemBase from '@/components/ListItemBase.vue';
+import Tooltip from '@/components/ui/Tooltip.vue';
+import { useEpisodeStatus } from '@/composables/useEpisodeStatus';
+import { useSupabaseUser } from '#imports';
+import { getSession } from '@/services/auth';
+import { useLogger } from '@/composables/useLogger';
 import { useTVShowSchema } from '@/composables/useSchemaOrg';
 import { getTVShowSeoExperience } from '@/composables/useSeoExperience';
 import { useTVShowKeywords } from '@/composables/useSeoKeywords';
@@ -143,11 +173,23 @@ const route = useRoute();
 const { getUserRegion } = useUserRegion();
 const userRegion = ref<string | null>(null);
 const { lang } = useRouteWithLang();
+const user = useSupabaseUser();
+const hasSession = computed(() => !!user.value);
+const { logError } = useLogger();
 
 // Get current language URL code for API calls
 const currentLangUrlCode = computed(() => lang.value);
 
 const tvShowId = route.params.id;
+const tmdbSeriesId = computed(() => parseInt(String(tvShowId), 10));
+
+// Episode status management
+const {
+  fetchEpisodeStatuses,
+  isEpisodeSeen,
+  markSeasonSeen,
+  unmarkSeason,
+} = useEpisodeStatus(tmdbSeriesId);
 
 const {
   data: tvShowDetails,
@@ -332,10 +374,80 @@ useSeoMeta({
   robots: 'index, follow',
 });
 
+// Calculate seen episodes count for all seasons
+const seenEpisodesCountBySeason = computed(() => {
+  const counts: Record<number, number> = {};
+  if (!tvShowWithProviders.value?.seasons) return counts;
+  
+  tvShowWithProviders.value.seasons.forEach((season) => {
+    if (!season.episode_count) {
+      counts[season.season_number] = 0;
+      return;
+    }
+    
+    // Count seen episodes in this season
+    let seenCount = 0;
+    for (let episodeNumber = 1; episodeNumber <= season.episode_count; episodeNumber++) {
+      if (isEpisodeSeen(season.season_number, episodeNumber)) {
+        seenCount++;
+      }
+    }
+    counts[season.season_number] = seenCount;
+  });
+  
+  return counts;
+});
+
+// Check if a season is fully seen (all episodes seen)
+const isSeasonFullySeen = (seasonNumber: number, episodeCount: number) => {
+  if (!episodeCount || episodeCount === 0) return false;
+  
+  for (let episodeNumber = 1; episodeNumber <= episodeCount; episodeNumber++) {
+    if (!isEpisodeSeen(seasonNumber, episodeNumber)) {
+      return false;
+    }
+  }
+  
+  return true;
+};
+
+// Handlers for season seen actions
+const handleMarkSeasonSeen = async (seasonNumber: number) => {
+  try {
+    await markSeasonSeen(seasonNumber);
+    await fetchEpisodeStatuses();
+  } catch (error) {
+    logError('[TV Show Detail] Error marking season as seen', error as Error, {
+      seasonNumber,
+      tmdbSeriesId: tmdbSeriesId.value,
+    });
+  }
+};
+
+const handleUnmarkSeason = async (seasonNumber: number) => {
+  try {
+    await unmarkSeason(seasonNumber);
+    await fetchEpisodeStatuses();
+  } catch (error) {
+    logError('[TV Show Detail] Error unmarking season', error as Error, {
+      seasonNumber,
+      tmdbSeriesId: tmdbSeriesId.value,
+    });
+  }
+};
+
 // Save the previous route when mounting
 onMounted(async () => {
   // Get user region for date formatting
   userRegion.value = await getUserRegion();
+  
+  // Fetch episode statuses if user is authenticated
+  const {
+    data: { session },
+  } = await getSession();
+  if (session?.access_token) {
+    await fetchEpisodeStatuses();
+  }
   if (import.meta.client) {
     const referrer = document.referrer;
     const currentOrigin = window.location.origin;

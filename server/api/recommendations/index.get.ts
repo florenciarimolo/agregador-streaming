@@ -21,6 +21,7 @@ import { TABLES } from '@/constants/db/tables';
 import {
   USER_PREFERENCES_COLUMNS,
   USER_TITLE_STATUS_COLUMNS,
+  USER_TITLE_FOLLOWING_COLUMNS,
 } from '@/constants/db/columns';
 import { calculateAnimationBias } from '@/services/animationBias';
 import { MEDIA_TYPE } from '@/constants/domain/mediaType';
@@ -371,46 +372,45 @@ export default defineEventHandler(async (event) => {
               explanation,
               explanation_code: explanationCode,
               providers: [], // Providers are fetched separately, not part of TitleData
-              in_watchlist: false, // Will be set below if needed
-              liked: false, // Will be set below if needed
+              following: false, // Will be set below if needed
             };
           }
         );
 
-        // Set watchlist and liked status
-        const recommendationTmdbIds = new Set(
-          recommendations.map((r) => r.tmdb_id)
-        );
-        const { data: statusData } = await supabase
-          .from(TABLES.USER_TITLE_STATUS)
-          .select(
-            `${USER_TITLE_STATUS_COLUMNS.TMDB_ID}, ${USER_TITLE_STATUS_COLUMNS.STATUS}, ${USER_TITLE_STATUS_COLUMNS.LIKED}`
-          )
-          .eq(USER_TITLE_STATUS_COLUMNS.USER_ID, userId)
-          .in(
-            USER_TITLE_STATUS_COLUMNS.TMDB_ID,
-            Array.from(recommendationTmdbIds)
-          );
+        // Note: We only fetch following status for recommendations
+        // Other statuses (liked, watchlist, seen, not_interested) are not needed on home page
 
-        if (statusData) {
-          const statusMap = new Map<
-            number,
-            { status: string; liked: boolean }
-          >();
-          statusData.forEach((status) => {
-            statusMap.set(status.tmdb_id, {
-              status: status.status,
-              liked: status.liked || false,
+        // Set following status (only for TV series)
+        // IMPORTANT: Following removes watchlist, not_interested, and seen from user_title_status
+        // So we need to set following first, then clear conflicting states
+        const tvSeriesIds = recommendations
+          .filter((r) => r.type === MEDIA_TYPE.TV)
+          .map((r) => r.tmdb_id);
+
+        if (tvSeriesIds.length > 0) {
+          const { data: followingData, error: followingError } = await supabase
+            .from(TABLES.USER_TITLE_FOLLOWING)
+            .select(USER_TITLE_FOLLOWING_COLUMNS.TMDB_ID)
+            .eq(USER_TITLE_FOLLOWING_COLUMNS.USER_ID, userId)
+            .in(USER_TITLE_FOLLOWING_COLUMNS.TMDB_ID, tvSeriesIds);
+
+          if (followingError) {
+            safeError('[Recommendations] Error fetching following status', followingError);
+          }
+
+          if (followingData) {
+            const followingSet = new Set(
+              followingData.map((f) => f.tmdb_id)
+            );
+            recommendations.forEach((rec) => {
+              if (rec.type === MEDIA_TYPE.TV && followingSet.has(rec.tmdb_id)) {
+                rec.following = true;
+                // When following, remove conflicting states (watchlist, not_interested, seen)
+                // This matches the backend behavior where following removes those states
+                rec.in_watchlist = false;
+              }
             });
-          });
-
-          recommendations.forEach((rec) => {
-            const status = statusMap.get(rec.tmdb_id);
-            if (status) {
-              rec.in_watchlist = status.status === TITLE_STATUS.WATCHLIST;
-              rec.liked = status.liked;
-            }
-          });
+          }
         }
 
         // Update last_shown_at for all recommendations
@@ -880,10 +880,41 @@ export default defineEventHandler(async (event) => {
           explanation,
           explanation_code: explanationCodeToUse,
           providers,
-          in_watchlist: false, // Watchlist titles are excluded, so this is always false
+          following: false, // Will be set below if needed
         });
 
         tmdbIdsToTrack.push(entry.tmdb_id);
+      }
+
+      // Note: We only fetch following status for recommendations
+      // Other statuses (liked, watchlist, seen, not_interested) are not needed on home page
+
+      // Set following status (only for TV series)
+      const tvSeriesIds = recommendations
+        .filter((r) => r.type === MEDIA_TYPE.TV)
+        .map((r) => r.tmdb_id);
+
+      if (tvSeriesIds.length > 0) {
+        const { data: followingData, error: followingError } = await supabase
+          .from(TABLES.USER_TITLE_FOLLOWING)
+          .select(USER_TITLE_FOLLOWING_COLUMNS.TMDB_ID)
+          .eq(USER_TITLE_FOLLOWING_COLUMNS.USER_ID, userId)
+          .in(USER_TITLE_FOLLOWING_COLUMNS.TMDB_ID, tvSeriesIds);
+
+        if (followingError) {
+          safeError('[Recommendations] Error fetching following status', followingError);
+        }
+
+        if (followingData) {
+          const followingSet = new Set(
+            followingData.map((f) => f.tmdb_id)
+          );
+          recommendations.forEach((rec) => {
+            if (rec.type === MEDIA_TYPE.TV && followingSet.has(rec.tmdb_id)) {
+              rec.following = true;
+            }
+          });
+        }
       }
 
       // Track that these recommendations were shown

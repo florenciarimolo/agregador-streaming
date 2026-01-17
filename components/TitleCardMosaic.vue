@@ -12,6 +12,9 @@
     :is-discover-list="isDiscoverList"
     :aria-label="ariaLabel"
     :has-top-left-content="!!voteAverage"
+    :is-following="isFollowing"
+    :is-liked="isLiked"
+    :is-in-watchlist="isInWatchlist"
   >
     <!-- Top-left: Rating Badge -->
     <template #top-left-badges>
@@ -92,6 +95,9 @@ interface Props {
   tag?: string | null;
   isDiscoverList?: boolean;
   ariaLabel?: string;
+  isFollowing?: boolean;
+  isLiked?: boolean;
+  isInWatchlist?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -108,6 +114,9 @@ const props = withDefaults(defineProps<Props>(), {
   tag: null,
   isDiscoverList: false,
   ariaLabel: undefined,
+  isFollowing: false,
+  isLiked: false,
+  isInWatchlist: false,
 });
 
 // Fetch tagline from TMDB if missing (only if type and tmdbId are provided)

@@ -326,6 +326,128 @@ This is a product decision to maintain data consistency and avoid orphaned state
 
 ---
 
+## Following Feature
+
+### Concept
+
+**Following** is an **interest signal**, separate from consumption states. It allows users to track TV series they're interested in without marking them as consumed.
+
+### Core Principles
+
+1. **Following is NOT a consumption state**
+   - Following does not indicate the user has watched the series
+   - Following is stored in `user_title_following`, NOT in `user_title_status`
+
+2. **Following does NOT exclude from recommendations**
+   - Followed series remain eligible for recommendations
+   - This distinguishes following from `watchlist` and `seen`
+
+3. **Following conflicts with consumption/negative states**
+   - When following a series, the system removes `not_interested`, `watchlist`, and `seen` from `user_title_status`
+   - Following cannot coexist with these states
+
+4. **Episode/season tracking is separate**
+   - Users can mark episodes and seasons as seen independently
+   - Episode/season seen does NOT exclude from recommendations
+   - Only fully seen series (all episodes in all seasons) are excluded
+
+### Following Behavior
+
+#### Mark Series as Following
+
+- Inserts record into `user_title_following`
+- Removes `not_interested`, `watchlist`, and `seen` from `user_title_status`
+- Does NOT touch `user_episode_status` (episode-level seen data is preserved)
+- Does NOT exclude from recommendation pool
+- Applies following scoring: `preference_score += +5`
+- Propagates influence to similar titles:
+  - ≥2 shared genres: +4
+  - 1 shared genre: +2
+
+#### Unfollow Series
+
+- Removes from `user_title_following`
+- Reverts only the following impact (scoring and propagation)
+- Does NOT create other states
+- Does NOT touch `user_episode_status`
+
+### Episode & Season Tracking
+
+#### Mark Episode as Seen
+
+- Inserts into `user_episode_status` with `seen: true`
+- If series is not followed, automatically adds following
+- Does NOT exclude from recommendations
+- Only applies following scoring once (if following was just added)
+
+#### Mark Season as Seen
+
+- Marks all episodes in that season as seen
+- Auto-adds following if missing (only if series is NOT fully seen)
+- Does NOT mark series as seen
+- Does NOT exclude from recommendations
+
+#### Mark Series as Seen (Fully)
+
+- Marks all episodes of all seasons as seen
+- Checks TV show status:
+  - If show is still ongoing (status is NOT "Ended" or "Canceled"):
+    - Removes following (series cannot be followed if fully seen)
+  - If show is ended/cancelled (status is "Ended" or "Canceled"):
+    - Keeps following (does NOT unfollow)
+- Creates `user_title_status = seen`
+- Excludes from recommendation pool
+
+#### Unmarking Seen
+
+- **Unmarking an episode**: Removes only that episode
+- **Unmarking a season**: Removes all episodes in that season (requires confirmation modal)
+- **Unmarking a series**: Removes all episodes and seen status
+- **Important**: Series does NOT auto-follow after unmarking (explicit UX constraint)
+
+### Series Fully Seen Check
+
+A series is considered fully seen when:
+- All episodes in all seasons are marked as seen
+- Uses cached `episode_count` from `seasons` table (NO live TMDB calls)
+- Calculated ONLY when episode status changes
+- When fully seen:
+  - Creates `user_title_status = seen`
+  - Checks TV show status from `titles.status`:
+    - If show is still ongoing (status is NOT "Ended" or "Canceled"):
+      - Automatically unfollows the series (removes from `user_title_following`)
+      - Reverts following scoring and propagation
+    - If show is ended/cancelled (status is "Ended" or "Canceled"):
+      - Keeps following (does NOT unfollow)
+  - Excludes from recommendation pool
+
+### Recommendation Pool Exclusion Rules
+
+**Excluded from recommendations:**
+- `user_title_status = seen` (fully seen series)
+- `user_title_status = watchlist`
+- `user_title_status = not_interested`
+
+**NOT excluded from recommendations:**
+- `user_title_following` (following)
+- `user_episode_status` (episode/season seen, but not fully seen series)
+
+### UX Constraints
+
+1. **Fully seen series cannot be followed**
+   - Follow button must be hidden or disabled when series is fully seen
+   - Check uses cached `episode_count` from `seasons` table
+
+2. **Unmarking episodes does NOT auto-follow**
+   - Explicit constraint: unmarking seen episodes does not automatically re-add following
+   - User must explicitly follow again if desired
+
+3. **Auto-follow on episode/season seen**
+   - Marking any episode or season as seen automatically adds following (if not already following and series is not fully seen)
+   - This happens silently in the background
+
+---
+
 ## Scoring System
 
 ### Principle
@@ -438,6 +560,25 @@ After calculating base `final_score`, apply runtime adjustments in this order:
 - Propagate penalty to similar titles
 - Remove from pool
 - Recalculate `score = base_score + preference_score`
+
+#### FOLLOW Action (TV Series Only)
+
+- Increment `preference_score` by +5 (base increment)
+- Propagate influence to similar titles (by shared genres):
+  - ≥2 shared genres: +4 (strong influence)
+  - 1 shared genre: +2 (moderate influence)
+- Recalculate `score = base_score + preference_score`
+- **Important**: Following scoring is applied inline in API endpoints (NO Edge Functions)
+- **Important**: Following does NOT exclude from recommendations
+
+#### UNFOLLOW Action
+
+- Revert base increment: `preference_score -= 5`
+- Revert propagation to similar titles:
+  - ≥2 shared genres: -4
+  - 1 shared genre: -2
+- Recalculate `score = base_score + preference_score`
+- **Important**: Only reverts following impact, does NOT create other states
 
 ### Similarity Propagation
 
@@ -741,6 +882,8 @@ The `preference_score` is updated when the user:
 - Marks a title as `liked` → Increment `preference_score`, propagate to similar titles
 - Removes a like → Apply decay (`preference_score *= 0.7`), propagate decay
 - Marks a title as `not_interested` → Apply penalty, propagate, remove from pool
+- Follows a TV series → Increment `preference_score` by +5, propagate to similar titles (+4 for ≥2 genres, +2 for 1 genre)
+- Unfollows a TV series → Revert following impact (-5 base, -4/-2 propagation)
 
 **Process:**
 
@@ -755,9 +898,18 @@ The `preference_score` is updated when the user:
 
 A title is removed from the pool when:
 
-- It is marked as `not_interested`
-- The user has already watched it (`seen`)
+- It is marked as `not_interested` (`user_title_status = not_interested`)
+- It is marked as `seen` (`user_title_status = seen`)
+  - For TV series: Only when fully seen (all episodes in all seasons are seen)
+  - Episode/season seen alone does NOT exclude from pool
+- It is added to `watchlist` (`user_title_status = watchlist`)
 - The pool is manually regenerated (when preferences change)
+
+**Titles that remain in the pool:**
+
+- Titles with `user_title_following` (following does NOT exclude)
+- Titles with `user_episode_status` but NOT fully seen (episode/season seen does NOT exclude)
+- Titles with no status in `user_title_status`
 
 ### Neutral Exploration Mode
 
@@ -814,8 +966,13 @@ The recommendation list must always maintain exactly 20 visible recommendations.
 
 2. **Titles that disappear from recommendations:**
    - Titles marked as `seen` (with or without `liked`)
+     - For TV series: Only when fully seen (all episodes in all seasons)
    - Titles marked as `not_interested`
    - Titles added to `watchlist` (also disappear from recommendations)
+
+3. **Titles that remain in recommendations:**
+   - Titles being followed (`user_title_following`)
+   - Titles with episode/season seen but NOT fully seen (`user_episode_status` without `user_title_status = seen`)
 
 3. **Replacement logic - No filters active:**
    - **Mode**: Exploration mode
@@ -849,6 +1006,7 @@ The recommendation list must always maintain exactly 20 visible recommendations.
      - `attention`: Current attention filter (if any)
   3. The replacement endpoint:
      - Excludes the removed title and all other excluded titles (seen, not_interested, watchlist)
+     - Does NOT exclude following or episode/season seen (unless series is fully seen)
      - Uses existing ranking (`score = base_score + preference_score`) as base
      - Calculates `final_score` with `recency_weight` (NO `animation_bias` in replacement)
      - Applies genre/provider filters (best-effort)
@@ -1012,7 +1170,7 @@ Stores TV show season information.
 
 ### Table: `user_title_status`
 
-Stores title states for each user.
+Stores title states for each user (consumption and negative states).
 
 **Fields:**
 
@@ -1034,6 +1192,63 @@ Stores title states for each user.
 
 - `idx_user_title_status_user_id` on `user_id`
 - `idx_user_title_status_tmdb_id` on `tmdb_id`
+
+**Important**: For TV series, `status = 'seen'` is only created when the series is fully seen (all episodes in all seasons). Episode/season seen alone does NOT create this status.
+
+### Table: `user_title_following`
+
+Stores TV series the user is following (interest signal, separate from consumption states).
+
+**Fields:**
+
+- `id`: UUID PRIMARY KEY - Internal ID (auto-generated)
+- `user_id`: UUID NOT NULL - User UUID (references `profiles.id` ON DELETE CASCADE)
+- `tmdb_id`: INTEGER NOT NULL - TV series TMDB ID
+- `type`: TEXT CHECK (type IN ('movie', 'tv')) NOT NULL - Content type (currently only 'tv')
+- `created_at`: TIMESTAMP WITH TIME ZONE - Creation timestamp (auto-set)
+
+**Constraints:**
+
+- `UNIQUE(user_id, tmdb_id)`: A user can only follow a title once
+- Foreign key to `profiles(id)` with CASCADE delete
+- Following conflicts with all consumption/negative states (removed when following is added)
+
+**Indexes:**
+
+- `idx_user_title_following_user_id` on `user_id`
+- `idx_user_title_following_tmdb_id` on `tmdb_id`
+
+**Important**: Following does NOT exclude titles from recommendations. Only fully seen series cannot be followed.
+
+### Table: `user_episode_status`
+
+Stores episode-level and season-level seen status for TV series.
+
+**Fields:**
+
+- `id`: UUID PRIMARY KEY - Internal ID (auto-generated)
+- `user_id`: UUID NOT NULL - User UUID (references `profiles.id` ON DELETE CASCADE)
+- `tmdb_series_id`: INTEGER NOT NULL - TV series TMDB ID
+- `season_number`: INTEGER NOT NULL - Season number
+- `episode_number`: INTEGER NOT NULL - Episode number within season
+- `seen`: BOOLEAN DEFAULT TRUE NOT NULL - Whether the episode is seen
+- `created_at`: TIMESTAMP WITH TIME ZONE - Creation timestamp (auto-set)
+
+**Constraints:**
+
+- `UNIQUE(user_id, tmdb_series_id, season_number, episode_number)`: One status per user/episode
+- Foreign key to `profiles(id)` with CASCADE delete
+
+**Indexes:**
+
+- `idx_user_episode_status_user_id` on `user_id`
+- `idx_user_episode_status_series_id` on `tmdb_series_id`
+- `idx_user_episode_status_user_series` on `(user_id, tmdb_series_id)`
+
+**Important**: 
+- Episode/season seen does NOT exclude titles from recommendations
+- Only fully seen series (all episodes in all seasons) are excluded
+- Series fully seen check uses cached `episode_count` from `seasons` table (NO live TMDB calls)
 
 ### Table: `recommendation_pool`
 
@@ -1228,6 +1443,8 @@ Stores user activity tracking for analytics and debugging.
 
 **IMPORTANT**: 
 - Marking/unmarking titles as "liked" does NOT regenerate the pool. Only `preference_score` is adjusted.
+- Following/unfollowing TV series does NOT regenerate the pool. Only `preference_score` is adjusted (inline, no Edge Functions).
+- Marking episodes/seasons as seen does NOT regenerate the pool. Only affects episode tracking and may auto-add following.
 - Changing **language** does NOT regenerate the pool. Only affects metadata display.
 - Changing **genres** or **providers** does NOT regenerate the pool. They are only runtime filters.
 
@@ -1304,24 +1521,147 @@ Stores user activity tracking for analytics and debugging.
 7. Backend does `upsert` in `user_title_status`
 8. Frontend shows toast with "Undo" option
 
+### Flow: Follow TV Series
+
+1. User clicks "Follow" on a TV series
+2. Frontend calls `POST /api/users/following` with `tmdb_id` and `type: 'tv'`
+3. Backend checks if series is fully seen (cannot follow fully seen series)
+4. Backend removes conflicting states: `not_interested`, `watchlist`, `seen` from `user_title_status`
+5. Backend inserts record into `user_title_following`
+6. Backend applies following scoring inline: `preference_score += +5`
+7. Backend propagates influence to similar titles: +4 (≥2 genres), +2 (1 genre)
+8. Backend updates `score = base_score + preference_score` in recommendation pool
+9. Frontend shows success toast
+10. **Important**: Series remains in recommendations (following does NOT exclude)
+
+### Flow: Unfollow TV Series
+
+1. User clicks "Unfollow" on a followed series
+2. Frontend calls `DELETE /api/users/following?tmdb_id=X`
+3. Backend deletes record from `user_title_following`
+4. Backend reverts following scoring: `preference_score -= 5`
+5. Backend reverts propagation: -4 (≥2 genres), -2 (1 genre)
+6. Backend updates `score = base_score + preference_score` in recommendation pool
+7. Frontend shows success toast with "Undo" option
+8. **Important**: Does NOT create other states, only reverts following impact
+
+### Flow: Mark Episode as Seen
+
+1. User clicks episode seen button
+2. Frontend calls `POST /api/users/episode-status` with `tmdb_series_id`, `season_number`, `episode_number`
+3. Backend inserts/updates `user_episode_status` with `seen: true`
+4. Backend checks if series is now fully seen (using cached `episode_count`)
+5. If fully seen:
+   - Backend checks TV show status from `titles.status`
+   - If show is still ongoing (status is NOT "Ended" or "Canceled"):
+     - Automatically unfollows the series (removes from `user_title_following`)
+     - Reverts following scoring: `preference_score -= 5`
+     - Reverts propagation: -4 (≥2 genres), -2 (1 genre)
+   - If show is ended/cancelled (status is "Ended" or "Canceled"):
+     - Keeps following (does NOT unfollow)
+   - Creates `user_title_status = seen`
+   - Excludes from recommendation pool
+6. If NOT fully seen:
+   - Backend checks if series is already followed
+   - If not followed:
+     - Auto-adds following silently
+     - Applies following scoring: `preference_score += +5`
+     - Propagates influence: +4 (≥2 genres), +2 (1 genre)
+7. Frontend updates UI to show episode as seen
+8. **Important**: Episode/season seen does NOT exclude from recommendations (unless series is fully seen)
+
+### Flow: Mark Season as Seen
+
+1. User clicks season seen button
+2. Frontend calls `POST /api/users/season-status` with `tmdb_series_id`, `season_number`
+3. Backend marks all episodes in season as seen (uses cached `episode_count`)
+4. Backend checks if series is now fully seen (using cached `episode_count`)
+5. If fully seen:
+   - Backend checks TV show status from `titles.status`
+   - If show is still ongoing (status is NOT "Ended" or "Canceled"):
+     - Automatically unfollows the series (removes from `user_title_following`)
+     - Reverts following scoring: `preference_score -= 5`
+     - Reverts propagation: -4 (≥2 genres), -2 (1 genre)
+   - If show is ended/cancelled (status is "Ended" or "Canceled"):
+     - Keeps following (does NOT unfollow)
+   - Creates `user_title_status = seen`
+   - Excludes from recommendation pool
+6. If NOT fully seen:
+   - Backend checks if series is already followed
+   - If not followed:
+     - Auto-adds following silently
+     - Applies following scoring: `preference_score += +5`
+     - Propagates influence: +4 (≥2 genres), +2 (1 genre)
+7. Frontend updates UI
+8. **Important**: Does NOT mark series as seen unless all seasons are seen
+
+### Flow: Mark Series as Fully Seen
+
+1. User marks entire series as seen
+2. Frontend calls `POST /api/users/series-seen` with `tmdb_series_id`
+3. Backend marks all episodes of all seasons as seen
+4. Backend checks TV show status from `titles.status`
+5. If show is still ongoing (status is NOT "Ended" or "Canceled"):
+   - Backend removes following (series cannot be followed if fully seen)
+   - Backend reverts following scoring if it existed
+6. If show is ended/cancelled (status is "Ended" or "Canceled"):
+   - Backend keeps following (does NOT unfollow)
+7. Backend creates `user_title_status = seen`
+8. Backend removes from recommendation pool
+9. Frontend updates UI
+10. **Important**: Fully seen series are excluded from recommendations
+
 ---
 
 ## Implementation Notes
 
 ### API Endpoints
 
+**Title Status:**
 - `POST /api/users/title-status`: Create or update title state
 - `DELETE /api/users/title-status`: Delete title state
 - `GET /api/users/watchlist`: Get user watchlist
+
+**Following:**
+- `POST /api/users/following`: Follow a TV series
+- `DELETE /api/users/following`: Unfollow a TV series
+- `GET /api/users/following`: Get user's following list
+- `GET /api/users/following/check`: Check if user is following a title
+
+**Episode/Season Status:**
+- `POST /api/users/episode-status`: Mark episode as seen
+- `DELETE /api/users/episode-status`: Unmark episode
+- `GET /api/users/episode-status`: Get episode statuses for a series
+- `POST /api/users/season-status`: Mark season as seen
+- `DELETE /api/users/season-status`: Unmark season
+- `POST /api/users/series-seen`: Mark entire series as seen
+
+**Recommendations:**
 - `GET /api/recommendations`: Get recommendations from pool
 - `POST /api/recommendations/populate-pool`: Regenerate pool
 
 ### Composable Functions
 
+**Title Status:**
 - `useUndoToast()`: Toast handling with undo option
 - `getUserLikedTitle()`: Get if a title is marked as liked
 - `upsertUserTitleStatus()`: Create or update title state
 - `deleteUserTitleStatus()`: Delete title state
+
+**Following:**
+- `useFollowing()`: Reactive following state management
+- `checkFollowing()`: Check if user is following a series
+- `followSeries()`: Follow a TV series
+- `unfollowSeries()`: Unfollow a TV series
+
+**Episode Status:**
+- `useEpisodeStatus()`: Reactive episode/season status management
+- `fetchEpisodeStatuses()`: Get all episode statuses for a series
+- `isEpisodeSeen()`: Check if an episode is seen
+- `markEpisodeSeen()`: Mark episode as seen
+- `unmarkEpisode()`: Unmark episode
+- `markSeasonSeen()`: Mark season as seen
+- `unmarkSeason()`: Unmark season
 
 ### Constants
 
