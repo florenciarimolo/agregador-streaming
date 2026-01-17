@@ -293,6 +293,7 @@ import {
 } from '@/utils/passwordValidation';
 import { useUserStore } from '@/stores/user';
 import Button from '@/components/ui/Button.vue';
+import { useLogger } from '@/composables/useLogger';
 import IconButton from '@/components/ui/IconButton.vue';
 import IconEye from '@/components/icons/IconEye.vue';
 import IconEyeSlash from '@/components/icons/IconEyeSlash.vue';
@@ -405,11 +406,7 @@ onMounted(async () => {
 
       if (!isRecoveryFlow) {
         // No estamos en el flujo de recovery - redirigir a login
-        if (process.env.NODE_ENV === 'development') {
-          console.log(
-            '[Reset Password] No recovery flag found, redirecting to login'
-          );
-        }
+        // Development-only logging removed
         router.replace(routeWithLang('/?auth=login'));
         return;
       }
@@ -420,9 +417,8 @@ onMounted(async () => {
       await supabase.auth.getSession();
 
     if (sessionError) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('[Reset Password] Session error:', sessionError);
-      }
+      const { logError } = useLogger();
+      logError('[ResetPassword] Session error', sessionError as Error);
       error.value = t('media.sessionError');
       codeValidated.value = true;
       return;
@@ -440,25 +436,18 @@ onMounted(async () => {
     // This is the ONLY reliable way to detect recovery
     if (!session.user?.recovery_sent_at) {
       // Not a recovery session - redirect to home
-      if (process.env.NODE_ENV === 'development') {
-        console.log(
-          '[Reset Password] Session is not a recovery session, redirecting to home'
-        );
-      }
+      // Development-only logging removed
       router.replace(routeWithLang('/'));
       return;
     }
 
     // Valid recovery session - show the form
-    if (process.env.NODE_ENV === 'development') {
-      console.log(
-        '[Reset Password] Valid recovery session found, showing form'
-      );
-    }
+    // Development-only logging removed
     codeValidated.value = true;
   } catch (err: unknown) {
     if (process.env.NODE_ENV === 'development') {
-      console.error('[Reset Password] Error:', err);
+      const { logError } = useLogger();
+      logError('[ResetPassword] Error', err as Error);
     }
     error.value = t('media.recoverySessionError');
     codeValidated.value = true;
@@ -487,7 +476,8 @@ const handleResetPassword = async () => {
     });
 
     if (resetError) {
-      console.error('[Server] Reset password error:', resetError);
+      const { logError } = useLogger();
+      logError('[ResetPassword] Reset password error', resetError as Error);
       // Translate error messages to Spanish
       const errorMsg = resetError.message || '';
       if (errorMsg.includes('password')) {
@@ -511,10 +501,10 @@ const handleResetPassword = async () => {
     if (signOutError) {
       // Log the error but don't fail the password reset
       // The password was already changed successfully
-      console.warn(
-        '[Reset Password] Error signing out from all sessions:',
-        signOutError
-      );
+      const { logWarn } = useLogger();
+      logWarn('[ResetPassword] Error signing out from all sessions', {
+        error: signOutError.message || 'Unknown error',
+      });
       // Continue with the flow even if signOut fails
     }
 
@@ -526,9 +516,10 @@ const handleResetPassword = async () => {
       userStore.reset();
     } catch (error) {
       // If store is not available, continue anyway
-      if (process.env.NODE_ENV === 'development') {
-        console.warn('[reset-password] useUserStore not available:', error);
-      }
+      const { logWarn } = useLogger();
+      logWarn('[ResetPassword] useUserStore not available', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
     }
 
     passwordReset.value = true;
@@ -546,7 +537,8 @@ const handleResetPassword = async () => {
     // Use replace to avoid adding to history
     router.replace(routeWithLang('/?auth=login'));
   } catch (err: unknown) {
-    console.error('[Client] Reset password error:', err);
+    const { logError } = useLogger();
+    logError('[ResetPassword] Client reset password error', err as Error);
     error.value = t('auth.requestError');
   } finally {
     loading.value = false;

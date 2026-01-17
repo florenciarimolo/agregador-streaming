@@ -810,6 +810,7 @@ import { getSession } from '@/services/auth';
 import { useUndoToast } from '@/composables/useUndoToast';
 import { useTitleStatusAction } from '@/composables/useTitleStatusAction';
 import ActionMenu from '@/components/ui/ActionMenu.vue';
+import { useLogger } from '@/composables/useLogger';
 import IconButton from '@/components/ui/IconButton.vue';
 import Button from '@/components/ui/Button.vue';
 import Tooltip from '@/components/ui/Tooltip.vue';
@@ -961,7 +962,15 @@ const fetchTitleStatus = async () => {
         titleStatus.status === TITLE_STATUS.NOT_INTERESTED;
     }
   } catch (error) {
-    console.error('Error fetching title status:', error);
+    const { logError } = useLogger();
+    logError(
+      '[MediaBannerDetail] Error fetching title status',
+      error as Error,
+      {
+        tmdbId: mediaWithProviders.value.id,
+        mediaType: props.mediaType,
+      }
+    );
   }
 };
 
@@ -983,19 +992,13 @@ onMounted(async () => {
       props.mediaType === MEDIA_TYPE.MOVIE ? MEDIA_TYPE.MOVIE : MEDIA_TYPE.TV
     );
     allVideos.value = videos;
-    if (import.meta.dev) {
-      console.log('[MediaBannerDetail] Videos loaded:', {
-        count: videos?.length || 0,
-        allVideos: allVideos.value,
-        trailers: trailers.value,
-        trailersCount: trailers.value?.length || 0,
-        recaps: recaps.value,
-        recapsCount: recaps.value?.length || 0,
-        willShow: !!(trailers.value || recaps.value),
-      });
-    }
+    // Development-only logging removed
   } catch (error) {
-    console.error('[MediaBannerDetail] Error loading videos:', error);
+    const { logError } = useLogger();
+    logError('[MediaBannerDetail] Error loading videos', error as Error, {
+      tmdbId: mediaWithProviders.value.id,
+      mediaType: props.mediaType,
+    });
     allVideos.value = null;
   }
 });
@@ -1020,7 +1023,8 @@ const sectionStyle = computed(() => ({
 // Poster filter style - use computed to avoid hydration mismatch with CSS variables
 // Primary color: #21186E = rgb(33, 24, 110)
 const posterFilterStyle = computed(() => ({
-  filter: 'drop-shadow(0 10px 15px -3px rgb(0 0 0 / 0.1)) drop-shadow(0 4px 6px -4px rgb(0 0 0 / 0.1)) drop-shadow(0 0 20px rgb(33 24 110 / 0.3))',
+  filter:
+    'drop-shadow(0 10px 15px -3px rgb(0 0 0 / 0.1)) drop-shadow(0 4px 6px -4px rgb(0 0 0 / 0.1)) drop-shadow(0 0 20px rgb(33 24 110 / 0.3))',
 }));
 
 // Get unified title status action handler
@@ -1179,13 +1183,10 @@ const handleRemoveLike = async () => {
       return;
     }
 
-    console.log('[UNLIKE DEBUG] Removing like', {
-      tmdb_id: mediaWithProviders.value.id,
-      type: props.mediaType,
-    });
+    // Development-only logging removed
 
     // Remove like (no modal needed - just updates score)
-    const response = await $fetch('/api/users/title-status', {
+    await $fetch('/api/users/title-status', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${session.access_token}`,
@@ -1198,7 +1199,7 @@ const handleRemoveLike = async () => {
       },
     });
 
-    console.log('[UNLIKE DEBUG] Remove like response', { response });
+    // Development-only logging removed
 
     // Note: Title remains as "seen" (not liked), so it should NOT be in recommendations
     // The title was already removed from recommendations when it was marked as "liked"
@@ -1229,7 +1230,11 @@ const handleRemoveLike = async () => {
             isSeen.value = true;
             await fetchTitleStatus();
           } catch (error) {
-            console.error('[MediaBannerDetail] Error undoing:', error);
+            const { logError } = useLogger();
+            logError('[MediaBannerDetail] Error undoing', error as Error, {
+              tmdbId: mediaWithProviders.value.id,
+              action: 'undo-remove-like',
+            });
             await fetchTitleStatus();
           }
         },
@@ -1241,7 +1246,11 @@ const handleRemoveLike = async () => {
     isLiked.value = false;
     await fetchTitleStatus();
   } catch (error) {
-    console.error('[handleRemoveLike] Error:', error);
+    const { logError } = useLogger();
+    logError('[MediaBannerDetail] Error removing like', error as Error, {
+      tmdbId: mediaWithProviders.value.id,
+      mediaType: props.mediaType,
+    });
     showToast(
       t('preferences.errorRemoving', { title: mediaTitle }),
       null,
@@ -1350,7 +1359,11 @@ const handleRemoveFromWatchlist = async () => {
             isInWatchlist.value = true;
             await fetchTitleStatus();
           } catch (error) {
-            console.error('[MediaBannerDetail] Error undoing:', error);
+            const { logError } = useLogger();
+            logError('[MediaBannerDetail] Error undoing', error as Error, {
+              tmdbId: mediaWithProviders.value.id,
+              action: 'undo-remove-like',
+            });
             await fetchTitleStatus();
           }
         },
@@ -1361,7 +1374,15 @@ const handleRemoveFromWatchlist = async () => {
     // Also fetch to ensure consistency
     await fetchTitleStatus();
   } catch (error) {
-    console.error('Error removing from watchlist:', error);
+    const { logError } = useLogger();
+    logError(
+      '[MediaBannerDetail] Error removing from watchlist',
+      error as Error,
+      {
+        tmdbId: mediaWithProviders.value.id,
+        mediaType: props.mediaType,
+      }
+    );
     const mediaTitle =
       mediaWithProviders.value.title ||
       (mediaWithProviders.value as Movie & { name?: string }).name ||

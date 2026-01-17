@@ -5,6 +5,7 @@ import { USER_TITLE_STATUS_COLUMNS } from '@/constants/db/columns';
 import { getUserIdFromEvent } from '@/server/utils/user-auth';
 import { createServerSupabaseClient } from '@/server/utils/supabase';
 import { DEFAULT_LANGUAGE } from '@/constants/languages';
+import { logWarn, logError, devLog } from '@/server/utils/logger';
 
 /**
  * Update user title status (seen, not_interested, or watchlist)
@@ -85,14 +86,12 @@ export default defineEventHandler(async (event) => {
             language: DEFAULT_LANGUAGE, // Default language, will be updated with user preferences later
           },
         });
-      } catch (tmdbError) {
+      } catch {
         // Don't fail if TMDB fetch fails - title might be created later when watchlist is fetched
-        if (process.env.NODE_ENV === 'development') {
-          console.warn(
-            `[Title Status] Could not fetch title ${tmdb_id} from TMDB:`,
-            tmdbError
-          );
-        }
+        logWarn('[Title Status] Could not fetch title from TMDB', {
+          tmdbId: tmdb_id,
+          type,
+        });
       }
     }
 
@@ -134,9 +133,12 @@ export default defineEventHandler(async (event) => {
       });
 
     if (error) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('Error updating user title status:', error);
-      }
+      logError('[Title Status] Error updating user title status', error, {
+        tmdbId: tmdb_id,
+        type,
+        status,
+        userId,
+      });
       throw createError({
         statusCode: 500,
         message: 'Error al actualizar el estado del título',
@@ -169,12 +171,10 @@ export default defineEventHandler(async (event) => {
       };
 
       // Log in development for debugging
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[Title Status] Calling Edge Function:', {
-          url: edgeFunctionUrl,
-          payload: { ...payload, userId: '***' }, // Don't log full userId
-        });
-      }
+      devLog('[Title Status] Calling Edge Function:', {
+        url: edgeFunctionUrl,
+        payload: { ...payload, userId: '***' }, // Don't log full userId
+      });
 
       // Don't await - let it run in background
       fetch(edgeFunctionUrl, {
@@ -186,12 +186,10 @@ export default defineEventHandler(async (event) => {
         body: JSON.stringify(payload),
       })
         .then((response) => {
-          if (process.env.NODE_ENV === 'development') {
-            console.log(
-              '[Title Status] Edge Function response status:',
-              response.status
-            );
-          }
+          devLog(
+            '[Title Status] Edge Function response status:',
+            response.status
+          );
           if (!response.ok) {
             return response.text().then((text) => {
               throw new Error(
@@ -202,13 +200,18 @@ export default defineEventHandler(async (event) => {
         })
         .catch((edgeFunctionError) => {
           // Log error but don't fail the request
-          console.error(
-            '[Title Status] Error calling Edge Function:',
-            edgeFunctionError
+          logError(
+            '[Title Status] Error calling Edge Function',
+            edgeFunctionError,
+            {
+              tmdbId: tmdb_id,
+              type,
+              status,
+            }
           );
         });
     } else {
-      console.warn(
+      logWarn(
         '[Title Status] Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY, skipping Edge Function call',
         {
           hasSupabaseUrl: !!supabaseUrl,

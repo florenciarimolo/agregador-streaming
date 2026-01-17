@@ -88,3 +88,6 @@ supabase/functions/**/*.js
 .supabase
 *.db
 *.db-journal
+
+# Sentry Config File
+.env.sentry-build-plugin

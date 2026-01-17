@@ -145,7 +145,15 @@ export default defineEventHandler(async (event) => {
       .eq(TITLES_COLUMNS.TYPE, type);
 
     if (updateError) {
-      console.error('[update-language] Error updating database:', updateError);
+      const { logError } = await import('@/server/utils/logger');
+      logError(
+        '[UpdateLanguage] Error updating database',
+        updateError as Error,
+        {
+          tmdbId: tmdb_id,
+          type,
+        }
+      );
       throw createError({
         statusCode: 500,
         statusMessage: 'Failed to update title in database',

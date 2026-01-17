@@ -5,6 +5,7 @@ import { TABLES } from '@/constants/db/tables';
 import { USER_PREFERENCES_COLUMNS } from '@/constants/db/columns';
 import { getUserIdFromEvent } from '@/server/utils/user-auth';
 import { createServerSupabaseClient } from '@/server/utils/supabase';
+import { devLog, logError } from '@/server/utils/logger';
 
 export default defineEventHandler(async (event) => {
   try {
@@ -109,12 +110,10 @@ export default defineEventHandler(async (event) => {
       : { user_id: userId, ...preferences };
 
     // Log for debugging
-    if (import.meta.dev) {
-      console.log('[Preferences PUT] Saving preferences:', {
-        userId,
-        allPreferences: mergedPreferences,
-      });
-    }
+    devLog('[Preferences PUT] Saving preferences:', {
+      userId,
+      allPreferences: mergedPreferences,
+    });
 
     const { data, error } = await supabase
       .from(TABLES.USER_PREFERENCES)
@@ -126,7 +125,9 @@ export default defineEventHandler(async (event) => {
       .single();
 
     if (error) {
-      console.error('[Preferences PUT] Error updating preferences:', error);
+      logError('[Preferences PUT] Error updating preferences', error, {
+        userId,
+      });
       throw createError({
         statusCode: 500,
         statusMessage: 'Failed to update preferences',
@@ -134,11 +135,9 @@ export default defineEventHandler(async (event) => {
     }
 
     // Log for debugging
-    if (import.meta.dev) {
-      console.log('[Preferences PUT] Successfully saved:', {
-        preferences: data,
-      });
-    }
+    devLog('[Preferences PUT] Successfully saved:', {
+      preferences: data,
+    });
 
     // Note: Cache invalidation is not needed when language changes because:
     // 1. The titles table stores multi-language JSONB (covers all languages)

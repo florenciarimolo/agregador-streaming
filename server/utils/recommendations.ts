@@ -19,6 +19,7 @@ import {
   getTaglineInLanguage,
   getTitleOrOverviewInLanguage,
 } from '@/composables/database/titles';
+import { logError, devLog } from '@/server/utils/logger';
 import { TABLES } from '@/constants/db/tables';
 import { TITLES_COLUMNS } from '@/constants/db/columns';
 import { safeError } from '@/server/utils/logger';
@@ -422,13 +423,7 @@ export async function getTitleData(
     typeof taglineJsonb === 'object' &&
     taglineJsonb[language] !== undefined;
 
-  if (import.meta.dev) {
-    const availableLanguages = titleJsonb ? Object.keys(titleJsonb) : [];
-    // eslint-disable-next-line no-console
-    console.log(
-      `${errorPrefix} For ${entry.tmdb_id}: requested language=${language}, available=${availableLanguages.join(', ')}, hasExactLanguage=${hasExactLanguage}`
-    );
-  }
+  // Development-only logging removed
 
   // Extract text in user's language from titles table (may return fallback if language missing)
   // Use getTitleOrOverviewInLanguage for title and overview to follow specific fallback logic
@@ -540,23 +535,21 @@ export async function getTitleData(
               })
               .catch((error: unknown) => {
                 // Log but don't fail the request
-                if (import.meta.dev) {
-                  console.error(
-                    `${errorPrefix} Error saving tagline to database:`,
-                    error
-                  );
-                }
+                logError(
+                  `${errorPrefix} Error saving tagline to database`,
+                  error as Error,
+                  {
+                    tmdbId: entry.tmdb_id,
+                  }
+                );
               });
           }
         }
       } catch (error) {
         // Silently fail - tagline is optional
-        if (import.meta.dev) {
-          console.error(
-            `${errorPrefix} Error fetching tagline for ${entry.tmdb_id}:`,
-            error
-          );
-        }
+        logError(`${errorPrefix} Error fetching tagline`, error as Error, {
+          tmdbId: entry.tmdb_id,
+        });
       }
     }
 
@@ -735,12 +728,9 @@ export async function getTitleData(
           }
         : mergedPosterPathJsonb;
 
-      if (import.meta.dev) {
-        // eslint-disable-next-line no-console
-        console.log(
-          `${errorPrefix} Updating titles for ${entry.tmdb_id}: adding language ${language}, final languages=${Object.keys(finalTitleJsonb).join(', ')}`
-        );
-      }
+      devLog(
+        `${errorPrefix} Updating titles for ${entry.tmdb_id}: adding language ${language}, final languages=${Object.keys(finalTitleJsonb).join(', ')}`
+      );
 
       const { error: upsertError } = await supabase.from(TABLES.TITLES).upsert(
         {
@@ -786,24 +776,24 @@ export async function getTitleData(
       );
 
       if (upsertError) {
-        if (import.meta.dev) {
-          // eslint-disable-next-line no-console
-          console.error(
-            `${errorPrefix} Error updating titles cache:`,
-            upsertError
-          );
-        }
-      } else if (import.meta.dev) {
-        // eslint-disable-next-line no-console
-        console.log(
+        logError(
+          `${errorPrefix} Error updating titles cache`,
+          upsertError as Error,
+          {
+            tmdbId: entry.tmdb_id,
+            language,
+          }
+        );
+      } else {
+        devLog(
           `${errorPrefix} Successfully updated titles for ${entry.tmdb_id} with language ${language}`
         );
       }
     } catch (error: unknown) {
-      if (import.meta.dev) {
-        // eslint-disable-next-line no-console
-        console.error(`${errorPrefix} Error updating titles cache:`, error);
-      }
+      logError(`${errorPrefix} Error updating titles cache`, error as Error, {
+        tmdbId: entry.tmdb_id,
+        language,
+      });
     }
 
     // Use finalTagline (which may have been fetched from primary language fallback)

@@ -98,10 +98,9 @@
               ? hasTopLeftContent
                 ? 'mt-2'
                 : ''
-              : recommendation?.vote_average ||
-                recommendation?.in_watchlist
-              ? 'mt-2'
-              : ''
+              : recommendation?.vote_average || recommendation?.in_watchlist
+                ? 'mt-2'
+                : ''
           "
         />
         <Badge
@@ -113,10 +112,9 @@
               ? hasTopLeftContent
                 ? 'mt-2'
                 : ''
-              : recommendation?.vote_average ||
-                recommendation?.in_watchlist
-              ? 'mt-2'
-              : ''
+              : recommendation?.vote_average || recommendation?.in_watchlist
+                ? 'mt-2'
+                : ''
           "
         />
       </div>
@@ -140,7 +138,9 @@
                 @mark-seen="() => handleAction(TITLE_STATUS.SEEN)"
                 @mark-liked="() => handleAction('liked')"
                 @remove-liked="() => handleAction('remove-liked')"
-                @mark-not-interested="() => handleAction(TITLE_STATUS.NOT_INTERESTED)"
+                @mark-not-interested="
+                  () => handleAction(TITLE_STATUS.NOT_INTERESTED)
+                "
                 @mark-watchlist="() => handleAction(TITLE_STATUS.WATCHLIST)"
               />
             </template>
@@ -202,7 +202,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 import type { Recommendation } from '@/types/Recommendation';

@@ -81,14 +81,6 @@ const shouldShow = computed(() => {
   }
   // Automatic control via composable
   const visible = props.useComposable && !!toast.value;
-  if (import.meta.dev) {
-    console.log('[Toast] shouldShow computed:', {
-      useComposable: props.useComposable,
-      hasToast: !!toast.value,
-      toastValue: toast.value,
-      visible,
-    });
-  }
   return visible;
 });
 

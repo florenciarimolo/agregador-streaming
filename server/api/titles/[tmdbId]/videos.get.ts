@@ -23,6 +23,7 @@ import { getUserTMDBParams } from '@/server/utils/user-tmdb';
 import type { MultiLanguageVideos } from '@/types/Video';
 import { LanguageIsoCode, DEFAULT_LANGUAGE_ISO } from '@/constants/languages';
 import { getPrimaryLanguageForRegion } from '@/utils/language-detection';
+import { devLog, logError } from '@/server/utils/logger';
 
 export default defineEventHandler(async (event) => {
   try {
@@ -61,14 +62,16 @@ export default defineEventHandler(async (event) => {
     // If lang query parameter is provided, use it; otherwise use user language from URL
     const requestedLang = query.lang as string | undefined;
     const { language: userLanguage, region } = await getUserTMDBParams(event);
-    const targetLanguage = requestedLang 
-      ? `${requestedLang}-${userLanguage.split('-')[1] || 'ES'}` 
+    const targetLanguage = requestedLang
+      ? `${requestedLang}-${userLanguage.split('-')[1] || 'ES'}`
       : userLanguage;
-    
+
     // Get primary language for user's region
     const regionPrimaryLang = getPrimaryLanguageForRegion(region);
-    const regionPrimaryLangCode = regionPrimaryLang.split('-')[0]?.toLowerCase() || DEFAULT_LANGUAGE_ISO;
-    const requestedLangCode = targetLanguage.split('-')[0]?.toLowerCase() || DEFAULT_LANGUAGE_ISO;
+    const regionPrimaryLangCode =
+      regionPrimaryLang.split('-')[0]?.toLowerCase() || DEFAULT_LANGUAGE_ISO;
+    const requestedLangCode =
+      targetLanguage.split('-')[0]?.toLowerCase() || DEFAULT_LANGUAGE_ISO;
 
     // Get title from database
     const { data: title, error: dbError } = await supabase
@@ -118,32 +121,37 @@ export default defineEventHandler(async (event) => {
         shouldFetch = true;
       } else {
         // Check if we have videos for target language
-        if (!existingVideos[requestedLangCode] || existingVideos[requestedLangCode].length === 0) {
+        if (
+          !existingVideos[requestedLangCode] ||
+          existingVideos[requestedLangCode].length === 0
+        ) {
           shouldFetch = true;
-          
+
           // Determine which language to use for TMDB fetch:
           // - If requested language is NOT the region primary language, fetch with region primary language
           // - If requested language IS the region primary language, fetch with English
           if (requestedLangCode !== regionPrimaryLangCode) {
             // Requested language is not the primary, fetch with primary language
             tmdbFetchLanguage = `${regionPrimaryLangCode}-${region || 'ES'}`;
-            if (import.meta.dev) {
-              console.log('[videos.get] No videos for requested language, will fetch with region primary language:', {
+            devLog(
+              '[videos.get] No videos for requested language, will fetch with region primary language:',
+              {
                 requestedLang: requestedLangCode,
                 regionPrimaryLang: regionPrimaryLangCode,
                 tmdbFetchLanguage,
-              });
-            }
+              }
+            );
           } else {
             // Requested language is already the primary, fetch with English
             tmdbFetchLanguage = `${LanguageIsoCode.ENGLISH}-${region || 'ES'}`;
-            if (import.meta.dev) {
-              console.log('[videos.get] No videos for requested language (which is primary), will fetch with English:', {
+            devLog(
+              '[videos.get] No videos for requested language (which is primary), will fetch with English:',
+              {
                 requestedLang: requestedLangCode,
                 regionPrimaryLang: regionPrimaryLangCode,
                 tmdbFetchLanguage,
-              });
-            }
+              }
+            );
           }
         }
       }
@@ -156,18 +164,16 @@ export default defineEventHandler(async (event) => {
         const { getTMDBConfig } = await import('@/server/utils/config');
         // Use the determined language for TMDB fetch (may be different from targetLanguage)
         const tmdbConfig = getTMDBConfig(tmdbFetchLanguage, region || 'ES');
-        
-        if (import.meta.dev) {
-          console.log('[videos.get] Fetching videos from TMDB:', {
-            tmdbId: tmdbIdNum,
-            type,
-            requestedLang: requestedLangCode,
-            targetLanguage,
-            tmdbFetchLanguage,
-            region,
-            regionPrimaryLang: regionPrimaryLangCode,
-          });
-        }
+
+        devLog('[videos.get] Fetching videos from TMDB:', {
+          tmdbId: tmdbIdNum,
+          type,
+          requestedLang: requestedLangCode,
+          targetLanguage,
+          tmdbFetchLanguage,
+          region,
+          regionPrimaryLang: regionPrimaryLangCode,
+        });
 
         let tmdbVideos;
         if (type === 'movie') {
@@ -208,7 +214,7 @@ export default defineEventHandler(async (event) => {
 
         // Update local reference
         const updatedVideos = normalizedVideos;
-        
+
         // Return videos for requested language (not the language used for TMDB fetch)
         // The videos are now stored in DB with all languages from TMDB response
         const videosForLang =
@@ -218,29 +224,36 @@ export default defineEventHandler(async (event) => {
           Object.values(updatedVideos)[0] ||
           [];
 
-        if (import.meta.dev) {
-          console.log('[videos.get] Returning videos after TMDB fetch:', {
-            requestedLang: requestedLangCode,
-            tmdbFetchLanguage,
-            availableLanguages: Object.keys(updatedVideos),
-            videosForLangCount: videosForLang.length,
-          });
-        }
+        devLog('[videos.get] Returning videos after TMDB fetch:', {
+          requestedLang: requestedLangCode,
+          tmdbFetchLanguage,
+          availableLanguages: Object.keys(updatedVideos),
+          videosForLangCount: videosForLang.length,
+        });
 
         return videosForLang;
       } catch (fetchError: unknown) {
         // Log the actual error for debugging
-        const error = fetchError as { message?: string; stack?: string; statusCode?: number; statusMessage?: string } | null;
-        console.error('[videos.get] Error fetching videos from TMDB:', {
-          tmdbId: tmdbIdNum,
-          type,
-          error: fetchError,
-          message: error?.message,
-          stack: error?.stack,
-        });
+        const error = fetchError as {
+          message?: string;
+          stack?: string;
+          statusCode?: number;
+          statusMessage?: string;
+        } | null;
+        logError(
+          '[Videos] Error fetching videos from TMDB',
+          fetchError as Error,
+          {
+            tmdbId: tmdbIdNum,
+            type,
+            message: error?.message,
+          }
+        );
         throw createError({
           statusCode: error?.statusCode || 500,
-          statusMessage: error?.statusMessage || `Error fetching videos from TMDB: ${error?.message || 'Unknown error'}`,
+          statusMessage:
+            error?.statusMessage ||
+            `Error fetching videos from TMDB: ${error?.message || 'Unknown error'}`,
           data: fetchError,
         });
       }
@@ -248,9 +261,7 @@ export default defineEventHandler(async (event) => {
 
     // Return existing videos for current language with fallback
     if (!existingVideos) {
-      if (import.meta.dev) {
-        console.log('[videos.get] No existing videos in database');
-      }
+      devLog('[videos.get] No existing videos in database');
       return [];
     }
 
@@ -262,44 +273,44 @@ export default defineEventHandler(async (event) => {
       Object.values(existingVideos)[0] ||
       [];
 
-    if (import.meta.dev) {
-      console.log('[videos.get] Returning existing videos:', {
-        tmdbId: tmdbIdNum,
-        type,
-        requestedLang,
-        targetLanguage,
-        userLanguage,
-        requestedLangCode,
-        availableLanguages: Object.keys(existingVideos),
-        videosForLangCount: videosForLang.length,
-        videosForLang: videosForLang,
-      });
-    }
+    devLog('[videos.get] Returning existing videos:', {
+      tmdbId: tmdbIdNum,
+      type,
+      requestedLang,
+      targetLanguage,
+      userLanguage,
+      requestedLangCode,
+      availableLanguages: Object.keys(existingVideos),
+      videosForLangCount: videosForLang.length,
+    });
 
     return videosForLang;
   } catch (error: unknown) {
     // Log the actual error for debugging
-    const errorObj = error as { message?: string; stack?: string; statusCode?: number; statusMessage?: string } | null;
-    console.error('[videos.get] Unexpected error:', {
+    const errorObj = error as {
+      message?: string;
+      stack?: string;
+      statusCode?: number;
+      statusMessage?: string;
+    } | null;
+    logError('[Videos] Unexpected error', error as Error, {
       tmdbId: tmdbIdNum,
       type,
-      error,
       message: errorObj?.message,
-      stack: errorObj?.stack,
       statusCode: errorObj?.statusCode,
       statusMessage: errorObj?.statusMessage,
     });
-    
+
     // If error is already an H3 error, re-throw it
     if (errorObj?.statusCode && errorObj?.statusMessage) {
       throw error;
     }
-    
+
     throw createError({
       statusCode: errorObj?.statusCode || 500,
-      statusMessage: errorObj?.statusMessage || errorObj?.message || 'Error fetching videos',
+      statusMessage:
+        errorObj?.statusMessage || errorObj?.message || 'Error fetching videos',
       data: error,
     });
   }
 });
-

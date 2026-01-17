@@ -1,9 +1,13 @@
 import { getSession } from '@/services/auth';
 import { useUndoToast } from '@/composables/useUndoToast';
 import { useRouteWithLang } from '@/composables/useRouteWithLang';
-import { TITLE_STATUS, type TitleStatusType } from '@/constants/domain/titleStatus';
+import {
+  TITLE_STATUS,
+  type TitleStatusType,
+} from '@/constants/domain/titleStatus';
 import { type MediaType } from '@/constants/domain/mediaType';
 import { useI18n } from 'vue-i18n';
+import { useLogger } from '@/composables/useLogger';
 
 export interface TitleStatusActionParams {
   tmdb_id: number;
@@ -24,7 +28,7 @@ export interface TitleStatusActionResult {
 /**
  * Unified composable for handling title status actions
  * Handles API calls, toast messages, and undo logic
- * 
+ *
  * Each component can handle its own UI updates after the action
  */
 export const useTitleStatusAction = () => {
@@ -40,7 +44,15 @@ export const useTitleStatusAction = () => {
     params: TitleStatusActionParams,
     targetStatus: TitleStatusType
   ): Promise<TitleStatusActionResult> => {
-    const { tmdb_id, type, title, currentStatus, isLiked = false, onUndoComplete, hideViewListButton = false } = params;
+    const {
+      tmdb_id,
+      type,
+      title,
+      currentStatus,
+      isLiked = false,
+      onUndoComplete,
+      hideViewListButton = false,
+    } = params;
 
     try {
       const {
@@ -71,42 +83,52 @@ export const useTitleStatusAction = () => {
         // Show toast with undo button
         const removeMessages: Record<TitleStatusType, string> = {
           [TITLE_STATUS.SEEN]: t('seen.titleRemoved', { title }),
-          [TITLE_STATUS.NOT_INTERESTED]: t('notInterested.titleRemoved', { title }),
+          [TITLE_STATUS.NOT_INTERESTED]: t('notInterested.titleRemoved', {
+            title,
+          }),
           [TITLE_STATUS.WATCHLIST]: t('watchlist.titleRemoved', { title }),
         };
 
-        showToast(removeMessages[targetStatus], {
-          label: t('undo.undo'),
-          variant: 'secondary',
-          action: async () => {
-            // Undo: Re-add the status
-            try {
-              const {
-                data: { session: undoSession },
-              } = await getSession();
-              if (!undoSession?.access_token) return;
+        showToast(
+          removeMessages[targetStatus],
+          {
+            label: t('undo.undo'),
+            variant: 'secondary',
+            action: async () => {
+              // Undo: Re-add the status
+              try {
+                const {
+                  data: { session: undoSession },
+                } = await getSession();
+                if (!undoSession?.access_token) return;
 
-              await $fetch('/api/users/title-status', {
-                method: 'POST',
-                headers: {
-                  Authorization: `Bearer ${undoSession.access_token}`,
-                },
-                body: {
-                  tmdb_id,
+                await $fetch('/api/users/title-status', {
+                  method: 'POST',
+                  headers: {
+                    Authorization: `Bearer ${undoSession.access_token}`,
+                  },
+                  body: {
+                    tmdb_id,
+                    type,
+                    status: targetStatus,
+                    liked: targetStatus === TITLE_STATUS.SEEN ? isLiked : false,
+                  },
+                });
+                // Execute optional callback after undo
+                if (onUndoComplete) {
+                  await onUndoComplete();
+                }
+              } catch (error) {
+                const { logError } = useLogger();
+                logError('[TitleStatusAction] Error undoing', error as Error, {
+                  tmdbId,
                   type,
-                  status: targetStatus,
-                  liked: targetStatus === TITLE_STATUS.SEEN ? isLiked : false,
-                },
-              });
-              // Execute optional callback after undo
-              if (onUndoComplete) {
-                await onUndoComplete();
+                });
               }
-            } catch (error) {
-              console.error('[useTitleStatusAction] Error undoing:', error);
-            }
+            },
           },
-        }, 7000);
+          7000
+        );
 
         return { success: true, action: 'removed', newStatus: null };
       } else {
@@ -127,7 +149,9 @@ export const useTitleStatusAction = () => {
         // Show toast with "View list" button
         const addMessages: Record<TitleStatusType, string> = {
           [TITLE_STATUS.SEEN]: t('seen.titleAdded', { title }),
-          [TITLE_STATUS.NOT_INTERESTED]: t('notInterested.titleAdded', { title }),
+          [TITLE_STATUS.NOT_INTERESTED]: t('notInterested.titleAdded', {
+            title,
+          }),
           [TITLE_STATUS.WATCHLIST]: t('watchlist.titleAdded', { title }),
         };
 
@@ -144,27 +168,44 @@ export const useTitleStatusAction = () => {
         };
 
         // If hideViewListButton is true, don't show the button (e.g., when already on that list page)
-        showToast(addMessages[targetStatus], hideViewListButton ? null : {
-          label: viewLabels[targetStatus],
-          variant: 'secondary',
-          action: async () => {
-            await navigateTo(routeWithLang(viewRoutes[targetStatus]));
-          },
-        }, 5000);
+        showToast(
+          addMessages[targetStatus],
+          hideViewListButton
+            ? null
+            : {
+                label: viewLabels[targetStatus],
+                variant: 'secondary',
+                action: async () => {
+                  await navigateTo(routeWithLang(viewRoutes[targetStatus]));
+                },
+              },
+          5000
+        );
 
         return { success: true, action: 'added', newStatus: targetStatus };
       }
     } catch (error) {
-      console.error('[useTitleStatusAction] Error:', error);
+      const { logError } = useLogger();
+      logError(
+        '[TitleStatusAction] Error executing status action',
+        error as Error,
+        {
+          tmdbId,
+          type,
+          targetStatus,
+        }
+      );
       // Determine if we were adding or removing to show the appropriate error message
       const isCurrentlySet = currentStatus === targetStatus;
       const isRemoving = isCurrentlySet;
-      
+
       if (isRemoving) {
         // Error removing
         const removeErrorMessages: Record<TitleStatusType, string> = {
           [TITLE_STATUS.SEEN]: t('seen.errorRemoving', { title }),
-          [TITLE_STATUS.NOT_INTERESTED]: t('notInterested.errorRemoving', { title }),
+          [TITLE_STATUS.NOT_INTERESTED]: t('notInterested.errorRemoving', {
+            title,
+          }),
           [TITLE_STATUS.WATCHLIST]: t('watchlist.errorRemoving', { title }),
         };
         showToast(removeErrorMessages[targetStatus], null, 3000);
@@ -172,7 +213,9 @@ export const useTitleStatusAction = () => {
         // Error adding
         const addErrorMessages: Record<TitleStatusType, string> = {
           [TITLE_STATUS.SEEN]: t('seen.errorAdding', { title }),
-          [TITLE_STATUS.NOT_INTERESTED]: t('notInterested.errorAdding', { title }),
+          [TITLE_STATUS.NOT_INTERESTED]: t('notInterested.errorAdding', {
+            title,
+          }),
           [TITLE_STATUS.WATCHLIST]: t('watchlist.errorAdding', { title }),
         };
         showToast(addErrorMessages[targetStatus], null, 3000);
@@ -188,7 +231,14 @@ export const useTitleStatusAction = () => {
     params: TitleStatusActionParams,
     isCurrentlyLiked: boolean
   ): Promise<TitleStatusActionResult> => {
-    const { tmdb_id, type, title, currentStatus, onUndoComplete, hideViewListButton = false } = params;
+    const {
+      tmdb_id,
+      type,
+      title,
+      currentStatus,
+      onUndoComplete,
+      hideViewListButton = false,
+    } = params;
 
     try {
       const {
@@ -215,40 +265,56 @@ export const useTitleStatusAction = () => {
           },
         });
 
-        showToast(t('preferences.titleRemoved', { title }), {
-          label: t('undo.undo'),
-          variant: 'secondary',
-          action: async () => {
-            // Undo: Re-add like
-            try {
-              const {
-                data: { session: undoSession },
-              } = await getSession();
-              if (!undoSession?.access_token) return;
+        showToast(
+          t('preferences.titleRemoved', { title }),
+          {
+            label: t('undo.undo'),
+            variant: 'secondary',
+            action: async () => {
+              // Undo: Re-add like
+              try {
+                const {
+                  data: { session: undoSession },
+                } = await getSession();
+                if (!undoSession?.access_token) return;
 
-              await $fetch('/api/users/title-status', {
-                method: 'POST',
-                headers: {
-                  Authorization: `Bearer ${undoSession.access_token}`,
-                },
-                body: {
-                  tmdb_id,
-                  type,
-                  status: TITLE_STATUS.SEEN,
-                  liked: true,
-                },
-              });
-              // Execute optional callback after undo
-              if (onUndoComplete) {
-                await onUndoComplete();
+                await $fetch('/api/users/title-status', {
+                  method: 'POST',
+                  headers: {
+                    Authorization: `Bearer ${undoSession.access_token}`,
+                  },
+                  body: {
+                    tmdb_id,
+                    type,
+                    status: TITLE_STATUS.SEEN,
+                    liked: true,
+                  },
+                });
+                // Execute optional callback after undo
+                if (onUndoComplete) {
+                  await onUndoComplete();
+                }
+              } catch (error) {
+                const { logError } = useLogger();
+                logError(
+                  '[TitleStatusAction] Error undoing like',
+                  error as Error,
+                  {
+                    tmdbId,
+                    type,
+                  }
+                );
               }
-            } catch (error) {
-              console.error('[useTitleStatusAction] Error undoing like:', error);
-            }
+            },
           },
-        }, 7000);
+          7000
+        );
 
-        return { success: true, action: 'removed', newStatus: currentStatus ?? null };
+        return {
+          success: true,
+          action: 'removed',
+          newStatus: currentStatus ?? null,
+        };
       } else {
         // Add like (requires seen status)
         await $fetch('/api/users/title-status', {
@@ -265,18 +331,32 @@ export const useTitleStatusAction = () => {
         });
 
         // If hideViewListButton is true, don't show the button (e.g., when already on that list page)
-        showToast(t('preferences.titleAdded', { title }), hideViewListButton ? null : {
-          label: t('home.viewList'),
-          variant: 'secondary',
-          action: async () => {
-            await navigateTo(routeWithLang('/lists?tab=liked'));
-          },
-        }, 5000);
+        showToast(
+          t('preferences.titleAdded', { title }),
+          hideViewListButton
+            ? null
+            : {
+                label: t('home.viewList'),
+                variant: 'secondary',
+                action: async () => {
+                  await navigateTo(routeWithLang('/lists?tab=liked'));
+                },
+              },
+          5000
+        );
 
         return { success: true, action: 'added', newStatus: TITLE_STATUS.SEEN };
       }
     } catch (error) {
-      console.error('[useTitleStatusAction] Error:', error);
+      const { logError } = useLogger();
+      logError(
+        '[TitleStatusAction] Error executing liked action',
+        error as Error,
+        {
+          tmdbId,
+          type,
+        }
+      );
       showToast(t('home.errorUpdatingStatus', { title }), null, 3000);
       return { success: false, action: 'removed', newStatus: null };
     }
@@ -287,4 +367,3 @@ export const useTitleStatusAction = () => {
     executeLikedAction,
   };
 };
-

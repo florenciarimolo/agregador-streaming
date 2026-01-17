@@ -461,6 +461,7 @@ import ProviderSelector from '@/components/ProviderSelector.vue';
 import FilterPill from '@/components/ui/FilterPill.vue';
 import { useUndoToast } from '@/composables/useUndoToast';
 import { DEFAULT_LANGUAGE, toTMDBLanguageCode } from '@/constants/languages';
+import { useLogger } from '@/composables/useLogger';
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore - Auto-imported
@@ -804,7 +805,11 @@ const fetchContentPreferences = async () => {
       };
     }
   } catch (error) {
-    console.error('Error fetching content preferences:', error);
+    const { logError } = useLogger();
+    logError(
+      '[Preferences] Error fetching content preferences',
+      error as Error
+    );
   }
 };
 
@@ -1086,7 +1091,8 @@ const confirmSaveContentPreferences = async () => {
             showToast(t('preferences.content.saved'), null, 5000);
           }
         } catch (poolError) {
-          console.error('Error regenerating pool:', poolError);
+          const { logError } = useLogger();
+          logError('[Preferences] Error regenerating pool', poolError as Error);
           await nextTick();
           if (import.meta.client) {
             showToast(t('home.generateError'), null, 5000);
@@ -1125,7 +1131,8 @@ const confirmSaveContentPreferences = async () => {
     }
   } catch (error: unknown) {
     // Always log the full error to console
-    console.error('Error saving content preferences:', error);
+    const { logError } = useLogger();
+    logError('[Preferences] Error saving content preferences', error as Error);
 
     // In development, show the actual error message (but filter out technical Nitro errors)
     // In production, show a generic error message

@@ -105,7 +105,10 @@ export default defineEventHandler(async (event) => {
   const query = getQuery(event);
   const mood = query[QUERY_PARAMS.MOOD] as Mood | undefined;
   const attention = query[QUERY_PARAMS.ATTENTION] as Attention | undefined;
-  const contentType = query[QUERY_PARAMS.TYPE] as typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV | undefined; // Filter by content type on server
+  const contentType = query[QUERY_PARAMS.TYPE] as
+    | typeof MEDIA_TYPE.MOVIE
+    | typeof MEDIA_TYPE.TV
+    | undefined; // Filter by content type on server
   const preserveIdsParam = query[QUERY_PARAMS.PRESERVE_IDS] as
     | string
     | undefined; // Format: "tmdb_id:type,tmdb_id:type"
@@ -355,7 +358,9 @@ export default defineEventHandler(async (event) => {
               id: `${entry.tmdb_id}-${entry.type}`,
               tmdb_id: entry.tmdb_id,
               title: titleData.title,
-              type: entry.type as typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV,
+              type: entry.type as
+                | typeof MEDIA_TYPE.MOVIE
+                | typeof MEDIA_TYPE.TV,
               poster_path: titleData.poster_path,
               overview: titleData.overview,
               tagline: titleData.tagline || null,
@@ -487,8 +492,8 @@ export default defineEventHandler(async (event) => {
         filteredByProviders.map((e) => `${e.tmdb_id}:${e.type}`)
       );
       // Filter original entries to keep all properties
-      filteredEntries = filteredEntries.filter(
-        (e) => filteredIdsSet.has(`${e.tmdb_id}:${e.type}`)
+      filteredEntries = filteredEntries.filter((e) =>
+        filteredIdsSet.has(`${e.tmdb_id}:${e.type}`)
       );
 
       // Filter by genres if user has preferences
@@ -515,7 +520,9 @@ export default defineEventHandler(async (event) => {
           const titleData = await getTitleDataForEntry(entry);
           if (!titleData) return null;
 
-          const genreIds = titleData.genres.map((g: { id: number; name: string }) => g.id);
+          const genreIds = titleData.genres.map(
+            (g: { id: number; name: string }) => g.id
+          );
           const voteAverage = titleData.vote_average;
 
           // Filter by genres if user has preferences
@@ -585,7 +592,12 @@ export default defineEventHandler(async (event) => {
           // Apply prioritize_content adjustments (runtime only, after exploration_mode)
           if (prioritizeContent === PRIORITIZE_CONTENT.NEW) {
             // Boost recent releases: last 2 years for movies, 1 year for TV
-            if (isRecentRelease(titleData, entry.type as typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV)) {
+            if (
+              isRecentRelease(
+                titleData,
+                entry.type as typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV
+              )
+            ) {
               finalScore *= 1.05;
             }
           } else if (prioritizeContent === PRIORITIZE_CONTENT.CLASSICS) {
@@ -830,12 +842,14 @@ export default defineEventHandler(async (event) => {
           }
         } catch (error) {
           // Don't fail if providers can't be fetched
-          if (process.env.NODE_ENV === 'development') {
-            console.error(
-              `Error fetching providers for ${entry.tmdb_id}:`,
-              error
-            );
-          }
+          const { logError } = await import('@/server/utils/logger');
+          logError(
+            '[Recommendations] Error fetching providers',
+            error as Error,
+            {
+              tmdbId: entry.tmdb_id,
+            }
+          );
         }
 
         // Map explanation_code to explanation text using translations

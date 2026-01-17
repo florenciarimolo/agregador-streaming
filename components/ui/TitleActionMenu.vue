@@ -116,7 +116,7 @@ interface Props {
   ariaLabel: string;
 }
 
-const props = defineProps<Props>();
+defineProps<Props>();
 
 const emit = defineEmits<{
   'mark-seen': [];

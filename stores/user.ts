@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia';
+import { useLogger } from '@/composables/useLogger';
 import type { User } from '@supabase/supabase-js';
 import { getProfile, insertProfile } from '@/services/profiles';
 import { countUserLikedTitles } from '@/services/userTitleStatus';
@@ -42,13 +43,7 @@ export const useUserStore = defineStore('user', {
     // hasCompletedOnboarding checks the onboarding_completed flag in profiles table
     hasCompletedOnboarding: (state: UserState) => {
       const result = state.profile?.onboarding_completed ?? false;
-      if (import.meta.dev) {
-        console.log('[UserStore] hasCompletedOnboarding getter:', {
-          hasProfile: !!state.profile,
-          onboarding_completed: state.profile?.onboarding_completed,
-          result,
-        });
-      }
+      // Development-only logging removed
       return result;
     },
   },
@@ -71,7 +66,7 @@ export const useUserStore = defineStore('user', {
       // This prevents race conditions where multiple concurrent fetches could overwrite each other
       if (this._fetchProfilePromise) {
         if (import.meta.dev) {
-          console.log('[UserStore] fetchProfile: Already in progress, waiting...');
+          // Development-only logging removed
         }
         await this._fetchProfilePromise;
         return;
@@ -89,7 +84,7 @@ export const useUserStore = defineStore('user', {
 
       // Create a promise to track this fetch operation
       this._fetchProfilePromise = this._doFetchProfile(userId);
-      
+
       try {
         await this._fetchProfilePromise;
       } finally {
@@ -113,7 +108,8 @@ export const useUserStore = defineStore('user', {
           // If profile doesn't exist, try to create it
           if (isNotFoundError(profileError)) {
             const userEmail =
-              (this.user as { email?: string }).email || (this.user as { email?: string })?.email;
+              (this.user as { email?: string }).email ||
+              (this.user as { email?: string })?.email;
             const { data: newProfile, error: createError } =
               await insertProfile({
                 id: userId,
@@ -122,15 +118,20 @@ export const useUserStore = defineStore('user', {
               });
 
             if (createError) {
-              console.error('Error creating profile:', createError);
+              const { logError } = useLogger();
+              logError(
+                '[UserStore] Error creating profile',
+                createError as Error
+              );
               throw createError;
             }
 
             this.profile = newProfile;
           } else {
-            console.error(
-              'Error fetching profile from Supabase:',
-              profileError
+            const { logError } = useLogger();
+            logError(
+              '[UserStore] Error fetching profile from Supabase',
+              profileError as Error
             );
             throw profileError;
           }
@@ -140,13 +141,18 @@ export const useUserStore = defineStore('user', {
 
         // Handle likes count
         if (likesError) {
-          console.error('Error fetching likes count:', likesError);
+          const { logError } = useLogger();
+          logError(
+            '[UserStore] Error fetching likes count',
+            likesError as Error
+          );
           this.likesCount = 0;
         } else {
           this.likesCount = count ?? 0;
         }
       } catch (error) {
-        console.error('Error fetching profile:', error);
+        const { logError } = useLogger();
+        logError('[UserStore] Error fetching profile', error as Error);
         this.profile = null;
         this.likesCount = null;
         this.loading = false;
@@ -160,26 +166,12 @@ export const useUserStore = defineStore('user', {
       // Only fetch if profile is missing
       if (!this.profile && this.user) {
         if (import.meta.dev) {
-          console.log('[UserStore] ensureProfile: Profile missing, fetching...');
+          // Development-only logging removed
         }
         await this.fetchProfile();
-        if (import.meta.dev) {
-          const onboardingStatus = this.profile
-            ? (this.profile as Profile).onboarding_completed
-            : undefined;
-          console.log(
-            '[UserStore] ensureProfile: Profile fetched, onboarding_completed:',
-            onboardingStatus
-          );
-        }
-      } else if (import.meta.dev) {
-        const onboardingStatus = this.profile
-          ? (this.profile as Profile).onboarding_completed
-          : undefined;
-        console.log(
-          '[UserStore] ensureProfile: Profile already exists, onboarding_completed:',
-          onboardingStatus
-        );
+        // Development-only logging removed
+      } else {
+        // Development-only logging removed
       }
     },
 

@@ -6,6 +6,7 @@ import {
 } from '../../constants/db/columns';
 import { TABLES } from '../../constants/db/tables';
 import { MEDIA_TYPE } from '../../constants/domain/mediaType';
+import { logError } from './logger';
 
 /**
  * Get all movie and TV show IDs from Supabase for sitemap generation
@@ -17,7 +18,11 @@ import { MEDIA_TYPE } from '../../constants/domain/mediaType';
  * @note updated_at is NOT NULL in the schema, so it should always be present
  */
 export async function getTitleIdsForSitemap(): Promise<
-  Array<{ tmdb_id: number; type: typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV; updated_at: string }>
+  Array<{
+    tmdb_id: number;
+    type: typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV;
+    updated_at: string;
+  }>
 > {
   try {
     // Try to use runtime config, fallback to env vars for sitemap generation context
@@ -39,8 +44,9 @@ export async function getTitleIdsForSitemap(): Promise<
     }
 
     if (!supabaseUrl || !supabaseKey) {
-      console.error(
-        '[Sitemap] Missing Supabase configuration. Cannot generate sitemap.'
+      logError(
+        '[Sitemap] Missing Supabase configuration. Cannot generate sitemap.',
+        new Error('Missing Supabase configuration')
       );
       return [];
     }
@@ -60,7 +66,7 @@ export async function getTitleIdsForSitemap(): Promise<
       );
 
     if (error) {
-      console.error('[Sitemap] Error fetching titles:', error);
+      logError('[Sitemap] Error fetching titles', error);
       return [];
     }
 
@@ -85,7 +91,7 @@ export async function getTitleIdsForSitemap(): Promise<
 
     return mappedTitles;
   } catch (error) {
-    console.error('[Sitemap] Unexpected error:', error);
+    logError('[Sitemap] Unexpected error', error as Error);
     return [];
   }
 }
@@ -118,8 +124,9 @@ export async function getDiscoverListsForSitemap(): Promise<
     }
 
     if (!supabaseUrl || !supabaseKey) {
-      console.error(
-        '[Sitemap] Missing Supabase configuration. Cannot generate sitemap for discover lists.'
+      logError(
+        '[Sitemap] Missing Supabase configuration. Cannot generate sitemap for discover lists.',
+        new Error('Missing Supabase configuration')
       );
       return [];
     }
@@ -142,7 +149,7 @@ export async function getDiscoverListsForSitemap(): Promise<
       .eq(DISCOVER_LISTS_COLUMNS.IS_INDEXABLE, true);
 
     if (error) {
-      console.error('[Sitemap] Error fetching discover lists:', error);
+      logError('[Sitemap] Error fetching discover lists', error);
       return [];
     }
 
@@ -155,7 +162,10 @@ export async function getDiscoverListsForSitemap(): Promise<
       updated_at: list.updated_at,
     }));
   } catch (error) {
-    console.error('[Sitemap] Unexpected error fetching discover lists:', error);
+    logError(
+      '[Sitemap] Unexpected error fetching discover lists',
+      error as Error
+    );
     return [];
   }
 }
@@ -191,8 +201,9 @@ export async function getSeasonsForSitemap(): Promise<
     }
 
     if (!supabaseUrl || !supabaseKey) {
-      console.error(
-        '[Sitemap] Missing Supabase configuration. Cannot generate sitemap for seasons.'
+      logError(
+        '[Sitemap] Missing Supabase configuration. Cannot generate sitemap for seasons.',
+        new Error('Missing Supabase configuration')
       );
       return [];
     }
@@ -212,7 +223,7 @@ export async function getSeasonsForSitemap(): Promise<
       );
 
     if (error) {
-      console.error('[Sitemap] Error fetching seasons:', error);
+      logError('[Sitemap] Error fetching seasons', error);
       return [];
     }
 
@@ -237,7 +248,7 @@ export async function getSeasonsForSitemap(): Promise<
 
     return mappedSeasons;
   } catch (error) {
-    console.error('[Sitemap] Unexpected error fetching seasons:', error);
+    logError('[Sitemap] Unexpected error fetching seasons', error as Error);
     return [];
   }
 }

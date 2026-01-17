@@ -6,6 +6,7 @@ import { TITLES_COLUMNS } from '@/constants/db/columns';
 import { TABLES } from '@/constants/db/tables';
 import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 import { type MultiLanguageText } from '@/services/titles';
+import { logError } from '@/server/utils/logger';
 
 /**
  * Endpoint to fetch and save tagline from TMDB when it's missing in the database
@@ -41,9 +42,7 @@ export default defineEventHandler(async (event) => {
       region = params.region || null;
     } catch (error) {
       // Fallback to defaults if getUserTMDBParams fails
-      if (import.meta.dev) {
-        console.error('[fetch-tagline] Error getting user TMDB params:', error);
-      }
+      logError('[FetchTagline] Error getting user TMDB params', error as Error);
       userLanguage = 'es-ES';
       region = 'ES';
     }
@@ -82,7 +81,7 @@ export default defineEventHandler(async (event) => {
         // Fetch full title data from TMDB
         const endpoint =
           type === MEDIA_TYPE.MOVIE ? `/movie/${tmdb_id}` : `/tv/${tmdb_id}`;
-        
+
         const fullTmdbResponse = await $fetch<{
           title?: string;
           name?: string;
@@ -118,9 +117,10 @@ export default defineEventHandler(async (event) => {
         const overviewMultiLang: MultiLanguageText = fullTmdbResponse.overview
           ? { [userLanguage]: fullTmdbResponse.overview }
           : {};
-        const posterPathMultiLang: MultiLanguageText = fullTmdbResponse.poster_path
-          ? { [userLanguage]: fullTmdbResponse.poster_path }
-          : {};
+        const posterPathMultiLang: MultiLanguageText =
+          fullTmdbResponse.poster_path
+            ? { [userLanguage]: fullTmdbResponse.poster_path }
+            : {};
         const taglineMultiLang: MultiLanguageText = fullTmdbResponse.tagline
           ? { [userLanguage]: fullTmdbResponse.tagline }
           : {};
@@ -129,9 +129,16 @@ export default defineEventHandler(async (event) => {
           tmdb_id: tmdb_id,
           type: type,
           title: titleMultiLang,
-          overview: Object.keys(overviewMultiLang).length > 0 ? overviewMultiLang : null,
-          poster_path: Object.keys(posterPathMultiLang).length > 0 ? posterPathMultiLang : null,
-          tagline: Object.keys(taglineMultiLang).length > 0 ? taglineMultiLang : null,
+          overview:
+            Object.keys(overviewMultiLang).length > 0
+              ? overviewMultiLang
+              : null,
+          poster_path:
+            Object.keys(posterPathMultiLang).length > 0
+              ? posterPathMultiLang
+              : null,
+          tagline:
+            Object.keys(taglineMultiLang).length > 0 ? taglineMultiLang : null,
           backdrop_path: fullTmdbResponse.backdrop_path || null,
           vote_average: fullTmdbResponse.vote_average || null,
           genres: fullTmdbResponse.genres || null,
@@ -160,7 +167,10 @@ export default defineEventHandler(async (event) => {
         }
 
         // If we got tagline from TMDB, return it
-        if (fullTmdbResponse.tagline && fullTmdbResponse.tagline.trim() !== '') {
+        if (
+          fullTmdbResponse.tagline &&
+          fullTmdbResponse.tagline.trim() !== ''
+        ) {
           return {
             success: true,
             tagline: taglineMultiLang,
@@ -175,9 +185,14 @@ export default defineEventHandler(async (event) => {
           throw error;
         }
         // Otherwise, log and return error
-        if (import.meta.dev) {
-          console.error('[fetch-tagline] Error creating title from TMDB:', error);
-        }
+        logError(
+          '[FetchTagline] Error creating title from TMDB',
+          error as Error,
+          {
+            tmdbId: tmdb_id,
+            type,
+          }
+        );
         throw createError({
           statusCode: 500,
           statusMessage: 'Error fetching title from TMDB',
@@ -203,7 +218,8 @@ export default defineEventHandler(async (event) => {
     }
 
     // Check if tagline already exists in requested language
-    const existingTagline = titleFromDbAfter.tagline as MultiLanguageText | null;
+    const existingTagline =
+      titleFromDbAfter.tagline as MultiLanguageText | null;
     const hasTaglineInLanguage =
       existingTagline &&
       typeof existingTagline === 'object' &&
@@ -256,12 +272,14 @@ export default defineEventHandler(async (event) => {
         );
       } catch (fallbackError) {
         // Log but don't fail - fallback is optional
-        if (import.meta.dev) {
-          console.error(
-            '[fetch-tagline] Error in fetchTaglineWithPrimaryLanguageFallback:',
-            fallbackError
-          );
-        }
+        logError(
+          '[FetchTagline] Error in fetchTaglineWithPrimaryLanguageFallback',
+          fallbackError as Error,
+          {
+            tmdbId: tmdb_id,
+            type,
+          }
+        );
         // Continue with empty finalTagline
       }
     }
@@ -317,9 +335,7 @@ export default defineEventHandler(async (event) => {
       throw error;
     }
     // Log the full error for debugging
-    if (import.meta.dev) {
-      console.error('[fetch-tagline] Error:', error);
-    }
+    logError('[FetchTagline] Unexpected error', error as Error);
     throw createError({
       statusCode: 500,
       statusMessage: 'Error fetching tagline',

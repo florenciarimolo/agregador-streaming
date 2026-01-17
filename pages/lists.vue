@@ -106,12 +106,7 @@
                             size="small"
                             variant="default"
                             custom-class="p-2 rounded-full backdrop-blur-sm pointer-events-auto w-fit h-fit bg-black/50 hover:bg-red-600/80 relative z-50"
-                            @click.stop.prevent="
-                              () => {
-                                console.log('IconButton clicked', title);
-                                handleRemoveLikedClick(title);
-                              }
-                            "
+                            @click.stop.prevent="handleRemoveLikedClick(title)"
                           >
                             <IconX icon-class="w-4 h-4 text-white" />
                           </IconButton>
@@ -248,10 +243,7 @@
                               variant="default"
                               custom-class="p-2 rounded-full backdrop-blur-sm pointer-events-auto w-fit h-fit bg-black/50 hover:bg-red-600/80 relative z-50"
                               @click.stop.prevent="
-                                () => {
-                                  console.log('IconButton clicked', title);
-                                  handleRemoveSeen(title);
-                                }
+                                () => handleRemoveSeen(title)
                               "
                             >
                               <IconX icon-class="w-4 h-4 text-white" />
@@ -392,7 +384,6 @@
                             custom-class="p-2 rounded-full backdrop-blur-sm pointer-events-auto w-fit h-fit bg-black/50 hover:bg-red-600/80 relative z-50"
                             @click.stop.prevent="
                               () => {
-                                console.log('IconButton clicked', title);
                                 handleRemoveNotInterested(title);
                               }
                             "
@@ -528,6 +519,7 @@ import ViewModeSelector from '@/components/ViewModeSelector.vue';
 import TitleListItem from '@/components/TitleListItem.vue';
 import SkeletonMediaCard from '@/components/SkeletonMediaCard.vue';
 import SkeletonListItem from '@/components/SkeletonListItem.vue';
+import { useLogger } from '@/composables/useLogger';
 import { useViewMode } from '@/composables/useViewMode';
 import { VIEW_MODE } from '@/constants/domain/viewMode';
 import { useUndoToast } from '@/composables/useUndoToast';
@@ -563,9 +555,10 @@ const userStore = computed(() => {
     return useUserStore();
   } catch (error) {
     // If store is not available, return a fallback object
-    if (process.env.NODE_ENV === 'development') {
-      console.warn('[pages/lists.vue] useUserStore not available:', error);
-    }
+    const { logWarn } = useLogger();
+    logWarn('[Lists] useUserStore not available', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
     return {
       profile: null,
       authInitialized: false,
@@ -792,12 +785,10 @@ const fetchProvidersForTitles = async (
           providers: (providerData.flatrate || []).slice(0, 5),
         };
       } catch (error) {
-        if (process.env.NODE_ENV === 'development') {
-          console.error(
-            `Error fetching providers for ${title.tmdb_id}:`,
-            error
-          );
-        }
+        const { logError } = useLogger();
+        logError('[Lists] Error fetching providers', error as Error, {
+          tmdbId: title.tmdb_id,
+        });
         return {
           tmdb_id: title.tmdb_id,
           providers: [],
@@ -816,9 +807,8 @@ const fetchProvidersForTitles = async (
       title.providers = providers;
     });
   } catch (error) {
-    if (process.env.NODE_ENV === 'development') {
-      console.error('Error fetching providers for titles:', error);
-    }
+    const { logError } = useLogger();
+    logError('[Lists] Error fetching providers for titles', error as Error);
   }
 };
 
@@ -835,7 +825,11 @@ const fetchContentPreferencesRegion = async () => {
       };
     }
   } catch (error) {
-    console.error('Error fetching content preferences region:', error);
+    const { logError } = useLogger();
+    logError(
+      '[Lists] Error fetching content preferences region',
+      error as Error
+    );
   }
 };
 
@@ -843,51 +837,35 @@ const fetchContentPreferencesRegion = async () => {
 const fetchAllLists = async () => {
   // Prevent concurrent executions
   if (isFetching.value) {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[lists.vue] fetchAllLists already in progress, skipping');
-    }
+    // Development-only logging removed
     return;
   }
 
   const id = userId.value;
   if (!id) {
     isLoading.value = false;
-    if (process.env.NODE_ENV === 'development') {
-      console.log(
-        '[lists.vue] fetchAllLists: no userId, setting isLoading to false'
-      );
-    }
+    // Development-only logging removed
     return;
   }
 
   isFetching.value = true;
   isLoading.value = true;
-  if (process.env.NODE_ENV === 'development') {
-    console.log('[lists.vue] fetchAllLists: starting fetch');
-  }
+  // Development-only logging removed
   try {
-    const results = await Promise.allSettled([
+    await Promise.allSettled([
       fetchLikedTitles(),
       fetchSeenTitles(),
       fetchNotInterestedTitles(),
       fetchWatchlistTitles(),
     ]);
-    if (process.env.NODE_ENV === 'development') {
-      console.log(
-        '[lists.vue] fetchAllLists: all promises settled',
-        results.map((r) => r.status)
-      );
-    }
+    // Development-only logging removed
   } catch (error) {
-    console.error('[lists.vue] Error fetching lists:', error);
+    const { logError } = useLogger();
+    logError('[Lists] Error fetching lists', error as Error);
   } finally {
     isLoading.value = false;
     isFetching.value = false;
-    if (process.env.NODE_ENV === 'development') {
-      console.log(
-        '[lists.vue] fetchAllLists: completed, isLoading set to false'
-      );
-    }
+    // Development-only logging removed
   }
 };
 
@@ -1127,7 +1105,6 @@ const handleRemoveLikedClick = async (title: {
   title: string;
   tmdb_id: number;
 }) => {
-  console.log('[handleRemoveLikedClick] Called with title:', title);
   const titleToRestore = likedTitles.value.find((t) => t.id === title.id);
 
   try {
@@ -1151,7 +1128,8 @@ const handleRemoveLikedClick = async (title: {
         });
       }
     } catch (poolError) {
-      console.error('Error regenerating pool:', poolError);
+      const { logError } = useLogger();
+      logError('[Lists] Error regenerating pool', poolError as Error);
       // Don't show error to user, pool regeneration is background task
     }
 
@@ -1191,7 +1169,8 @@ const handleRemoveLikedClick = async (title: {
                   });
                 }
               } catch (poolError) {
-                console.error('Error regenerating pool:', poolError);
+                const { logError } = useLogger();
+                logError('[Lists] Error regenerating pool', poolError as Error);
               }
             }
           }
@@ -1218,7 +1197,7 @@ const handleRemoveSeen = async (title: {
   type: typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV;
   liked?: boolean;
 }) => {
-  console.log('[handleRemoveSeen] Called with title:', title);
+  // Development-only logging removed
   // Store original title for undo
   const titleToRestore = seenTitles.value.find((t) => t.id === title.id);
 
@@ -1251,7 +1230,11 @@ const handleRemoveSeen = async (title: {
       await fetchSeenTitles();
     }
   } catch (error) {
-    console.error('[handleRemoveSeen] Error:', error);
+    const { logError } = useLogger();
+    logError('[Lists] Error removing seen title', error as Error, {
+      tmdbId: title.tmdb_id,
+      title: title.title,
+    });
     showError(t('seen.errorRemoving', { title: title.title }));
     await fetchSeenTitles();
   }
@@ -1353,7 +1336,10 @@ const handleAddToLiked = async (title: {
           });
         }
       } catch (poolError) {
-        console.error('Error regenerating pool:', poolError);
+        const { logError } = useLogger();
+        logError('[Lists] Error regenerating pool', poolError as Error, {
+          tmdbId: title.tmdb_id,
+        });
         // Don't show error to user, pool regeneration is background task
       }
     } else if (!result.success) {
@@ -1361,7 +1347,11 @@ const handleAddToLiked = async (title: {
       await fetchSeenTitles();
     }
   } catch (error) {
-    console.error('Error adding to liked:', error);
+    const { logError } = useLogger();
+    logError('[Lists] Error adding to liked', error as Error, {
+      tmdbId: title.tmdb_id,
+      title: title.title,
+    });
     showError(t('preferences.errorAdding', { title: title.title }));
     await fetchSeenTitles();
   }
@@ -1450,7 +1440,8 @@ const confirmRemoveLikeFromSeen = async () => {
                 });
               }
             } catch (poolError) {
-              console.error('Error regenerating pool:', poolError);
+              const { logError } = useLogger();
+              logError('[Lists] Error regenerating pool', poolError as Error);
             }
           }
         },
@@ -1472,17 +1463,15 @@ const confirmRemoveLikeFromSeen = async () => {
         });
       }
     } catch (poolError) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('Error regenerating pool:', poolError);
-      }
+      const { logError } = useLogger();
+      logError('[Lists] Error regenerating pool', poolError as Error);
       // Don't show error to user, pool regeneration is background task
     }
 
     titleToRemoveLike.value = null;
   } catch (error) {
-    if (process.env.NODE_ENV === 'development') {
-      console.error('Error in confirmRemoveLikeFromSeen:', error);
-    }
+    const { logError } = useLogger();
+    logError('[Lists] Error in confirmRemoveLikeFromSeen', error as Error);
     showToast(
       t('preferences.errorRemoving', { title: title.title }),
       null,
@@ -1498,7 +1487,7 @@ const handleRemoveNotInterested = async (title: {
   tmdb_id: number;
   type: typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV;
 }) => {
-  console.log('[handleRemoveNotInterested] Called with title:', title);
+  // Development-only logging removed
   // Store original title for undo
   const titleToRestore = notInterestedTitles.value.find(
     (t) => t.id === title.id
@@ -1535,7 +1524,11 @@ const handleRemoveNotInterested = async (title: {
       await fetchNotInterestedTitles();
     }
   } catch (error) {
-    console.error('[handleRemoveNotInterested] Error:', error);
+    const { logError } = useLogger();
+    logError('[Lists] Error removing not interested title', error as Error, {
+      tmdbId: title.tmdb_id,
+      title: title.title,
+    });
     showError(t('notInterested.errorRemoving', { title: title.title }));
     await fetchNotInterestedTitles();
   }
@@ -1593,17 +1586,7 @@ onMounted(async () => {
 });
 
 // Watch isLoading for debugging
-if (process.env.NODE_ENV === 'development') {
-  watch(
-    () => isLoading.value,
-    (newVal, oldVal) => {
-      console.log('[lists.vue] isLoading changed:', {
-        from: oldVal,
-        to: newVal,
-      });
-    }
-  );
-}
+// Development-only logging removed
 
 // Watch for app language changes and refresh all lists
 watch(
@@ -1611,15 +1594,7 @@ watch(
   async (newLocale, oldLocale) => {
     // Only refresh if language actually changed and user is authenticated
     if (newLocale && oldLocale && newLocale !== oldLocale && userId.value) {
-      if (import.meta.dev) {
-        console.log(
-          '[lists.vue] Language changed, refreshing all lists with new language:',
-          {
-            oldLocale,
-            newLocale,
-          }
-        );
-      }
+      // Development-only logging removed
 
       // Refresh all lists with new language
       // getAppLanguage() will automatically use the new locale.value

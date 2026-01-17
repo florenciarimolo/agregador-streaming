@@ -40,5 +40,39 @@ export default tseslint.config(
       '@typescript-eslint/no-undef': 'off',
     },
   },
+  // Disallow console.log in production code paths
+  // Exclude logger files since they're logging utilities
+  {
+    files: [
+      'server/**/*.ts',
+      'server/**/*.js',
+      'composables/**/*.ts',
+      'services/**/*.ts',
+      'utils/**/*.ts',
+    ],
+    ignores: ['**/logger.ts', '**/useLogger.ts'],
+    rules: {
+      'no-console': ['error', { allow: ['warn', 'error'] }],
+    },
+  },
+  // Allow console in logger utilities (they're logging utilities by design)
+  {
+    files: ['**/logger.ts', '**/useLogger.ts'],
+    rules: {
+      'no-console': 'off',
+    },
+  },
+  // Allow console.log in pages and scripts (for temporary debugging)
+  {
+    files: [
+      'pages/**/*.vue',
+      'pages/**/*.ts',
+      'scripts/**/*.ts',
+      'scripts/**/*.js',
+    ],
+    rules: {
+      'no-console': 'off',
+    },
+  },
   eslintConfigPrettier
 );

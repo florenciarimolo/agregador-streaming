@@ -2,6 +2,7 @@ import { TABLES } from '@/constants/db/tables';
 import { USER_PREFERENCES_COLUMNS } from '@/constants/db/columns';
 import { getUserIdFromEvent } from '@/server/utils/user-auth';
 import { createServerSupabaseClient } from '@/server/utils/supabase';
+import { devLog, logError } from '@/server/utils/logger';
 
 export default defineEventHandler(async (event) => {
   try {
@@ -11,25 +12,20 @@ export default defineEventHandler(async (event) => {
     const userId = await getUserIdFromEvent(event);
 
     if (!userId) {
-      if (import.meta.dev) {
-        console.error(
-          '[preferences.get] No userId found - missing or invalid Bearer token'
-        );
-        console.error('[preferences.get] Request headers:', {
-          authorization: event.node.req.headers.authorization
-            ? 'present'
-            : 'missing',
-        });
-      }
+      logError(
+        '[Preferences] No userId found - missing or invalid Bearer token',
+        new Error('Unauthorized'),
+        {
+          hasAuthorization: !!event.node.req.headers.authorization,
+        }
+      );
       throw createError({
         statusCode: 401,
         statusMessage: 'Unauthorized',
       });
     }
 
-    if (import.meta.dev) {
-      console.log('[preferences.get] User ID:', userId);
-    }
+    devLog('[preferences.get] User ID:', userId);
 
     // Create Supabase client for server-side operations
     // Use service role key to bypass RLS (we've already validated userId)
@@ -43,57 +39,37 @@ export default defineEventHandler(async (event) => {
 
     if (error && error.code !== 'PGRST116') {
       // PGRST116 is "not found" - return empty preferences
-      if (import.meta.dev) {
-        console.error('[preferences.get] Error fetching preferences:', error);
-      }
+      logError('[Preferences] Error fetching preferences', error, { userId });
       throw createError({
         statusCode: 500,
         statusMessage: 'Failed to fetch preferences',
       });
     }
 
-    // Log raw database response before any processing
-    if (import.meta.dev) {
-      console.warn('[preferences.get] Raw database query result:', {
-        hasData: !!data,
-        dataType: typeof data,
-        dataIsNull: data === null,
-        dataIsUndefined: data === undefined,
-        rawData: data,
-        regionRaw: data?.region,
-        regionType: typeof data?.region,
-        regionValue: data?.region,
-        regionIsNull: data?.region === null,
-        regionIsUndefined: data?.region === undefined,
-        regionIsEmptyString: data?.region === '',
-        allKeys: data ? Object.keys(data) : [],
-      });
-    }
+    // Log raw database response before any processing (development only)
+    devLog('[preferences.get] Raw database query result:', {
+      hasData: !!data,
+      dataType: typeof data,
+      dataIsNull: data === null,
+      dataIsUndefined: data === undefined,
+      regionRaw: data?.region,
+      regionType: typeof data?.region,
+      allKeys: data ? Object.keys(data) : [],
+    });
 
-    if (import.meta.dev) {
-      const dataStr = data ? JSON.stringify(data, null, 2) : 'null';
-      console.warn('[preferences.get] Database response:', {
-        hasData: !!data,
-        userId,
-        region: data?.region,
-        regionType: typeof data?.region,
-        regionLength: data?.region?.length,
-        regionIsNull: data?.region === null,
-        regionIsUndefined: data?.region === undefined,
-        regionIsEmptyString: data?.region === '',
-        fullData: dataStr,
-      });
-    }
+    devLog('[preferences.get] Database response:', {
+      hasData: !!data,
+      userId,
+      region: data?.region,
+      regionType: typeof data?.region,
+    });
 
-    // Log the exact value being returned
-    if (import.meta.dev) {
-      console.warn('[preferences.get] Returning response:', {
-        success: true,
-        preferences: data || null,
-        preferencesRegion: data?.region,
-        preferencesRegionType: typeof data?.region,
-      });
-    }
+    // Log the exact value being returned (development only)
+    devLog('[preferences.get] Returning response:', {
+      success: true,
+      preferencesRegion: data?.region,
+      preferencesRegionType: typeof data?.region,
+    });
 
     return {
       success: true,

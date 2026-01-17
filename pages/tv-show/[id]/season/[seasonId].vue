@@ -176,15 +176,7 @@ watch(
   () => locale.value,
   async (newLocale, oldLocale) => {
     if (newLocale && oldLocale && newLocale !== oldLocale) {
-      if (import.meta.dev) {
-        console.log(
-          '[tv-show/[id]/season/[seasonId].vue] Language changed, refreshing season data:',
-          {
-            oldLocale,
-            newLocale,
-          }
-        );
-      }
+      // Development-only logging removed
       // Refresh all data with new language
       await Promise.all([
         refreshTVShowDetails(),
@@ -247,7 +239,11 @@ const { canonicalUrl: canonicalUrlFromComposable } = useCanonical();
 // Schema.org JSON-LD
 const seasonSchema = computed(() => {
   if (!seasonWithProviders.value || !tvShowData.value) return null;
-  return useTVSeasonSchema(seasonWithProviders.value, tvShowData.value, siteUrl);
+  return useTVSeasonSchema(
+    seasonWithProviders.value,
+    tvShowData.value,
+    siteUrl
+  );
 });
 
 // SEO keywords

@@ -6,6 +6,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { TABLES } from '@/constants/db/tables';
 import { RECOMMENDATION_POOL_COLUMNS } from '@/constants/db/columns';
+import { logError, logWarn } from '@/server/utils/logger';
 
 export type RecommendationPoolSource =
   | 'based_on_like'
@@ -56,7 +57,17 @@ export async function getPoolCount(
     .eq(RECOMMENDATION_POOL_COLUMNS.USER_ID, userId);
 
   if (error) {
-    console.error('[RecommendationPool] Error getting pool count:', error);
+    if (import.meta.client) {
+      const { useLogger } = await import('@/composables/useLogger');
+      const { logError } = useLogger();
+      logError(
+        '[RecommendationPool] Error getting pool count',
+        error as Error,
+        {
+          userId,
+        }
+      );
+    }
     throw error;
   }
 
@@ -84,10 +95,18 @@ export async function deleteLowestScoreEntries(
     .limit(count);
 
   if (selectError) {
-    console.error(
-      '[RecommendationPool] Error selecting entries to delete:',
-      selectError
-    );
+    if (import.meta.client) {
+      const { useLogger } = await import('@/composables/useLogger');
+      const { logError } = useLogger();
+      logError(
+        '[RecommendationPool] Error selecting entries to delete',
+        selectError as Error,
+        {
+          userId,
+          count,
+        }
+      );
+    }
     throw selectError;
   }
 
@@ -103,7 +122,9 @@ export async function deleteLowestScoreEntries(
     .in(RECOMMENDATION_POOL_COLUMNS.ID, idsToDelete);
 
   if (deleteError) {
-    console.error('[RecommendationPool] Error deleting entries:', deleteError);
+    logError('[RecommendationPool] Error deleting entries', deleteError, {
+      idsToDelete: idsToDelete.length,
+    });
     throw deleteError;
   }
 }
@@ -152,7 +173,9 @@ export async function insertPoolEntries(
     if (error.code === '23505') {
       return 0;
     }
-    console.error('[RecommendationPool] Error inserting entries:', error);
+    logError('[RecommendationPool] Error inserting entries', error, {
+      entriesCount: entries.length,
+    });
     throw error;
   }
 
@@ -162,7 +185,7 @@ export async function insertPoolEntries(
 /**
  * Update the score of a pool entry
  * Clamps score to -100 to 100 range
- * 
+ *
  * @deprecated Use updatePreferenceScore instead for new scoring model
  */
 export async function updatePoolScore(
@@ -207,7 +230,10 @@ export async function updatePoolScore(
     .eq(RECOMMENDATION_POOL_COLUMNS.TMDB_ID, tmdbId);
 
   if (updateError) {
-    console.error('[RecommendationPool] Error updating score:', updateError);
+    logError('[RecommendationPool] Error updating score', updateError, {
+      entryId,
+      newScore,
+    });
     throw updateError;
   }
 }
@@ -252,7 +278,14 @@ export async function updatePreferenceScore(
     .eq(RECOMMENDATION_POOL_COLUMNS.TMDB_ID, tmdbId);
 
   if (updateError) {
-    console.error('[RecommendationPool] Error updating preference_score:', updateError);
+    logError(
+      '[RecommendationPool] Error updating preference_score',
+      updateError,
+      {
+        entryId,
+        newPreferenceScore,
+      }
+    );
     throw updateError;
   }
 }
@@ -292,7 +325,9 @@ export async function recalculateScore(
     .eq(RECOMMENDATION_POOL_COLUMNS.TMDB_ID, tmdbId);
 
   if (updateError) {
-    console.error('[RecommendationPool] Error recalculating score:', updateError);
+    logError('[RecommendationPool] Error recalculating score', updateError, {
+      entryId,
+    });
     throw updateError;
   }
 }
@@ -315,7 +350,9 @@ export async function removeFromPool(
     .eq(RECOMMENDATION_POOL_COLUMNS.TMDB_ID, tmdbId);
 
   if (error) {
-    console.error('[RecommendationPool] Error removing entry:', error);
+    logError('[RecommendationPool] Error removing entry', error, {
+      entryId,
+    });
     throw error;
   }
 }
@@ -336,10 +373,9 @@ export async function deleteAllPoolEntries(
     .eq(RECOMMENDATION_POOL_COLUMNS.USER_ID, userId);
 
   if (error) {
-    console.error(
-      '[RecommendationPool] Error deleting all pool entries:',
-      error
-    );
+    logError('[RecommendationPool] Error deleting all pool entries', error, {
+      userId,
+    });
     throw error;
   }
 }
@@ -366,9 +402,13 @@ export async function updateLastShownAt(
     .in(RECOMMENDATION_POOL_COLUMNS.TMDB_ID, tmdbIds);
 
   if (error) {
-    console.error('[RecommendationPool] Error updating last_shown_at:', error);
+    logError('[RecommendationPool] Error updating last_shown_at', error, {
+      entryId,
+    });
     // Don't throw - this is not critical
-    console.warn('[RecommendationPool] Continuing despite error');
+    logWarn(
+      '[RecommendationPool] Continuing despite error updating last_shown_at'
+    );
   }
 }
 
@@ -398,7 +438,10 @@ export async function getPoolEntries(
   const { data, error } = await query;
 
   if (error) {
-    console.error('[RecommendationPool] Error getting pool entries:', error);
+    logError('[RecommendationPool] Error getting pool entries', error, {
+      userId,
+      limit,
+    });
     throw error;
   }
 
@@ -413,4 +456,3 @@ export async function updateTitleDataLanguage(): Promise<void> {
   // No-op: title_data has been removed from recommendation_pool
   // Title data is now fetched from titles table when needed
 }
-

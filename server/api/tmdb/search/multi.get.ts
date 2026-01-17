@@ -57,7 +57,8 @@ export default defineEventHandler(async (event: H3Event) => {
       LanguageIsoCode,
       SUPPORTED_LANGUAGE_ISO_CODES,
     } = await import('@/constants/languages');
-    const languageCode = extractLanguageCode(language) || LanguageIsoCode.SPANISH;
+    const languageCode =
+      extractLanguageCode(language) || LanguageIsoCode.SPANISH;
     const primaryLanguage = getPrimaryLanguageForRegion(region);
 
     // Filter results to only movies and TV shows
@@ -74,8 +75,12 @@ export default defineEventHandler(async (event: H3Event) => {
 
         // Check alphabet if the user's language is a Latin script language
         // (Spanish, Catalan, Basque, Galician, or English)
-        const supportedLanguages = SUPPORTED_LANGUAGE_ISO_CODES.map((code) => code);
-        const shouldCheckAlphabet = supportedLanguages.includes(languageCode as LanguageIsoCode);
+        const supportedLanguages = SUPPORTED_LANGUAGE_ISO_CODES.map(
+          (code) => code
+        );
+        const shouldCheckAlphabet = supportedLanguages.includes(
+          languageCode as LanguageIsoCode
+        );
 
         if (shouldCheckAlphabet && title) {
           // For English, we need to check differently since hasUnexpectedCharacters
@@ -188,18 +193,28 @@ export default defineEventHandler(async (event: H3Event) => {
                     }
                   } catch (primaryError) {
                     // If primary language fetch fails, keep original title
-                    console.error(
-                      `[Search] Failed to fetch primary language title for ${result.media_type} ${result.id}:`,
-                      primaryError
+                    const { logError } = await import('@/server/utils/logger');
+                    logError(
+                      '[Search] Failed to fetch primary language title',
+                      primaryError as Error,
+                      {
+                        mediaType: result.media_type,
+                        tmdbId: result.id,
+                      }
                     );
                   }
                 }
               }
             } catch (error) {
               // If fetch fails, keep original title
-              console.error(
-                `[Search] Failed to fetch preferred language title for ${result.media_type} ${result.id}:`,
-                error
+              const { logError } = await import('@/server/utils/logger');
+              logError(
+                '[Search] Failed to fetch preferred language title',
+                error as Error,
+                {
+                  mediaType: result.media_type,
+                  tmdbId: result.id,
+                }
               );
             }
           }

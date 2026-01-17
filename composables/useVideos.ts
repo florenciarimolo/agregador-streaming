@@ -4,13 +4,18 @@
  * Never call video endpoints directly from components
  */
 
-import { VIDEO_SITE_YOUTUBE, VIDEO_TYPE_TRAILER, VIDEO_TYPE_RECAP } from '@/constants/domain/videos';
+import {
+  VIDEO_SITE_YOUTUBE,
+  VIDEO_TYPE_TRAILER,
+  VIDEO_TYPE_RECAP,
+} from '@/constants/domain/videos';
 import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 import type { Video } from '@/types/Video';
 import { getPrimaryLanguageForRegion } from '@/utils/language-detection';
 import { useUserRegion } from '@/composables/useUserRegion';
 import { useCurrentLanguage } from '@/composables/useCurrentLanguage';
 import { LanguageIsoCode, DEFAULT_LANGUAGE_ISO } from '@/constants/languages';
+import { useLogger } from '@/composables/useLogger';
 
 /**
  * Get videos for a title (movie or TV show) with language fallback
@@ -23,38 +28,32 @@ export async function getVideosForTitle(
   try {
     const { currentLanguage } = useCurrentLanguage();
     const { getUserRegion } = useUserRegion();
-    
+
     // Get current language code (base code, e.g., 'es' from 'es-ES')
-    const currentLangCode = currentLanguage.value.code.split('-')[0]?.toLowerCase() || DEFAULT_LANGUAGE_ISO;
-    
+    const currentLangCode =
+      currentLanguage.value.code.split('-')[0]?.toLowerCase() ||
+      DEFAULT_LANGUAGE_ISO;
+
     // Get user region for fallback
     const userRegion = await getUserRegion();
     const regionPrimaryLang = getPrimaryLanguageForRegion(userRegion);
-    const regionPrimaryLangCode = regionPrimaryLang.split('-')[0]?.toLowerCase() || DEFAULT_LANGUAGE_ISO;
-    
+    const regionPrimaryLangCode =
+      regionPrimaryLang.split('-')[0]?.toLowerCase() || DEFAULT_LANGUAGE_ISO;
+
     // Determine fallback languages
     const fallbackLanguages: string[] = [currentLangCode];
-    
+
     // Add region primary language if different from current
     if (regionPrimaryLangCode !== currentLangCode) {
       fallbackLanguages.push(regionPrimaryLangCode);
     }
-    
+
     // Add English if region primary is not English
     if (regionPrimaryLangCode !== LanguageIsoCode.ENGLISH) {
       fallbackLanguages.push(LanguageIsoCode.ENGLISH);
     }
 
-    if (import.meta.dev) {
-      console.log('[getVideosForTitle] Language fallback order:', {
-        tmdbId,
-        type,
-        currentLang: currentLangCode,
-        region: userRegion,
-        regionPrimaryLang: regionPrimaryLangCode,
-        fallbackOrder: fallbackLanguages,
-      });
-    }
+    // Development-only logging removed - use proper logging if needed for production
 
     // Try each language in fallback order
     // We need to check if there are videos of type Trailer or Recap after filtering
@@ -72,52 +71,40 @@ export async function getVideosForTitle(
         if (videos && videos.length > 0) {
           // Filter to YouTube only and official videos for rendering
           const youtubeVideos = videos.filter(
-            (video) => video.site === VIDEO_SITE_YOUTUBE && video.official === true
+            (video) =>
+              video.site === VIDEO_SITE_YOUTUBE && video.official === true
           );
 
           if (youtubeVideos.length > 0) {
             // Check if there are videos of type Trailer or Recap
             // This is the key: we need videos that will be shown after type filtering
             const trailersOrRecaps = youtubeVideos.filter(
-              (video) => video.type === VIDEO_TYPE_TRAILER || video.type === VIDEO_TYPE_RECAP
+              (video) =>
+                video.type === VIDEO_TYPE_TRAILER ||
+                video.type === VIDEO_TYPE_RECAP
             );
 
             if (trailersOrRecaps.length > 0) {
               // Found videos that will be displayed, use all YouTube videos
               allVideos = youtubeVideos;
-              if (import.meta.dev) {
-                console.log('[getVideosForTitle] Found videos with Trailer/Recap in language:', {
-                  langCode,
-                  total: videos.length,
-                  youtube: youtubeVideos.length,
-                  trailersOrRecaps: trailersOrRecaps.length,
-                });
-              }
               break; // Found videos, stop trying other languages
-            } else if (import.meta.dev) {
-              console.log('[getVideosForTitle] Found videos but no Trailer/Recap in language:', {
-                langCode,
-                total: videos.length,
-                youtube: youtubeVideos.length,
-                types: youtubeVideos.map((v) => v.type),
-              });
             }
           }
         }
-      } catch (error) {
-        if (import.meta.dev) {
-          console.warn(`[getVideosForTitle] Error fetching videos for language ${langCode}:`, error);
-        }
-        // Continue to next language
+      } catch {
+        // Continue to next language - error is recoverable (fallback to next language)
+        const { logWarn } = useLogger();
+        logWarn('[Videos] Error fetching videos for language, trying next', {
+          langCode,
+        });
       }
     }
 
     if (allVideos.length === 0) {
-      if (import.meta.dev) {
-        console.warn('[getVideosForTitle] No videos found in any language:', {
-          triedLanguages,
-        });
-      }
+      const { logWarn } = useLogger();
+      logWarn('[Videos] No videos found in any language', {
+        triedLanguages: triedLanguages.join(', '),
+      });
       return null;
     }
 
@@ -128,16 +115,13 @@ export async function getVideosForTitle(
       return dateB - dateA;
     });
 
-    if (import.meta.dev) {
-      console.log('[getVideosForTitle] Final videos:', {
-        count: allVideos.length,
-        types: allVideos.map((v) => v.type),
-      });
-    }
-
     return allVideos;
   } catch (error) {
-    console.error('[getVideosForTitle] Error:', error);
+    const { logError } = useLogger();
+    logError('[Videos] Error getting videos for title', error as Error, {
+      tmdbId,
+      type,
+    });
     return null;
   }
 }
@@ -168,7 +152,11 @@ export async function getVideosForSeason(
 
     return youtubeVideos.length > 0 ? youtubeVideos : null;
   } catch (error) {
-    console.error('[getVideosForSeason] Error:', error);
+    const { logError } = useLogger();
+    logError('[Videos] Error getting videos for season', error as Error, {
+      tvTmdbId,
+      seasonNumber,
+    });
     return null;
   }
 }
@@ -183,4 +171,3 @@ export function filterVideosByType(
   if (!videos) return [];
   return videos.filter((video) => video.type === type);
 }
-

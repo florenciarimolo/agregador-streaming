@@ -12,6 +12,7 @@ import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 import { TITLES_COLUMNS } from '@/constants/db/columns';
 import { TABLES } from '@/constants/db/tables';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { logError, devLog } from '@/server/utils/logger';
 
 export interface ExtractedTitleData {
   title: string;
@@ -146,19 +147,19 @@ export async function fetchOverviewWithPrimaryLanguageFallback(
           })
           .catch((error: unknown) => {
             // Log but don't fail the request
-            if (import.meta.dev) {
-              console.error(
-                '[fetchOverviewWithPrimaryLanguageFallback] Error updating cache with primary language:',
-                error
-              );
-            }
+            logError(
+              '[TitleExtraction] Error updating cache with primary language',
+              error as Error,
+              {
+                tmdbId,
+                primaryLanguageKey,
+              }
+            );
           }) as Promise<void>;
 
-        if (import.meta.dev) {
-          console.log(
-            `[fetchOverviewWithPrimaryLanguageFallback] Using primary language (${primaryLanguageKey}) overview for ${tmdbId} as fallback`
-          );
-        }
+        devLog(
+          `[TitleExtraction] Using primary language (${primaryLanguageKey}) overview for ${tmdbId} as fallback`
+        );
 
         return primaryResponse.overview;
       }
@@ -202,31 +203,31 @@ export async function fetchOverviewWithPrimaryLanguageFallback(
           })
           .catch((error: unknown) => {
             // Log but don't fail the request
-            if (import.meta.dev) {
-              console.error(
-                '[fetchOverviewWithPrimaryLanguageFallback] Error updating cache with English:',
-                error
-              );
-            }
+            logError(
+              '[TitleExtraction] Error updating cache with English',
+              error as Error,
+              {
+                tmdbId,
+              }
+            );
           }) as Promise<void>;
 
-        if (import.meta.dev) {
-          console.log(
-            `[fetchOverviewWithPrimaryLanguageFallback] Using English overview for ${tmdbId} as fallback`
-          );
-        }
+        devLog(
+          `[TitleExtraction] Using English overview for ${tmdbId} as fallback`
+        );
 
         return englishResponse.overview;
       }
     }
   } catch (primaryError) {
     // Log but don't fail the request
-    if (import.meta.dev) {
-      console.error(
-        '[fetchOverviewWithPrimaryLanguageFallback] Error fetching fallback overview:',
-        primaryError
-      );
-    }
+    logError(
+      '[TitleExtraction] Error fetching fallback overview',
+      primaryError as Error,
+      {
+        tmdbId,
+      }
+    );
   }
 
   // Return empty string if no fallback found
@@ -307,31 +308,32 @@ export async function fetchTaglineWithPrimaryLanguageFallback(
           })
           .catch((error: unknown) => {
             // Log but don't fail the request
-            if (import.meta.dev) {
-              console.error(
-                '[fetchTaglineWithPrimaryLanguageFallback] Error updating cache with primary language:',
-                error
-              );
-            }
+            logError(
+              '[TitleExtraction] Error updating cache with primary language tagline',
+              error as Error,
+              {
+                tmdbId,
+                primaryLanguageKey,
+              }
+            );
           }) as Promise<void>;
 
-        if (import.meta.dev) {
-          console.log(
-            `[fetchTaglineWithPrimaryLanguageFallback] Using primary language (${primaryLanguageKey}) tagline for ${tmdbId} as fallback`
-          );
-        }
+        devLog(
+          `[TitleExtraction] Using primary language (${primaryLanguageKey}) tagline for ${tmdbId} as fallback`
+        );
 
         return primaryResponse.tagline;
       }
     }
   } catch (primaryError) {
     // Log but don't fail the request
-    if (import.meta.dev) {
-      console.error(
-        '[fetchTaglineWithPrimaryLanguageFallback] Error fetching primary language tagline:',
-        primaryError
-      );
-    }
+    logError(
+      '[TitleExtraction] Error fetching primary language tagline',
+      primaryError as Error,
+      {
+        tmdbId,
+      }
+    );
   }
 
   // Return empty string if no fallback found
@@ -503,22 +505,19 @@ export async function extractTitleDataWithFallback(
           })
           .catch((error: unknown) => {
             // Log but don't fail the request
-            if (import.meta.dev) {
-              console.error(
-                '[extractTitleDataWithFallback] Error updating cache:',
-                error
-              );
-            }
+            logError('[TitleExtraction] Error updating cache', error as Error, {
+              tmdbId,
+              type,
+            });
           }) as Promise<void>;
       }
     } catch (error) {
       // Log but don't fail the request
-      if (import.meta.dev) {
-        console.error(
-          '[extractTitleDataWithFallback] Error fetching from TMDB:',
-          error
-        );
-      }
+      logError('[TitleExtraction] Error fetching from TMDB', error as Error, {
+        tmdbId,
+        type,
+        language,
+      });
     }
   }
 

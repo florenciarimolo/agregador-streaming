@@ -142,7 +142,10 @@ const loadList = async () => {
       items.value = response.items;
     }
   } catch (error) {
-    console.error('[Discover] Error fetching list:', error);
+    const { logError } = useLogger();
+    logError('[Discover] Error fetching list', error as Error, {
+      slug,
+    });
   } finally {
     isLoading.value = false;
   }

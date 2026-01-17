@@ -28,6 +28,7 @@ import FinalCtaSection from '@/components/home/FinalCtaSection.vue';
 import AnimatedBackground from '@/components/AnimatedBackground.vue';
 import RecommendationSection from '@/components/RecommendationSection.vue';
 import ViewModeSelector from '@/components/ViewModeSelector.vue';
+import { useLogger } from '@/composables/useLogger';
 import SkeletonMediaCard from '@/components/SkeletonMediaCard.vue';
 import SkeletonListItem from '@/components/SkeletonListItem.vue';
 import { useViewMode } from '@/composables/useViewMode';
@@ -75,9 +76,10 @@ const userStore = computed(() => {
     return useUserStore();
   } catch (error) {
     // If store is not available, return a fallback object
-    if (process.env.NODE_ENV === 'development') {
-      console.warn('[pages/index.vue] useUserStore not available:', error);
-    }
+    const { logWarn } = useLogger();
+    logWarn('[Home] useUserStore not available', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
     return {
       profile: null,
       authInitialized: false,
@@ -258,7 +260,8 @@ watch(
         ]);
         genresData.value = { movie: movieResponse, tv: tvResponse };
       } catch (error) {
-        console.error('Error fetching genres:', error);
+        const { logError } = useLogger();
+        logError('[Home] Error fetching genres', error as Error);
         genresData.value = { movie: { genres: [] }, tv: { genres: [] } };
       }
     } else if (!newUser) {
@@ -320,7 +323,10 @@ const loadProvidersForRegion = async (region: string) => {
     });
     providersData.value = response;
   } catch (error) {
-    console.error('Error loading providers for region:', error);
+    const { logError } = useLogger();
+    logError('[Home] Error loading providers for region', error as Error, {
+      region,
+    });
     providersData.value = { results: [] };
   }
 };
@@ -382,17 +388,7 @@ const fetchUserPreferences = async () => {
       timeout: 5000,
     });
 
-    if (import.meta.dev) {
-      console.log('[pages/index.vue] Raw API response:', {
-        success: response.success,
-        hasPreferences: !!response.preferences,
-        region: response.preferences?.region,
-        regionType: typeof response.preferences?.region,
-        regionIsNull: response.preferences?.region === null,
-        regionIsUndefined: response.preferences?.region === undefined,
-        fullResponse: JSON.stringify(response, null, 2),
-      });
-    }
+    // Development-only logging removed
 
     if (response.success && response.preferences) {
       // Store preferences data for reactive mapping
@@ -408,25 +404,19 @@ const fetchUserPreferences = async () => {
         regionValue.length > 0
       ) {
         if (userRegion.value !== regionValue) {
-          if (import.meta.dev) {
-            console.log(
-              '[pages/index.vue] Setting userRegion from preferences:',
-              regionValue
-            );
-          }
           userRegion.value = regionValue;
         }
       } else {
         // Explicitly set to null if region is not available
         if (userRegion.value !== null) {
-          if (import.meta.dev) {
-            console.warn(
-              '[pages/index.vue] Region is null/undefined/empty in preferences, clearing userRegion. Value:',
+          const { logWarn } = useLogger();
+          logWarn(
+            '[Home] Region is null/undefined/empty in preferences, clearing userRegion',
+            {
               regionValue,
-              'Type:',
-              typeof regionValue
-            );
-          }
+              regionType: typeof regionValue,
+            }
+          );
           userRegion.value = null;
         }
       }
@@ -440,29 +430,25 @@ const fetchUserPreferences = async () => {
       mapPreferencesToSelections();
     }
   } catch (error) {
-    console.error('Error fetching user preferences:', error);
+    const { logError } = useLogger();
+    logError('[Home] Error fetching user preferences', error as Error);
     // Fallback: Try to get cached region from useUserRegion if fetch failed
     // This ensures the page can still render even if the API call times out
     try {
       const { getUserRegion } = useUserRegion();
       const cachedRegion = await getUserRegion(false); // Don't force refresh, use cache
       if (cachedRegion) {
-        if (import.meta.dev) {
-          console.log(
-            '[pages/index.vue] Using cached region from useUserRegion as fallback:',
-            cachedRegion
-          );
-        }
         userRegion.value = cachedRegion;
       }
     } catch (fallbackError) {
       // If fallback also fails, just log it - we'll continue with null region
-      if (import.meta.dev) {
-        console.warn(
-          '[pages/index.vue] Failed to get cached region from useUserRegion:',
-          fallbackError
-        );
-      }
+      const { logWarn } = useLogger();
+      logWarn('[Home] Failed to get cached region from useUserRegion', {
+        error:
+          fallbackError instanceof Error
+            ? fallbackError.message
+            : 'Unknown error',
+      });
     }
   } finally {
     filtersLoading.value = false;
@@ -559,45 +545,35 @@ watch(
         await Promise.race([fetchPromise, timeoutPromise]);
       } catch (error) {
         // If fetch times out or fails, try to use cached region from useUserRegion
-        if (import.meta.dev) {
-          console.warn(
-            '[pages/index.vue] fetchUserPreferences failed, trying cached region:',
-            error
-          );
-        }
+        const { logWarn } = useLogger();
+        logWarn('[Home] fetchUserPreferences failed, trying cached region', {
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
         try {
           const { getUserRegion } = useUserRegion();
           const cachedRegion = await getUserRegion(false); // Use cache, don't force refresh
           if (cachedRegion && !userRegion.value) {
-            if (import.meta.dev) {
-              console.log(
-                '[pages/index.vue] Using cached region from useUserRegion as fallback:',
-                cachedRegion
-              );
-            }
+            // Development-only logging removed
             userRegion.value = cachedRegion;
           }
         } catch (fallbackError) {
-          if (import.meta.dev) {
-            console.warn(
-              '[pages/index.vue] Failed to get cached region from useUserRegion:',
-              fallbackError
-            );
-          }
+          const { logWarn } = useLogger();
+          logWarn('[Home] Failed to get cached region from useUserRegion', {
+            error:
+              fallbackError instanceof Error
+                ? fallbackError.message
+                : 'Unknown error',
+          });
         }
       }
-      if (import.meta.dev) {
-        console.log(
-          '[pages/index.vue] User preferences loaded, region:',
-          userRegion.value
-        );
-      }
+      // Development-only logging removed
       // Load providers for region (already done in fetchUserPreferences if region exists)
       if (userRegion.value && availableProviders.value.length === 0) {
         await loadProvidersForRegion(userRegion.value);
       }
     } catch (error) {
-      console.error('Error fetching user preferences:', error);
+      const { logError } = useLogger();
+      logError('[Home] Error fetching user preferences', error as Error);
       userRegion.value = null;
     } finally {
       preferencesPending.value = false;
@@ -652,11 +628,7 @@ watch(
   async (newUser, oldUser) => {
     // If user just logged in (was null, now has value)
     if (!oldUser && newUser) {
-      if (import.meta.dev) {
-        console.log('[pages/index.vue] User logged in, updating state...', {
-          userId: newUser.id || (newUser as { sub?: string })?.sub,
-        });
-      }
+      // Development-only logging removed
       // Force state refresh by ensuring profile is loaded
       if (userStore.value.profile === null) {
         await userStore.value.fetchProfile();
@@ -668,9 +640,7 @@ watch(
     }
     // If user just logged out (had value, now null)
     else if (oldUser && !newUser) {
-      if (import.meta.dev) {
-        console.log('[pages/index.vue] User logged out, clearing state...');
-      }
+      // Development-only logging removed
       // Clear preferences state
       userRegion.value = null;
       preferencesPending.value = false;
@@ -776,7 +746,8 @@ const saveFilters = async () => {
       body: preferencesToSave,
     });
   } catch (error) {
-    console.error('Error saving filters:', error);
+    const { logError } = useLogger();
+    logError('[Home] Error saving filters', error as Error);
   }
 };
 
@@ -845,7 +816,8 @@ const applyFilters = async () => {
     allRecommendations.value = fetched;
     filterRecommendationsByType();
   } catch (error) {
-    console.error('Error applying filters:', error);
+    const { logError } = useLogger();
+    logError('[Home] Error applying filters', error as Error);
   } finally {
     filtersLoading.value = false;
   }

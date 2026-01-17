@@ -2,6 +2,7 @@ import { readonly } from 'vue';
 import { validatePassword } from '@/utils/passwordValidation';
 import { STORAGE_KEYS } from '@/constants/storage/keys';
 import { DEFAULT_LANGUAGE_URL_CODE } from '@/constants/urlLanguageCodes';
+import { useLogger } from '@/composables/useLogger';
 
 /**
  * Authentication composable for UpNext
@@ -63,9 +64,7 @@ export const useAuth = () => {
       const lang = getCurrentLang();
       const redirectUrl = getAuthRedirectUrl(lang);
 
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[useAuth] SignUp redirectTo:', redirectUrl);
-      }
+      // Development-only logging removed
 
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -97,7 +96,8 @@ export const useAuth = () => {
 
       return { data, error: null };
     } catch (error: unknown) {
-      console.error('Sign up error:', error);
+      const { logError } = useLogger();
+      logError('[Auth] Sign up error', error as Error);
       return {
         data: null,
         error: error instanceof Error ? error : new Error('Unknown error'),
@@ -119,7 +119,8 @@ export const useAuth = () => {
 
       return { data, error: null };
     } catch (error: unknown) {
-      console.error('Sign in error:', error);
+      const { logError } = useLogger();
+      logError('[Auth] Sign in error', error as Error);
       return {
         data: null,
         error: error instanceof Error ? error : new Error('Unknown error'),
@@ -136,9 +137,7 @@ export const useAuth = () => {
       const lang = getCurrentLang();
       const redirectUrl = getAuthRedirectUrl(lang);
 
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[useAuth] MagicLink redirectTo:', redirectUrl);
-      }
+      // Development-only logging removed
 
       const { data, error } = await supabase.auth.signInWithOtp({
         email,
@@ -151,7 +150,8 @@ export const useAuth = () => {
 
       return { data, error: null };
     } catch (error: unknown) {
-      console.error('Magic link error:', error);
+      const { logError } = useLogger();
+      logError('[Auth] Magic link error', error as Error);
       return {
         data: null,
         error: error instanceof Error ? error : new Error('Unknown error'),
@@ -171,9 +171,7 @@ export const useAuth = () => {
     const baseUrl = config.public.baseUrl.replace(/\/$/, '');
     const redirectUrl = `${baseUrl}/${lang}/auth/callback?next=/${lang}/auth/reset-password`;
 
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[useAuth] ResetPassword redirectTo:', redirectUrl);
-    }
+    // Development-only logging removed
 
     try {
       const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
@@ -190,7 +188,8 @@ export const useAuth = () => {
       }
 
       if (error) {
-        console.error('[Server] Reset password error:', error);
+        const { logError } = useLogger();
+        logError('[Auth] Reset password error', error as Error);
 
         // Handle rate limit error specifically
         if (
@@ -224,7 +223,8 @@ export const useAuth = () => {
 
       return { data, error: null };
     } catch (error: unknown) {
-      console.error('[Server] Reset password error:', error);
+      const { logError } = useLogger();
+      logError('[Auth] Reset password error', error as Error);
 
       // If it's already a RateLimitError, return it as is
       if (
@@ -263,12 +263,13 @@ export const useAuth = () => {
           userStore.reset();
         } catch (storeError) {
           // Store might not be available, but that's okay - the listener will handle it
-          if (process.env.NODE_ENV === 'development') {
-            console.warn(
-              '[useAuth] Could not reset store during signOut:',
-              storeError
-            );
-          }
+          const { logWarn } = useLogger();
+          logWarn('[Auth] Could not reset store during signOut', {
+            error:
+              storeError instanceof Error
+                ? storeError.message
+                : 'Unknown error',
+          });
         }
       }
 
@@ -276,7 +277,8 @@ export const useAuth = () => {
       await router.push(routeWithLang('/'));
       return { error: null };
     } catch (error: unknown) {
-      console.error('Sign out error:', error);
+      const { logError } = useLogger();
+      logError('[Auth] Sign out error', error as Error);
       return {
         error: error instanceof Error ? error : new Error('Unknown error'),
       };
@@ -299,7 +301,8 @@ export const useAuth = () => {
       if (error) throw error;
       return data;
     } catch (error: unknown) {
-      console.error('Get profile error:', error);
+      const { logError } = useLogger();
+      logError('[Auth] Get profile error', error as Error);
       return null;
     }
   };

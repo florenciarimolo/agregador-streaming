@@ -62,9 +62,11 @@ export const useTitleActions = (
         return titleData.title;
       }
     } catch (error) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('[getTitleWithAlphabetDetection] Error:', error);
-      }
+      const { logError } = useLogger();
+      logError(
+        '[TitleActions] Error getting title with alphabet detection',
+        error as Error
+      );
     }
 
     // Fallback to original title if database fetch fails
@@ -129,7 +131,14 @@ export const useTitleActions = (
       }
       filterRecommendationsByType();
     } catch (error) {
-      console.error('[fetchReplacementTitle] Error:', error);
+      const { logError } = useLogger();
+      logError(
+        '[TitleActions] Error fetching replacement title',
+        error as Error,
+        {
+          tmdbId: title.tmdb_id,
+        }
+      );
       filterRecommendationsByType();
     } finally {
       fetchingReplacement.value = false;
@@ -183,10 +192,6 @@ export const useTitleActions = (
       );
 
       if (result.success) {
-        if (process.env.NODE_ENV === 'development') {
-          console.log('[handleTitleStatus] Success:', { status, result });
-        }
-
         // Get replacement title
         await fetchReplacementTitle(title);
       } else {
@@ -211,9 +216,11 @@ export const useTitleActions = (
         filterRecommendationsByType();
       }
 
-      if (process.env.NODE_ENV === 'development') {
-        console.error('[handleTitleStatus] Error:', error);
-      }
+      const { logError } = useLogger();
+      logError('[TitleActions] Error handling title status', error as Error, {
+        tmdbId: title.tmdb_id,
+        status,
+      });
     } finally {
       loadingTitles.value.delete(title.tmdb_id);
     }
@@ -296,10 +303,6 @@ export const useTitleActions = (
       );
 
       if (result.success) {
-        if (process.env.NODE_ENV === 'development') {
-          console.log('[handleMarkLiked] Success');
-        }
-
         // Get replacement title
         await fetchReplacementTitle(title);
       } else {
@@ -324,9 +327,10 @@ export const useTitleActions = (
         filterRecommendationsByType();
       }
 
-      if (process.env.NODE_ENV === 'development') {
-        console.error('[handleMarkLiked] Error:', error);
-      }
+      const { logError } = useLogger();
+      logError('[TitleActions] Error marking title as liked', error as Error, {
+        tmdbId: title.tmdb_id,
+      });
     } finally {
       loadingTitles.value.delete(title.tmdb_id);
     }
@@ -351,7 +355,7 @@ export const useTitleActions = (
       const titleWithDetection = await getTitleWithAlphabetDetection(title);
 
       // Use unified composable for API call and toast
-      const result = await executeLikedAction(
+      await executeLikedAction(
         {
           tmdb_id: title.tmdb_id,
           type: title.type,
@@ -362,13 +366,12 @@ export const useTitleActions = (
         true
       );
 
-      if (result.success && process.env.NODE_ENV === 'development') {
-        console.log('[confirmRemoveLike] Success');
-      }
+      // Success - no logging needed for normal flow
     } catch (error) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('[confirmRemoveLike] Error:', error);
-      }
+      const { logError } = useLogger();
+      logError('[TitleActions] Error removing like', error as Error, {
+        tmdbId: title.tmdb_id,
+      });
     } finally {
       loadingTitles.value.delete(title.tmdb_id);
     }

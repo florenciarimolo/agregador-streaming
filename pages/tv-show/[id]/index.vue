@@ -174,12 +174,7 @@ watch(
   () => lang.value,
   async (newLang, oldLang) => {
     if (newLang && oldLang && newLang !== oldLang) {
-      if (import.meta.dev) {
-        console.log('[tv-show/[id]/index.vue] Language changed in URL, refreshing TV show data:', {
-          oldLang,
-          newLang,
-        });
-      }
+      // Development-only logging removed
       // Refresh all data with new language
       await Promise.all([refreshTVShowDetails(), refreshTVProviders()]);
     }

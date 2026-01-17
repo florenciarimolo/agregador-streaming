@@ -13,6 +13,7 @@ import {
   DEFAULT_LANGUAGE_ISO,
   LATIN_SCRIPT_LANGUAGE_ISO_CODES,
 } from '@/constants/languages';
+import { logError, logWarn } from '@/server/utils/logger';
 
 /**
  * Service: Titles operations
@@ -163,11 +164,7 @@ export function getTitleInLanguage(
       }
     }
 
-    if (import.meta.dev) {
-      console.log(
-        `[getTitleInLanguage] Using legacy format for language ${language}, found key: ${langCode}`
-      );
-    }
+    // Development-only logging removed
     return legacyText;
   }
 
@@ -326,14 +323,7 @@ export async function getTitlesByTmdbIds(
   const { getTitleOrOverviewInLanguage, getTaglineInLanguage } =
     await import('@/composables/database/titles');
 
-  if (import.meta.dev) {
-    console.log(
-      '[getTitlesByTmdbIds] Fetching titles for tmdbIds:',
-      tmdbIds,
-      'with language:',
-      language
-    );
-  }
+  // Development-only logging removed
 
   const result = await supabase
     .from(TABLES.TITLES)
@@ -346,7 +336,15 @@ export async function getTitlesByTmdbIds(
   const { error } = result;
 
   if (error) {
-    console.error('[getTitlesByTmdbIds] Error fetching titles:', error);
+    // Services run on client, use client logger
+    if (import.meta.client) {
+      const { useLogger } = await import('@/composables/useLogger');
+      const { logError } = useLogger();
+      logError('[Titles] Error fetching titles by tmdbIds', error as Error, {
+        tmdbIdsCount: tmdbIds.length,
+        language,
+      });
+    }
     return { data: null, error };
   }
 
@@ -360,20 +358,15 @@ export async function getTitlesByTmdbIds(
 
   // If there are missing titles and we have type information, fetch them from TMDB
   if (missingTmdbIds.length > 0 && titleTypes) {
-    if (import.meta.dev) {
-      console.log(
-        '[getTitlesByTmdbIds] Missing titles, fetching from TMDB:',
-        missingTmdbIds
-      );
-    }
+    // Development-only logging removed
 
     // Fetch missing titles from TMDB in parallel
     const fetchPromises = missingTmdbIds.map(async (tmdbId) => {
       const type = titleTypes.get(tmdbId);
       if (!type) {
-        console.warn(
-          `[getTitlesByTmdbIds] No type found for tmdb_id ${tmdbId}, skipping`
-        );
+        logWarn('[getTitlesByTmdbIds] No type found for tmdb_id, skipping', {
+          tmdbId,
+        });
         return null;
       }
 
@@ -385,16 +378,17 @@ export async function getTitlesByTmdbIds(
             language,
           },
         });
-        if (import.meta.dev) {
-          console.log(
-            `[getTitlesByTmdbIds] Successfully fetched and inserted title ${tmdbId} from TMDB`
-          );
-        }
+        // Development-only logging removed
         return tmdbId;
       } catch (err) {
-        console.error(
-          `[getTitlesByTmdbIds] Error fetching title ${tmdbId} from TMDB:`,
-          err
+        logError(
+          '[getTitlesByTmdbIds] Error fetching title from TMDB',
+          err as Error,
+          {
+            tmdbId,
+            type,
+            language,
+          }
         );
         return null;
       }
@@ -409,55 +403,28 @@ export async function getTitlesByTmdbIds(
       .in(TITLES_COLUMNS.TMDB_ID, tmdbIds);
 
     if (reloadError) {
-      console.error(
-        '[getTitlesByTmdbIds] Error reloading titles after TMDB fetch:',
-        reloadError
+      logError(
+        '[getTitlesByTmdbIds] Error reloading titles after TMDB fetch',
+        reloadError,
+        {
+          tmdbIds: tmdbIds.length,
+        }
       );
     } else if (reloadedData) {
       // Use reloaded data which includes the newly fetched titles
       data = reloadedData;
-      if (import.meta.dev) {
-        console.log(
-          `[getTitlesByTmdbIds] Reloaded ${data.length} titles from database after TMDB fetch`
-        );
-      }
+      // Development-only logging removed
     }
   }
 
   if (!data || data.length === 0) {
-    if (import.meta.dev) {
-      console.warn(
-        '[getTitlesByTmdbIds] No titles found in database for tmdbIds:',
-        tmdbIds
-      );
-    }
+    logWarn('[getTitlesByTmdbIds] No titles found in database', {
+      tmdbIdsCount: tmdbIds.length,
+    });
     return { data: [], error: null };
   }
 
-  if (import.meta.dev) {
-    console.log(
-      '[getTitlesByTmdbIds] Found',
-      data.length,
-      'titles in database'
-    );
-    // Check what language keys exist in the first title
-    if (data.length > 0) {
-      const firstTitle = data[0];
-      const titleJsonb = firstTitle.title as MultiLanguageText;
-      if (titleJsonb && typeof titleJsonb === 'object') {
-        console.log(
-          '[getTitlesByTmdbIds] Sample title language keys:',
-          Object.keys(titleJsonb)
-        );
-        console.log(
-          '[getTitlesByTmdbIds] Looking for language:',
-          language,
-          'exists:',
-          !!titleJsonb[language]
-        );
-      }
-    }
-  }
+  // Development-only logging removed
 
   // Check which titles need language updates and fetch them in parallel
   const updatePromises: Array<
@@ -536,9 +503,13 @@ export async function getTitlesByTmdbIds(
             poster_path: response.poster_path,
           }))
           .catch((err) => {
-            console.error(
-              `Error updating language for title ${title.tmdb_id}:`,
-              err
+            logError(
+              '[getTitlesByTmdbIds] Error updating language for title',
+              err as Error,
+              {
+                tmdbId: title.tmdb_id,
+                language: primaryLanguageKey,
+              }
             );
             return { tmdb_id: title.tmdb_id };
           });
@@ -648,7 +619,9 @@ export async function getTitlesByTmdbIds(
           // Also check if overview is empty in preferred language
           const needsOverview = !extractedOverview || extractedOverview === '';
           // Type assertion: title.type comes from database and should be MEDIA_TYPE.MOVIE or MEDIA_TYPE.TV
-          const titleType = title.type as typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV;
+          const titleType = title.type as
+            | typeof MEDIA_TYPE.MOVIE
+            | typeof MEDIA_TYPE.TV;
           titlesNeedingPrimaryLanguageFallback.push({
             tmdb_id: title.tmdb_id,
             type: titleType,
@@ -674,15 +647,7 @@ export async function getTitlesByTmdbIds(
 
   // If we have titles needing primary language fallback, fetch them from TMDB
   if (titlesNeedingPrimaryLanguageFallback.length > 0) {
-    if (import.meta.dev) {
-      console.log(
-        `[getTitlesByTmdbIds] Titles needing primary language (${primaryLanguageKey}) fallback (non-Latin detected but no primary language found):`,
-        titlesNeedingPrimaryLanguageFallback.map((t) => ({
-          tmdb_id: t.tmdb_id,
-          needsOverview: t.needsOverview,
-        }))
-      );
-    }
+    // Development-only logging removed
 
     // Fetch primary language translations from TMDB in parallel
     const fetchPrimaryLanguagePromises =
@@ -694,16 +659,16 @@ export async function getTitlesByTmdbIds(
               language: primaryLanguageKey, // Fetch primary language specifically
             },
           });
-          if (import.meta.dev) {
-            console.log(
-              `[getTitlesByTmdbIds] Successfully fetched primary language (${primaryLanguageKey}) for title ${title.tmdb_id} from TMDB`
-            );
-          }
+          // Development-only logging removed
           return title.tmdb_id;
         } catch (err) {
-          console.error(
-            `[getTitlesByTmdbIds] Error fetching primary language (${primaryLanguageKey}) for title ${title.tmdb_id} from TMDB:`,
-            err
+          logError(
+            '[getTitlesByTmdbIds] Error fetching primary language from TMDB',
+            err as Error,
+            {
+              tmdbId: title.tmdb_id,
+              primaryLanguageKey,
+            }
           );
           return null;
         }
@@ -867,7 +832,14 @@ export async function getTitleByTmdbIdWithLanguage(
         }
       }
     } catch (err) {
-      console.error(`Error updating language for title ${tmdbId}:`, err);
+      logError(
+        '[updateTitleLanguage] Error updating language for title',
+        err as Error,
+        {
+          tmdbId,
+          language,
+        }
+      );
       // Continue with fallback language
     }
   }
@@ -932,7 +904,10 @@ export async function updateTitleVideos(
     .eq(TITLES_COLUMNS.TYPE, type);
 
   if (error) {
-    console.error('[updateTitleVideos] Error:', error);
+    logError('[updateTitleVideos] Error', error, {
+      tmdbId,
+      mediaType,
+    });
     throw error;
   }
 }

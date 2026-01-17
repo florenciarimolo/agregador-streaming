@@ -21,10 +21,6 @@ export const useUndoToast = () => {
     undoAction: UndoAction | null = null,
     duration: number = 7000
   ) => {
-    if (import.meta.dev) {
-      console.log('[useUndoToast] showToast called:', { message, duration });
-    }
-
     // Clear existing toast
     if (timeoutId) {
       clearTimeout(timeoutId);
@@ -36,10 +32,6 @@ export const useUndoToast = () => {
       undoAction,
       id: toastId,
     };
-
-    if (import.meta.dev) {
-      console.log('[useUndoToast] Toast state updated:', toast.value);
-    }
 
     // Auto-dismiss after duration
     if (duration > 0) {

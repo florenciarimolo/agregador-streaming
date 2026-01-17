@@ -38,17 +38,7 @@ export default defineNuxtRouteMiddleware(
     // Get language from URL
     const lang = getLangFromRoute(to);
 
-    if (import.meta.dev) {
-      console.log('[AUTH TRACE] middleware executing', {
-        path: to.path,
-        lang,
-        hasUser: !!user.value,
-        userId: user.value?.id || user.value?.sub,
-        hasProfile: userStore.profile !== null,
-        onboardingCompleted: userStore.profile?.onboarding_completed,
-        authInitialized: userStore.authInitialized,
-      });
-    }
+    // Development-only logging removed
 
     // Public routes (with language prefix)
     const publicRoutes = [
@@ -63,7 +53,7 @@ export default defineNuxtRouteMiddleware(
       to.path.startsWith(`/${lang}/auth/`)
     ) {
       if (import.meta.dev) {
-        console.log('[AUTH TRACE] middleware allowing public route', to.path);
+        // Development-only logging removed
       }
       return;
     }
@@ -73,10 +63,7 @@ export default defineNuxtRouteMiddleware(
     // We need to wait for the session to be checked before redirecting
     if (!userStore.authInitialized) {
       if (import.meta.dev) {
-        console.log(
-          '[AUTH TRACE] middleware waiting for auth initialization...',
-          to.path
-        );
+        // Development-only logging removed
       }
 
       // Try to get session if not initialized yet
@@ -94,10 +81,7 @@ export default defineNuxtRouteMiddleware(
           // Let initAuth() in app.vue handle the initialization
           // This prevents premature redirects during F5/refresh
           if (import.meta.dev) {
-            console.log(
-              '[AUTH TRACE] middleware no session found, waiting for initAuth()',
-              to.path
-            );
+            // Development-only logging removed
           }
           // Allow navigation to proceed - initAuth() will set authInitialized
           return;
@@ -106,10 +90,7 @@ export default defineNuxtRouteMiddleware(
         // If session check fails, don't mark as initialized
         // Let initAuth() handle it to avoid blocking or premature redirects
         if (import.meta.dev) {
-          console.log(
-            '[AUTH TRACE] middleware session check failed, waiting for initAuth()',
-            to.path
-          );
+          // Development-only logging removed
         }
         // Allow navigation to proceed - initAuth() will set authInitialized
         return;
@@ -124,10 +105,7 @@ export default defineNuxtRouteMiddleware(
     // CRITICAL: Only redirect if we're certain there's no user (authInitialized is true from initAuth)
     if (!currentUser && userStore.authInitialized) {
       if (import.meta.dev) {
-        console.log(
-          '[AUTH TRACE] middleware redirecting to / (no user after init)',
-          to.path
-        );
+        // Development-only logging removed
       }
       return navigateTo(`/${lang}/`);
     }
@@ -136,10 +114,7 @@ export default defineNuxtRouteMiddleware(
     // The auth initialization will happen and user will be set if session exists
     if (!currentUser && !userStore.authInitialized) {
       if (import.meta.dev) {
-        console.log(
-          '[AUTH TRACE] middleware allowing navigation (auth not initialized yet)',
-          to.path
-        );
+        // Development-only logging removed
       }
       // Don't redirect - let the page load and auth will initialize
       return;
@@ -148,23 +123,10 @@ export default defineNuxtRouteMiddleware(
     // If user exists but profile is not loaded, wait for it to load
     if (!userStore.profile) {
       if (import.meta.dev) {
-        console.log(
-          '[AUTH TRACE] middleware waiting for profile to load...',
-          to.path
-        );
+        // Development-only logging removed
       }
       await userStore.ensureProfile();
-      if (import.meta.dev) {
-        const profileAfterLoad = userStore.profile;
-        console.log('[AUTH TRACE] middleware profile loaded', {
-          hasProfile: profileAfterLoad !== null,
-          onboardingCompleted:
-            profileAfterLoad !== null
-              ? ((profileAfterLoad as { onboarding_completed?: boolean })
-                  .onboarding_completed ?? false)
-              : false,
-        });
-      }
+      // Development-only logging removed
     }
 
     // Now we can safely check onboarding status
@@ -176,10 +138,7 @@ export default defineNuxtRouteMiddleware(
     // Type guard to ensure profile is not null
     if (!profile) {
       if (import.meta.dev) {
-        console.log(
-          '[AUTH TRACE] middleware no profile after ensureProfile',
-          to.path
-        );
+        // Development-only logging removed
       }
       return navigateTo(`/${lang}/`);
     }
@@ -191,26 +150,20 @@ export default defineNuxtRouteMiddleware(
       !to.path.startsWith(`/${lang}/auth/callback`)
     ) {
       if (import.meta.dev) {
-        console.log(
-          '[AUTH TRACE] middleware redirecting to /onboarding (onboarding not completed)',
-          to.path
-        );
+        // Development-only logging removed
       }
       return navigateTo(`/${lang}/onboarding`, { replace: true });
     }
 
     if (hasCompletedOnboarding && to.path === `/${lang}/onboarding`) {
       if (import.meta.dev) {
-        console.log(
-          '[AUTH TRACE] middleware redirecting to / (onboarding completed but on /onboarding)',
-          to.path
-        );
+        // Development-only logging removed
       }
       return navigateTo(`/${lang}/`, { replace: true });
     }
 
     if (import.meta.dev) {
-      console.log('[AUTH TRACE] middleware allowing navigation', to.path);
+      // Development-only logging removed
     }
   }
 );

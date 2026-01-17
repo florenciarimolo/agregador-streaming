@@ -20,6 +20,7 @@ import Alert from '@/components/ui/Alert.vue';
 import IconTv from '@/components/icons/IconTv.vue';
 import { useRegions } from '@/composables/useRegions';
 import { useUserStore } from '@/stores/user';
+import { useLogger } from '@/composables/useLogger';
 
 definePageMeta({
   middleware: 'auth',
@@ -82,9 +83,10 @@ const userStore = computed(() => {
   try {
     return useUserStore();
   } catch (error) {
-    if (process.env.NODE_ENV === 'development') {
-      console.warn('[pages/onboarding.vue] useUserStore not available:', error);
-    }
+    const { logWarn } = useLogger();
+    logWarn('[Onboarding] useUserStore not available', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
     return {
       profile: null,
       authInitialized: false,
@@ -196,7 +198,8 @@ const handleSearch = () => {
         .sort((a, b) => (b.popularity || 0) - (a.popularity || 0))
         .slice(0, 20);
     } catch (error) {
-      console.error('Search error:', error);
+      const { logError } = useLogger();
+      logError('[Onboarding] Search error', error as Error);
       searchResults.value = [];
     } finally {
       loading.value = false;
@@ -319,7 +322,14 @@ const loadProvidersForRegion = async (region: string) => {
 
     providersData.value = response;
   } catch (error) {
-    console.error('Error loading providers for region:', error);
+    const { logError } = useLogger();
+    logError(
+      '[Onboarding] Error loading providers for region',
+      error as Error,
+      {
+        region,
+      }
+    );
     providersData.value = { results: [] };
   }
 };
@@ -464,7 +474,8 @@ const savePreferences = async () => {
     preferencesSaved.value = true;
     currentStep.value = 'titles';
   } catch (err: unknown) {
-    console.error('Error saving preferences:', err);
+    const { logError } = useLogger();
+    logError('[Onboarding] Error saving preferences', err as Error);
     const errorMessage =
       err instanceof Error ? err.message : t('onboarding.savePreferencesError');
     error.value = errorMessage;
@@ -523,9 +534,14 @@ const saveSelections = async () => {
           const endpoint = title.media_type === 'movie' ? 'movies' : 'tvshows';
           await $fetch(`/api/tmdb/${endpoint}/${title.id}`);
         } catch (tmdbError) {
-          console.error(
-            `[saveSelections] Error fetching title ${title.id} from TMDB:`,
-            tmdbError
+          const { logError } = useLogger();
+          logError(
+            '[Onboarding] Error fetching title from TMDB',
+            tmdbError as Error,
+            {
+              titleId: title.id,
+              mediaType: title.media_type,
+            }
           );
           // If TMDB fetch fails, we can't proceed without proper title data
           throw new Error(
@@ -559,7 +575,14 @@ const saveSelections = async () => {
       .eq('id', userId);
 
     if (updateError) {
-      console.error('Error updating onboarding status:', updateError);
+      const { logError } = useLogger();
+      logError(
+        '[Onboarding] Error updating onboarding status',
+        updateError as Error,
+        {
+          userId,
+        }
+      );
     }
 
     // Ensure profile is fully loaded before redirecting
@@ -586,14 +609,24 @@ const saveSelections = async () => {
       }
     } catch (poolError) {
       // Don't fail onboarding if pool population fails
-      console.error('Error populating recommendation pool:', poolError);
+      const { logError } = useLogger();
+      logError(
+        '[Onboarding] Error populating recommendation pool',
+        poolError as Error,
+        {
+          userId,
+        }
+      );
     }
 
     // Redirect to home
     const { routeWithLang } = useRouteWithLang();
     await router.push(routeWithLang('/'));
   } catch (err: unknown) {
-    console.error('Error saving selections:', err);
+    const { logError } = useLogger();
+    logError('[Onboarding] Error saving selections', err as Error, {
+      userId,
+    });
     const errorMessage =
       err instanceof Error ? err.message : t('onboarding.saveError');
     error.value = errorMessage;

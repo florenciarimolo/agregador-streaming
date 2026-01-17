@@ -2,6 +2,7 @@
 import { TABLES } from '@/constants/db/tables';
 import { USER_TITLE_STATUS_COLUMNS } from '@/constants/db/columns';
 import type { TitleStatusType } from '@/constants/domain/titleStatus';
+import { devLog } from '@/server/utils/logger';
 
 /**
  * Service: User title status operations
@@ -46,9 +47,7 @@ export async function upsertUserTitleStatus(data: UpsertUserTitleStatusData) {
 export async function getUserLikedTitles(userId: string) {
   const supabase = useSupabaseClient();
 
-  if (import.meta.dev) {
-    console.log('[getUserLikedTitles] Querying for userId:', userId);
-  }
+  devLog('[getUserLikedTitles] Querying for userId:', userId);
 
   const result = await supabase
     .from(TABLES.USER_TITLE_STATUS)
@@ -57,13 +56,11 @@ export async function getUserLikedTitles(userId: string) {
     .eq(USER_TITLE_STATUS_COLUMNS.LIKED, true)
     .order(USER_TITLE_STATUS_COLUMNS.CREATED_AT, { ascending: false });
 
-  if (import.meta.dev) {
-    console.log('[getUserLikedTitles] Result:', {
-      data: result.data,
-      error: result.error,
-      count: result.data?.length || 0,
-    });
-  }
+  devLog('[getUserLikedTitles] Result:', {
+    data: result.data,
+    error: result.error,
+    count: result.data?.length || 0,
+  });
 
   return result;
 }
@@ -195,9 +192,10 @@ export async function getTitleStatus(userId: string, tmdbId: number) {
   const supabase = useSupabaseClient();
   return await supabase
     .from(TABLES.USER_TITLE_STATUS)
-    .select(`${USER_TITLE_STATUS_COLUMNS.LIKED}, ${USER_TITLE_STATUS_COLUMNS.STATUS}`)
+    .select(
+      `${USER_TITLE_STATUS_COLUMNS.LIKED}, ${USER_TITLE_STATUS_COLUMNS.STATUS}`
+    )
     .eq(USER_TITLE_STATUS_COLUMNS.USER_ID, userId)
     .eq(USER_TITLE_STATUS_COLUMNS.TMDB_ID, tmdbId)
     .maybeSingle();
 }
-

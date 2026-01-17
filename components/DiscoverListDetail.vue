@@ -187,6 +187,7 @@ import { useRouteWithLang } from '@/composables/useRouteWithLang';
 import { useViewMode } from '@/composables/useViewMode';
 import { VIEW_MODE } from '@/constants/domain/viewMode';
 import { useSupabaseUser } from '#imports';
+import { useLogger } from '@/composables/useLogger';
 
 const router = useRouter();
 const { routeWithLang } = useRouteWithLang();
@@ -256,10 +257,10 @@ const loadTitleStatuses = async () => {
           liked: !!likedTitle,
         };
       } catch (error) {
-        console.error(
-          `[DiscoverListDetail] Error loading status for ${item.tmdb_id}:`,
-          error
-        );
+        const { logError } = useLogger();
+        logError('[DiscoverListDetail] Error loading status', error as Error, {
+          tmdbId: item.tmdb_id,
+        });
         return null;
       }
     });
@@ -274,7 +275,11 @@ const loadTitleStatuses = async () => {
       }
     });
   } catch (error) {
-    console.error('[DiscoverListDetail] Error loading title statuses:', error);
+    const { logError } = useLogger();
+    logError(
+      '[DiscoverListDetail] Error loading title statuses',
+      error as Error
+    );
   }
 };
 
@@ -431,7 +436,11 @@ async function handleAction(item: DiscoverListItem, action: string) {
       }
     }
   } catch (error) {
-    console.error('[DiscoverListDetail] Error handling action:', error);
+    const { logError } = useLogger();
+    logError('[DiscoverListDetail] Error handling action', error as Error, {
+      tmdbId: item.tmdb_id,
+      action: actionType,
+    });
   } finally {
     loadingTitles.value.delete(item.tmdb_id);
     // Reload statuses after action

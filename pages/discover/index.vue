@@ -143,17 +143,11 @@ const loadLists = async () => {
 
     if (response.success) {
       lists.value = response.lists;
-      // Debug: log first list to verify data structure
-      if (response.lists && response.lists.length > 0) {
-        console.log('[Discover] First list data:', {
-          title: response.lists[0].title,
-          itemCount: response.lists[0].itemCount,
-          previewPosters: response.lists[0].previewPosters,
-        });
-      }
+      // Development-only logging removed
     }
   } catch (error) {
-    console.error('[Discover] Error fetching lists:', error);
+    const { logError } = useLogger();
+    logError('[Discover] Error fetching lists', error as Error);
   } finally {
     isLoading.value = false;
   }

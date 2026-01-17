@@ -32,10 +32,13 @@ async function translateToSpanish(text: string): Promise<string> {
     return translated;
   } catch (translateError) {
     // If translation fails, use English text as fallback
-    console.warn(
-      'Translation failed, using English text:',
-      translateError instanceof Error ? translateError.message : translateError
-    );
+    const { logWarn } = await import('@/server/utils/logger');
+    logWarn('[IMDBMovies] Translation failed, using English text', {
+      error:
+        translateError instanceof Error
+          ? translateError.message
+          : 'Unknown error',
+    });
     return text;
   }
 }
@@ -73,7 +76,8 @@ export default defineCachedEventHandler(
           timeout: 15000, // 15 seconds
         });
       } catch (fetchError) {
-        console.error('Failed to fetch IMDB page:', fetchError);
+        const { logError } = await import('@/server/utils/logger');
+        logError('[IMDBMovies] Failed to fetch IMDB page', fetchError as Error);
         throw createError({
           statusCode: 503,
           statusMessage: `Failed to fetch IMDB page: ${fetchError instanceof Error ? fetchError.message : 'Unknown error'}`,
@@ -83,12 +87,18 @@ export default defineCachedEventHandler(
 
       // Parse HTML to extract IMDB IDs
       const imdbIds = extractImdbIds(html);
-      console.log(`Found ${imdbIds.length} IMDB IDs`);
+      const { devLog } = await import('@/server/utils/logger');
+      devLog(`[IMDBMovies] Found ${imdbIds.length} IMDB IDs`);
 
       if (imdbIds.length === 0) {
-        console.error('No IMDB IDs found. HTML length:', html.length);
-        // Log a sample of the HTML to help debug
-        console.error('HTML sample (first 500 chars):', html.substring(0, 500));
+        const { logError } = await import('@/server/utils/logger');
+        logError(
+          '[IMDBMovies] No IMDB IDs found',
+          new Error('No IMDB IDs found'),
+          {
+            htmlLength: html.length,
+          }
+        );
         throw createError({
           statusCode: 500,
           statusMessage:
@@ -98,7 +108,7 @@ export default defineCachedEventHandler(
 
       // Get first 20 IDs
       const top20Ids = imdbIds.slice(0, 20);
-      console.log(`Processing ${top20Ids.length} IMDB IDs`);
+      devLog(`[IMDBMovies] Processing ${top20Ids.length} IMDB IDs`);
 
       // Convert IMDB IDs to TMDB movie data
       const movies: Media[] = [];
@@ -177,12 +187,14 @@ export default defineCachedEventHandler(
                 overview = await translateToSpanish(englishOverview);
               }
             } catch (englishFetchError) {
-              console.warn(
-                `Failed to fetch English overview for movie ${tmdbId}:`,
-                englishFetchError instanceof Error
-                  ? englishFetchError.message
-                  : englishFetchError
-              );
+              const { logWarn } = await import('@/server/utils/logger');
+              logWarn('[IMDBMovies] Failed to fetch English overview', {
+                tmdbId,
+                error:
+                  englishFetchError instanceof Error
+                    ? englishFetchError.message
+                    : 'Unknown error',
+              });
             }
 
             // Map TMDB Movie response to Media type
@@ -204,16 +216,20 @@ export default defineCachedEventHandler(
             movies.push(media);
             successCount++;
           } else {
-            console.warn(`No TMDB movie found for IMDB ID ${imdbId}`);
+            const { logWarn } = await import('@/server/utils/logger');
+            logWarn('[IMDBMovies] No TMDB movie found for IMDB ID', {
+              imdbId,
+            });
             failCount++;
           }
         } catch (error) {
           // Skip movies that can't be found in TMDB
           failCount++;
-          console.warn(
-            `Failed to fetch TMDB data for IMDB ID ${imdbId}:`,
-            error instanceof Error ? error.message : error
-          );
+          const { logWarn } = await import('@/server/utils/logger');
+          logWarn('[IMDBMovies] Failed to fetch TMDB data', {
+            imdbId,
+            error: error instanceof Error ? error.message : 'Unknown error',
+          });
           continue;
         }
 
@@ -221,8 +237,8 @@ export default defineCachedEventHandler(
         await new Promise((resolve) => setTimeout(resolve, 100));
       }
 
-      console.log(
-        `IMDB scraper completed: ${successCount} successful, ${failCount} failed, ${movies.length} total movies`
+      devLog(
+        `[IMDBMovies] Scraper completed: ${successCount} successful, ${failCount} failed, ${movies.length} total movies`
       );
 
       if (movies.length === 0) {
@@ -248,7 +264,8 @@ export default defineCachedEventHandler(
 
       return response;
     } catch (error) {
-      console.error('IMDB scraper error:', error);
+      const { logError } = await import('@/server/utils/logger');
+      logError('[IMDBMovies] Scraper error', error as Error);
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
       throw createError({

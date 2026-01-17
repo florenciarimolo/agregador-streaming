@@ -59,13 +59,7 @@
           :title="recommendation"
           @mark-seen="$emit('mark-seen', $event)"
           @mark-not-interested="$emit('mark-not-interested', $event)"
-          @mark-liked="
-            console.log(
-              '[UNLIKE DEBUG] RecommendationSection received mark-liked',
-              $event
-            );
-            $emit('mark-liked', $event);
-          "
+          @mark-liked="$emit('mark-liked', $event)"
           @remove-liked="$emit('remove-liked', $event)"
           @mark-watchlist="$emit('mark-watchlist', $event)"
         />

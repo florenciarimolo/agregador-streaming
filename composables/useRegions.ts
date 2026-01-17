@@ -1,6 +1,7 @@
 import type { Region } from '@/constants/regions';
 import { DEFAULT_LANGUAGE } from '@/constants/languages';
 import { getI18nCodeFromUrlCode } from '@/composables/useLangFromUrl';
+import { useLogger } from '@/composables/useLogger';
 
 /**
  * Composable to get and cache regions by language
@@ -40,11 +41,10 @@ export const useRegions = () => {
   } catch {
     // If error (e.g., called outside setup context from plugin), we'll use DEFAULT_LANGUAGE
     // This is expected when called from plugins before Vue setup
-    if (import.meta.dev) {
-      console.warn(
-        '[useRegions] useI18n() not available in this context, will use default language'
-      );
-    }
+    const { logWarn } = useLogger();
+    logWarn(
+      '[Regions] useI18n() not available in this context, will use default language'
+    );
   }
 
   /**
@@ -114,7 +114,10 @@ export const useRegions = () => {
       // If API call failed, return empty array
       return [];
     } catch (error) {
-      console.error('[useRegions] Error loading regions:', error);
+      const { logError } = useLogger();
+      logError('[Regions] Error loading regions', error as Error, {
+        language: targetLanguage,
+      });
       return [];
     }
   };
