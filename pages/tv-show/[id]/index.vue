@@ -156,7 +156,6 @@ import IconEpisodes from '@/components/icons/IconEpisodes.vue';
 import IconEye from '@/components/icons/IconEye.vue';
 import Badge from '@/components/Badge.vue';
 import ListItemBase from '@/components/ListItemBase.vue';
-import Tooltip from '@/components/ui/Tooltip.vue';
 import { useEpisodeStatus } from '@/composables/useEpisodeStatus';
 import { useSupabaseUser } from '#imports';
 import { getSession } from '@/services/auth';

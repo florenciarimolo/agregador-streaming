@@ -321,7 +321,7 @@ const handleUnfollowTitle = async (title: FollowingTitle) => {
       return;
     }
 
-    const response = await $fetch('/api/users/following', {
+    await $fetch('/api/users/following', {
       method: 'DELETE',
       headers: {
         Authorization: `Bearer ${session.access_token}`,
