@@ -70,9 +70,9 @@ export async function getVideosForTitle(
         triedLanguages.push(langCode);
 
         if (videos && videos.length > 0) {
-          // Filter to YouTube only for rendering
+          // Filter to YouTube only and official videos for rendering
           const youtubeVideos = videos.filter(
-            (video) => video.site === VIDEO_SITE_YOUTUBE
+            (video) => video.site === VIDEO_SITE_YOUTUBE && video.official === true
           );
 
           if (youtubeVideos.length > 0) {
@@ -154,9 +154,9 @@ export async function getVideosForSeason(
       `/api/seasons/${tvTmdbId}/${seasonNumber}/videos`
     );
 
-    // Filter to YouTube only for rendering
+    // Filter to YouTube only and official videos for rendering
     const youtubeVideos = videos.filter(
-      (video) => video.site === VIDEO_SITE_YOUTUBE
+      (video) => video.site === VIDEO_SITE_YOUTUBE && video.official === true
     );
 
     // Sort by published_at descending

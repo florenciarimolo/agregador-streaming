@@ -22,6 +22,7 @@ import { VIDEO_REFRESH_THRESHOLD_HOURS } from '@/constants/domain/videos';
 import { getUserTMDBParams } from '@/server/utils/user-tmdb';
 import type { MultiLanguageVideos } from '@/types/Video';
 import { LanguageIsoCode, DEFAULT_LANGUAGE_ISO } from '@/constants/languages';
+import { getPrimaryLanguageForRegion } from '@/utils/language-detection';
 
 export default defineEventHandler(async (event) => {
   try {
@@ -56,13 +57,18 @@ export default defineEventHandler(async (event) => {
       },
     });
 
-    // Get user preferences for language
+    // Get user preferences for language and region
     // If lang query parameter is provided, use it; otherwise use user language from URL
     const requestedLang = query.lang as string | undefined;
-    const { language: userLanguage } = await getUserTMDBParams(event);
+    const { language: userLanguage, region } = await getUserTMDBParams(event);
     const targetLanguage = requestedLang 
       ? `${requestedLang}-${userLanguage.split('-')[1] || 'ES'}` 
       : userLanguage;
+    
+    // Get primary language for user's region
+    const regionPrimaryLang = getPrimaryLanguageForRegion(region);
+    const regionPrimaryLangCode = regionPrimaryLang.split('-')[0]?.toLowerCase() || DEFAULT_LANGUAGE_ISO;
+    const requestedLangCode = targetLanguage.split('-')[0]?.toLowerCase() || DEFAULT_LANGUAGE_ISO;
 
     // Get title from database
     const { data: title, error: dbError } = await supabase
@@ -91,8 +97,9 @@ export default defineEventHandler(async (event) => {
       ? new Date(title.videos_updated_at)
       : null;
 
-    // Determine if we need to fetch videos
+    // Determine if we need to fetch videos and which language to use for TMDB
     let shouldFetch = false;
+    let tmdbFetchLanguage = targetLanguage; // Default: use requested language
 
     if (preRelease) {
       // Pre-release: check if videos_updated_at is null or older than threshold
@@ -111,9 +118,33 @@ export default defineEventHandler(async (event) => {
         shouldFetch = true;
       } else {
         // Check if we have videos for target language
-        const langCode = targetLanguage.split('-')[0]?.toLowerCase() || LanguageIsoCode.ENGLISH;
-        if (!existingVideos[langCode] || existingVideos[langCode].length === 0) {
+        if (!existingVideos[requestedLangCode] || existingVideos[requestedLangCode].length === 0) {
           shouldFetch = true;
+          
+          // Determine which language to use for TMDB fetch:
+          // - If requested language is NOT the region primary language, fetch with region primary language
+          // - If requested language IS the region primary language, fetch with English
+          if (requestedLangCode !== regionPrimaryLangCode) {
+            // Requested language is not the primary, fetch with primary language
+            tmdbFetchLanguage = `${regionPrimaryLangCode}-${region || 'ES'}`;
+            if (import.meta.dev) {
+              console.log('[videos.get] No videos for requested language, will fetch with region primary language:', {
+                requestedLang: requestedLangCode,
+                regionPrimaryLang: regionPrimaryLangCode,
+                tmdbFetchLanguage,
+              });
+            }
+          } else {
+            // Requested language is already the primary, fetch with English
+            tmdbFetchLanguage = `${LanguageIsoCode.ENGLISH}-${region || 'ES'}`;
+            if (import.meta.dev) {
+              console.log('[videos.get] No videos for requested language (which is primary), will fetch with English:', {
+                requestedLang: requestedLangCode,
+                regionPrimaryLang: regionPrimaryLangCode,
+                tmdbFetchLanguage,
+              });
+            }
+          }
         }
       }
     }
@@ -123,7 +154,20 @@ export default defineEventHandler(async (event) => {
       try {
         const languageParam = getVideoLanguageParam();
         const { getTMDBConfig } = await import('@/server/utils/config');
-        const tmdbConfig = getTMDBConfig(targetLanguage, 'ES');
+        // Use the determined language for TMDB fetch (may be different from targetLanguage)
+        const tmdbConfig = getTMDBConfig(tmdbFetchLanguage, region || 'ES');
+        
+        if (import.meta.dev) {
+          console.log('[videos.get] Fetching videos from TMDB:', {
+            tmdbId: tmdbIdNum,
+            type,
+            requestedLang: requestedLangCode,
+            targetLanguage,
+            tmdbFetchLanguage,
+            region,
+            regionPrimaryLang: regionPrimaryLangCode,
+          });
+        }
 
         let tmdbVideos;
         if (type === 'movie') {
@@ -164,15 +208,24 @@ export default defineEventHandler(async (event) => {
 
         // Update local reference
         const updatedVideos = normalizedVideos;
-        const langCode = targetLanguage.split('-')[0]?.toLowerCase() || LanguageIsoCode.ENGLISH;
-
-        // Return videos for target language with fallback
+        
+        // Return videos for requested language (not the language used for TMDB fetch)
+        // The videos are now stored in DB with all languages from TMDB response
         const videosForLang =
-          updatedVideos[langCode] ||
+          updatedVideos[requestedLangCode] ||
           updatedVideos[DEFAULT_LANGUAGE_ISO] ||
           updatedVideos[LanguageIsoCode.ENGLISH] ||
           Object.values(updatedVideos)[0] ||
           [];
+
+        if (import.meta.dev) {
+          console.log('[videos.get] Returning videos after TMDB fetch:', {
+            requestedLang: requestedLangCode,
+            tmdbFetchLanguage,
+            availableLanguages: Object.keys(updatedVideos),
+            videosForLangCount: videosForLang.length,
+          });
+        }
 
         return videosForLang;
       } catch (fetchError: unknown) {
@@ -201,10 +254,9 @@ export default defineEventHandler(async (event) => {
       return [];
     }
 
-    // Use target language if provided, otherwise use user language
-    const langCode = targetLanguage.split('-')[0]?.toLowerCase() || LanguageIsoCode.ENGLISH;
+    // Use requested language code (already calculated)
     const videosForLang =
-      existingVideos[langCode] ||
+      existingVideos[requestedLangCode] ||
       existingVideos[DEFAULT_LANGUAGE_ISO] ||
       existingVideos[LanguageIsoCode.ENGLISH] ||
       Object.values(existingVideos)[0] ||
@@ -217,7 +269,7 @@ export default defineEventHandler(async (event) => {
         requestedLang,
         targetLanguage,
         userLanguage,
-        langCode,
+        requestedLangCode,
         availableLanguages: Object.keys(existingVideos),
         videosForLangCount: videosForLang.length,
         videosForLang: videosForLang,
