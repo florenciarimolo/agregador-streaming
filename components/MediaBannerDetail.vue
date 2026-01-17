@@ -20,7 +20,7 @@
         ></div>
         <!-- Top row: Back button, Rating and Menu - aligned horizontally -->
         <div
-          class="absolute top-6 left-4 right-4 flex items-center justify-between gap-4 z-20"
+          class="absolute top-6 left-4 right-4 flex items-center justify-between gap-4 z-30"
         >
           <!-- Back button - left -->
           <button
@@ -202,7 +202,7 @@
             (mediaWithProviders as any).name ||
             tagline
           "
-          class="flex absolute inset-0 z-20 flex-col justify-center items-start gap-2 px-4"
+          class="flex absolute inset-0 z-10 flex-col justify-center items-start gap-2 px-4 pointer-events-none"
         >
           <h1
             class="text-lg sm:text-xl font-bold text-white uppercase break-words line-clamp-2"
@@ -219,7 +219,7 @@
         <!-- Informative icons overlay (only show if user has session) -->
         <div
           v-if="hasSession"
-          class="media-banner-tooltips flex absolute bottom-6 right-4 gap-2 z-20"
+          class="media-banner-tooltips flex absolute bottom-6 right-4 gap-2 z-30"
         >
           <Tooltip v-if="isLiked" text="Favorito">
             <div
@@ -1264,26 +1264,6 @@ const handleBack = async () => {
   await nextTick();
 
   // Try to get the previous route from sessionStorage
-  // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/fa20eabc-ceed-4124-936f-87a814c192af', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      sessionId: 'debug-session',
-      runId: 'pre-fix-1',
-      hypothesisId: 'H3',
-      location: 'components/MediaBannerDetail.vue:1267',
-      message: 'handleBack invoked in MediaBannerDetail',
-      data: {
-        hasPreviousRoute: !!sessionStorage.getItem('previousRoute'),
-        mediaId: mediaWithProviders.value.id,
-        mediaType: props.mediaType,
-      },
-      timestamp: Date.now(),
-    }),
-  }).catch(() => {});
-  // #endregion
-
   const previousRoute = sessionStorage.getItem('previousRoute');
 
   if (previousRoute) {

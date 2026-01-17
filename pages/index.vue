@@ -92,6 +92,9 @@ const userStore = computed(() => {
 const { hreflangLinks } = useHreflang();
 const { canonicalUrl } = useCanonical();
 
+// SEO keywords - must be called at top level of setup
+const { seoKeywords: homeKeywords } = useHomeKeywords();
+
 // Get language code for og:image (outside watchEffect to avoid recreating computed)
 const ogImageUrl = computed(() => {
   const isAuthenticated = !!user.value;
@@ -103,6 +106,15 @@ const ogImageUrl = computed(() => {
   // Handle en-gb -> en (fallback if en-gb-og-image.jpg doesn't exist)
   const imageLangCode = langCode === 'en-gb' ? 'en' : langCode;
   return `/${imageLangCode}-og-image.jpg`;
+});
+
+// Computed for SEO keywords based on authentication state
+const seoKeywords = computed(() => {
+  const isAuthenticated = !!user.value;
+  if (isAuthenticated) {
+    return '';
+  }
+  return homeKeywords.value;
 });
 
 watchEffect(() => {
@@ -120,15 +132,6 @@ watchEffect(() => {
         },
       ];
 
-  // SEO keywords
-  const { seoKeywords: homeKeywords } = useHomeKeywords();
-  const seoKeywords = computed(() => {
-    if (isAuthenticated) {
-      return '';
-    }
-    return homeKeywords.value;
-  });
-
   useHead({
     title: isAuthenticated ? t('seo.defaultTitle') : t('seo.homeTitlePublic'),
     titleTemplate: isAuthenticated ? '%s' : undefined,
@@ -142,7 +145,7 @@ watchEffect(() => {
         : [
             {
               name: 'keywords',
-              content: seoKeywords,
+              content: seoKeywords.value,
             },
           ]),
     ],
@@ -160,11 +163,11 @@ watchEffect(() => {
     ogDescription: isAuthenticated
       ? t('seo.homeDescription')
       : t('seo.homeDescriptionPublic'),
-    ogImage: ogImageUrl,
+    ogImage: ogImageUrl.value,
     ogType: 'website',
     ogUrl: canonicalUrl,
     twitterCard: 'summary_large_image',
-    twitterImage: ogImageUrl,
+    twitterImage: ogImageUrl.value,
     robots: isAuthenticated ? 'noindex, nofollow' : 'index, follow',
   });
 });
@@ -643,6 +646,42 @@ const hasRegion = computed(() => {
   return !!userPreferences.value?.region;
 });
 
+// Watch user changes to ensure state updates reactively after login
+watch(
+  user,
+  async (newUser, oldUser) => {
+    // If user just logged in (was null, now has value)
+    if (!oldUser && newUser) {
+      if (import.meta.dev) {
+        console.log('[pages/index.vue] User logged in, updating state...', {
+          userId: newUser.id || (newUser as { sub?: string })?.sub,
+        });
+      }
+      // Force state refresh by ensuring profile is loaded
+      if (userStore.value.profile === null) {
+        await userStore.value.fetchProfile();
+      }
+      // Reset preferences state to trigger reload
+      preferencesPending.value = false;
+      preferencesFetchInProgress.value = false;
+      regionLoadAttempted.value = false;
+    }
+    // If user just logged out (had value, now null)
+    else if (oldUser && !newUser) {
+      if (import.meta.dev) {
+        console.log('[pages/index.vue] User logged out, clearing state...');
+      }
+      // Clear preferences state
+      userRegion.value = null;
+      preferencesPending.value = false;
+      regionLoadAttempted.value = false;
+      userPreferencesData.value = null;
+      preferencesFetchInProgress.value = false;
+    }
+  },
+  { immediate: false }
+);
+
 // Computed: Show hero section (no user)
 // Only show when state is ready and there's no user
 const showHero = computed(() => isStateReady.value && !user.value);
@@ -930,13 +969,15 @@ onMounted(() => {
       </ClientOnly>
 
       <!-- New Landing Page Sections (only for non-authenticated users) -->
-      <ProblemSection />
-      <ProductFlowSection />
-      <DiscoverSection />
-      <DifferentiationSection />
-      <ProductValueSection />
-      <FaqSection />
-      <FinalCtaSection />
+      <template v-if="showHero">
+        <ProblemSection />
+        <ProductFlowSection />
+        <DiscoverSection />
+        <DifferentiationSection />
+        <ProductValueSection />
+        <FaqSection />
+        <FinalCtaSection />
+      </template>
 
       <!-- Recommendations Section -->
       <ClientOnly v-if="showRecommendations">

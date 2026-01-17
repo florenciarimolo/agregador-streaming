@@ -328,26 +328,7 @@ function logClick(
   message: string,
   data: Record<string, unknown>
 ) {
-  if (import.meta.client && typeof window !== 'undefined' && window.fetch) {
-    window
-      .fetch(
-        'http://127.0.0.1:7242/ingest/fa20eabc-ceed-4124-936f-87a814c192af',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            sessionId: 'debug-session',
-            runId: 'debug-2',
-            hypothesisId,
-            location,
-            message,
-            data,
-            timestamp: Date.now(),
-          }),
-        }
-      )
-      .catch(() => {});
-  }
+  // Logging removed - was causing connection errors
 }
 
 // Computed link with language prefix
@@ -360,26 +341,6 @@ const computedLinkTo = computed(() => {
       : !props.type
         ? ''
         : routeWithLang(`/${mediaType.value}/${props.tmdbId}`);
-  // #region agent log - H3: computedLinkTo value
-  if (import.meta.client && result) {
-    logClick(
-      'H3',
-      'components/ListItemBase.vue:computedLinkTo',
-      'computedLinkTo computed',
-      {
-        result,
-        resultType: typeof result,
-        resultLength: result?.length,
-        isEmpty: !result || result === '',
-        isHash: result === '#',
-        linkTo: props.linkTo,
-        type: props.type,
-        tmdbId: props.tmdbId,
-        mediaType: mediaType.value,
-      }
-    );
-  }
-  // #endregion
   return result;
 });
 
