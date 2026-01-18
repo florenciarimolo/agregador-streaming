@@ -13,7 +13,7 @@ interface Props {
   maxWidth?: string;
 }
 
-const props = withDefaults(defineProps<Props>(), {
+withDefaults(defineProps<Props>(), {
   maxWidth: '200px',
 });
 </script>

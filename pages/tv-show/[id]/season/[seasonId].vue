@@ -59,7 +59,7 @@
               class="md:hidden space-y-4"
             >
               <article
-                v-for="(episode, index) in seasonWithProviders.episodes"
+                v-for="episode in seasonWithProviders.episodes"
                 :key="episode.id"
                 class="overflow-visible relative rounded-3xl border backdrop-blur-xl transition-all duration-300 dark:bg-gray-900/40 bg-gray-100/80 border-gray-300/50 dark:border-white/10"
               >
@@ -159,7 +159,7 @@
               class="hidden md:grid md:grid-cols-3 md:gap-4"
             >
               <div
-                v-for="(episode, index) in seasonWithProviders.episodes"
+                v-for="episode in seasonWithProviders.episodes"
                 :key="episode.id"
                 class="relative"
               >
@@ -258,14 +258,11 @@ import PageContainer from '@/components/layout/PageContainer.vue';
 import Section from '@/components/layout/Section.vue';
 import SectionTitle from '@/components/layout/SectionTitle.vue';
 import Alert from '@/components/ui/Alert.vue';
-import IconCalendar from '@/components/icons/IconCalendar.vue';
-import IconClock from '@/components/icons/IconClock.vue';
 import IconTv from '@/components/icons/IconTv.vue';
 import EpisodeSeenButton from '@/components/EpisodeSeenButton.vue';
 import SeasonSeenButton from '@/components/SeasonSeenButton.vue';
 import TitleCard from '@/components/TitleCard.vue';
 import RatingBadge from '@/components/RatingBadge.vue';
-import { formatDateByRegion } from '@/utils/formatDate';
 import { useUserRegion } from '@/composables/useUserRegion';
 import { useTVSeasonSchema } from '@/composables/useSchemaOrg';
 import { useHreflang } from '@/composables/useHreflang';

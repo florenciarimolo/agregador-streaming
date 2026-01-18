@@ -199,7 +199,7 @@ export const useEpisodeStatus = (
       let sessionResult;
       try {
         sessionResult = await Promise.race([getSessionPromise, timeoutPromise]);
-      } catch (error) {
+      } catch {
         throw new Error('Session timeout - please try again');
       }
       

@@ -328,7 +328,7 @@ interface Props {
   seasonNumber?: number;
 }
 
-const emit = defineEmits<{
+defineEmits<{
   'mark-season-seen': [];
   'unmark-season': [];
 }>();
