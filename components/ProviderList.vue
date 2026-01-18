@@ -1,7 +1,7 @@
 <template lang="">
   <div v-if="mediaProviderPropList.length > 0" class="flex flex-col gap-3">
     <h3
-      class="text-xl font-bold dark:text-gray-300 text-gray-800 uppercase font-heading"
+      class="text-xl font-bold dark:text-gray-300 text-gray-800 font-heading"
       >{{ watchTypeProp }}</h3
     >
     <div class="flex flex-row flex-wrap items-center justify-start gap-4">

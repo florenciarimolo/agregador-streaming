@@ -190,9 +190,22 @@ export const useEpisodeStatus = (
       isLoading.value = true;
       error.value = null;
 
+      // Get session with timeout to prevent hanging
+      const getSessionPromise = getSession();
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('getSession timeout after 5s')), 5000);
+      });
+      
+      let sessionResult;
+      try {
+        sessionResult = await Promise.race([getSessionPromise, timeoutPromise]);
+      } catch (error) {
+        throw new Error('Session timeout - please try again');
+      }
+      
       const {
         data: { session },
-      } = await getSession();
+      } = sessionResult as Awaited<ReturnType<typeof getSession>>;
 
       if (!session?.access_token) {
         throw new Error('Unauthorized');

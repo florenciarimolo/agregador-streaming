@@ -43,7 +43,7 @@
         >
           <h1
             v-if="season?.name"
-            class="text-lg font-bold text-white uppercase break-words sm:text-xl line-clamp-2"
+            class="text-lg font-bold text-white break-words sm:text-xl line-clamp-2"
           >
             {{ season.name }}
           </h1>
@@ -52,6 +52,12 @@
             class="text-sm italic break-words sm:text-base text-white/90"
           >
             {{ tagline }}
+          </p>
+          <p
+            v-if="season?.overview"
+            class="text-xs sm:text-sm text-white/90 break-words line-clamp-3 mt-2"
+          >
+            {{ season.overview }}
           </p>
         </div>
       </div>
@@ -143,7 +149,7 @@
               >
                 <div class="hidden flex-col gap-2 lg:flex xl:flex-1">
                   <h1
-                    class="text-4xl font-bold text-gray-800 uppercase break-words dark:text-gray-300"
+                    class="text-4xl font-bold text-gray-800 break-words dark:text-gray-300"
                   >
                     {{ season?.name }}
                   </h1>
@@ -153,41 +159,18 @@
                   >
                     {{ tagline }}
                   </p>
-                  <!-- Episodes seen count and season seen button (only for logged users) -->
+                  <!-- Episodes seen count (only for logged users) -->
                   <div
                     v-if="hasSession && seenEpisodesCount !== undefined"
                     class="flex gap-2 items-center text-gray-800 dark:text-gray-300"
                   >
-                    <Tooltip
-                      :text="
+                    <IconEye
+                      :icon-class="
                         isSeasonSeen
-                          ? $t('episodes.seasonUnmarkAsSeen', {
-                              season: seasonNumber,
-                            })
-                          : $t('episodes.seasonMarkAsSeen', {
-                              season: seasonNumber,
-                            })
+                          ? 'w-5 h-5 text-primary-600 dark:text-primary-400'
+                          : 'w-5 h-5 text-gray-500 dark:text-gray-400'
                       "
-                    >
-                      <IconEye
-                        :icon-class="
-                          isSeasonSeen
-                            ? 'w-5 h-5 text-primary-600 dark:text-primary-400'
-                            : 'w-5 h-5 text-gray-500 dark:text-gray-400'
-                        "
-                        class="cursor-pointer transition-colors hover:text-primary-600 dark:hover:text-primary-400"
-                        :aria-label="
-                          isSeasonSeen
-                            ? $t('episodes.seasonUnmarkAsSeen', {
-                                season: seasonNumber,
-                              })
-                            : $t('episodes.seasonMarkAsSeen', {
-                                season: seasonNumber,
-                              })
-                        "
-                        @click="handleSeasonSeenClick"
-                      />
-                    </Tooltip>
+                    />
                     <span>{{
                       $t(
                         seenEpisodesCount === 1
@@ -222,7 +205,7 @@
 
           <p
             :class="[
-              'dark:text-gray-300 text-gray-800',
+              'hidden lg:block dark:text-gray-300 text-gray-800',
               { italic: !season?.overview },
             ]"
             >{{ season?.overview || $t('media.noDescriptionAvailable') }}</p
@@ -304,30 +287,6 @@
         </div>
       </section>
     </Section>
-
-    <!-- Confirmation Modal for unmarking season -->
-    <Modal :is-open="showConfirmModal" @close="showConfirmModal = false">
-      <div>
-        <h3 class="text-lg font-semibold mb-2">
-          {{ $t('episodes.confirmUnmarkSeason') }}
-        </h3>
-        <p class="mb-4">
-          {{
-            $t('episodes.confirmUnmarkSeasonMessage', {
-              season: props.seasonNumber,
-            })
-          }}
-        </p>
-        <div class="flex gap-2 justify-end">
-          <Button variant="ghost" @click="showConfirmModal = false">
-            {{ $t('common.cancel') }}
-          </Button>
-          <Button variant="default" @click="confirmUnmark">
-            {{ $t('common.confirm') }}
-          </Button>
-        </div>
-      </div>
-    </Modal>
   </div>
 </template>
 
@@ -345,7 +304,6 @@ import IconCalendar from '@/components/icons/IconCalendar.vue';
 import IconEpisodes from '@/components/icons/IconEpisodes.vue';
 import IconEye from '@/components/icons/IconEye.vue';
 import Section from '@/components/layout/Section.vue';
-import Tooltip from '@/components/ui/Tooltip.vue';
 import { useUserRegion } from '@/composables/useUserRegion';
 import { getTitleInLanguage, type MultiLanguageText } from '@/services/titles';
 import { useCurrentLanguage } from '@/composables/useCurrentLanguage';
@@ -360,8 +318,6 @@ import {
 } from '@/constants/domain/videos';
 import type { Video } from '@/types/Video';
 import { useSupabaseUser } from '#imports';
-import Modal from '@/components/ui/Modal.vue';
-import Button from '@/components/ui/Button.vue';
 
 interface Props {
   season: (Season & { providers?: WatchProviderTypes }) | null | undefined;
@@ -387,7 +343,6 @@ const { currentLanguage } = useCurrentLanguage();
 const { t } = useI18n();
 const user = useSupabaseUser();
 const hasSession = computed(() => !!user.value);
-const showConfirmModal = ref(false);
 
 // Videos state
 const allVideos = ref<Video[] | null>(null);
@@ -499,21 +454,6 @@ onMounted(async () => {
   );
   allVideos.value = videos;
 });
-
-const handleSeasonSeenClick = () => {
-  if (props.isSeasonSeen) {
-    // Show confirmation modal before unmarking
-    showConfirmModal.value = true;
-  } else {
-    // Mark season as seen (no confirmation needed)
-    emit('mark-season-seen');
-  }
-};
-
-const confirmUnmark = () => {
-  showConfirmModal.value = false;
-  emit('unmark-season');
-};
 
 onUnmounted(() => {
   window.removeEventListener('resize', handleResize);

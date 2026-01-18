@@ -393,6 +393,7 @@
     "unmarkAsSeen": "Unmark episode {episode} of season {season} as seen",
     "seasonMarkAsSeen": "Mark season {season} as seen",
     "seasonUnmarkAsSeen": "Unmark season {season} as seen",
+    "seasonMarkedAsSeen": "Season marked as seen",
     "confirmUnmarkSeason": "Unmark season?",
     "confirmUnmarkSeasonMessage": "This will unmark all episodes in season {season}. This action cannot be undone.",
     "episodesSeenCount_one": "{count} episode seen",

@@ -1,7 +1,7 @@
 <template>
   <div class="tooltip-container relative">
     <slot />
-    <span class="tooltip">
+    <span class="tooltip" :style="{ maxWidth: maxWidth }">
       {{ text }}
     </span>
   </div>
@@ -10,9 +10,12 @@
 <script setup lang="ts">
 interface Props {
   text: string;
+  maxWidth?: string;
 }
 
-defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+  maxWidth: '200px',
+});
 </script>
 
 <style scoped>
@@ -38,7 +41,6 @@ defineProps<Props>();
   border-radius: 6px;
   font-size: 12px;
   white-space: normal;
-  max-width: 200px;
   word-wrap: break-word;
   pointer-events: none;
   opacity: 0;

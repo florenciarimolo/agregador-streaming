@@ -395,6 +395,7 @@
     "unmarkAsSeen": "Desmarkatu {season}. denboraldiko {episode}. atala ikusita bezala",
     "seasonMarkAsSeen": "Markatu {season}. denboraldia ikusita bezala",
     "seasonUnmarkAsSeen": "Desmarkatu {season}. denboraldia ikusita bezala",
+    "seasonMarkedAsSeen": "Denboraldia ikusita bezala markatuta",
     "episodesSeenCount_one": "{count} atal ikusia",
     "episodesSeenCount_other": "{count} atal ikusiak",
     "confirmUnmarkSeason": "Desmarkatu denboraldia?",

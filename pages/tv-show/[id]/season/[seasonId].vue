@@ -53,56 +53,181 @@
               />
             </div>
 
-            <div v-if="seasonWithProviders?.episodes?.length" class="space-y-4">
-              <ListItemBase
+            <!-- Mobile: Custom 2-row layout -->
+            <div
+              v-if="seasonWithProviders?.episodes?.length"
+              class="md:hidden space-y-4"
+            >
+              <article
                 v-for="(episode, index) in seasonWithProviders.episodes"
                 :key="episode.id"
-                :title="`${index + 1}. ${episode.name}`"
-                :poster-path="episode.still_path"
-                :overview="episode.overview"
-                :vote-average="episode.vote_average"
-                :tmdb-id="episode.id"
-                :hide-type-badge="true"
-                :show-overview="true"
-                :aria-label="$t('media.viewDetailsOf', { title: episode.name })"
-                :link-aria-label="
-                  $t('media.viewDetailsOf', { title: episode.name })
-                "
-                :image-alt="$t('media.posterOf', { title: episode.name })"
-                :no-image-aria-label="
-                  $t('media.noPosterAvailableFor', { title: episode.name })
-                "
+                class="overflow-visible relative rounded-3xl border backdrop-blur-xl transition-all duration-300 dark:bg-gray-900/40 bg-gray-100/80 border-gray-300/50 dark:border-white/10"
               >
-                <template #actions>
-                  <!-- Episode actions: Seen button and info -->
-                  <div class="flex flex-col gap-2 items-end">
-                    <!-- Episode seen button -->
-                    <EpisodeSeenButton
-                      :is-seen="isEpisodeSeen(seasonWithProviders.season_number, episode.episode_number)"
-                      :season-number="seasonWithProviders.season_number"
-                      :episode-number="episode.episode_number"
-                      size="small"
-                      @click="handleToggleEpisodeSeen(seasonWithProviders.season_number, episode.episode_number)"
-                    />
-                    <!-- Additional episode info: Date and Duration -->
-                    <div
-                      class="flex items-center gap-2 dark:text-gray-300 text-gray-800 text-xs"
-                    >
-                      <IconCalendar icon-class="w-3 h-3" />
-                      <span>{{
-                        formatDateByRegion(episode.air_date, userRegion, t)
-                      }}</span>
+                <div class="flex flex-col p-4 gap-3">
+                  <!-- Row 1: Image, Title, Time, Rating -->
+                  <div class="flex flex-row gap-3">
+                    <!-- Horizontal image with eye icon overlay -->
+                    <div class="relative flex-shrink-0">
+                      <div
+                        class="relative bg-gray-800 overflow-hidden rounded-2xl aspect-video w-32"
+                      >
+                        <img
+                          v-if="episode.still_path"
+                          :src="`https://image.tmdb.org/t/p/w500${episode.still_path}`"
+                          :alt="$t('media.posterOf', { title: episode.name })"
+                          class="object-cover w-full h-full"
+                          loading="lazy"
+                          decoding="async"
+                        />
+                        <div
+                          v-else
+                          class="flex justify-center items-center w-full h-full text-gray-600 dark:text-gray-500"
+                          role="img"
+                          :aria-label="
+                            $t('media.noPosterAvailableFor', {
+                              title: episode.name,
+                            })
+                          "
+                        >
+                          <IconTv icon-class="w-8 h-8" />
+                        </div>
+                        <!-- Rating badge at top left -->
+                        <div
+                          v-if="episode.vote_average"
+                          class="absolute top-1 left-1 z-10 pointer-events-none"
+                        >
+                          <RatingBadge :rating="episode.vote_average" />
+                        </div>
+                      </div>
                     </div>
-                    <div
-                      v-if="episode.runtime"
-                      class="flex items-center gap-2 dark:text-gray-300 text-gray-800 text-xs"
-                    >
-                      <IconClock icon-class="w-3 h-3" />
-                      <span>{{ episode.runtime }} min</span>
+                    <!-- Title, Time -->
+                    <div class="flex flex-col flex-1 gap-1 min-w-0">
+                      <div class="flex items-center gap-2">
+                        <h3
+                          class="text-xs font-semibold text-gray-800 dark:text-gray-300 break-words flex-1"
+                        >
+                          {{ episode.episode_number }}. {{ episode.name }}
+                        </h3>
+                        <EpisodeSeenButton
+                          :is-seen="
+                            isEpisodeSeen(
+                              seasonWithProviders.season_number,
+                              episode.episode_number
+                            )
+                          "
+                          :season-number="seasonWithProviders.season_number"
+                          :episode-number="episode.episode_number"
+                          size="small"
+                          @click="
+                            handleToggleEpisodeSeen(
+                              seasonWithProviders.season_number,
+                              episode.episode_number
+                            )
+                          "
+                        />
+                      </div>
+                      <div
+                        v-if="episode.runtime"
+                        class="text-xs text-gray-600 dark:text-gray-400"
+                      >
+                        {{ episode.runtime }} min
+                      </div>
                     </div>
                   </div>
-                </template>
-              </ListItemBase>
+                  <!-- Row 2: Overview -->
+                  <div>
+                    <p
+                      v-if="episode.overview"
+                      class="text-xs text-gray-700 dark:text-gray-300 line-clamp-3"
+                    >
+                      {{ episode.overview }}
+                    </p>
+                    <p
+                      v-else
+                      class="text-xs italic text-gray-600 dark:text-gray-400"
+                    >
+                      {{ $t('media.noDescriptionAvailable') }}
+                    </p>
+                  </div>
+                </div>
+              </article>
+            </div>
+
+            <!-- Desktop/Tablet: 3-column mosaic grid -->
+            <div
+              v-if="seasonWithProviders?.episodes?.length"
+              class="hidden md:grid md:grid-cols-3 md:gap-4"
+            >
+              <div
+                v-for="(episode, index) in seasonWithProviders.episodes"
+                :key="episode.id"
+                class="relative"
+              >
+                <TitleCard
+                  :title="episode.name"
+                  :poster-path="episode.still_path"
+                  aspect-ratio="video"
+                  :show-content="true"
+                  :show-type="false"
+                  :link-to="''"
+                  :image-alt="$t('media.posterOf', { title: episode.name })"
+                  :no-image-aria-label="
+                    $t('media.noPosterAvailableFor', { title: episode.name })
+                  "
+                  :aria-label="$t('media.viewDetailsOf', { title: episode.name })"
+                >
+                  <template #top-left-badges>
+                    <RatingBadge
+                      v-if="episode.vote_average"
+                      :rating="episode.vote_average"
+                    />
+                  </template>
+                  <template #top-right-actions>
+                    <EpisodeSeenButton
+                      :is-seen="
+                        isEpisodeSeen(
+                          seasonWithProviders.season_number,
+                          episode.episode_number
+                        )
+                      "
+                      :season-number="seasonWithProviders.season_number"
+                      :episode-number="episode.episode_number"
+                      size="medium"
+                      @click="
+                        handleToggleEpisodeSeen(
+                          seasonWithProviders.season_number,
+                          episode.episode_number
+                        )
+                      "
+                    />
+                  </template>
+                  <template #content>
+                    <h3
+                      class="text-sm font-semibold text-gray-800 dark:text-gray-300 mb-1"
+                    >
+                      {{ episode.episode_number }}. {{ episode.name }}
+                    </h3>
+                    <p
+                      v-if="episode.runtime"
+                      class="text-xs text-gray-600 dark:text-gray-400 mb-2"
+                    >
+                      {{ episode.runtime }} min
+                    </p>
+                    <p
+                      v-if="episode.overview"
+                      class="text-xs text-gray-800 dark:text-gray-300 line-clamp-3"
+                    >
+                      {{ episode.overview }}
+                    </p>
+                    <p
+                      v-else
+                      class="text-xs italic text-gray-600 dark:text-gray-400"
+                    >
+                      {{ $t('media.noDescriptionAvailable') }}
+                    </p>
+                  </template>
+                </TitleCard>
+              </div>
             </div>
 
             <!-- Empty state -->
@@ -135,9 +260,11 @@ import SectionTitle from '@/components/layout/SectionTitle.vue';
 import Alert from '@/components/ui/Alert.vue';
 import IconCalendar from '@/components/icons/IconCalendar.vue';
 import IconClock from '@/components/icons/IconClock.vue';
-import ListItemBase from '@/components/ListItemBase.vue';
+import IconTv from '@/components/icons/IconTv.vue';
 import EpisodeSeenButton from '@/components/EpisodeSeenButton.vue';
 import SeasonSeenButton from '@/components/SeasonSeenButton.vue';
+import TitleCard from '@/components/TitleCard.vue';
+import RatingBadge from '@/components/RatingBadge.vue';
 import { formatDateByRegion } from '@/utils/formatDate';
 import { useUserRegion } from '@/composables/useUserRegion';
 import { useTVSeasonSchema } from '@/composables/useSchemaOrg';
@@ -147,6 +274,8 @@ import { useSeasonKeywords } from '@/composables/useSeoKeywords';
 import { useEpisodeStatus } from '@/composables/useEpisodeStatus';
 import { getSession } from '@/services/auth';
 import { useLogger } from '@/composables/useLogger';
+import { useUndoToast } from '@/composables/useUndoToast';
+import { useSupabaseUser } from '#imports';
 
 const route = useRoute();
 const { locale } = useI18n();
@@ -400,15 +529,75 @@ const handleToggleEpisodeSeen = async (
   }
 };
 
+const { showToast } = useUndoToast();
+const user = useSupabaseUser();
+
 const handleMarkSeasonSeen = async () => {
   const { logError } = useLogger();
   try {
-    if (!seasonWithProviders.value) return;
+    if (!seasonWithProviders.value) {
+      return;
+    }
 
-    await markSeasonSeen(seasonWithProviders.value.season_number);
+    // Check if user is authenticated using useSupabaseUser (reactive, no getSession call)
+    if (!user.value) {
+      showToast(t('media.authRequired'), null, 3000);
+      return;
+    }
+
+    // Get session with timeout to prevent hanging
+    const getSessionPromise = getSession();
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('getSession timeout after 5s')), 5000);
+    });
+    
+    let sessionResult;
+    try {
+      sessionResult = await Promise.race([getSessionPromise, timeoutPromise]);
+    } catch (error) {
+      const { logWarn } = useLogger();
+      logWarn('[SeasonPage] getSession timeout or error', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+      showToast(t('home.errorUpdatingStatus', { title: t('episodes.seasonMarkAsSeen', { season: seasonWithProviders.value?.season_number || 1 }) }), null, 3000);
+      return;
+    }
+    
+    const {
+      data: { session },
+    } = sessionResult as Awaited<ReturnType<typeof getSession>>;
+
+    if (!session?.access_token) {
+      showToast(t('media.authRequired'), null, 3000);
+      return;
+    }
+
+    const seasonNumber = seasonWithProviders.value.season_number;
+
+    await markSeasonSeen(seasonNumber);
     await fetchEpisodeStatuses();
+
+    // Show success toast with undo
+    showToast(
+      t('episodes.seasonMarkedAsSeen'),
+      {
+        label: t('undo.undo'),
+        action: async () => {
+          await handleUnmarkSeason();
+        },
+      },
+      7000
+    );
   } catch (error) {
     logError('[SeasonPage] Error marking season as seen', error as Error);
+    const seasonNumber = seasonWithProviders.value?.season_number || '';
+    showToast(
+      t('home.errorUpdatingStatus', {
+        title: t('episodes.seasonMarkAsSeen', { season: seasonNumber }),
+      }),
+      null,
+      3000
+    );
   }
 };
 
@@ -417,10 +606,37 @@ const handleUnmarkSeason = async () => {
   try {
     if (!seasonWithProviders.value) return;
 
-    await unmarkSeason(seasonWithProviders.value.season_number);
+    // Check if user is authenticated
+    const {
+      data: { session },
+    } = await getSession();
+
+    if (!session?.access_token) {
+      showToast(t('media.authRequired'), null, 3000);
+      return;
+    }
+
+    const seasonNumber = seasonWithProviders.value.season_number;
+
+    await unmarkSeason(seasonNumber);
     await fetchEpisodeStatuses();
+
+    // Show success toast
+    showToast(
+      t('episodes.seasonUnmarkAsSeen', { season: seasonNumber }) + ' ✓',
+      null,
+      3000
+    );
   } catch (error) {
     logError('[SeasonPage] Error unmarking season', error as Error);
+    const seasonNumber = seasonWithProviders.value?.season_number || '';
+    showToast(
+      t('home.errorUpdatingStatus', {
+        title: t('episodes.seasonUnmarkAsSeen', { season: seasonNumber }),
+      }),
+      null,
+      3000
+    );
   }
 };
 

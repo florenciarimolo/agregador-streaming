@@ -38,6 +38,13 @@
               :rating="mediaWithProviders.vote_average"
               class="lg:hidden"
             />
+            <!-- TmdbStatusBadge: Shows TMDB status or inTheaters (mobile only) -->
+            <TmdbStatusBadge
+              v-if="mediaWithProviders.status || inTheaters"
+              :status="mediaWithProviders.status"
+              :in-theaters="inTheaters"
+              class="lg:hidden"
+            />
             <!-- Actions Menu (only show if user has session) -->
             <ActionMenu
               v-if="hasSession"
@@ -238,7 +245,7 @@
           class="flex absolute inset-0 z-10 flex-col justify-center items-start gap-2 px-4 pointer-events-none"
         >
           <h1
-            class="text-lg sm:text-xl font-bold text-white uppercase break-words line-clamp-2"
+            class="text-lg sm:text-xl font-bold text-white break-words line-clamp-2"
           >
             {{ mediaWithProviders.title || (mediaWithProviders as any).name }}
           </h1>
@@ -247,6 +254,12 @@
             class="text-sm sm:text-base italic text-white/90 break-words"
           >
             {{ tagline }}
+          </p>
+          <p
+            v-if="mediaWithProviders.overview"
+            class="text-xs sm:text-sm text-white/90 break-words line-clamp-3 mt-2"
+          >
+            {{ mediaWithProviders.overview }}
           </p>
         </div>
         <!-- Informative icons overlay (only show if user has session) -->
@@ -462,7 +475,7 @@
               >
                 <div class="hidden lg:flex flex-col gap-2 xl:flex-1 xl:min-w-0">
                   <h1
-                    class="text-4xl font-bold text-gray-800 break-words dark:text-gray-300 uppercase"
+                    class="text-4xl font-bold text-gray-800 break-words dark:text-gray-300"
                   >
                     {{
                       mediaWithProviders.title ||
@@ -694,7 +707,7 @@
 
           <p
             :class="[
-              'dark:text-gray-300 text-gray-800',
+              'hidden lg:block dark:text-gray-300 text-gray-800',
               { italic: !mediaWithProviders.overview },
             ]"
             >{{ mediaWithProviders.overview || $t('media.noDescription') }}</p
