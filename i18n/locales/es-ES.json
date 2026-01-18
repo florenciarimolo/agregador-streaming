@@ -395,6 +395,7 @@
     "unmarkAsSeen": "Desmarcar episodio {episode} de la temporada {season} como visto",
     "seasonMarkAsSeen": "Marcar temporada {season} como vista",
     "seasonUnmarkAsSeen": "Desmarcar temporada {season} como vista",
+    "seasonMarkedAsSeen": "Temporada marcada como vista",
     "episodesSeenCount_one": "{count} episodio visto",
     "episodesSeenCount_other": "{count} episodios vistos",
     "confirmUnmarkSeason": "¿Desmarcar temporada?",

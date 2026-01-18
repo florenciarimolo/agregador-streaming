@@ -1,6 +1,6 @@
 <template>
   <div v-if="videos && videos.length > 0" class="flex flex-col gap-4">
-    <h3 class="text-xl font-bold dark:text-gray-300 text-gray-800 uppercase font-heading">
+    <h3 class="text-xl font-bold dark:text-gray-300 text-gray-800 font-heading">
       {{ title }}
     </h3>
     <div

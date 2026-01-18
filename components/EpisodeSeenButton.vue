@@ -11,6 +11,7 @@
             season: seasonNumber,
           })
     "
+    max-width="300px"
   >
     <IconButton
       :aria-label="
@@ -26,8 +27,8 @@
       "
       :custom-class="
         isSeen
-          ? 'text-primary-600 dark:text-primary-400'
-          : 'text-gray-500 dark:text-gray-400'
+          ? 'p-2 rounded-full bg-primary-600 dark:bg-primary-500 text-white'
+          : 'p-2 rounded-full backdrop-blur-xl dark:bg-black/50 bg-gray-100/80 text-gray-500 dark:text-gray-400'
       "
       @click="handleClick"
     >
