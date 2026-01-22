@@ -45,7 +45,7 @@ definePageMeta({
   middleware: ['onboarding'],
 });
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const user = useSupabaseUser();
@@ -404,68 +404,50 @@ const selectedAttention = ref<Attention | null>(
 
 // Genres data - only loaded when user is logged in
 // Genres are only needed for filters, which are only shown to authenticated users
-const genresData = ref<{
-  movie: { genres: Array<{ id: number; name: string }> };
-  tv: { genres: Array<{ id: number; name: string }> };
-} | null>(null);
+const { genresData, availableGenres, refresh: refreshGenres } = useGenres(
+  'home-genres',
+  {
+    server: false,
+    immediate: false, // Only fetch when user is logged in
+  }
+);
+
+// Track current locale to detect changes
+const currentLocale = ref<string | null>(null);
 
 // Only fetch genres when user is logged in
 watch(
   user,
   async (newUser) => {
-    // Only fetch if user exists and genres haven't been loaded yet
-    if (newUser && !genresData.value) {
-      try {
-        const [movieResponse, tvResponse] = await Promise.all([
-          $fetch<{ genres: Array<{ id: number; name: string }> }>(
-            `/api/tmdb/genres?type=${MEDIA_TYPE.MOVIE}`
-          ),
-          $fetch<{ genres: Array<{ id: number; name: string }> }>(
-            `/api/tmdb/genres?type=${MEDIA_TYPE.TV}`
-          ),
-        ]);
-        genresData.value = { movie: movieResponse, tv: tvResponse };
-      } catch (error) {
-        const { logError } = useLogger();
-        logError('[Home] Error fetching genres', error as Error);
-        genresData.value = { movie: { genres: [] }, tv: { genres: [] } };
-      }
-    } else if (!newUser) {
+    if (newUser) {
+      // Update current locale and load genres
+      currentLocale.value = locale.value;
+      await refreshGenres();
+    } else {
       // Clear genres when user logs out
       genresData.value = null;
+      currentLocale.value = null;
     }
   },
-  { immediate: false } // Don't execute immediately - wait for user to be available
+  { immediate: true } // Execute immediately if user is already authenticated
 );
 
-const availableGenres = computed(() => {
-  if (!genresData.value) return [];
-  const allGenres: Array<{
-    id: number;
-    name: string;
-    type?: typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV;
-  }> = [];
-  const movieGenres = genresData.value.movie?.genres || [];
-  movieGenres.forEach((g: { id: number; name: string }) => {
-    if (g.name) {
-      allGenres.push({ id: g.id, name: g.name, type: MEDIA_TYPE.MOVIE });
+// Reload genres when language changes (if user is logged in)
+// Watch lang (from URL) instead of locale to ensure genres reload when URL language changes
+watch(
+  lang,
+  async (newLang, oldLang) => {
+    // Only reload if language actually changed and user is authenticated
+    if (
+      newLang &&
+      oldLang &&
+      newLang !== oldLang &&
+      user.value
+    ) {
+      await refreshGenres();
     }
-  });
-  const tvGenres = genresData.value.tv?.genres || [];
-  tvGenres.forEach((g: { id: number; name: string }) => {
-    if (g.name) {
-      allGenres.push({ id: g.id, name: g.name, type: MEDIA_TYPE.TV });
-    }
-  });
-  return allGenres
-    .filter((genre) => genre.name)
-    .sort((a, b) => {
-      if (a.type !== b.type) {
-        return a.type === MEDIA_TYPE.MOVIE ? -1 : 1;
-      }
-      return (a.name || '').localeCompare(b.name || '');
-    });
-});
+  }
+);
 
 // Load providers based on user region
 const providersData = ref<{

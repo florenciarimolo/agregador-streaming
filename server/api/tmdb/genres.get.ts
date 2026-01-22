@@ -20,11 +20,9 @@ export default defineEventHandler(async (event) => {
 
     // Extract language code only (e.g., 'es-ES' -> 'es')
     // TMDB genres API only accepts ISO 639-1 language code, not the full locale
-    // IMPORTANT: If region is ES, always use Spanish regardless of preferred language
-    const languageCode =
-      config.region === 'ES'
-        ? LanguageIsoCode.SPANISH
-        : extractLanguageCode(config.language) || DEFAULT_LANGUAGE_ISO;
+    // Priority: Use language from params (which comes from query.lang or URL) over region-based override
+    // The query parameter lang should be respected to allow users to see genres in their selected language
+    const languageCode = extractLanguageCode(config.language) || DEFAULT_LANGUAGE_ISO;
 
     const url = `${config.baseUrl}/genre/${type}/list`;
     const queryParams = {
