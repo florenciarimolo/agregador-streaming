@@ -527,7 +527,7 @@ const contentPreferences = ref<{
 });
 
 // Fetch genres using composable
-const { genresData, availableGenres } = useGenres('genres', {
+const { availableGenres } = useGenres('genres', {
   server: false,
 });
 

@@ -3,7 +3,6 @@ import { getUserTMDBParams } from '@/server/utils/user-tmdb';
 import { createError, defineEventHandler, getQuery } from 'h3';
 import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 import {
-  LanguageIsoCode,
   DEFAULT_LANGUAGE_ISO,
   extractLanguageCode,
 } from '@/constants/languages';

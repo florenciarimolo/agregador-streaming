@@ -1,4 +1,4 @@
-import { computed, watch, ref } from 'vue';
+import { computed, watch } from 'vue';
 import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 import { useRouteWithLang } from '@/composables/useRouteWithLang';
 

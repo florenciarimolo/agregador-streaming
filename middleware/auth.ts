@@ -8,7 +8,7 @@
  */
 import { useUserStore } from '@/stores/user';
 
-import { DEFAULT_LANGUAGE_URL_CODE, VALID_URL_CODES } from '@/constants/urlLanguageCodes';
+import { DEFAULT_LANGUAGE_URL_CODE } from '@/constants/urlLanguageCodes';
 import { extractLangFromPath } from '@/composables/useRouteWithLang';
 
 /**

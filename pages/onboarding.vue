@@ -239,7 +239,7 @@ const goBackToPreferences = () => {
 };
 
 // Fetch genres using composable
-const { genresData, availableGenres } = useGenres('onboarding-genres', {
+const { availableGenres } = useGenres('onboarding-genres', {
   server: false,
 });
 
