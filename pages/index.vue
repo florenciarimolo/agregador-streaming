@@ -433,14 +433,16 @@ watch(
 );
 
 // Reload genres when language changes (if user is logged in)
-// Watch lang (from URL) instead of locale to ensure genres reload when URL language changes
+// Watch lang.value explicitly to ensure reactivity when URL language changes
+// This watch handles language changes after initial load
 watch(
-  lang,
+  () => lang.value,
   async (newLang, oldLang) => {
     // Only reload if language actually changed and user is authenticated
+    // Skip if oldLang is undefined (initial load) - that's handled by user watch
     if (
       newLang &&
-      oldLang &&
+      oldLang !== undefined &&
       newLang !== oldLang &&
       user.value
     ) {

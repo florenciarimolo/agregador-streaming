@@ -1,4 +1,4 @@
-import { computed, watch } from 'vue';
+import { computed, watch, ref } from 'vue';
 import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 import { useRouteWithLang } from '@/composables/useRouteWithLang';
 
@@ -53,19 +53,37 @@ export const useGenres = (
     }
   );
 
+  // Track the language that was used to fetch current data
+  // Use useState to persist across component remounts
+  const lastFetchedLangKey = `genres-last-lang-${key}`;
+  const lastFetchedLang = useState<string | null>(lastFetchedLangKey, () => null);
+
   // Watch for language changes and clear cache + refresh
   // This ensures genres are reloaded with the new language
+  // Watch lang.value explicitly to ensure reactivity
   watch(
-    lang,
+    () => lang.value,
     async (newLang, oldLang) => {
-      if (newLang && oldLang && newLang !== oldLang) {
+      // Only refresh if language actually changed
+      // Check both oldLang (for same-component updates) and lastFetchedLang (for remounts)
+      const langChanged =
+        (oldLang !== undefined && newLang !== oldLang) ||
+        (lastFetchedLang.value !== null &&
+          newLang !== lastFetchedLang.value);
+
+      if (newLang && langChanged) {
         // Clear cache to force fresh fetch with new language
         await clearNuxtData(key);
         // Refresh will use the new language from lang.value
         await refresh();
+        // Update lastFetchedLang after refresh
+        lastFetchedLang.value = newLang;
+      } else if (newLang && lastFetchedLang.value === null) {
+        // First load - just track the language
+        lastFetchedLang.value = newLang;
       }
     },
-    { immediate: false }
+    { immediate: true } // Execute immediately to set initial lastFetchedLang
   );
 
   const availableGenres = computed<AvailableGenre[]>(() => {
