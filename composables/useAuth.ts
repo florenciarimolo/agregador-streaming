@@ -166,10 +166,9 @@ export const useAuth = () => {
     // Get current language from URL
     const lang = getCurrentLang();
     // Redirect to callback with next parameter so callback can handle recovery flow
-    // CRITICAL: Remove trailing slash from baseUrl to prevent // when concatenating
-    // Result: baseUrl (no trailing /) + "/" + lang + "/auth/callback?next=..." = clean URL
-    const baseUrl = config.public.baseUrl.replace(/\/$/, '');
-    const redirectUrl = `${baseUrl}/${lang}/auth/callback?next=/${lang}/auth/reset-password`;
+    // Use getAuthRedirectUrl as base and add the next query parameter
+    const baseRedirectUrl = getAuthRedirectUrl(lang);
+    const redirectUrl = `${baseRedirectUrl}?next=/${lang}/auth/reset-password`;
 
     // Development-only logging removed
 

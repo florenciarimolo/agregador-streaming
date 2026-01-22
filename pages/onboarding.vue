@@ -238,64 +238,9 @@ const goBackToPreferences = () => {
   // Preferences are already saved in state, so they will be maintained
 };
 
-// Preload genres using useAsyncData
-const { data: genresData } = useAsyncData(
-  'onboarding-genres',
-  async () => {
-    // Fetch both movie and TV genres
-    const [movieResponse, tvResponse] = await Promise.all([
-      $fetch<{ genres: Array<{ id: number; name: string }> }>(
-        `/api/tmdb/genres?type=${MEDIA_TYPE.MOVIE}`
-      ),
-      $fetch<{ genres: Array<{ id: number; name: string }> }>(
-        `/api/tmdb/genres?type=${MEDIA_TYPE.TV}`
-      ),
-    ]);
-    return { movie: movieResponse, tv: tvResponse };
-  },
-  {
-    server: false, // Only fetch on client
-    default: () => ({ movie: { genres: [] }, tv: { genres: [] } }),
-  }
-);
-
-const availableGenres = computed(() => {
-  if (!genresData.value) return [];
-
-  // Combine all genres with their type (movie or tv)
-  const allGenres: Array<{
-    id: number;
-    name: string;
-    type: typeof MEDIA_TYPE.MOVIE | typeof MEDIA_TYPE.TV;
-  }> = [];
-
-  // Add movie genres
-  const movieGenres = genresData.value.movie?.genres || [];
-  movieGenres.forEach((g: { id: number; name: string }) => {
-    if (g.name) {
-      allGenres.push({ id: g.id, name: g.name, type: MEDIA_TYPE.MOVIE });
-    }
-  });
-
-  // Add TV genres
-  const tvGenres = genresData.value.tv?.genres || [];
-  tvGenres.forEach((g: { id: number; name: string }) => {
-    if (g.name) {
-      allGenres.push({ id: g.id, name: g.name, type: MEDIA_TYPE.TV });
-    }
-  });
-
-  // Sort: first by type (movie first, then tv), then alphabetically by name
-  return allGenres
-    .filter((genre) => genre.name) // Filter out any genres without a name
-    .sort((a, b) => {
-      // First sort by type: movie comes before tv
-      if (a.type !== b.type) {
-        return a.type === MEDIA_TYPE.MOVIE ? -1 : 1;
-      }
-      // Then sort alphabetically by name
-      return (a.name || '').localeCompare(b.name || '');
-    });
+// Fetch genres using composable
+const { availableGenres } = useGenres('onboarding-genres', {
+  server: false,
 });
 
 // Load providers based on selected region
@@ -818,7 +763,7 @@ const saveSelections = async () => {
 
           <!-- Info Message -->
           <p
-            v-if="selectedProviders.length === 0"
+            v-if="selectedRegion && selectedProviders.length === 0"
             class="text-xs mt-2 italic text-gray-600 dark:text-gray-400"
           >
             {{ $t('preferences.content.includedProviders.allIncluded') }}

@@ -9,16 +9,24 @@
 import { useUserStore } from '@/stores/user';
 
 import { DEFAULT_LANGUAGE_URL_CODE } from '@/constants/urlLanguageCodes';
+import { extractLangFromPath } from '@/composables/useRouteWithLang';
 
 /**
- * Get language from route params
+ * Get language from route params or path
  * @param route - Route object
  * @returns Language URL code (e.g., 'es', 'en') or DEFAULT_LANGUAGE_URL_CODE as default
  */
-const getLangFromRoute = (route: { params?: { lang?: string } }): string => {
+const getLangFromRoute = (route: { params?: { lang?: string }; path?: string }): string => {
   const langParam = route.params?.lang as string | undefined;
   if (langParam) {
     return langParam.toLowerCase();
+  }
+  // Fallback: try to extract from path if params.lang is not available
+  if (route.path) {
+    const langFromPath = extractLangFromPath(route.path);
+    if (langFromPath) {
+      return langFromPath;
+    }
   }
   // Default to DEFAULT_LANGUAGE_URL_CODE if no lang param
   return DEFAULT_LANGUAGE_URL_CODE;
@@ -144,14 +152,13 @@ export default defineNuxtRouteMiddleware(
     }
 
     // Handle onboarding redirects (with language)
+    // Allow access to /my-account regardless of onboarding status
     if (
       !hasCompletedOnboarding &&
       to.path !== `/${lang}/onboarding` &&
+      to.path !== `/${lang}/my-account` &&
       !to.path.startsWith(`/${lang}/auth/callback`)
     ) {
-      if (import.meta.dev) {
-        // Development-only logging removed
-      }
       return navigateTo(`/${lang}/onboarding`, { replace: true });
     }
 
