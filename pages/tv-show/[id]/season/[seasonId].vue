@@ -45,7 +45,7 @@
               <SectionTitle>{{ $t('media.episodes') }}</SectionTitle>
               <!-- Season seen button -->
               <SeasonSeenButton
-                v-if="seasonWithProviders"
+                v-if="seasonWithProviders && user"
                 :is-season-seen="isSeasonFullySeen"
                 :season-number="seasonWithProviders.season_number"
                 @mark="handleMarkSeasonSeen"
@@ -109,6 +109,7 @@
                           {{ episode.episode_number }}. {{ episode.name }}
                         </h3>
                         <EpisodeSeenButton
+                          v-if="user"
                           :is-seen="
                             isEpisodeSeen(
                               seasonWithProviders.season_number,
@@ -138,7 +139,7 @@
                   <div>
                     <p
                       v-if="episode.overview"
-                      class="text-xs text-gray-700 dark:text-gray-300 line-clamp-3"
+                      class="text-xs text-gray-700 dark:text-gray-300"
                     >
                       {{ episode.overview }}
                     </p>
@@ -184,6 +185,7 @@
                   </template>
                   <template #top-right-actions>
                     <EpisodeSeenButton
+                      v-if="user"
                       :is-seen="
                         isEpisodeSeen(
                           seasonWithProviders.season_number,
@@ -215,7 +217,7 @@
                     </p>
                     <p
                       v-if="episode.overview"
-                      class="text-xs text-gray-800 dark:text-gray-300 line-clamp-3"
+                      class="text-xs text-gray-800 dark:text-gray-300"
                     >
                       {{ episode.overview }}
                     </p>

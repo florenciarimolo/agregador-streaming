@@ -20,7 +20,8 @@
         :to="computedLinkTo"
         :aria-label="computedLinkAriaLabel"
         :class="[
-          'block overflow-hidden relative w-full h-full focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 group',
+          'block overflow-hidden relative w-full h-full focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2',
+          hasValidLink ? 'group cursor-pointer' : 'cursor-default',
           showContent ? 'rounded-t-3xl' : 'rounded-3xl',
         ]"
         @click="handleLinkClick"
@@ -36,7 +37,10 @@
           <img
             :src="`https://image.tmdb.org/t/p/w500${computedPosterPath}`"
             :alt="computedImageAlt"
-            class="object-cover w-full h-full transition-transform duration-300 group-hover:scale-105"
+            :class="[
+              'object-cover w-full h-full transition-transform duration-300',
+              hasValidLink ? 'group-hover:scale-105' : '',
+            ]"
             loading="lazy"
             decoding="async"
           />
@@ -56,6 +60,7 @@
 
         <!-- Hover Overlay -->
         <div
+          v-if="hasValidLink"
           class="flex absolute bottom-0 left-0 flex-col justify-center items-center px-4 w-full h-full opacity-0 backdrop-blur-md transition-all duration-300 pointer-events-none group-hover:opacity-100 dark:bg-black/80 bg-white/80"
         >
           <p class="font-semibold text-gray-800 dark:text-gray-300">
@@ -311,6 +316,10 @@ const computedLinkTo = computed(() => {
   // If linkTo is provided, use it as-is (it should already have language prefix)
   // Otherwise return default
   return props.linkTo || '#';
+});
+
+const hasValidLink = computed(() => {
+  return computedLinkTo.value !== '#' && computedLinkTo.value !== '';
 });
 const computedPosterPath = computed(
   () => props.posterPath ?? props.recommendation?.poster_path ?? null
