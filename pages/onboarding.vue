@@ -818,7 +818,7 @@ const saveSelections = async () => {
 
           <!-- Info Message -->
           <p
-            v-if="selectedProviders.length === 0"
+            v-if="selectedRegion && selectedProviders.length === 0"
             class="text-xs mt-2 italic text-gray-600 dark:text-gray-400"
           >
             {{ $t('preferences.content.includedProviders.allIncluded') }}

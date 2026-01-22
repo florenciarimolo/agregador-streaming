@@ -67,7 +67,7 @@ useSeoMeta({
 const supabase = useSupabaseClient();
 const router = useRouter();
 const route = useRoute();
-const { routeWithLang } = useRouteWithLang();
+const { routeWithLang, lang } = useRouteWithLang();
 
 // Safely get userStore - it may not be available immediately after Pinia initialization
 // Use a computed to lazy-load the store, but only on client side
@@ -134,15 +134,15 @@ const parseHashParams = (): Record<string, string> => {
 
 // Helper function to redirect based on onboarding status or next parameter
 const redirectAfterAuth = async (next?: string) => {
-  // Development-only logging removed
-
   // Check if we have a next parameter for recovery flow
   if (
     next === '/auth/reset-password' ||
     next?.endsWith('/auth/reset-password')
   ) {
     // Recovery flow: redirect immediately to reset-password (with language)
-    router.replace(routeWithLang('/auth/reset-password'));
+    // Get current language from route to ensure we use the correct language
+    const currentLang = lang.value;
+    router.replace(routeWithLang('/auth/reset-password', currentLang));
     return;
   }
 
@@ -151,7 +151,6 @@ const redirectAfterAuth = async (next?: string) => {
 
   // Get the current session and user
   const { data: sessionData } = await supabase.auth.getSession();
-  // Development-only logging removed
 
   if (sessionData?.session?.user) {
     const user = sessionData.session.user;
@@ -175,21 +174,25 @@ const redirectAfterAuth = async (next?: string) => {
     // Check if user has completed onboarding
     const hasCompletedOnboarding = userStore.value.hasCompletedOnboarding;
 
+    // Get current language from route to ensure we use the correct language
+    // This is critical when user logs in from a specific language URL (e.g., /es)
+    const currentLang = lang.value;
+
     // Redirect to onboarding if not completed, otherwise to home (with language)
     if (!hasCompletedOnboarding) {
-      router.replace(routeWithLang('/onboarding'));
+      router.replace(routeWithLang('/onboarding', currentLang));
     } else {
-      router.replace(routeWithLang('/'));
+      router.replace(routeWithLang('/', currentLang));
     }
   } else {
     // No user, redirect to home (with language)
-    router.replace(routeWithLang('/'));
+    // Get current language from route to ensure we use the correct language
+    const currentLang = lang.value;
+    router.replace(routeWithLang('/', currentLang));
   }
 };
 
 onMounted(async () => {
-  // Development-only logging removed
-
   // Check for recovery flow flag BEFORE any other logic
   // This must be the first thing we check, even before checking session
   if (typeof window !== 'undefined') {
@@ -221,7 +224,8 @@ onMounted(async () => {
     if (isRecoveryFlow) {
       // NO eliminar el flag aquí - se eliminará en reset-password.vue después de cambiar la contraseña
       loading.value = false;
-      router.replace(routeWithLang('/auth/reset-password'));
+      const currentLang = lang.value;
+      router.replace(routeWithLang('/auth/reset-password', currentLang));
       return;
     }
   }
@@ -238,7 +242,8 @@ onMounted(async () => {
     // Development-only logging removed
 
     if (event === 'PASSWORD_RECOVERY') {
-      router.replace(routeWithLang('/auth/reset-password'));
+      const currentLang = lang.value;
+      router.replace(routeWithLang('/auth/reset-password', currentLang));
     }
   });
 
@@ -294,7 +299,8 @@ onMounted(async () => {
       error.value = errorText;
       loading.value = false;
       setTimeout(() => {
-        router.replace(routeWithLang('/'));
+        const currentLang = lang.value;
+        router.replace(routeWithLang('/', currentLang));
       }, 5000);
       return;
     }
@@ -318,7 +324,8 @@ onMounted(async () => {
         error.value = t('auth.callbackSessionError');
         loading.value = false;
         setTimeout(() => {
-          router.replace(routeWithLang('/'));
+          const currentLang = lang.value;
+          router.replace(routeWithLang('/', currentLang));
         }, 3000);
         return;
       }
@@ -386,7 +393,8 @@ onMounted(async () => {
               error.value = t('auth.callbackLinkExpiredOrInvalid');
               loading.value = false;
               setTimeout(() => {
-                router.replace(routeWithLang('/'));
+                const currentLang = lang.value;
+                router.replace(routeWithLang('/', currentLang));
               }, 3000);
               return;
             }
@@ -407,7 +415,8 @@ onMounted(async () => {
             error.value = t('auth.callbackLinkExpiredOrInvalid');
             loading.value = false;
             setTimeout(() => {
-              router.replace(routeWithLang('/'));
+              const currentLang = lang.value;
+              router.replace(routeWithLang('/', currentLang));
             }, 3000);
             return;
           }
@@ -425,7 +434,8 @@ onMounted(async () => {
         error.value = t('auth.callbackUnexpectedError');
         loading.value = false;
         setTimeout(() => {
-          router.replace(routeWithLang('/'));
+          const currentLang = lang.value;
+          router.replace(routeWithLang('/', currentLang));
         }, 3000);
         return;
       }
@@ -443,7 +453,8 @@ onMounted(async () => {
         error.value = t('auth.callbackGetSessionError');
         loading.value = false;
         setTimeout(() => {
-          router.replace(routeWithLang('/'));
+          const currentLang = lang.value;
+          router.replace(routeWithLang('/', currentLang));
         }, 3000);
         return;
       }
@@ -459,7 +470,8 @@ onMounted(async () => {
     error.value = t('auth.callbackSessionNotEstablished');
     loading.value = false;
     setTimeout(() => {
-      router.replace(routeWithLang('/'));
+      const currentLang = lang.value;
+      router.replace(routeWithLang('/', currentLang));
     }, 2000);
   } catch (err: unknown) {
     const { logError } = useLogger();
@@ -467,7 +479,8 @@ onMounted(async () => {
     error.value = t('auth.callbackUnexpectedError');
     loading.value = false;
     setTimeout(() => {
-      router.replace(routeWithLang('/'));
+      const currentLang = lang.value;
+      router.replace(routeWithLang('/', currentLang));
     }, 3000);
   }
 });
