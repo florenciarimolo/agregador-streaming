@@ -152,9 +152,11 @@ export default defineNuxtRouteMiddleware(
     }
 
     // Handle onboarding redirects (with language)
+    // Allow access to /my-account regardless of onboarding status
     if (
       !hasCompletedOnboarding &&
       to.path !== `/${lang}/onboarding` &&
+      to.path !== `/${lang}/my-account` &&
       !to.path.startsWith(`/${lang}/auth/callback`)
     ) {
       return navigateTo(`/${lang}/onboarding`, { replace: true });
