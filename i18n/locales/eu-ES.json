@@ -510,7 +510,8 @@
         "selected": "Hautatutako plataformak",
         "allIncluded": "Plataforma guztiak sartuta daude. Bilatu eta aukeratu plataformak edukia mugatzeko.",
         "noResults": "Ez da plataformarik aurkitu.",
-        "remove": "Ezabatu {name}"
+        "remove": "Ezabatu {name}",
+        "regionRequired": "Mesedez, hautatu eskualde bat lehenik plataformak ikusteko."
       },
       "region": {
         "title": "Eskualdea",

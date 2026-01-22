@@ -510,7 +510,8 @@
         "selected": "Plataformes seleccionades",
         "allIncluded": "Totes les plataformes estan incloses. Cerca i selecciona plataformes per limitar el contingut.",
         "noResults": "No s'han trobat plataformes.",
-        "remove": "Eliminar {name}"
+        "remove": "Eliminar {name}",
+        "regionRequired": "Si us plau, selecciona una regió primer per veure les plataformes disponibles."
       },
       "region": {
         "title": "Regió",

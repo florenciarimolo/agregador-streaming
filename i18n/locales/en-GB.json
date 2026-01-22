@@ -508,7 +508,8 @@
         "selected": "Selected platforms",
         "allIncluded": "All platforms are included. Search and select platforms to limit content.",
         "noResults": "No platforms found.",
-        "remove": "Remove {name}"
+        "remove": "Remove {name}",
+        "regionRequired": "Please select a region first to see available platforms."
       },
       "region": {
         "title": "Region",
