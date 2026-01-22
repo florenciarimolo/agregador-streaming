@@ -76,6 +76,16 @@
                 @season-seen-mark="handleMarkSeasonSeen(season.season_number)"
                 @season-seen-unmark="handleUnmarkSeason(season.season_number)"
               >
+                <template #below-title>
+                  <div v-if="hasSession" class="mt-2">
+                    <SeasonSeenButton
+                      :is-season-seen="isSeasonFullySeen(season.season_number, season.episode_count || 0)"
+                      :season-number="season.season_number"
+                      @mark="handleMarkSeasonSeen(season.season_number)"
+                      @unmark="handleUnmarkSeason(season.season_number)"
+                    />
+                  </div>
+                </template>
                 <template #actions>
                   <!-- Additional season info: Date and Episode count -->
                   <div class="flex flex-col gap-2 items-end">
@@ -167,6 +177,8 @@ import AppShell from '@/components/layout/AppShell.vue';
 import PageContainer from '@/components/layout/PageContainer.vue';
 import Section from '@/components/layout/Section.vue';
 import Alert from '@/components/ui/Alert.vue';
+import SeasonSeenButton from '@/components/SeasonSeenButton.vue';
+import { useUndoToast } from '@/composables/useUndoToast';
 
 const route = useRoute();
 const { getUserRegion } = useUserRegion();
@@ -175,6 +187,7 @@ const { lang } = useRouteWithLang();
 const user = useSupabaseUser();
 const hasSession = computed(() => !!user.value);
 const { logError } = useLogger();
+const { showToast } = useUndoToast();
 
 // Get current language URL code for API calls
 const currentLangUrlCode = computed(() => lang.value);
@@ -413,25 +426,78 @@ const isSeasonFullySeen = (seasonNumber: number, episodeCount: number) => {
 // Handlers for season seen actions
 const handleMarkSeasonSeen = async (seasonNumber: number) => {
   try {
+    // Check if user is authenticated
+    const {
+      data: { session },
+    } = await getSession();
+
+    if (!session?.access_token) {
+      showToast(t('media.authRequired'), null, 3000);
+      return;
+    }
+
     await markSeasonSeen(seasonNumber);
     await fetchEpisodeStatuses();
+
+    // Show success toast with undo
+    showToast(
+      t('episodes.seasonMarkedAsSeen'),
+      {
+        label: t('undo.undo'),
+        action: async () => {
+          await handleUnmarkSeason(seasonNumber);
+        },
+      },
+      7000
+    );
   } catch (error) {
     logError('[TV Show Detail] Error marking season as seen', error as Error, {
       seasonNumber,
       tmdbSeriesId: tmdbSeriesId.value,
     });
+    showToast(
+      t('home.errorUpdatingStatus', {
+        title: t('episodes.seasonMarkAsSeen', { season: seasonNumber }),
+      }),
+      null,
+      3000
+    );
   }
 };
 
 const handleUnmarkSeason = async (seasonNumber: number) => {
   try {
+    // Check if user is authenticated
+    const {
+      data: { session },
+    } = await getSession();
+
+    if (!session?.access_token) {
+      showToast(t('media.authRequired'), null, 3000);
+      return;
+    }
+
     await unmarkSeason(seasonNumber);
     await fetchEpisodeStatuses();
+
+    // Show success toast
+    showToast(
+      t('episodes.seasonUnmarkAsSeen', { season: seasonNumber }) + ' ✓',
+      null,
+      3000
+    );
   } catch (error) {
     logError('[TV Show Detail] Error unmarking season', error as Error, {
       seasonNumber,
       tmdbSeriesId: tmdbSeriesId.value,
     });
+    showToast(
+      t('home.errorUpdatingStatus', {
+        title: t('episodes.seasonUnmarkAsSeen', { season: seasonNumber }),
+      }),
+      null,
+      3000
+    );
   }
 };
 
