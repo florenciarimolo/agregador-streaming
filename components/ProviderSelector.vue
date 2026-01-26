@@ -66,8 +66,7 @@
                       ? 'dark:bg-gray-800/30 bg-gray-100/50'
                       : '',
                   ]"
-                  @mousedown.stop="handleProviderSelect(provider)"
-                  @touchstart.stop="handleProviderSelect(provider)"
+                  @click.stop="handleProviderSelect(provider)"
                 >
                   <img
                     v-if="provider.logo_path"

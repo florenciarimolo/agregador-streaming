@@ -89,8 +89,7 @@
                         : 'bg-transparent',
                       selected ? 'dark:bg-gray-800/30 bg-gray-100/50' : '',
                     ]"
-                    @mousedown.stop="handleGenreSelect(genre)"
-                    @touchstart.stop="handleGenreSelect(genre)"
+                    @click.stop="handleGenreSelect(genre)"
                   >
                     <span
                       class="text-sm text-gray-800 dark:text-gray-300 whitespace-nowrap"
