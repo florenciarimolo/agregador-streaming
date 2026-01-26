@@ -39,6 +39,8 @@ import { useUserRegion } from '@/composables/useUserRegion';
 import { useRouteWithLang } from '@/composables/useRouteWithLang';
 import { useUndoToast } from '@/composables/useUndoToast';
 import Toast from '@/components/ui/Toast.vue';
+import Modal from '@/components/ui/Modal.vue';
+import AuthForm from '@/components/AuthForm.vue';
 
 // Middleware handles onboarding check - if user has session, onboarding is completed
 definePageMeta({
@@ -1011,6 +1013,14 @@ const handleCloseAuthForm = () => {
 
 const showAuthForm = ref(false);
 
+// Computed for authentication state
+const isAuthenticated = computed(() => !!user.value);
+
+// Handle open auth modal from HeroSection
+const handleOpenAuth = () => {
+  showAuthForm.value = true;
+};
+
 // Check if auth query param is present to show auth form
 onMounted(() => {
   // Reset preferences loading state if it's stuck (e.g., from previous navigation)
@@ -1095,11 +1105,12 @@ onMounted(() => {
             v-if="showHero"
             :button-text="$t('hero.discoverButton')"
             :show-auth-form="showAuthForm"
-            :is-authenticated="false"
+            :is-authenticated="isAuthenticated"
             :hide-background="true"
             @auth-success="handleAuthSuccess"
             @signup-success="handleSignupSuccess"
             @close="handleCloseAuthForm"
+            @open-auth="handleOpenAuth"
           />
         </template>
         <template #fallback>
@@ -1353,5 +1364,18 @@ onMounted(() => {
         </template>
       </ClientOnly>
     </template>
+
+    <!-- Auth Form Modal -->
+    <Modal
+      :is-open="showAuthForm"
+      custom-class="max-w-md p-0"
+      @close="showAuthForm = false"
+    >
+      <AuthForm
+        in-modal
+        @success="handleAuthSuccess"
+        @signup="handleSignupSuccess"
+      />
+    </Modal>
   </div>
 </template>
