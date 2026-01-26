@@ -148,7 +148,7 @@
                     <button
                       type="button"
                       class="block px-4 py-2 mb-2 w-full text-sm text-left text-red-600 dark:text-red-400 rounded-lg transition-colors hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400"
-                      @click="
+                      @click.stop="
                         userMenuDropdownRef?.close();
                         handleLogoutClick();
                       "
@@ -428,7 +428,7 @@
             <button
               type="button"
               class="block px-4 py-3 w-full text-sm text-left text-red-600 dark:text-red-400 transition-colors hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400"
-              @click="handleLogoutClick"
+              @click.stop="handleLogoutClick"
             >
               {{ $t('navbar.logout') }}
             </button>
@@ -491,7 +491,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed } from 'vue';
+import { ref, onMounted, onUnmounted, computed, nextTick } from 'vue';
 import { useUserStore } from '@/stores/user';
 import Avatar from './Avatar.vue';
 import ActionMenu from '@/components/ui/ActionMenu.vue';
@@ -609,10 +609,13 @@ const showLogoutConfirm = ref(false);
 const showAuthForm = ref(false);
 
 // Handle logout click (show confirmation)
-const handleLogoutClick = () => {
-  showLogoutConfirm.value = true;
+const handleLogoutClick = async () => {
+  // Close menus first
   userMenuDropdownRef.value?.close();
   showMobileMenu.value = false;
+  // Wait for menus to close, then show modal
+  await nextTick();
+  showLogoutConfirm.value = true;
 };
 
 // Confirm logout
