@@ -6,7 +6,7 @@
         v-model="searchQuery"
         type="text"
         :placeholder="$t('search.placeholder')"
-        class="px-4 py-2 pr-4 pl-10 w-full text-sm text-gray-800 rounded-lg border-gray-300 transition-all dark:text-gray-300 dark:bg-gray-800/50 bg-white/80 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-transparent focus:border-transparent backdrop-blur-xs"
+        class="px-4 py-2 pr-4 pl-10 w-full text-base text-gray-800 rounded-lg border-gray-300 transition-all dark:text-gray-300 dark:bg-gray-800/50 bg-white/80 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-transparent focus:border-transparent backdrop-blur-xs"
         @input="handleSearch"
         @focus="showResults = true"
         @blur="handleBlur"
