@@ -993,8 +993,9 @@ const applyFilters = async () => {
 };
 
 // Check if there are active genre/provider filters
-// Handle auth success - redirect to home with language
+// Handle auth success - close modal and redirect to home with language
 const handleAuthSuccess = async () => {
+  showAuthForm.value = false;
   await navigateTo(routeWithLang('/'), { replace: true });
 };
 

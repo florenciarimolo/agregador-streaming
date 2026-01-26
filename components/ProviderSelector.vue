@@ -66,7 +66,6 @@
                       ? 'dark:bg-gray-800/30 bg-gray-100/50'
                       : '',
                   ]"
-                  @click.stop="handleProviderSelect(provider)"
                 >
                   <img
                     v-if="provider.logo_path"
@@ -97,7 +96,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted, onBeforeUnmount, nextTick } from 'vue';
 import {
   Combobox,
   ComboboxButton,
@@ -154,8 +153,8 @@ const dropdownStyle = ref<{
 const updateDropdownPosition = () => {
   if (!buttonRef.value) return;
 
-  const button = buttonRef.value.$el as HTMLElement;
-  if (!button) return;
+  const button = buttonRef.value.$el;
+  if (!button || !(button instanceof HTMLElement)) return;
 
   const rect = button.getBoundingClientRect();
   dropdownStyle.value = {
@@ -177,12 +176,31 @@ const updateOpenState = (value: boolean) => {
   }
 };
 
+// Selected provider for Combobox (must be defined before watchers)
+const selectedProviderObj = computed({
+  get: () => props.modelValue || null,
+  set: (provider: Provider | null) => {
+    emit('update:modelValue', provider);
+  },
+});
+
+// Track if component is mounted
+const isMounted = ref(false);
+// Track if selection is from explicit user action
+const isExplicitSelection = ref(false);
+
 // Watch openState for position updates and clearing selection
-watch(openState, async (isOpen, wasOpen) => {
+const stopOpenStateWatcher = watch(openState, async (isOpen, wasOpen) => {
+  if (!isMounted.value) return;
+  
   if (isOpen) {
-    // Opening: update position
+    // Opening: update position - wait for DOM to be ready
     await nextTick();
-    updateDropdownPosition();
+    if (!isMounted.value) return;
+    // Double check that button is mounted before updating position
+    if (buttonRef.value?.$el instanceof HTMLElement) {
+      updateDropdownPosition();
+    }
   } else if (wasOpen) {
     // Closing: clear selection if no explicit selection was made
     if (!isExplicitSelection.value && selectedProviderObj.value) {
@@ -192,43 +210,60 @@ watch(openState, async (isOpen, wasOpen) => {
   }
 });
 
+// Watch for selection changes from Combobox
+const stopSelectionWatcher = watch(selectedProviderObj, async (newValue, oldValue) => {
+  if (!isMounted.value) return;
+  
+  // Only handle when a new value is selected (not when clearing)
+  if (newValue && newValue !== oldValue) {
+    // Emit select event
+    emit('select', newValue);
+    
+    // Clear search input
+    searchQuery.value = '';
+    
+    // Mark as explicit selection and clear after a tick
+    isExplicitSelection.value = true;
+    await nextTick();
+    if (!isMounted.value) return;
+    selectedProviderObj.value = null;
+    isExplicitSelection.value = false;
+  }
+});
+
 // Update position on scroll and resize when open
 onMounted(() => {
-  window.addEventListener('scroll', updateDropdownPosition, { passive: true });
-  window.addEventListener('resize', updateDropdownPosition);
+  isMounted.value = true;
+  // Wait for button to be mounted before adding listeners
+  nextTick(() => {
+    if (isMounted.value && buttonRef.value?.$el instanceof HTMLElement) {
+      window.addEventListener('scroll', updateDropdownPosition, { passive: true });
+      window.addEventListener('resize', updateDropdownPosition);
+    }
+  });
 });
+
+onBeforeUnmount(() => {
+  isMounted.value = false;
+  // Stop watchers before unmounting
+  if (stopOpenStateWatcher) {
+    stopOpenStateWatcher();
+  }
+  if (stopSelectionWatcher) {
+    stopSelectionWatcher();
+  }
+  // Clear any pending state
+  openState.value = false;
+  selectedProviderObj.value = null;
+});
+
 
 onUnmounted(() => {
   window.removeEventListener('scroll', updateDropdownPosition);
   window.removeEventListener('resize', updateDropdownPosition);
 });
 
-// Track if selection is from explicit user action
-const isExplicitSelection = ref(false);
-
-// Selected provider for Combobox
-const selectedProviderObj = computed({
-  get: () => props.modelValue || null,
-  set: (provider: Provider | null) => {
-    emit('update:modelValue', provider);
-  },
-});
-
-// Handle explicit selection via click
-const handleProviderSelect = (provider: Provider) => {
-  // Emit select event first, before any other operations
-  emit('select', provider);
-  
-  // Clear search input immediately
-  searchQuery.value = '';
-  
-  // Clear the selection so the placeholder shows again
-  isExplicitSelection.value = true;
-  nextTick(() => {
-    selectedProviderObj.value = null;
-    isExplicitSelection.value = false;
-  });
-};
+// Note: Selection is now handled by watcher on selectedProviderObj
 
 // Filtered providers based on search query and excluding already selected
 const filteredProviders = computed(() => {
