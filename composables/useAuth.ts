@@ -1,8 +1,8 @@
 import { readonly } from 'vue';
 import { validatePassword } from '@/utils/passwordValidation';
 import { STORAGE_KEYS } from '@/constants/storage/keys';
-import { DEFAULT_LANGUAGE_URL_CODE } from '@/constants/urlLanguageCodes';
 import { useLogger } from '@/composables/useLogger';
+import { getCurrentLangUrlCode } from '@/composables/useRouteWithLang';
 
 /**
  * Authentication composable for UpNext
@@ -15,19 +15,6 @@ export const useAuth = () => {
   const route = useRoute();
   const config = useRuntimeConfig();
   const { routeWithLang } = useRouteWithLang();
-
-  /**
-   * Get language from current route
-   * @returns Language URL code (e.g., 'es', 'en') or DEFAULT_LANGUAGE_URL_CODE as default
-   */
-  const getCurrentLang = (): string => {
-    const langParam = route.params?.lang as string | undefined;
-    if (langParam) {
-      return langParam.toLowerCase();
-    }
-    // Default to DEFAULT_LANGUAGE_URL_CODE if no lang param
-    return DEFAULT_LANGUAGE_URL_CODE;
-  };
 
   /**
    * Get auth redirect URL with language
@@ -60,8 +47,8 @@ export const useAuth = () => {
         throw error;
       }
 
-      // Get current language from URL
-      const lang = getCurrentLang();
+      // Get current language from URL (with fallback to extract from path)
+      const lang = getCurrentLangUrlCode(route);
       const redirectUrl = getAuthRedirectUrl(lang);
 
       // Development-only logging removed
@@ -133,8 +120,8 @@ export const useAuth = () => {
    */
   const signInWithMagicLink = async (email: string) => {
     try {
-      // Get current language from URL
-      const lang = getCurrentLang();
+      // Get current language from URL (with fallback to extract from path)
+      const lang = getCurrentLangUrlCode(route);
       const redirectUrl = getAuthRedirectUrl(lang);
 
       // Development-only logging removed
@@ -163,8 +150,8 @@ export const useAuth = () => {
    * Reset password (forgot password)
    */
   const resetPassword = async (email: string) => {
-    // Get current language from URL
-    const lang = getCurrentLang();
+    // Get current language from URL (with fallback to extract from path)
+    const lang = getCurrentLangUrlCode(route);
     // Redirect to callback with next parameter so callback can handle recovery flow
     // Use getAuthRedirectUrl as base and add the next query parameter
     const baseRedirectUrl = getAuthRedirectUrl(lang);
