@@ -19,6 +19,7 @@ const emit = defineEmits<{
   authSuccess: [];
   signupSuccess: [];
   close: [];
+  openAuth: [];
 }>();
 
 const { t } = useI18n();
@@ -29,6 +30,17 @@ const scrollToSection = (sectionId: string) => {
   const element = document.getElementById(sectionId);
   if (element) {
     element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+};
+
+// Handle discover button click
+const handleDiscoverClick = () => {
+  if (!props.isAuthenticated) {
+    // If user is not authenticated, emit event to open auth modal
+    emit('openAuth');
+  } else {
+    // If user is authenticated, scroll to discover section
+    scrollToSection('discover');
   }
 };
 
@@ -150,7 +162,7 @@ const heroTitleParts = computed(() => {
         <Button
           size="medium"
           variant="primary"
-          @click="scrollToSection('discover')"
+          @click="handleDiscoverClick"
         >
           {{ props.buttonText }}
         </Button>
