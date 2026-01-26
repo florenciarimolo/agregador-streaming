@@ -1,8 +1,16 @@
 <template>
-  <div
-    v-if="isOpen"
-    class="p-6 rounded-3xl border backdrop-blur-xl bg-white/60 dark:bg-gray-900/40 border-gray-300/50 dark:border-white/10 md:p-8"
+  <Transition
+    enter-active-class="transition duration-200 ease-out"
+    enter-from-class="opacity-0 transform scale-95"
+    enter-to-class="opacity-100 transform scale-100"
+    leave-active-class="transition duration-150 ease-in"
+    leave-from-class="opacity-100 transform scale-100"
+    leave-to-class="opacity-0 transform scale-95"
   >
+    <div
+      v-if="isOpen"
+      class="p-6 rounded-3xl border backdrop-blur-xl bg-white/60 dark:bg-gray-900/40 border-gray-300/50 dark:border-white/10 md:p-8"
+    >
     <!-- Two Column Layout -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
       <!-- Left Column: First 2 Filters -->
@@ -164,11 +172,12 @@
         {{ $t('common.applyFilters') }}
       </Button>
     </div>
-  </div>
+    </div>
+  </Transition>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, onMounted, onErrorCaptured } from 'vue';
 import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 import type { Mood } from '@/constants/domain/mood';
 import type { Attention } from '@/constants/domain/attention';

@@ -89,7 +89,6 @@
                         : 'bg-transparent',
                       selected ? 'dark:bg-gray-800/30 bg-gray-100/50' : '',
                     ]"
-                    @click.stop="handleGenreSelect(genre)"
                   >
                     <span
                       class="text-sm text-gray-800 dark:text-gray-300 whitespace-nowrap"
@@ -107,7 +106,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted, onBeforeUnmount, nextTick } from 'vue';
 import {
   Combobox,
   ComboboxButton,
@@ -164,8 +163,8 @@ const dropdownStyle = ref<{
 const updateDropdownPosition = () => {
   if (!buttonRef.value) return;
 
-  const button = buttonRef.value.$el as HTMLElement;
-  if (!button) return;
+  const button = buttonRef.value.$el;
+  if (!button || !(button instanceof HTMLElement)) return;
 
   const rect = button.getBoundingClientRect();
   dropdownStyle.value = {
@@ -187,15 +186,31 @@ const updateOpenState = (value: boolean) => {
   }
 };
 
+// Selected genre for Combobox (must be defined before watchers)
+const selectedGenreObj = computed({
+  get: () => props.modelValue || null,
+  set: (genre: Genre | null) => {
+    emit('update:modelValue', genre);
+  },
+});
+
 // Track if selection is from explicit user action
 const isExplicitSelection = ref(false);
+// Track if component is mounted
+const isMounted = ref(false);
 
 // Watch openState for position updates and clearing selection
-watch(openState, async (isOpen, wasOpen) => {
+const stopOpenStateWatcher = watch(openState, async (isOpen, wasOpen) => {
+  if (!isMounted.value) return;
+  
   if (isOpen) {
-    // Opening: update position
+    // Opening: update position - wait for DOM to be ready
     await nextTick();
-    updateDropdownPosition();
+    if (!isMounted.value) return;
+    // Double check that button is mounted before updating position
+    if (buttonRef.value?.$el instanceof HTMLElement) {
+      updateDropdownPosition();
+    }
   } else if (wasOpen) {
     // Closing: clear selection if no explicit selection was made
     if (!isExplicitSelection.value && selectedGenreObj.value) {
@@ -205,40 +220,60 @@ watch(openState, async (isOpen, wasOpen) => {
   }
 });
 
+// Watch for selection changes from Combobox
+const stopSelectionWatcher = watch(selectedGenreObj, async (newValue, oldValue) => {
+  if (!isMounted.value) return;
+  
+  // Only handle when a new value is selected (not when clearing)
+  if (newValue && newValue !== oldValue) {
+    // Emit select event
+    emit('select', newValue);
+    
+    // Clear search input
+    searchQuery.value = '';
+    
+    // Mark as explicit selection and clear after a tick
+    isExplicitSelection.value = true;
+    await nextTick();
+    if (!isMounted.value) return;
+    selectedGenreObj.value = null;
+    isExplicitSelection.value = false;
+  }
+});
+
 // Update position on scroll and resize when open
 onMounted(() => {
-  window.addEventListener('scroll', updateDropdownPosition, { passive: true });
-  window.addEventListener('resize', updateDropdownPosition);
+  isMounted.value = true;
+  // Wait for button to be mounted before adding listeners
+  nextTick(() => {
+    if (isMounted.value && buttonRef.value?.$el instanceof HTMLElement) {
+      window.addEventListener('scroll', updateDropdownPosition, { passive: true });
+      window.addEventListener('resize', updateDropdownPosition);
+    }
+  });
 });
+
+onBeforeUnmount(() => {
+  isMounted.value = false;
+  // Stop watchers before unmounting
+  if (stopOpenStateWatcher) {
+    stopOpenStateWatcher();
+  }
+  if (stopSelectionWatcher) {
+    stopSelectionWatcher();
+  }
+  // Clear any pending state
+  openState.value = false;
+  selectedGenreObj.value = null;
+});
+
 
 onUnmounted(() => {
   window.removeEventListener('scroll', updateDropdownPosition);
   window.removeEventListener('resize', updateDropdownPosition);
 });
 
-// Selected genre for Combobox
-const selectedGenreObj = computed({
-  get: () => props.modelValue || null,
-  set: (genre: Genre | null) => {
-    emit('update:modelValue', genre);
-  },
-});
-
-// Handle explicit selection via click
-const handleGenreSelect = (genre: Genre) => {
-  // Emit select event first, before any other operations
-  emit('select', genre);
-
-  // Clear search input immediately
-  searchQuery.value = '';
-
-  // Clear the selection so the placeholder shows again
-  isExplicitSelection.value = true;
-  nextTick(() => {
-    selectedGenreObj.value = null;
-    isExplicitSelection.value = false;
-  });
-};
+// Note: Selection is now handled by watcher on selectedGenreObj
 
 // Filtered genres based on search query and excluding already selected
 const filteredGenres = computed(() => {
