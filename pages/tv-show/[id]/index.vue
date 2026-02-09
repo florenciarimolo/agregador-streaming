@@ -2,8 +2,14 @@
   <AppShell>
     <PageContainer>
       <div class="w-full pt-0 pb-6 lg:pt-6">
-        <!-- Skeleton loading (after delay) -->
-        <template v-if="showSkeleton && isLoading">
+        <!-- Loading state: spinner + text first, then skeleton after delay -->
+        <div
+          v-if="isLoading && !showSkeleton"
+          class="flex items-center justify-center min-h-[80dvh]"
+        >
+          <Spinner :message="$t('media.loadingTvShow')" />
+        </div>
+        <template v-else-if="showSkeleton && isLoading">
           <SkeletonMediaDetail />
         </template>
 
@@ -255,12 +261,13 @@ const {
   unmarkSeason,
 } = useEpisodeStatus(tmdbSeriesId);
 
+// No await: page mounts immediately and shows loading state (text then skeleton)
 const {
   data: tvShowDetails,
   pending: tvShowPending,
   error: tvShowError,
   refresh: refreshTVShowDetails,
-} = await useFetch<TVShow>(`/api/tmdb/tvshows/${tvShowId}`, {
+} = useFetch<TVShow>(`/api/tmdb/tvshows/${tvShowId}`, {
   query: { lang: currentLangUrlCode },
 });
 
@@ -269,7 +276,7 @@ const {
   pending: tvProvidersPending,
   error: tvProvidersError,
   refresh: refreshTVProviders,
-} = await useFetch(`/api/tmdb/tvshows/${tvShowId}/providers`, {
+} = useFetch(`/api/tmdb/tvshows/${tvShowId}/providers`, {
   query: { lang: currentLangUrlCode },
 });
 

@@ -23,78 +23,63 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue';
+import { onMounted, onUnmounted, ref, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 
 const router = useRouter();
 const route = useRoute();
-const isLoading = ref(false);
 
-// Global navigation loading state shared across pages
-// This allows pages to detect when a full-page navigation is in progress
-// and avoid showing local skeletons at the same time.
-const pageNavigationLoading = useState<boolean>(
-  'page-navigation-loading',
-  () => false
-);
+// Single source of truth: overlay visibility and global state for pages.
+// Stopped by app.vue on Transition afterEnter (when new page content is rendered).
+const isLoading = useState<boolean>('page-navigation-loading', () => false);
+
+// Fallback: pages with top-level await (e.g. season) don't mount until async setup resolves,
+// so the Transition never gets a new child and afterEnter never fires. Stop after max wait.
+const FALLBACK_MS = 5000;
+const fallbackTimer = ref<ReturnType<typeof setTimeout> | null>(null);
+
+const clearFallback = () => {
+  if (fallbackTimer.value !== null) {
+    clearTimeout(fallbackTimer.value);
+    fallbackTimer.value = null;
+  }
+};
 
 const startLoading = () => {
+  clearFallback();
   isLoading.value = true;
-  pageNavigationLoading.value = true;
+  fallbackTimer.value = setTimeout(() => {
+    stopLoading();
+  }, FALLBACK_MS);
 };
 
 const stopLoading = () => {
+  clearFallback();
   isLoading.value = false;
-  pageNavigationLoading.value = false;
 };
 
+// When app.vue sets loading to false (afterEnter), clear fallback so it doesn't run later
+watch(isLoading, (val) => {
+  if (!val) clearFallback();
+});
+
 onMounted(() => {
-  // Register navigation hooks to show loading indicator
-  // These hooks will be called for all navigation, including navigateTo() from Nuxt
   router.beforeEach((to, from, next) => {
-    // Only show loading if navigating to a different route
     if (to.path !== from.path) {
       startLoading();
     }
     next();
   });
 
-  router.afterEach(() => {
-    if (typeof window !== 'undefined') {
-      // Wait for page to be fully loaded and rendered
-      // Use nextTick to wait for Vue to finish rendering, then add a small delay
-      nextTick(() => {
-        // Wait for images and content to load
-        window.setTimeout(() => {
-          stopLoading();
-        }, 500); // Increased delay to ensure page is fully loaded
-      });
-    } else {
-      stopLoading();
-    }
-  });
-
   router.onError(() => {
     stopLoading();
   });
 
-  // Also watch for route changes (handles browser back/forward and Nuxt navigation)
-  // This ensures loading shows even if router hooks don't fire
   watch(
     () => route.path,
     (newPath, oldPath) => {
       if (newPath !== oldPath && oldPath) {
         startLoading();
-        // Stop loading after page is ready
-        nextTick(() => {
-          if (typeof window !== 'undefined') {
-            window.setTimeout(() => {
-              stopLoading();
-            }, 500);
-          } else {
-            stopLoading();
-          }
-        });
       }
     }
   );

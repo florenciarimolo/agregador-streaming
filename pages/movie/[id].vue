@@ -7,9 +7,7 @@
           v-if="isLoading"
           class="flex items-center justify-center min-h-[80dvh]"
         >
-          <div class="text-xl dark:text-gray-300 text-gray-800">{{
-            $t('common.loading')
-          }}</div>
+          <Spinner :message="$t('media.loadingMovie')" />
         </div>
 
         <!-- Error state -->
@@ -65,33 +63,31 @@ const { lang } = useRouteWithLang();
 // Get current language URL code for API calls
 const currentLangUrlCode = computed(() => lang.value);
 
-// Fetch movie details
+// No await: page mounts immediately and shows loading state
 const {
   data: movieDetails,
   pending: moviePending,
   error: movieError,
   refresh: refreshMovieDetails,
-} = await useFetch(`/api/tmdb/movies/${movieId}`, {
+} = useFetch(`/api/tmdb/movies/${movieId}`, {
   query: { lang: currentLangUrlCode },
 });
 
-// Fetch providers
 const {
   data: providersData,
   pending: providersPending,
   error: providersError,
   refresh: refreshProviders,
-} = await useFetch(`/api/tmdb/movies/${movieId}/providers`, {
+} = useFetch(`/api/tmdb/movies/${movieId}/providers`, {
   query: { lang: currentLangUrlCode },
 });
 
-// Fetch alternative titles
 const {
   data: alternativeTitlesData,
   pending: alternativeTitlesPending,
   error: alternativeTitlesError,
   refresh: refreshAlternativeTitles,
-} = await useFetch(`/api/tmdb/movies/${movieId}/alternative-titles`, {
+} = useFetch(`/api/tmdb/movies/${movieId}/alternative-titles`, {
   query: { lang: currentLangUrlCode },
 });
 
