@@ -39,11 +39,11 @@
         <!-- Title and Tagline - vertically centered container -->
         <div
           v-if="season?.name || tagline"
-          class="flex absolute inset-0 z-10 flex-col gap-2 justify-center items-start px-4 pointer-events-none"
+          class="flex absolute inset-0 z-10 flex-col gap-2 justify-center items-start px-4 py-2 pointer-events-none"
         >
           <h1
             v-if="season?.name"
-            class="text-lg font-bold text-white break-words sm:text-xl line-clamp-2"
+            class="text-lg font-bold text-white break-words sm:text-xl line-clamp-2 mt-4"
           >
             {{ season.name }}
           </h1>
