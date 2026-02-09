@@ -142,8 +142,8 @@
               <!-- RatingBadge -->
               <RatingBadge v-if="voteAverage" :rating="voteAverage" />
             </div>
-            <!-- Slot for content below title (e.g., season seen button) -->
-            <div v-if="$slots['below-title']" class="mt-2">
+            <!-- Slot for content below title (e.g., season seen button). Hidden on mobile, visible on desktop (lg+) -->
+            <div v-if="$slots['below-title']" class="mt-2 hidden lg:block">
               <slot name="below-title" />
             </div>
             <p
@@ -246,7 +246,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 import { useRouteWithLang } from '@/composables/useRouteWithLang';
 import { useFetchTagline } from '@/composables/useFetchTagline';
@@ -264,9 +264,8 @@ import IconStar from '@/components/icons/IconStar.vue';
 import IconEye from '@/components/icons/IconEye.vue';
 import IconButton from '@/components/ui/IconButton.vue';
 import Button from '@/components/ui/Button.vue';
-import { useSupabaseUser } from '#imports';
-import { ref } from 'vue';
 import Modal from '@/components/ui/Modal.vue';
+import { useSupabaseUser } from '#imports';
 
 interface Props {
   title: string;
@@ -371,7 +370,7 @@ const providersWithLogos = computed(() => {
 // The component renders as 'nuxt-link' when there's a valid link, and 'div' when there isn't
 // Actions are positioned outside the link, so they won't interfere
 
-// Season seen button handlers
+// Season seen button handlers (overlay on poster, mobile only)
 const showConfirmModal = ref(false);
 
 const emit = defineEmits<{
@@ -381,10 +380,8 @@ const emit = defineEmits<{
 
 const handleSeasonSeenClick = () => {
   if (props.isSeasonSeen) {
-    // Show confirmation modal before unmarking
     showConfirmModal.value = true;
   } else {
-    // Mark season as seen (no confirmation needed)
     emit('season-seen-mark');
   }
 };
