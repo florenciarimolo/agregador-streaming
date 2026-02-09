@@ -1,6 +1,10 @@
 <template>
   <NuxtLayout>
-    <NuxtPage />
+    <Transition name="page" mode="out-in" @after-enter="onPageAfterEnter">
+      <div :key="route.fullPath" class="contents">
+        <NuxtPage />
+      </div>
+    </Transition>
   </NuxtLayout>
   <PageNavigationLoader />
   <CookieBanner />
@@ -11,6 +15,16 @@ import { onMounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import PageNavigationLoader from '@/components/PageNavigationLoader.vue';
 import { useHtmlLang } from '@/composables/useHtmlLang';
+
+// Shared state with PageNavigationLoader: stop overlay when new page has finished rendering
+const pageNavigationLoading = useState<boolean>(
+  'page-navigation-loading',
+  () => false
+);
+
+const onPageAfterEnter = () => {
+  pageNavigationLoading.value = false;
+};
 
 // Initialize theme
 useTheme();
@@ -58,8 +72,14 @@ watch(
 </script>
 
 <style>
-/* Los estilos globales van aquí */
+/* Global styles */
 #__nuxt {
   background-color: inherit;
+}
+
+/* Page transition: instant so we only use afterEnter for loader timing (content rendered) */
+.page-enter-active,
+.page-leave-active {
+  transition: none;
 }
 </style>

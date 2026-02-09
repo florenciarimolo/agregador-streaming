@@ -7,9 +7,7 @@
           v-if="isLoading"
           class="flex items-center justify-center min-h-[80dvh]"
         >
-          <div class="text-xl dark:text-gray-300 text-gray-800">{{
-            $t('media.loadingSeason')
-          }}</div>
+          <Spinner :message="$t('media.loadingSeason')" />
         </div>
 
         <!-- Error state -->
@@ -289,13 +287,13 @@ const currentLangUrlCode = computed(() => lang.value);
 const seriesId = route.params.id;
 const seasonId = route.params.seasonId;
 
-// Fetch TV show details to get the series name
+// Fetch TV show details to get the series name (no await: page mounts immediately and shows loading state)
 const {
   data: tvShowData,
   pending: tvShowPending,
   error: tvShowError,
   refresh: refreshTVShowDetails,
-} = await useFetch<TVShow>(`/api/tmdb/tvshows/${seriesId}`, {
+} = useFetch<TVShow>(`/api/tmdb/tvshows/${seriesId}`, {
   query: { lang: currentLangUrlCode },
 });
 
@@ -304,11 +302,20 @@ const {
   pending: seasonPending,
   error: seasonError,
   refresh: refreshSeasonData,
-} = await useFetch<Season>(
+} = useFetch<Season>(
   `/api/tmdb/tvshows/${seriesId}/seasons/${seasonId}`,
   {
     query: { lang: currentLangUrlCode },
   }
+);
+
+const {
+  data: seasonProviders,
+  pending: seasonProvidersPending,
+  error: seasonProvidersError,
+  refresh: refreshSeasonProviders,
+} = useFetch<WatchProviderTypes>(
+  `/api/tmdb/tvshows/${seriesId}/seasons/${seasonId}/providers`
 );
 
 const isLoading = computed(
@@ -317,15 +324,6 @@ const isLoading = computed(
 );
 const hasError = computed(
   () => seasonError.value || seasonProvidersError.value || tvShowError.value
-);
-
-const {
-  data: seasonProviders,
-  pending: seasonProvidersPending,
-  error: seasonProvidersError,
-  refresh: refreshSeasonProviders,
-} = await useFetch<WatchProviderTypes>(
-  `/api/tmdb/tvshows/${seriesId}/seasons/${seasonId}/providers`
 );
 
 // Watch for locale changes and refresh all data

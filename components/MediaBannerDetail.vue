@@ -245,7 +245,7 @@
           class="flex absolute inset-0 z-10 flex-col justify-center items-start gap-2 px-4 pointer-events-none"
         >
           <h1
-            class="text-lg sm:text-xl font-bold text-white break-words line-clamp-2"
+            class="text-lg sm:text-xl font-bold text-white break-words line-clamp-2 mt-4"
           >
             {{ mediaWithProviders.title || (mediaWithProviders as any).name }}
           </h1>
