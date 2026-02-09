@@ -177,7 +177,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onErrorCaptured } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { MEDIA_TYPE } from '@/constants/domain/mediaType';
 import type { Mood } from '@/constants/domain/mood';
 import type { Attention } from '@/constants/domain/attention';
