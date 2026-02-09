@@ -119,7 +119,7 @@
         <!-- Columna 2: Contenido (móvil y desktop) -->
         <div class="flex flex-col flex-1 gap-2 justify-between min-w-0">
           <div>
-            <div class="flex gap-2 items-center nowrap md:flex-wrap">
+            <div class="flex items-center gap-2 justify-between md:justify-start md:flex-wrap">
               <h3 class="text-sm md:text-lg font-semibold text-gray-800 dark:text-gray-300">
                 <nuxt-link
                   v-if="computedLinkTo"
@@ -142,8 +142,8 @@
               <!-- RatingBadge -->
               <RatingBadge v-if="voteAverage" :rating="voteAverage" />
             </div>
-            <!-- Slot for content below title (e.g., season seen button). Hidden on mobile, visible on desktop (lg+) -->
-            <div v-if="$slots['below-title']" class="mt-2 hidden lg:block">
+            <!-- Slot for content below title (e.g., season seen button) -->
+            <div v-if="$slots['below-title']" class="mt-2">
               <slot name="below-title" />
             </div>
             <p

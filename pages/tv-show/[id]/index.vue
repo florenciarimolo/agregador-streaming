@@ -77,7 +77,59 @@
                 @season-seen-unmark="handleUnmarkSeason(season.season_number)"
               >
                 <template #below-title>
-                  <div v-if="hasSession" class="mt-2">
+                  <!-- Mobile: season meta (date, episodes, seen) under title -->
+                  <div class="mt-2 flex flex-col gap-1 lg:hidden">
+                    <div
+                      class="flex items-center gap-2 dark:text-gray-300 text-gray-800 text-xs"
+                    >
+                      <IconCalendar icon-class="w-3 h-3" />
+                      <span
+                        :class="{
+                          italic:
+                            !season.air_date || season.air_date.trim() === '',
+                        }"
+                        >{{
+                          formatDateByRegion(season.air_date, userRegion, t)
+                        }}</span
+                      >
+                    </div>
+                    <div
+                      class="flex items-center gap-2 dark:text-gray-300 text-gray-800 text-xs"
+                    >
+                      <IconEpisodes icon-class="w-3 h-3" />
+                      <span>{{
+                        $t(
+                          (season.episode_count || 0) === 1
+                            ? 'media.episodesCount_one'
+                            : 'media.episodesCount_other',
+                          {
+                            count: season.episode_count || 0,
+                          }
+                        )
+                      }}</span>
+                    </div>
+                    <div
+                      v-if="hasSession && seenEpisodesCountBySeason[season.season_number] !== undefined"
+                      class="flex items-center gap-2 dark:text-gray-300 text-gray-800 text-xs"
+                    >
+                      <IconEye
+                        icon-class="w-3 h-3 text-primary-600 dark:text-primary-400"
+                      />
+                      <span>{{
+                        $t(
+                          seenEpisodesCountBySeason[season.season_number] === 1
+                            ? 'episodes.episodesSeenCount_one'
+                            : 'episodes.episodesSeenCount_other',
+                          {
+                            count: seenEpisodesCountBySeason[season.season_number],
+                          }
+                        )
+                      }}</span>
+                    </div>
+                  </div>
+
+                  <!-- Desktop: season seen button below title -->
+                  <div v-if="hasSession" class="mt-2 hidden lg:block">
                     <SeasonSeenButton
                       :is-season-seen="isSeasonFullySeen(season.season_number, season.episode_count || 0)"
                       :season-number="season.season_number"
@@ -87,8 +139,8 @@
                   </div>
                 </template>
                 <template #actions>
-                  <!-- Additional season info: Date and Episode count -->
-                  <div class="flex flex-col gap-2 items-end">
+                  <!-- Desktop: season meta (date, episodes, seen) aligned to the right -->
+                  <div class="hidden lg:flex flex-col gap-2 items-end">
                     <div
                       class="flex items-center gap-2 dark:text-gray-300 text-gray-800 text-xs"
                     >
